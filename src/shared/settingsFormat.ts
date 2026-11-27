@@ -91,6 +91,7 @@ const KNOWN_SETTINGS: { [K in keyof Required<AppSettings>]: true } = {
   repoLayouts: true,
   repoTodos: true,
   repoBookmarks: true,
+  prVisits: true,
   analyzerMode: true,
   todosHideDone: true,
   todosManualOrder: true,

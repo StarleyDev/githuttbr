@@ -36,6 +36,8 @@ export default {
       'test/missionHosting.test.ts',
       'test/fileTree.test.ts',
       'test/prViewed.test.ts',
+      // The Conversation tab's timeline, its filters and the last-visit marks.
+      'test/prTimeline.test.ts',
       'test/i18n.test.ts',
       'test/ciRunsLogic.test.ts',
       // The PR Checks tab: failed tests read from vitest, jest and pytest logs.

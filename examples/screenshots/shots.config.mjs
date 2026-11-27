@@ -253,6 +253,104 @@ async function fakeRollbackData(app) {
 
 /** @type {Shot[]} */
 /** The pr-updates shots' fictional Azure DevOps pull request. */
+/**
+ * The conversation timeline's fake pull request (#42 on a fictional GitHub
+ * repository): pushes, a line thread still open, a change request, an approval,
+ * a resolved thread, and a last visit between them. Dates count back from now,
+ * so "2d ago" reads the same on every run. `full` adds the review round;
+ * without it the detail keeps to the rendered-comment shot's comments.
+ */
+const PR_TIMELINE_REMOTE = 'https://github.com/example/workspace.git'
+const PR_TIMELINE_VISIT_KEY = 'https://github.com/example/workspace#42'
+function prTimelineFake({ full, comments }) {
+  const now = Date.now()
+  const ago = (h) => new Date(now - h * 3600e3).toISOString()
+  const commit = (sha, subject, h) => ({
+    sha: sha.padEnd(40, '0'), shortSha: sha, subject, authorName: 'Sam', authorLogin: 'sam', authoredAt: ago(h)
+  })
+  const commits = [
+    commit('3f9a2c1', 'feat: index filenames per repository', 72),
+    commit('b71e08d', 'feat: cap results at 50', 71.6),
+    commit('e04c7aa', 'feat: a setting for the search cap', 5)
+  ]
+  const at = (list) => list.map((c, i) => ({ ...c, createdAt: ago(c.h ?? 30 - i) }))
+  const detail = {
+    number: 42, title: 'Add workspace search', author: 'sam', source: 'workspace-search', target: 'main',
+    body: [
+      'Adds **workspace search** to the command palette. Closes #41.',
+      '',
+      '- [x] A filename index per open repository',
+      '- [x] Results capped at 50',
+      '- [ ] A setting for the cap'
+    ].join('\n'),
+    createdAt: ago(73),
+    state: 'open', draft: false, merged: false, mergeable: true, url: 'https://github.com/example/workspace/pull/42',
+    viewer: 'sam',
+    comments: at(comments),
+    reviews: [
+      ...(full
+        ? [{ author: 'kalani', state: 'CHANGES_REQUESTED', submittedAt: ago(47.5), body: 'The cap needs to be configurable before this goes in.' }]
+        : []),
+      { author: 'alex', state: 'APPROVED', submittedAt: ago(3) }
+    ],
+    reviewThreads: full
+      ? [
+          {
+            path: 'src/search/index.ts', line: 42, side: 'new', rootId: 601, resolved: false,
+            diffHunk: [
+              '@@ -40,2 +41,2 @@ import { index } from \'./index\'',
+              ' export function search(query: string) {',
+              '-  return index.all().filter(match(query))',
+              '+  return index.search(query, { limit: 50 })'
+            ].join('\n'),
+            comments: [
+              { id: 601, author: 'kalani', createdAt: ago(48), handle: { id: 601, kind: 'review' },
+                body: 'Should 50 come from the setting the description promises, rather than a literal here?' },
+              { id: 602, author: 'sam', createdAt: ago(26), handle: { id: 602, kind: 'review' }, body: 'Yes — next commit.' }
+            ]
+          },
+          {
+            path: 'src/palette.tsx', line: 18, side: 'new', rootId: 611, resolved: true, diffHunk: '',
+            comments: [
+              { id: 611, author: 'alex', createdAt: ago(1.5), handle: { id: 611, kind: 'review' }, body: 'Debounce this?' },
+              { id: 612, author: 'sam', createdAt: ago(1), handle: { id: 612, kind: 'review' }, body: 'Done.' }
+            ]
+          }
+        ]
+      : [],
+    requestedReviewers: [],
+    ...(full ? { labels: [{ name: 'enhancement', color: '84c5dd' }] } : {}),
+    commits: 3, changedFiles: 2, additions: 84, deletions: 12
+  }
+  return { detail, commits: { commits, truncated: false, kept: 'oldest' }, lastVisit: now - 12 * 3600e3 }
+}
+
+/** alex's comment with a table, shared by both conversation shots. */
+const PR_TIMELINE_TIMINGS = {
+  author: 'alex', h: 24, handle: { id: 501, kind: 'conversation' },
+  body: ['Timings on the large fixture:', '', '| Repositories | Files | First query |', '|---:|---:|---:|',
+    '| 3 | 92k | 41 ms |', '| 8 | 240k | 118 ms |'].join('\n')
+}
+
+/** Answers the PR page's reads with `fake` in main, and sets the last visit before the page opens. */
+async function openPrTimelineShot(page, app, repoPath, fake) {
+  await app.evaluate(({ ipcMain }, f) => {
+    for (const method of ['prDetail', 'prChecks', 'prFiles', 'prListCommits', 'prListUpdates']) {
+      ipcMain.removeHandler('hosting:' + method)
+    }
+    ipcMain.handle('hosting:prDetail', () => f.detail)
+    ipcMain.handle('hosting:prChecks', () => [])
+    ipcMain.handle('hosting:prFiles', () => ({ files: [], revision: null }))
+    ipcMain.handle('hosting:prListCommits', () => f.commits)
+    ipcMain.handle('hosting:prListUpdates', () => ({ updates: [], truncated: false, grouping: 'approximate' }))
+  }, fake)
+  await page.evaluate(({ repoPath, remoteUrl, key, at }) => {
+    const settings = window.__shot.settings.getState()
+    settings.update((s) => ({ ...s, prVisits: { ...(s.prVisits ?? {}), [key]: at } }))
+    settings.openPageTab({ type: 'pr', repoPath, remoteUrl, number: 42, title: 'Add workspace search' })
+  }, { repoPath, remoteUrl: PR_TIMELINE_REMOTE, key: PR_TIMELINE_VISIT_KEY, at: fake.lastVisit })
+}
+
 const PR_UPDATES_REMOTE = 'https://dev.azure.com/example/studio/_git/catalog'
 const PR_UPDATES_FAKE = (() => {
   const sha = (tag) => tag.padEnd(40, '0')
@@ -1258,24 +1356,21 @@ export const shots = [
   },
   {
     out: 'pull-request-page',
+    // The conversation as a timeline: pushes, a line thread still open with its
+    // lines, a change request, what is new since the last visit, an approval and
+    // a resolved thread folded to one line. Faked in main — fictional people.
     repos: ['octopus-merge'],
     drive: async (page, repos, app) => {
-      await app.evaluate(({ ipcMain }) => {
-        for (const method of ['prDetail', 'prChecks', 'prFiles']) ipcMain.removeHandler('hosting:' + method)
-        ipcMain.handle('hosting:prDetail', () => ({
-          number: 42, title: 'Add workspace search', author: 'sam', source: 'workspace-search', target: 'main',
-          body: 'Search filenames across open repositories from the command palette.',
-          state: 'open', draft: false, merged: false, mergeable: true, url: 'https://github.com/example/workspace/pull/42',
-          comments: [], reviews: [], reviewThreads: [], requestedReviewers: [{ login: 'alex' }],
-          labels: [{ name: 'enhancement', color: '84c5dd' }], commits: 3, changedFiles: 2, additions: 84, deletions: 12
-        }))
-        ipcMain.handle('hosting:prChecks', () => [])
-        ipcMain.handle('hosting:prFiles', () => ({ files: [], revision: null }))
+      await openPrTimelineShot(page, app, repos['octopus-merge'], prTimelineFake({ full: true, comments: [] }))
+      await page.locator('.prt-new-divider').waitFor()
+      await page.locator('.prt-push').first().waitFor()
+      // From the line thread down: the review round, the new-since line, the approval, the folded thread.
+      await page.locator('.prt-push').first().evaluate((el) => {
+        el.scrollIntoView({ block: 'start' })
+        // Below the sticky filter bar, not under it.
+        el.closest('.prp-body').scrollTop -= 44
       })
-      await page.evaluate((repoPath) => window.__shot.settings.getState().openPageTab({
-        type: 'pr', repoPath, remoteUrl: 'https://github.com/example/workspace.git', number: 42, title: 'Add workspace search'
-      }), repos['octopus-merge'])
-      await page.locator('.prp-head h2').waitFor()
+      await page.waitForTimeout(300)
     }
   },
   {
@@ -1695,52 +1790,26 @@ export const shots = [
     repos: ['octopus-merge'],
     themes: ['dark'],
     drive: async (page, repos, app) => {
-      await app.evaluate(({ ipcMain }) => {
-        for (const method of ['prDetail', 'prChecks', 'prFiles']) ipcMain.removeHandler('hosting:' + method)
-        const fence = '`'.repeat(3)
-        ipcMain.handle('hosting:prDetail', () => ({
-          number: 42, title: 'Add workspace search', author: 'sam', source: 'workspace-search', target: 'main',
+      const fence = '`'.repeat(3)
+      const comments = [
+        {
+          ...PR_TIMELINE_TIMINGS,
           body: [
-            'Adds **workspace search** to the command palette. Closes #41.',
+            PR_TIMELINE_TIMINGS.body,
             '',
-            '- [x] A filename index per open repository',
-            '- [x] Results capped at 50',
-            '- [ ] A setting for the cap'
-          ].join('\n'),
-          state: 'open', draft: false, merged: false, mergeable: true, url: 'https://github.com/example/workspace/pull/42',
-          viewer: 'sam',
-          comments: [
-            {
-              author: 'alex', createdAt: '2026-11-20T10:00:00Z', handle: { id: 501, kind: 'conversation' },
-              body: [
-                'Timings on the large fixture:',
-                '',
-                '| Repositories | Files | First query |',
-                '|---:|---:|---:|',
-                '| 3 | 92k | 41 ms |',
-                '| 8 | 240k | 118 ms |',
-                '',
-                '![Flame graph of the first query](https://perf.example.net/flame/search-42.png)',
-                '',
-                `${fence}ts`,
-                'const results = index.search(query, { limit: 50 })',
-                fence
-              ].join('\n')
-            },
-            {
-              author: 'sam', createdAt: '2026-11-20T10:40:00Z', handle: { id: 502, kind: 'conversation' },
-              body: 'Thanks — `limit` becomes a setting in the next commit. @alex the follow-up is #43.'
-            }
-          ],
-          reviews: [], reviewThreads: [], requestedReviewers: [{ login: 'kalani' }],
-          commits: 3, changedFiles: 2, additions: 84, deletions: 12
-        }))
-        ipcMain.handle('hosting:prChecks', () => [])
-        ipcMain.handle('hosting:prFiles', () => ({ files: [], revision: null }))
-      })
-      await page.evaluate((repoPath) => window.__shot.settings.getState().openPageTab({
-        type: 'pr', repoPath, remoteUrl: 'https://github.com/example/workspace.git', number: 42, title: 'Add workspace search'
-      }), repos['octopus-merge'])
+            '![Flame graph of the first query](https://perf.example.net/flame/search-42.png)',
+            '',
+            `${fence}ts`,
+            'const results = index.search(query, { limit: 50 })',
+            fence
+          ].join('\n')
+        },
+        {
+          author: 'sam', h: 23, handle: { id: 502, kind: 'conversation' },
+          body: 'Thanks — `limit` becomes a setting in the next commit. @alex the follow-up is #43.'
+        }
+      ]
+      await openPrTimelineShot(page, app, repos['octopus-merge'], prTimelineFake({ full: false, comments }))
       await page.locator('.md-remote-img-blocked').waitFor()
       await page.locator('.md-remote pre code.hljs').waitFor()
       await page.waitForTimeout(300)

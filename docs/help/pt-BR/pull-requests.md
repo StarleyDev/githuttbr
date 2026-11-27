@@ -2,9 +2,9 @@
 title: Página de pull requests
 category: Sincronização e vários repositórios
 order: 57
-summary: Todos os pull requests de um repositório numa página — por estado, filtrados por autor, revisor, destino e CI — ‹ › para percorrer a lista filtrada de dentro de um PR, os commits dele, as atualizações (cada push, o que mudou, o que é novo desde a sua última visita), e comentários numa linha do diff.
-keywords: título referência cartão item de trabalho AB# número de issue dica pull requests lista página merge requests pr mr filtro autor revisor meus aguardando minha revisão revisão pedida ci falhando branch de destino rascunhos mesclados fechados busca triagem anterior próximo alt seta navegação checkout ir para branch de origem destino copiar nome da branch buscar fetch comentário de linha comentário inline comentário de revisão comentar na linha aba arquivos revisão de código aba commits lista de commits commits do pr histórico abrir commit copiar sha buscar branch do pr commits de pr de fork refs/pull head atualizações iterações pushes force push rebase histórico reescrito versões de diff o que mudou desde a última visita selo nova marcar como visto comparar atualização editor markdown barra formatação visualizar menção árvore de arquivos pastas visão em árvore visão de caminhos arquivos vistos marcar pasta como vista editar excluir apagar editado erro digitação renderizado comentários imagens pixel rastreamento imagem bloqueada clique carregar tarefas tabela bloco
-source: d91d96af92225cb74da274f8d168b07f6110b709
+summary: Todos os pull requests de um repositório numa página — por estado, filtrados por autor, revisor, destino e CI — ‹ › para percorrer a lista filtrada de dentro de um PR, os commits dele, as atualizações (cada push, o que mudou, o que é novo desde a sua última visita), e comentários numa linha do diff. A conversa como uma linha do tempo, com o que é novo desde a sua última visita.
+keywords: título referência cartão item de trabalho AB# número de issue dica pull requests lista página merge requests pr mr filtro autor revisor meus aguardando minha revisão revisão pedida ci falhando branch de destino rascunhos mesclados fechados busca triagem anterior próximo alt seta navegação checkout ir para branch de origem destino copiar nome da branch buscar fetch comentário de linha comentário inline comentário de revisão comentar na linha aba arquivos revisão de código aba commits lista de commits commits do pr histórico abrir commit copiar sha buscar branch do pr commits de pr de fork refs/pull head atualizações iterações pushes force push rebase histórico reescrito versões de diff o que mudou desde a última visita selo nova marcar como visto comparar atualização editor markdown barra formatação visualizar menção árvore de arquivos pastas visão em árvore visão de caminhos arquivos vistos marcar pasta como vista editar excluir apagar editado erro digitação renderizado comentários imagens pixel rastreamento imagem bloqueada clique carregar tarefas tabela bloco conversa linha do tempo threads abertas thread resolvida aprovou pediu alterações enviou commits papel revisor novo desde a última visita
+source: 9ff258ed8255fe2c0aeaa75b978512b673f9c268
 ---
 
 # Página de pull requests
@@ -582,6 +582,65 @@ O que não faz:
   site.
 - **Um arquivo sem diff** (binário, ou grande demais para o host incluir) não
   tem linhas para comentar.
+
+## A conversa
+
+A história de um pull request fica espalhada: a descrição no topo, comentários
+numa lista, threads de linha em outra, os vereditos só na barra lateral, os
+pushes numa aba à parte. Pôr-se em dia era ler tudo e remontar a ordem de
+cabeça. A aba **Conversa** conta tudo como uma **linha do tempo**, num trilho,
+na ordem em que aconteceu.
+
+![A conversa como linha do tempo: dois pushes, uma thread de linha ainda aberta com as linhas dela, um pedido de alterações, a linha que marca o que é novo desde a última visita e uma aprovação](../../screenshots/pull-request-page.webp)
+
+| Na linha do tempo | O que mostra |
+|---|---|
+| **A descrição** | Sempre primeiro, com quem abriu o pull request e quando |
+| **Comentários** | A conversa, cada um com o papel do autor: **Autor**, **Revisor**, e **Você** nos seus |
+| **Pushes** | *sam enviou 2 commits*, depois uma linha por commit; um clique no hash abre a aba Commits |
+| **Threads de linha** | No lugar, no horário do primeiro comentário: o arquivo e a linha, as linhas do diff de que ela trata, as respostas e uma caixa de resposta. O caminho e **Ver em Arquivos →** abrem esse arquivo na aba Arquivos |
+| **Vereditos de revisão** | **aprovou** em verde, **pediu alterações** em vermelho com o que o revisor escreveu, ou o comentário de uma revisão |
+
+Uma thread que o host diz estar **aberta** leva uma etiqueta âmbar, e a barra
+acima da linha do tempo conta essas threads: **1 thread aberta** mostra só elas,
+as que ainda esperam resposta. Uma thread **resolvida** se recolhe numa linha —
+*Thread resolvida em src/palette.tsx:18 · 2 comentários* — e um clique a abre.
+**Tudo · Comentários · Revisões · Commits** reduzem a linha do tempo a um tipo.
+
+Os **Revisores** da barra lateral dizem o veredito de cada pessoa por escrito —
+**✓ aprovou** ou **pediu alterações** — e um relógio para quem ainda não
+respondeu.
+
+### Novo desde a sua última visita
+
+Quando você sai da página de um pull request (outra página, outra aba, ou
+fechando-a), o app anota a hora. Na próxima vez, uma linha marca onde você
+parou — **Novo desde a sua última visita** — e a barra diz quantos itens vieram
+depois. A marca é feita ao sair, não ao abrir, então ela fica parada enquanto
+você lê. Na primeira vez que você abre um pull request, nada aparece como novo.
+
+Os horários aparecem como *há 2d*; passe o mouse para ver a data completa.
+
+*Limites:*
+
+- **Quando um commit foi enviado** é algo que os hosts não dizem. Os pushes são
+  remontados a partir da lista de commits: commits seguidos do mesmo autor, cada
+  um até uma hora depois do anterior, contam como um push, colocado na data do
+  último. Um rebase que reescreveu as datas os desloca. A aba Atualizações é o
+  registro do próprio host, onde existe.
+- **Aberta ou resolvida** vem do GitHub (uma requisição GraphQL a mais por
+  leitura) e do GitLab. Threads do Azure DevOps, do Bitbucket Data Center e do
+  Forgejo não mostram etiqueta nem entram na contagem.
+- **Vereditos na linha do tempo** precisam de data: GitHub, GitLab (uma
+  aprovação, datada pela nota que o GitLab escreve para ela) e Forgejo dão uma.
+  Votos do Azure DevOps e aprovações do Bitbucket Data Center não têm, então
+  aparecem só na barra lateral.
+- Uma revisão do GitHub sem texto próprio — o envelope em que cada lote de
+  comentários de linha é arquivado — não ganha linha; as threads dela já
+  aparecem.
+- Suas últimas visitas ficam guardadas para os 300 pull requests mais recentes,
+  só neste computador. Fechar o app com um pull request aberto não conta como
+  sair dele.
 
 ## Escrever comentários
 

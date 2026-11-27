@@ -49,6 +49,8 @@ import { PrChecksSection } from './PrChecksSection'
 import { HostUserAvatar as Avatar } from './HostUserAvatar'
 import { PrNavBar } from './PrNavBar'
 import { PrCommitsSection, usePrCommits } from './PrCommitsSection'
+import { PrConversationTimeline, PrReviewerVerdict, TimeAgoLabel } from './PrConversationTimeline'
+import { getLastVisit, getPrVisitKey, recordVisit } from '../lib/prVisits'
 import { PrUpdatesSection, usePrUpdates, usePrUpdatesSeen } from './PrUpdatesSection'
 import { PrUpdateDiffBanner, usePrUpdateDiff, type UpdateDiffView } from './PrUpdateDiff'
 import { forgetFinished } from '../stores/prList'
@@ -617,7 +619,22 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
   const reviewers = pr ? reviewerStates(pr) : []
   const people = pr ? participants(pr) : []
   const conversationCount = pr ? pr.comments.length + pr.reviewThreads.length : 0
-  const commits = usePrCommits(repoPath, remoteUrl, tokens, number, section === 'commits', reloads)
+  // "New since your last visit" (lib/prVisits.ts): read once when the page opens,
+  // so the marker stays put while reading; recorded when the page is left or closed.
+  const visitKey = getPrVisitKey(remoteUrl, number)
+  const lastVisit = useMemo(() => getLastVisit(visitKey), [visitKey])
+  const visited = useRef(false)
+  useEffect(() => {
+    visited.current = false
+    return () => {
+      if (visited.current) recordVisit(visitKey, Date.now())
+    }
+  }, [visitKey])
+  useEffect(() => {
+    if (pr) visited.current = true
+  }, [pr])
+  // The conversation's timeline places the pushes, so the commits are read with it too.
+  const commits = usePrCommits(repoPath, remoteUrl, tokens, number, section === 'commits' || section === 'conversation', reloads)
   // A truncated list is not the whole count: the detail's own number, when it says more.
   const commitCount = commits.list?.truncated
     ? Math.max(commits.list.commits.length, pr?.commits ?? 0)
@@ -777,58 +794,42 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
             ) : error ? (
               <div className="prd-error">{readableError(error, t, interp)}</div>
             ) : !pr ? null : section === 'conversation' ? (
-              <>
-                <article className="prp-card">
-                  <div className="prp-card-head">
-                    <Avatar login={pr.author} avatars={pr.avatars} />
-                    <strong>{pr.author}</strong>
-                    <span>{fmtDate(pr.createdAt)}</span>
-                  </div>
-                  <div className={`prp-card-body ${pr.body.trim() ? '' : 'prp-muted'}`}>
-                    {pr.body.trim() ? (
-                      <RemoteMarkdown body={pr.body} bodyHtml={pr.bodyHtml} repoWebUrl={web} linkOptions={linkOptions} />
-                    ) : (
-                      t('prPage.noDescription')
-                    )}
-                  </div>
-                </article>
-
-                {pr.comments.map((c, i) => (
-                  <article key={c.handle ? `${c.handle.threadId ?? ''}:${c.handle.id}` : i} className="prp-card">
-                    <EditableComment
-                      handle={c.handle}
-                      body={c.body}
-                      edited={c.edited}
-                      mine={isMyComment(c, pr)}
-                      headClassName="prp-card-head"
-                      bodyClassName="prp-card-body"
-                      head={
-                        <>
-                          <Avatar login={c.author} avatars={pr.avatars} />
-                          <strong>{c.author}</strong>
-                          <span>{fmtDate(c.createdAt)}</span>
-                        </>
-                      }
-                      rendered={<RemoteMarkdown body={c.body} bodyHtml={c.bodyHtml} repoWebUrl={web} linkOptions={linkOptions} />}
-                      drafts={editDrafts}
-                      busy={busy}
-                      mentions={mentions}
-                      getReferences={getReferences}
-                      hasUnsentText={NEVER_LOST}
-                      onSave={saveCommentEdit}
-                      onDelete={(handle) => askDeleteComment(handle, !!c.hasReplies)}
-                    />
-                  </article>
-                ))}
-
-                {pr.reviewThreads.length > 0 && (
-                  <div className="prd-section-title">
-                    {t('prDetail.reviewThreads')} <span className="prd-count">{pr.reviewThreads.length}</span>
-                  </div>
+              <PrConversationTimeline
+                pr={pr}
+                commits={commits.list?.commits ?? null}
+                lastVisit={lastVisit}
+                renderMarkdown={(body, bodyHtml) => (
+                  <RemoteMarkdown body={body} bodyHtml={bodyHtml} repoWebUrl={web} linkOptions={linkOptions} />
                 )}
-                {pr.reviewThreads.map((th) => threadCard(th, true))}
-                {conversationCount === 0 && <p className="prp-muted prp-pad">{t('prDetail.noComments')}</p>}
-              </>
+                renderComment={(c, head) => (
+                  <EditableComment
+                    handle={c.handle}
+                    body={c.body}
+                    edited={c.edited}
+                    mine={isMyComment(c, pr)}
+                    headClassName="prp-card-head prt-head"
+                    bodyClassName="prp-card-body"
+                    head={head}
+                    rendered={<RemoteMarkdown body={c.body} bodyHtml={c.bodyHtml} repoWebUrl={web} linkOptions={linkOptions} />}
+                    drafts={editDrafts}
+                    busy={busy}
+                    mentions={mentions}
+                    getReferences={getReferences}
+                    hasUnsentText={NEVER_LOST}
+                    onSave={saveCommentEdit}
+                    onDelete={(handle) => askDeleteComment(handle, !!c.hasReplies)}
+                  />
+                )}
+                renderThread={(th) => threadCard(th, false)}
+                onViewInFiles={(path) => {
+                  // The Files tab opens on the file it remembers: this one, from its top.
+                  view.selectedFile = path
+                  view.diffScroll = null
+                  setUpdateView(null)
+                  setSection('files')
+                }}
+                onOpenCommits={() => setSection('commits')}
+              />
             ) : section === 'commits' ? (
               <PrCommitsSection repoPath={repoPath} remoteUrl={remoteUrl} pr={pr} list={commits.list} error={commits.error} />
             ) : section === 'updates' ? (
@@ -1071,7 +1072,11 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                       <li key={r.login} className="prp-person" title={t(REVIEW_KEY[r.state])}>
                         {r.team ? <Users size={14} className="prp-team" /> : <Avatar login={r.login} avatars={pr.avatars} />}
                         <span className="prp-person-name">{r.login}</span>
-                        <ReviewIcon state={r.state} />
+                        {r.state === 'APPROVED' || r.state === 'CHANGES_REQUESTED' ? (
+                          <PrReviewerVerdict state={r.state} />
+                        ) : (
+                          <ReviewIcon state={r.state} />
+                        )}
                       </li>
                     ))}
                   </ul>
@@ -1301,7 +1306,7 @@ function ReviewThreadCard({
               <>
                 <Avatar login={c.author} avatars={pr.avatars} />
                 <strong>{c.author}</strong>
-                <span>{fmtDate(c.createdAt)}</span>
+                <TimeAgoLabel iso={c.createdAt} />
               </>
             }
             rendered={<RemoteMarkdown body={c.body} bodyHtml={c.bodyHtml} repoWebUrl={web} linkOptions={linkOptions} />}

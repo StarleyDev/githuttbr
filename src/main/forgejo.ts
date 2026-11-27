@@ -577,7 +577,16 @@ export async function forgejoPullDetail(
     comments: comments.map(mapForgejoComment),
     reviews: reviews.flatMap((rv) => {
       const state = mapForgejoReviewState(rv)
-      return state ? [{ author: rv.user?.login ?? 'unknown', state }] : []
+      return state
+        ? [
+            {
+              author: rv.user?.login ?? 'unknown',
+              state,
+              ...(rv.submitted_at ? { submittedAt: rv.submitted_at } : {}),
+              ...(rv.body?.trim() ? { body: rv.body } : {})
+            }
+          ]
+        : []
     }),
     reviewThreads,
     createdAt: pr.created_at,

@@ -19250,6 +19250,125 @@ button.insights-row:hover { background: var(--bg-2); }
   cursor: grabbing;
 }
 
+/* ── PR conversation timeline ─────────────────────────────────────────────
+   The Conversation tab down one rail (components/PrConversationTimeline.tsx):
+   a face or a dot per entry, the filter bar above it, a line for what is new. */
+/* Sticky, so a filter stays at hand down a long conversation. Its top is the body's own padding. */
+.prt-bar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: -14px 0 8px; padding: 14px 0 6px;
+  position: sticky; top: -14px; z-index: 3; background: var(--bg-1);
+}
+.prt-seg { display: inline-flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; font-size: 12px; }
+.prt-seg button {
+  border: none; background: none; font: inherit; padding: 5px 11px; color: var(--text-2); cursor: pointer;
+}
+.prt-seg button + button { border-inline-start: 1px solid var(--border-soft); }
+.prt-seg button:hover { color: var(--text-0); }
+.prt-seg button.active { background: color-mix(in srgb, var(--accent) 22%, transparent); color: var(--text-0); }
+.prt-seg button:focus-visible, .prt-open-chip:focus-visible, .prt-resolved:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.prt-open-chip {
+  border: 1px solid transparent; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer;
+  padding: 4px 10px; border-radius: 6px; color: var(--warn); background: color-mix(in srgb, var(--warn) 14%, transparent);
+}
+.prt-open-chip.active { border-color: var(--warn); }
+.prt-grow { flex: 1; }
+.prt-new-summary { font-size: 12px; color: var(--text-3); }
+
+.prt-rail { position: relative; display: flex; flex-direction: column; gap: 12px; padding-inline-start: 26px; }
+.prt-rail::before {
+  content: ''; position: absolute; inset-inline-start: 9px; top: 6px; bottom: 6px; width: 2px; background: var(--border);
+}
+.prt-entry { position: relative; }
+.prt-dot {
+  position: absolute; inset-inline-start: -24px; top: 12px; width: 18px; height: 18px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; z-index: 1;
+}
+.prt-dot-face .prp-avatar { box-shadow: 0 0 0 3px var(--bg-1); }
+.prt-dot-icon { top: 11px; color: var(--bg-0); }
+.prt-dot-ok { background: var(--green); }
+.prt-dot-bad { background: var(--red); }
+.prt-dot-note { background: var(--bg-4); color: var(--text-1); }
+.prt-dot-ring {
+  inset-inline-start: -22px; top: 6px; width: 14px; height: 14px; box-sizing: border-box;
+  background: var(--bg-1); border: 2px solid var(--text-3);
+}
+.prt-item.prp-card { margin-bottom: 0; border-radius: 10px; }
+.prt-head { flex-wrap: wrap; font-size: 12.5px; color: var(--text-3); }
+.prt-head strong { color: var(--text-0); }
+.prt-sep, .prt-time { color: var(--text-3); }
+.prt-role {
+  padding: 0 6px; border: 1px solid var(--border); border-radius: 999px; font-size: 10.5px; color: var(--text-2);
+  line-height: 1.5;
+}
+.prt-role-you { border-color: color-mix(in srgb, var(--accent) 60%, transparent); color: var(--text-1); }
+
+/* A line thread in place: where, its state, the lines it is about, its comments and reply box. */
+.prt-thread {
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border)); border-radius: 10px; background: var(--bg-2);
+}
+.prt-thread-head { display: flex; align-items: center; gap: 8px; padding: 9px 14px; border-bottom: 1px solid var(--border); }
+.prt-path { font-family: var(--mono, monospace); font-size: 12px; padding: 1px 6px; border-radius: 4px; background: var(--bg-3); }
+.prt-path-link { border: none; color: var(--accent); cursor: pointer; overflow-wrap: anywhere; text-align: start; }
+.prt-path-link:hover { color: var(--text-0); }
+.prt-pill { padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+.prt-pill-open { color: var(--warn); background: color-mix(in srgb, var(--warn) 14%, transparent); }
+.prt-pill-resolved { color: var(--green); background: color-mix(in srgb, var(--green) 14%, transparent); }
+.prt-files-link { font-size: 12px; }
+.prt-collapse { border: none; background: none; padding: 0; color: var(--text-3); cursor: pointer; display: inline-flex; }
+.prt-collapse-open { transform: rotate(90deg); }
+.prt-hunk {
+  margin: 0; padding: 8px 0; font-family: var(--mono, monospace); font-size: 12px; line-height: 1.6;
+  background: var(--bg-0); border-bottom: 1px solid var(--border); overflow-x: auto;
+}
+.prt-hunk-line { display: block; padding: 0 14px; white-space: pre; color: var(--text-3); }
+.prt-hunk-add { background: color-mix(in srgb, var(--green) 14%, transparent); color: var(--green); }
+.prt-hunk-del { background: color-mix(in srgb, var(--red) 12%, transparent); color: var(--red); }
+.prt-hunk-no { display: inline-block; min-width: 4ch; margin: 0 12px 0 6px; text-align: end; opacity: 0.75; }
+/* The thread's own card (shared with the Files tab), flattened into this one. */
+.prt-thread-body .prp-card.prp-thread { border: none; background: none; margin: 0; border-radius: 0 0 10px 10px; padding: 8px 14px 12px; }
+.prt-thread-body .prp-thread-comment + .prp-thread-comment {
+  border-top: none; padding-inline-start: 12px; border-inline-start: 2px solid var(--border);
+}
+.prt-resolved {
+  display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 14px; box-sizing: border-box;
+  border: 1px dashed var(--border); border-radius: 10px; background: none; font: inherit; font-size: 12.5px;
+  color: var(--text-3); cursor: pointer; text-align: start;
+}
+.prt-resolved:hover { color: var(--text-1); }
+.prt-resolved .prt-path { background: none; padding: 0; }
+
+/* A review's verdict: a tinted band, red for changes asked, green for an approval. */
+.prt-review {
+  position: relative; display: flex; flex-direction: column; gap: 6px; padding: 10px 14px; border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--tone) 35%, transparent); background: color-mix(in srgb, var(--tone) 6%, transparent);
+}
+.prt-review-ok { --tone: var(--green); }
+.prt-review-bad { --tone: var(--red); }
+.prt-review-note { --tone: var(--text-3); }
+/* Flex, so the parts of the sentence and the time keep their spacing. */
+.prt-review-line, .prt-push-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 6px; }
+.prt-review-line { font-size: 12.5px; }
+.prt-verb { color: var(--tone); font-weight: 600; }
+.prt-review-note .prt-verb { color: var(--text-2); font-weight: 400; }
+.prt-verb strong { color: var(--text-0); font-weight: 700; }
+.prt-review-body { font-size: 13.5px; color: var(--text-0); }
+
+/* A push: who, how many, then one line per commit. */
+.prt-push { position: relative; display: flex; flex-direction: column; gap: 4px; padding: 4px 0; font-size: 12.5px; color: var(--text-3); }
+.prt-push strong { color: var(--text-1); }
+.prt-push-commit { display: flex; gap: 10px; font-family: var(--mono, monospace); font-size: 12px; min-width: 0; }
+.prt-sha { border: none; background: none; padding: 0; font: inherit; color: var(--accent); cursor: pointer; }
+.prt-sha:hover { color: var(--text-0); }
+.prt-subject { color: var(--text-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.prt-new-divider { display: flex; align-items: center; gap: 10px; font-size: 11.5px; font-weight: 600; color: var(--accent); }
+.prt-new-divider::before, .prt-new-divider::after { content: ''; flex: 1; height: 1px; background: var(--accent); }
+
+/* The sidebar's verdict next to a reviewer who decided. */
+.prt-verdict { flex: none; font-size: 12px; font-weight: 600; }
+.prt-verdict-ok { color: var(--green); }
+.prt-verdict-bad { color: var(--red); }
+
 /* ─── PR inline review threads ─────────────────────────────────────────── */
 .prd-threads { display: flex; flex-direction: column; gap: 12px; margin-bottom: 12px; }
 .prd-thread {

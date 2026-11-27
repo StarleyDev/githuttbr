@@ -170,3 +170,56 @@ export async function addReviewThreadReply(
   if (!comment?.id) throw new Error('GitHub did not create the reply.')
   return { pending: comment.state === 'PENDING' }
 }
+
+// ── Which review threads are resolved ────────────────────────────────────────
+
+/** REST has no resolved flag: each thread's state, keyed by its first comment's REST id. */
+const THREAD_RESOLUTION_QUERY = `query($owner:String!,$repo:String!,$number:Int!,$after:String){
+  repository(owner:$owner,name:$repo){
+    pullRequest(number:$number){
+      reviewThreads(first:100,after:$after){
+        pageInfo{ hasNextPage endCursor }
+        nodes{ isResolved comments(first:1){ nodes{ databaseId } } }
+      }
+    }
+  }
+}`
+
+interface ResolutionPage {
+  repository?: {
+    pullRequest?: {
+      reviewThreads?: {
+        pageInfo?: { hasNextPage?: boolean; endCursor?: string | null }
+        nodes?: Array<{ isResolved?: boolean; comments?: { nodes?: Array<{ databaseId?: number | null } | null> } } | null>
+      }
+    } | null
+  } | null
+}
+
+/**
+ * Whether each review thread of a pull request is resolved, by the REST id of
+ * its first comment — the id the REST read keys its threads on. A thread whose
+ * first comment was deleted is keyed by the first one left, so the caller looks
+ * up both. A thread missing from the answer stays unknown to the caller.
+ */
+export async function getReviewThreadResolution(
+  post: GithubGraphqlPost,
+  owner: string,
+  repo: string,
+  number: number
+): Promise<Map<number, boolean>> {
+  const out = new Map<number, boolean>()
+  let after: string | null = null
+  for (let page = 0; page < MAX_THREAD_PAGES; page++) {
+    const data: ResolutionPage = await post<ResolutionPage>(THREAD_RESOLUTION_QUERY, { owner, repo, number, after })
+    const conn = data.repository?.pullRequest?.reviewThreads
+    if (!conn) break
+    for (const th of conn.nodes ?? []) {
+      const first = th?.comments?.nodes?.[0]?.databaseId
+      if (typeof first === 'number' && typeof th?.isResolved === 'boolean') out.set(first, th.isResolved)
+    }
+    if (!conn.pageInfo?.hasNextPage || !conn.pageInfo.endCursor) break
+    after = conn.pageInfo.endCursor
+  }
+  return out
+}
