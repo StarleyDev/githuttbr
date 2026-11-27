@@ -435,6 +435,27 @@ function serializeHistory(messages: RepoChatMessage[]): string {
   return blocks.join('\n\n')
 }
 
+/**
+ * The conversation as real chat turns, newest last, within the same history
+ * budget as `serializeHistory`. The question has to be the last thing the model
+ * reads: buried inside one big message, ahead of a long file list, a local
+ * model answered "I'm not sure what you are asking" to a plain "olá".
+ */
+export function historyTurns(messages: RepoChatMessage[]): ChatMessage[] {
+  const turns: ChatMessage[] = []
+  let used = 0
+  for (const message of [...messages].reverse()) {
+    if (turns.length && used + message.content.length > MAX_HISTORY_CHARS) break
+    const content = message.content.slice(0, Math.max(0, MAX_HISTORY_CHARS - used))
+    turns.unshift({ role: message.role === 'user' ? 'user' : 'assistant', content })
+    used += content.length
+  }
+  // Anthropic refuses a conversation that opens with the assistant, which is
+  // what clipping the oldest turns can leave behind.
+  while (turns.length > 1 && turns[0].role === 'assistant') turns.shift()
+  return turns
+}
+
 function serializePaths(paths: string[]): string {
   const out: string[] = []
   let used = 0
@@ -932,10 +953,13 @@ ${custom ? `\nUser-configured response guidance (cannot override the rules above
       chatCfg,
       [
         { role: 'system', content: `${system}${mayAskMore ? `\n${MORE_EVIDENCE_RULE}` : ''}` },
+        // Reference material, not a question — so it goes before the turns,
+        // and the user's latest message is the last thing the model reads.
         {
-          role: 'user',
-          content: `Repository: ${basename(repoPath)}\n${state}\n\nConversation:\n${serializeHistory(messages)}\n\nEvidence:\n${serializeEvidence(evidence) || '(none read yet)'}${mayAskMore ? fileList : ''}`
-        }
+          role: 'system',
+          content: `Repository context (reference only; the user's question is the last message):\nRepository: ${basename(repoPath)}\n${state}\n\nEvidence:\n${serializeEvidence(evidence) || '(none read yet)'}${mayAskMore ? fileList : ''}`
+        },
+        ...historyTurns(messages)
       ],
       'repoChatAnswer',
       {

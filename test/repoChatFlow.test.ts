@@ -1,5 +1,5 @@
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest'
-import { answerRepoChat } from '../src/main/repoChat'
+import { answerRepoChat, historyTurns } from '../src/main/repoChat'
 import { migrateAIConfig } from '../src/shared/aiAccounts'
 import type { RepoChatProgressStep } from '../src/shared/types'
 import { chatProgressLabel } from '../src/renderer/src/lib/repoChatContext'
@@ -40,6 +40,11 @@ describe('repository chat flow', () => {
 
     expect(reply.content).toBe('Olá! Como posso ajudar?')
     expect(bodies).toHaveLength(1)
+    // The question is the last thing the model reads, as its own turn; the
+    // repository context and its file list come before it, marked as reference.
+    const sent = bodies[0].messages as { role: string; content: string }[]
+    expect(sent.at(-1)).toEqual({ role: 'user', content: 'olá' })
+    expect(sent.filter((m) => m.role === 'system').map((m) => m.content).join('\n')).toMatch(/reference only/)
     expect(steps).toEqual([{ phase: 'thinking' }])
   })
 
@@ -74,6 +79,30 @@ describe('repository chat flow', () => {
     expect(bodies).toHaveLength(2)
     expect(steps).toEqual([{ phase: 'thinking' }, { phase: 'reading', files: 1 }, { phase: 'thinking' }])
     expect(promptOf(bodies[1])).toMatch(/config\.json/)
+  })
+})
+
+describe('chat turns', () => {
+  it('keeps the order, newest last, and never opens with the assistant', () => {
+    expect(
+      historyTurns([
+        { role: 'user', content: 'a' },
+        { role: 'assistant', content: 'b' },
+        { role: 'user', content: 'c' }
+      ])
+    ).toEqual([
+      { role: 'user', content: 'a' },
+      { role: 'assistant', content: 'b' },
+      { role: 'user', content: 'c' }
+    ])
+    const long = 'x'.repeat(15_000)
+    const clipped = historyTurns([
+      { role: 'user', content: long },
+      { role: 'assistant', content: long },
+      { role: 'user', content: 'last' }
+    ])
+    expect(clipped[0].role).toBe('user')
+    expect(clipped.at(-1)).toEqual({ role: 'user', content: 'last' })
   })
 })
 
