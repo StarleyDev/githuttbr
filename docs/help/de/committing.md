@@ -3,14 +3,16 @@ title: Committen
 category: Mit Änderungen arbeiten
 order: 31
 summary: Nachrichtenstile, Vorlagen, Co-Autoren und der Linter.
-keywords: commit committen nachricht message composer conventional gitmoji ticket amend template vorlage co-author linter rückgängig undo reset
+keywords: commit committen nachricht message composer conventional gitmoji ticket amend template vorlage co-author linter rückgängig undo reset generate with ai cancel undo
 ---
 
 # Committen
 
 ## Nachrichtenstile
 
-Wähle einen in den Einstellungen; der Editor passt sich daran an.
+Wähle einen unter **Einstellungen → KI → Commit-Nachrichten** oder direkt im
+Editor; der Editor passt sich daran an. Der Stil gehört zur KI, die das Profil
+verwendet — der allgemeinen oder der eigenen des Profils.
 
 | Stil | Sieht so aus |
 |---|---|
@@ -63,6 +65,43 @@ Grenzen:
   für Conventional ausführt, lehnt ein führendes Emoji ab. Das ist die Regel des
   Hooks, nicht von GitHuttBr — konfiguriere commitlint für Gitmoji oder nutze dort
   reines Conventional.
+
+## Die Nachricht mit KI schreiben
+
+Bei eingeschalteter KI steht **Mit KI erzeugen** unter der Beschreibung. Es
+liest den gestagten Diff und schreibt Zusammenfassung und Beschreibung im
+oben gewählten Stil. Der Button nennt, wer antwortet — *Konto · Modell*, das
+Paar, das unter **Einstellungen → KI → Modell pro Aufgabe** für
+Commit-Nachrichten gewählt ist —, damit ein langsames lokales oder ein teures
+Modell nie überrascht.
+
+- **▾** neben dem Namen listet die gespeicherten Konten, jedes mit einigen
+  seiner Modelle. Die Wahl gilt **nur für diese eine Erzeugung**; die
+  Einstellungen ändern sich nicht.
+- Während es läuft, zeigt das Feld *Erzeuge mit Konto · Modell… 12 s* und
+  **Abbrechen**, das die Anfrage selbst stoppt, nicht nur den Spinner. Nach 30
+  Sekunden bietet es zusätzlich **Verwende** ein anderes bereites Konto an, das
+  dieselbe Erzeugung dort ausführt. Die app-weite Meldung *dauert länger als
+  erwartet* ([KI](ai.md)) erscheint weiterhin.
+- Der neue Text **ersetzt** den alten, der aufbewahrt wird: ein Banner meldet
+  *Von Konto · Modell in 7 s erzeugt* und bietet **Rückgängig**, das
+  Zusammenfassung und Beschreibung zurückholt, und **Erneut erzeugen**. Es
+  verschwindet, sobald du den Text bearbeitest oder committest.
+
+![Mit KI erzeugen und das Kontomenü](../../screenshots/commit-ai-generate.webp)
+
+[Commit bearbeiten](commit-edit.md) hat denselben Button, ausgehend vom Diff
+dieses Commits.
+
+Grenzen:
+
+- Nur der gestagte Diff wird gesendet, bei sehr großen gekürzt — nie
+  ungestagte Änderungen oder andere Dateien.
+- Rückgängig hält einen Schritt: den Text vor der ersten Erzeugung in Folge.
+  Ist das Banner weg, ist auch diese Kopie weg.
+- Abbrechen erstattet keine Tokens, die ein Anbieter schon verbraucht hat.
+- Die ▾-Liste zeigt alle gespeicherten Konten, auch eines ohne Schlüssel; es
+  zu wählen scheitert mit dem Fehler dieses Kontos.
 
 ## Was der Editor für dich erledigt
 

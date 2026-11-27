@@ -2,8 +2,9 @@
 title: Paramètres par dépôt
 category: Outils de l'espace de travail
 order: 94
-summary: Branches protégées, informations, statistiques d'usage, historique et journal des opérations.
-keywords: paramètres du dépôt réglages du dépôt repo settings branches protégées protected branches analytics journal des opérations operation log historique history info roue dentée gear image de l’onglet tab image icône logo
+summary: Le nom affiché, le profil, les branches protégées et l’image d’onglet d’un dépôt, plus ses règles, son coffre et son activité.
+keywords: paramètres du dépôt réglages du dépôt repo settings branches protégées protected branches analytics journal des opérations operation log historique history info roue dentée gear image de l’onglet tab image icône logo nom affiché alias profil retirer de la liste oublier statistiques configuration du projet
+source: 6cd23a3db24f4869df7d1b881fb15155bd0a0a8b
 ---
 
 # Paramètres par dépôt
@@ -13,19 +14,51 @@ appartiennent à **ce** dépôt, pas à l'application.
 
 ![Les paramètres par dépôt](../../screenshots/repo-settings.webp)
 
-| Onglet | Ce qu'il contient |
-|---|---|
-| **Général** | Branches protégées (une sélection multiple de branches, stockée dans la configuration git), signature, l’image de l’onglet |
-| **Config** | Les [règles que ce dépôt emporte](repo-config.md) dans `.githuttbr.json`, et le doctor qui les vérifie |
-| **Infos** | Notes et champs libres à propos de ce dépôt, conservés localement |
-| **Coffre** | Les entrées de [coffre](vault.md) de ce dépôt |
-| **Analyses** | Le [tableau de bord d'historique](insights.md) |
-| **Statistiques d'usage** | Ce que vous avez fait dans ce dépôt, compté localement |
-| **Historique** · **Journaux** | Le journal des opérations : chaque commande git que GitHuttBr a exécutée, avec sa sortie |
+L’en-tête dit quel dépôt vous vous apprêtez à modifier : son nom, son dossier,
+la branche courante, le distant principal (`origin` s’il existe) avec l’hôte
+où il vit, et quelques compteurs. Le nombre de branches vient de la liste déjà
+chargée. Celui du coffre n’apparaît qu’après avoir ouvert **Coffre-fort**, car lire
+le coffre interroge le trousseau du système, ce que l’ouverture des paramètres
+ne devrait pas faire. Il n’y a pas de nombre de commits : compter un long
+historique est un appel git à part entière, et un en-tête n’en vaut pas la peine.
+
+Les pages sont dans une navigation latérale, en trois groupes :
+
+| Groupe | Page | Ce qu’elle contient |
+|---|---|---|
+| Dépôt | **Général** | Nom affiché, profil, branches protégées, l’image de l’onglet et Retirer de la liste |
+| Dépôt | **Configuration du projet** | Les [règles que ce dépôt embarque](repo-config.md) dans `.githuttbr.json`, et le doctor qui les vérifie |
+| Dépôt | **Informations** | Notes et champs libres sur ce dépôt, conservés localement |
+| Sécurité | **Coffre-fort** | Les entrées du [coffre](vault.md) de ce dépôt |
+| Activité | **Statistiques** | Ce que vous avez fait dans GitHuttBr, compté localement |
+| Activité | **Analyse** | Le [tableau de bord de l’historique](insights.md) |
+| Activité | **Historique des opérations** | Les commits dans le temps et leurs auteurs, pour les dépôts que vous avez ouverts |
+| Activité | **Journaux** | Le journal des opérations : chaque commande git lancée ici par GitHuttBr, avec son résultat |
 
 Le journal des opérations est celui qui est honnête : quand quelque chose se
 comporte bizarrement, il montre la commande exacte et l'erreur exacte, pour qu'un
 rapport de bug puisse porter des faits plutôt que des adjectifs.
+
+## Général
+
+Chaque réglage est une ligne : ce qu’il fait à gauche, le contrôle à droite.
+Rien n’est enregistré avant d’appuyer sur **Enregistrer**.
+
+| Ligne | Ce qu’elle fait | Où c’est stocké |
+|---|---|---|
+| **Nom affiché** | Le nom sur les onglets et les listes. Le dossier sur le disque n’est jamais renommé ; vide, le nom du dossier est utilisé | Paramètres de GitHuttBr, sur cette machine |
+| **Profil** | L’identité, les jetons et l’IA que ce dépôt active quand son onglet est actif. **Auto** suit le profil actif | Paramètres de GitHuttBr, sur cette machine |
+| **Branches protégées** | Avertit avant de committer ou de forcer un push directement sur ces branches | La config git du dépôt |
+| **Image de l’onglet** | Une petite image sur l’onglet, ci-dessous | Paramètres de GitHuttBr, sur cette machine |
+
+Quand le dépôt contient un `.githuttbr.json`, un bandeau en haut de Général le
+signale et mène à **Configuration du projet**. Ces règles suivent le dépôt chez
+tous ceux qui le clonent ; les lignes sous le bandeau ne concernent que vous.
+
+**Retirer de la liste…** retire le dépôt de [Dépôts](repositories.md). Il
+demande d’abord, et la question dit ce qu’il ne fait pas : le dossier sur le
+disque n’est pas touché, et un onglet ouvert reste ouvert. Rouvrir le dépôt le
+remet dans la liste.
 
 ## Image de l’onglet
 

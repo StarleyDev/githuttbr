@@ -28,11 +28,11 @@ Você não precisa escrevê-lo à mão: o [chat do repositório](repo-chat.md) r
 o esquema deste arquivo, então *adicione links de tickets para JIRA-1234* ou
 *proteja os branches de release* volta como uma ação de arquivo revisável.
 
-![A aba Config do repositório, com as linhas do doctor e as seções de regras](../../screenshots/repo-config.webp)
+![A página Configuração do projeto do repositório, com as linhas do doctor e as seções de regras](../../screenshots/repo-config.webp)
 
 ## Onde editar
 
-A engrenagem ao lado das ferramentas da barra → **Config**. Esse editor escreve
+A engrenagem ao lado das ferramentas da barra → **Configuração do projeto**. Esse editor escreve
 o arquivo na sua árvore de trabalho; ele não é salvo em nenhum outro lugar,
 então **faça commit** para compartilhar as regras com o time.
 
@@ -87,7 +87,7 @@ mesmo (veja [a linha de comando](cli.md)).
 
 `requires` é a parte que responde a *"clonei e não roda"*. O GitHuttBr verifica ao
 abrir o repositório e mostra um chip de estetoscópio na barra de status quando
-algo está fora do lugar. Clicar no chip abre a aba Config nas linhas do doctor;
+algo está fora do lugar. Clicar no chip abre a página Configuração do projeto nas linhas do doctor;
 **Verificar de novo** roda tudo outra vez.
 
 | Verificação | Passa quando | Conserta com |
@@ -151,7 +151,7 @@ commit:
   num painel.
 
 Um campo ruim é descartado, não fatal. O resto do arquivo continua valendo, e o
-que foi descartado aparece em **Ignorado pelo GitHuttBr** na aba Config, com o
+que foi descartado aparece em **Ignorado pelo GitHuttBr** na página Configuração do projeto, com o
 motivo. A única exceção é JSON inválido ou uma `version` desconhecida, onde não
 há o que salvar.
 

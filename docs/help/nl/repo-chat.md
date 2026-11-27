@@ -2,8 +2,9 @@
 title: Repository-chat
 category: AI
 order: 82
-summary: Stel vragen over deze repository, met de bestanden en commits die je als context vastzet — en laat hem git-acties voorstellen die jij goedkeurt voordat ze lopen.
-keywords: chat vraag vragen assistent context vastzetten bijlage slepen loslaten commit bestand bewijs onderbouwd ai paneel acties uitvoeren goedkeuren automatisch toestaan fout herstellen toast
+summary: Vraag alles — algemene vragen of vragen over deze repository — met de bestanden en commits die je als context vastzet, en laat hem git-acties voorstellen die jij goedkeurt voordat ze lopen.
+keywords: chat vraag vragen assistent context vastzetten bijlage slepen loslaten commit bestand bewijs onderbouwd ai paneel acties uitvoeren goedkeuren automatisch toestaan fout herstellen toast algemene vraag elke vraag aan het nadenken bestanden lezen
+source: 14be127d45f76373e5ced5db32f7f21167e6f965
 ---
 
 # Repository-chat
@@ -13,6 +14,11 @@ van het token echt? Wat veranderde deze commit, in één zin? Waarom bestaat dit
 bestand?* De repository-chat beantwoordt dat voor de geopende repository en laat
 de regels zien waarop het antwoord rust.
 
+Het is ook gewoon een AI-chat. Een begroeting, een algemene
+programmeervraag of wat dan ook krijgt een direct antwoord van het model, zonder
+de repository te lezen — hij kijkt alleen naar bestanden als de vraag erover
+gaat.
+
 Hij deelt de rechterkolom met **Details**: de tabbladen bovenaan wisselen ertussen,
 zodat de graaf zijn selectie niet kwijtraakt als je iets vraagt.
 
@@ -20,20 +26,33 @@ zodat de graaf zijn selectie niet kwijtraakt als je iets vraagt.
 
 ## Wat hij leest
 
-Elk antwoord komt in twee rondes tot stand. De eerste kiest een kleine set paden
-en letterlijke zoekopdrachten uit de lijst met gevolgde bestanden van de
-repository zelf. De tweede antwoordt alleen met de fragmenten die dat oplevert,
-en mag ook alleen die citeren: een verzonnen bestand of regel is een
-validatiefout, geen aannemelijk klinkend antwoord.
+Hij werkt zoals elke chat: **wat verstuurd wordt is je bericht**, met daarnaast
+alleen de naam en de branch van de repository — geen Git-toestand, geen
+bestandslijst, geen bestandsinhoud — en het antwoord komt terug als platte
+tekst. Een begroeting of een vraag die niet over de repository gaat, wordt
+meteen beantwoord, in één aanroep, en niets uit de repository verlaat je
+machine.
 
-**Een tweede blik.** De eerste ronde moet alleen aan namen raden welke bestanden
-ertoe doen — precies de gok die misgaat bij "waar wordt dit aangeroepen". Een
-antwoord mag daarom terugvragen in plaats van raden: het kan meer paden, meer
-letterlijke zoekopdrachten of commit-hashes uit de recente historie noemen,
-waarna de vraag opnieuw wordt gesteld met wat dat oplevert. Dat gebeurt hooguit
-twee keer — elke ronde is weer een modelaanroep waar je op wacht — en in de
-laatste moet het antwoorden met wat het heeft. Je merkt er niets van behalve een
-iets langere wachttijd en een beter antwoord.
+**Wanneer de repository erbij komt.** Die wordt in drie gevallen voor het model
+geopend:
+
+| Je… | Wat er gebeurt |
+|------|--------------|
+| Noemt een gevolgd bestand (`config.json`, `src/app.ts`) | Dat bestand wordt gelezen voordat het model antwoordt |
+| Zegt het met zoveel woorden — ‘deze repository’, ‘mijn wijzigingen’, ‘niet gecommit’, ‘huidige branch’ | De Git-toestand en de lijst met gevolgde bestanden worden meegestuurd |
+| Vraagt iets waarvoor het model besluit dat het die nodig heeft | Het antwoordt met één regel `@repo`, en de app opent de repository ervoor |
+
+Vanaf daar vraagt het model om wat het verder nodig heeft in plaats van te
+raden: exacte paden uit de lijst, letterlijke zoekopdrachten of commit-hashes
+uit de recente historie. De app leest die en stelt de vraag opnieuw met wat ze
+opleverden. Dat gebeurt hooguit vier keer — elke ronde is weer een modelaanroep
+waar je op wacht — en in de laatste moet het antwoorden met wat het heeft. Deze
+antwoorden citeren de fragmenten die ze gebruikten, en een verzonnen bestand of
+regel is een validatiefout, geen aannemelijk klinkend antwoord.
+
+Terwijl je wacht, zegt de regel onder je bericht wat er gebeurt: **Aan het
+nadenken…** terwijl het model werkt, **Bestanden lezen (N)…** of **Repository
+doorzoeken…** alleen terwijl de app echt leest waar het om vroeg.
 
 | Wel | Niet |
 |---|---|
@@ -72,17 +91,21 @@ op een uitgesloten pad vallen uit die diff, niet de hele commit.
 
 ## Instellingen
 
-**Instellingen → Profiel → Schrijfvoorkeuren van de AI → Repository-chat** (elk profiel heeft de zijne):
+**Instellingen → AI → Repository-chat** — op de algemene AI, of op de eigen AI
+van een profiel als het die heeft (de balk **Bewerken** kiest welke, zie [Eén AI
+voor elk profiel](ai.md#één-ai-voor-elk-profiel)):
 
 | Instelling | Doet |
 |---|---|
 | **Vragen stellen over de repository** | Uit verwijdert het tabblad, de knop en het doel van de sneltoets. De rest van de AI blijft werken |
-| **Chatmodel** | Een model alleen voor de chat. Leeg is dat van het profiel — vragen kost minder dan reviewen, een kleiner model volstaat vaak |
+| **De repository lezen** | Bestanden, geschiedenis en diffs, om je te antwoorden. Bestanden die op geheimen lijken, worden nooit gelezen |
 | **Alleen vastgelegde inhoud** | Antwoordt vanuit de laatste commit in plaats van je werkmap: niet-vastgelegde bewerkingen verlaten de machine nooit |
-| **Bestands- en Git-acties voorstellen in de chat** | Uit maakt de chat weer puur alleen-lezen: geen actiekaarten, geen goedkeuringsmenu |
-| **Alleen-lezenmodus voor bestanden** | Aan blokkeert bestanden maken, bewerken, vervangen en verwijderen, maar Git-acties blijven beschikbaar. Standaard ingeschakeld |
-| **Hoe voorgestelde acties worden uitgevoerd** | De goedkeuringsmodus — zie [Goedkeuringsmodi](#goedkeuringsmodi). Destructieve acties vragen hoe dan ook bevestiging |
-| **Chat mag externe acties voorstellen** | Standaard uit. Aan voegt fetch, pull, push, een pull request openen en een stack indienen toe |
+| **Lokale Git-acties** | Stagen, committen, branch, stash, merge en meer, voorgesteld op een kaart die je controleert. Uit: de chat antwoordt alleen |
+| **Bestanden maken, bewerken en verwijderen** | Exacte bewerkingen, nieuwe bestanden, vervangingen en verwijderingen, elk met zijn diff op de kaart. Vereist lokale Git-acties. Standaard uit. Vervangt *Alleen-lezenmodus voor bestanden* met de betekenis omgedraaid: hier aan is die modus uit, en een opgeslagen instelling leest hetzelfde als voorheen |
+| **Als de AI een actie voorstelt** | De goedkeuringsmodus — zie [Goedkeuringsmodi](#goedkeuringsmodi). Destructieve acties vragen hoe dan ook bevestiging |
+| **Externe acties** | Standaard uit. Aan voegt fetch, pull, push, een pull request openen en een stack indienen toe |
+
+Boven de lijst vat één zin samen wat de AI met deze instellingen nu mag. Hij beschrijft de instellingen, niet het model: een voorstel wordt nog steeds gecontroleerd en geweigerd als het een regel breekt.
 
 Staat AI helemaal uit, dan verdwijnt de chat mee — geen paneel dat een antwoord
 aanbiedt dat niemand kan geven.
@@ -90,8 +113,25 @@ aanbiedt dat niemand kan geven.
 Welke provider en welk model de chat beantwoorden, stel je in op de pagina **AI**,
 onder **Model per taak** — zie [AI-functies](ai.md#model-per-taak).
 
-Het chatmodel is ook te wisselen in de koptekst van het paneel zelf, naast de
-naam van de provider — dezelfde instelling, zonder Instellingen te openen.
+### De pillen in de kop
+
+Onder de titel van het paneel zeggen drie pillen wat de chat met je volgende
+bericht gaat doen, en elk ervan verandert dat zonder de Instellingen te openen:
+
+| Pil | Toont | Klik om |
+|---|---|---|
+| **Account · model** | Wie antwoordt, met een stip voor de staat van het account — klaar, reageert niet, geen sleutel of nog niet gecontroleerd | Een ander model te kiezen uit een menu gegroepeerd per account, of terug te gaan naar het model van het profiel. Dezelfde instelling als **Model per taak → Chat** |
+| **Mag: …** | Wat de chat mag — *lezen*, plus *Git*, *bestanden* en *remote* als die aan staan | **Lokale Git-acties**, **Bestanden maken, bewerken en verwijderen** en **Externe acties** om te zetten, of **Alle chatinstellingen** te openen |
+| **Goedkeuring** | *Vraagt vóór uitvoeren*, *Voert veilige acties uit* of *Voert alle acties uit* | Een van de drie goedkeuringsmodi (hieronder) te kiezen. Verborgen zolang lokale Git-acties uit staan, omdat er niets wordt voorgesteld |
+
+Het zijn dezelfde instellingen als **Instellingen → AI → Repository-chat**,
+opgeslagen op dezelfde AI, dus de twee spreken elkaar nooit tegen. Eén vraag
+naar een sterker model sturen is één klik en verstoort de rest van de app niet.
+De statusstip komt uit de modellijst die het paneel toch al ophaalde — hij doet
+nooit een eigen verzoek, dus *Niet gecontroleerd* betekent alleen dat nog niets
+het account heeft bewezen.
+
+![De geopende mogelijkhedenpil](../../screenshots/repo-chat-capabilities.webp)
 
 De toverstafknop naast de paneeltitel opent de **AI-configuratiewizard** — een
 begeleide flow die assistentconfiguratiebestanden (instructies, agents, hooks)
@@ -122,9 +162,7 @@ leidt, toont gewoon niets.
 
 Vraag om een verandering in plaats van een feit — *stage de
 markdown-bestanden, commit dit als fix, zet de buildoutput op de ignorelijst* —
-en het antwoord komt met een **actiekaart**. Een leeg gesprek biedt onder de
-introductie een paar voorbeeldverzoeken als chips aan; erop klikken vult het
-invoerveld, zodat je het verzoek kunt bewerken voor je het verstuurt. De kaart
+en het antwoord komt met een **actiekaart**. Een leeg gesprek begint met **Vraag wat je wilt** en drie suggesties — *Bekijk de laatste commit*, *Wat is er veranderd sinds main?* (met de naam van de standaardbranch van de repository als die er is) en *Schrijf de PR-beschrijving voor deze branch*. Erop klikken vult het invoerveld en verstuurt niets, zodat je het eerst kunt bewerken. De kaart
 somt de concrete stappen op die de
 assistent wil zetten, één rij per actie, met de knoppen **Uitvoeren** en
 **Afwijzen**. Niets op de kaart is al gebeurd; het model kan alleen
@@ -145,6 +183,15 @@ bestanden moeten uit gelezen bewijs komen; onveilige, geheime, genegeerde,
 gegenereerde, binaire, verouderde, te grote en via symlink bereikte doelen
 worden geweigerd. Reset, historie herschrijven, branches verwijderen en elke
 force-operatie blijven in hun eigen scherm.
+
+**Tekst uit het gesprek kan een bestand worden.** Vraag om een tekst en daarna
+*maak het bestand aan*: het vorige antwoord is de inhoud, en noem je geen
+bestandsnaam, dan kiest de assistent er een en toont die op de kaart. Met
+bestandsacties aan krijgt het model te horen dat het kan schrijven, dus een
+eerder antwoord dat beweerde geen toegang te hebben wordt niet herhaald. Mislukt
+het gestructureerde antwoord toch, dan zegt het antwoord dat de wijziging deze
+keer niet kon worden voorbereid en dat het verzoek opnieuw sturen het nogmaals
+probeert; het beweert nooit dat het bestand is geschreven.
 
 Een merge of rebase kan op een conflict stranden. Dan stopt de run daar, markeert
 de kaart die regel als mislukt en houdt het aantal al uitgevoerde acties bij, en
@@ -176,7 +223,7 @@ of laten staan.
 ### Acties die de machine verlaten
 
 Ophalen, pullen, pushen, een pull request openen en een stack indienen staan
-**standaard uit**, achter **Chat mag externe acties voorstellen**. Werk
+**standaard uit**, achter **Externe acties**. Werk
 publiceren verdient een bewuste keuze, en met de instelling uit hoort het model
 niet eens dat die acties bestaan: het kan er geen voorstellen en geweigerd
 worden — de fout die mensen leert dingen ongelezen aan te zetten.
@@ -208,10 +255,21 @@ waarmee alles wat het plan opleverde vervalt — dus wordt eerst bevestigd, met 
 commit erbij. Geopende pull requests blijven open: een remote kan een lokale
 momentopname niet terughalen.
 
+Met **Alle acties automatisch uitvoeren** wordt een geldige bestandswijziging
+meteen uitgevoerd en legt de kaart de voltooide actie vast:
+
+![Automatisch voltooide bestandsactie in de repository-chat](../../screenshots/repo-chat-file-action-auto-run.webp)
+
+Met **Altijd vragen** blijft dezelfde soort wijziging openstaan tot je
+**Uitvoeren** of **Afwijzen** kiest:
+
+![Bestandsactie in de repository-chat wacht op goedkeuring](../../screenshots/repo-chat-file-action-approval.webp)
+
 ### Goedkeuringsmodi
 
-Het schildmenu onder het invoerveld (ook in **Instellingen → Profiel →
-Repository-chat**) bepaalt hoe een kaart loopt:
+De goedkeuringspil in de kop van het paneel (ook in **Instellingen → AI →
+Repository-chat**) bepaalt hoe een kaart loopt — voor elk profiel op dezelfde
+AI:
 
 | Modus | Voert uit |
 |---|---|
@@ -239,6 +297,12 @@ er wordt niets verstuurd tot je op Verzenden drukt.
   [maskeren van geheimen](security.md) niet.
 - **Binaries en bestanden groter dan 512 KB** van buiten de repository worden op
   dezelfde manier overgeslagen. Binnen gelden de gewone regels.
+- **Een vraag krijgt geen voorstellen.** Acties worden het model alleen
+  aangeboden wanneer je bericht vraagt om iets te doen — "commit de gestagede
+  bestanden", "faça um stash", "maak de branch aan". Vragen wat de versie is, of
+  wat een commit is, kan nooit terugkomen met een plan om uit te voeren. Een
+  kort antwoord dat aandringt op het verzoek vlak ervoor — "ja", "ik heb je
+  toegang gegeven" — telt als dat verzoek; een vraag of een bedankje niet.
 - **Hij schrijft nooit uit zichzelf.** Het model heeft geen gereedschap, alleen
   tekst: een verandering komt als voorstelkaart, loopt alleen onder
   [jouw goedkeuringsregels](#goedkeuringsmodi), en een destructieve stap vraagt
@@ -246,6 +310,12 @@ er wordt niets verstuurd tot je op Verzenden drukt.
   niet eens voor.
 - **Gesprekken leven alleen in het geheugen.** Elke repository houdt zijn eigen
   draad; GitHuttBr afsluiten gooit ze weg.
+- **Kleine lokale modellen zijn zwakker in vragen over de repository.** Gemeten
+  met een 3B-model: algemene vragen beantwoordt het even goed als in zijn eigen
+  terminal, maar het vraagt misschien niet om de repository wanneer het zou
+  moeten, en een lang antwoord opgebouwd uit bestanden kan afgekapt terugkomen.
+  Het bestand noemen, of ‘deze repository’ zeggen, laat de app hem hoe dan ook
+  openen. Een model van 7B of groter doet het merkbaar beter.
 
 ## Openen
 

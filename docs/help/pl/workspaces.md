@@ -4,7 +4,7 @@ category: Zacznij tutaj
 order: 3
 summary: Wiele repozytoriów bez tonięcia w nich: karty, grupy, foldery i przestrzenie robocze.
 keywords: przestrzeń robocza karty grupy foldery wiele repozytoriów układ workspace tabs groups folders multiple repos organise switch layout przejdź do repozytorium przełącznik rozmiar kart go to repository switcher tab sizing
-source: 6fc6b6e0f1f3c8f6a3a638dc0388df5328222a41
+source: 0a7a79bf2fb89d3802683802c172c87da41b1909
 ---
 
 # Przestrzenie, karty i grupy
@@ -33,7 +33,7 @@ pracy, którą wciąż trzymałeś.
 
 ### Rozmiar kart
 
-Domyślnie (**Ustawienia → Układ → Rozmiar kart → Dopasuj**) karty zachowują się
+Domyślnie (**Ustawienia → Układ i terminal → Rozmiar kart → Dopasuj**) karty zachowują się
 jak w przeglądarce: gdy w pasku brakuje miejsca, kurczą się równo do minimalnej
 szerokości, a przewijają dopiero, gdy i ta granica zostanie osiągnięta. **Stały**
 przywraca klasyczne zachowanie — każda karta zachowuje szerokość swojej zawartości,

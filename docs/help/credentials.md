@@ -148,7 +148,7 @@ the fetch URL and each push URL holding one — and writes nothing but
 |---------------|-------------------------|
 | The repository's profile has a token or linked account for that host | That token — the confirmation says nothing more |
 | No profile token, but git's own helper has a login for the host | The helper's login |
-| Neither | Nothing: fetch and push fail until you add a token. The confirmation says so first and offers **Add a token first**, which opens Settings → Integrations |
+| Neither | Nothing: fetch and push fail until you add a token. The confirmation says so first and offers **Add a token first**, which opens Settings → Connected accounts |
 
 When it started from a failed operation, it offers **Try again**.
 

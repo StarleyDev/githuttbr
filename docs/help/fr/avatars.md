@@ -73,7 +73,7 @@ passe quelque chose*, d’un coup d’œil.
 ### Mouvement
 
 L’avatar de la barre de titre respire et clignote tout seul. Désactivez-le dans
-**Paramètres → Thèmes → Graphe → Animer l’avatar du profil** — l’expression continue
+**Paramètres → Disposition et terminal → Animer l’avatar du profil** — l’expression continue
 de suivre le dépôt, elle cesse simplement de bouger. Le mouvement est aussi ignoré
 automatiquement si votre système demande un mouvement réduit.
 
@@ -84,7 +84,7 @@ plusieurs centaines qu’un graphe dessine au défilement.
 ## L’image de votre profil
 
 L’avatar de la barre de titre et de la liste des profils est le vôtre : vous pouvez donc le choisir.
-**Paramètres → Profil → Avatar** propose cinq sources :
+**Paramètres → Profil et identité → Avatar** propose cinq sources :
 
 | Source | Ce qui s’affiche |
 |---|---|
@@ -94,7 +94,7 @@ L’avatar de la barre de titre et de la liste des profils est le vôtre : vous 
 | **Image** | Un fichier que vous choisissez — PNG ou JPEG. Réduit à 256 px et conservé sur cet ordinateur, dans le dossier de données de GitHuttBr, pas dans le fichier de paramètres. |
 | **Depuis un dépôt** | Une icône ou un logo trouvé dans l’un des dépôts du profil — celui de l’app ou de l’entreprise —, copié dans le profil comme une image. |
 
-L’image suit **Paramètres → Données → Exporter les paramètres** et revient à l’import ; supprimer le
+L’image suit **Paramètres → Données et sauvegarde → Exporter les paramètres** et revient à l’import ; supprimer le
 profil la supprime.
 
 ### Une icône depuis un dépôt
@@ -140,7 +140,7 @@ pas d’expression : le visage qui réagit au dépôt est l’automatique.
 
 ## Désactiver la recherche
 
-**Paramètres → Thèmes → Graphe → Afficher les avatars.**
+**Paramètres → Graphe → Afficher les avatars.**
 
 Désactivé signifie :
 

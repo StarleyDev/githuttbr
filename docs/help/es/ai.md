@@ -3,7 +3,7 @@ title: Funciones de IA
 category: IA
 order: 80
 summary: Opcionales, agnósticas del proveedor, y ancladas a tu código real.
-keywords: ia ai inteligencia artificial openai anthropic ollama local llm mensaje de commit explicar review revisión wiki anclado grounded cuentas account clave api suscripción cli claude codex gemini modelos
+keywords: ia ai inteligencia artificial openai anthropic ollama local llm mensaje de commit explicar review revisión wiki anclado grounded cuentas account clave api suscripción cli claude codex gemini modelos lento timeout tardando seguir esperando cancelar no responde ollama cerrado cambiar de cuenta otra cuenta preferencias de escritura estilo de commit instrucciones personalizadas coautor pasar el cursor explicar ia propia ia general
 ---
 
 # Funciones de IA
@@ -20,32 +20,58 @@ La IA se configura una vez, en **Ajustes → IA**, y todos los [perfiles](profil
 la usan: un perfil que crees después ya tiene la IA, sin volver a añadir ninguna
 cuenta. La página lista cada perfil y si sigue esta **IA general**.
 
-Un perfil puede usar **su propia IA** en su lugar — un perfil de trabajo que debe
-pasar por la cuenta de la empresa, por coste o por política de datos. En la
-página **Perfil** de ese perfil, en *IA de este perfil*, cambia **General** a
-**Propia**: empieza como una copia de la IA general, y sus proveedores y claves
-pasan a ser solo suyos. Volver a **General** los elimina, tras una confirmación,
-y deja la IA general como estaba.
+Un perfil puede usar **su propia IA** en su lugar — un perfil de trabajo que
+debe pasar por la cuenta de la empresa, por coste o por política de datos, o que
+escribe sus commits de otra forma. En la página **Perfil** de ese perfil, en *IA
+de este perfil*, cambia **General** a **Propia**: empieza como una copia de toda
+la IA general — cuentas, claves y preferencias — y desde entonces todo eso es
+solo suyo. Volver a **General** la elimina, tras una confirmación, y deja la IA
+general como estaba.
+
+Un perfil usa una IA **entera**: la general o la suya, nunca una mezcla. Las
+cuentas y los modelos *y* cómo escribe la IA y lo que puede hacer el chat vienen
+del mismo sitio, así que cambiar el estilo de commit en la IA general lo cambia
+para todos los perfiles que la siguen.
 
 Todas las IA se configuran en esta misma página. La barra **Editando** de arriba
 elige cuál: la IA general, o la propia de un perfil (*IA propia de Trabajo*).
 **Configurar la IA propia** en la página Perfil, o **Editar su IA propia** en la
-lista de perfiles, abre la página en esa. La página Perfil solo muestra qué IA usa
-el perfil y qué responde — nunca aloja el editor.
+lista de perfiles, abre la página en esa. La página Perfil solo muestra qué IA
+usa el perfil y qué responde — nunca aloja el editor, ni ninguna opción de IA
+propia.
 
 ![La IA de un perfil en su página Perfil: General o Propia, qué responde y cómo configurarla](../../screenshots/settings-profile-ai.webp)
 
-Cómo **escribe** la IA sigue siendo de cada perfil en ambos casos: el estilo del
-mensaje de commit, el estilo de las explicaciones, los estilos de resolución de
-conflictos y de nombres de rama, las instrucciones personalizadas, la línea de
-coautor y el chat del repositorio. Están en la página **Perfil**, en
-*Preferencias de escritura de la IA*, así que un perfil de trabajo puede escribir
-commits `ticket` mientras uno personal escribe `conventional`, los dos con la
-misma IA.
+Debajo de las cuentas, la misma página guarda cómo **escribe** esa IA y lo que
+puede hacer, en secciones:
+
+| Sección | Contiene |
+|---|---|
+| **Mensajes de commit** | El estilo de commit — Conventional, Gitmoji y Ticket como tarjetas con una línea de ejemplo, el resto en *Más estilos* — *Generar descripción del commit*, la línea de coautor, **Reglas extra para commits** y una vista previa |
+| **Explicar y al pasar el ratón** | Estilo de las explicaciones, *Explicar código al pasar el cursor* y su tecla modificadora |
+| **Conflictos y ramas** | Estilo de resolución de conflictos, estilo de nombres de rama, cada uno con un ejemplo del resultado |
+| **Chat del repositorio** | Si el chat está activado, qué lee, las acciones que puede proponer — consulta [Chat del repositorio](repo-chat.md#ajustes) |
+
+**Reglas extra para commits** — *Instrucciones personalizadas* hasta la 4.60 — solo se añaden a la generación de mensajes de commit: el chat, las explicaciones, las revisiones y los nombres de rama no las leen. La vista previa es un ejemplo fijo, no una llamada al modelo: muestra la forma del estilo elegido, no lo que la IA escribirá para tu cambio.
+
+![Mensajes de commit](../../screenshots/settings-ai-commits.webp)
+
+El selector de estilo del compositor y los selectores de modelo y de aprobación
+del chat escriben en la misma IA que lee el perfil: la general o la propia del
+perfil.
 
 Actualizar desde una versión en la que cada perfil tenía su propia IA no pierde
 nada: la IA del perfil en uso pasa a ser la IA general, y cualquier otro perfil
 cuya IA fuera distinta la conserva como propia.
+
+**Actualizar desde la 4.59 o anterior**, cuando las preferencias de escritura
+estaban en cada perfil: una sola vez, las preferencias del perfil en uso (o, si
+ese tiene IA propia, las del primer perfil en la IA general) pasan a la IA
+general. Los perfiles con IA propia conservan las suyas. **El límite:** si dos
+perfiles en la IA general escribían distinto — uno de trabajo con `ticket` y uno
+personal con `conventional` —, ahora los dos escriben como el que se trasladó.
+Para mantener la diferencia, dale a uno de ellos su propia IA y vuelve a elegir
+allí su estilo.
 
 ## Proveedores
 
@@ -62,9 +88,122 @@ Anthropic usa su propia API `/v1/messages` en vez de una llamada con forma de
 OpenAI, así que los modelos Claude funcionan de verdad en lugar de solo
 aparentarlo. A Gemini se llega por el endpoint compatible con OpenAI de Google.
 
+### Añadir y editar un proveedor
+
+Un proveedor guardado a medias era una trampa silenciosa: una clave vacía podía
+acabar en uso y nada respondía. Por eso nada de esta tarjeta
+se guarda mientras escribes.
+
+**Añadir proveedor** abre una tarjeta marcada **Borrador · sin guardar**, con borde
+discontinuo. Rellena proveedor, clave, endpoint y modelo y elige
+**Probar y guardar**. GitHuttBr primero lista los modelos del proveedor
+con esa clave —la misma petición que **Obtener modelos**— y solo guarda cuando
+responde. Verás **Conectado · N modelos** y el proveedor entra en la lista como
+**Listo**.
+
+Si la prueba falla, la tarjeta dice **No se pudo conectar** con el
+motivo del proveedor (una clave rechazada, `401`; un servidor que no está en
+marcha) y **No se guardó nada.** Corrige el campo y vuelve a probar, elige
+**Guardar de todos modos** para conservarlo tal cual —entonces aparece como
+**No responde**— o **Cancelar**, que no deja rastro.
+
+Editar un proveedor guardado funciona igual. Un aviso dice
+**Cambios sin guardar: nada cambia hasta que guardes** y cada campo que tocaste queda marcado
+**· modificado**. **Descartar cambios** recupera los valores
+guardados; **Probar y guardar** prueba y guarda. Elegir otro proveedor,
+añadir uno o abrir **Usar mi suscripción** con cambios pendientes pregunta
+**¿Guardar los cambios en «…»?**: **Guardar**, **Descartar cambios** o
+**Seguir editando**. Cerrar Ajustes conserva el borrador en memoria, así
+que sigue ahí cuando vuelves; nunca se escribe en disco.
+
+Las claves se guardan exactamente como antes, en tu llavero, y solo al guardar.
+El error de un proveedor se muestra con la clave y todo lo que parezca un token
+enmascarados.
+
+![Añadir y editar un proveedor](../../screenshots/ai-provider-draft.webp)
+
+| Tipo de proveedor | Qué comprueba **Probar y guardar** |
+| --- | --- |
+| Clave de API o servidor local (Ollama, endpoint propio) | Lista los modelos; si funciona, el endpoint respondió con esa clave |
+| Suscripción (Codex, Claude Code) | Envía el breve prompt de prueba descrito abajo, con cargo a tu plan |
+| CLI local | Busca el comando en tu `PATH`; una ruta escrita se guarda sin comprobar |
+
+### Insignias de estado
+
+Cada proveedor de la lista lleva una insignia, deducida de lo que la página ya
+sabe: la última prueba o la lista de modelos que obtuvo de todos modos. No se
+consulta nada en segundo plano.
+
+| Insignia | Significado |
+| --- | --- |
+| **Listo** | La última prueba o lista de modelos funcionó |
+| **No responde** | El último intento falló; el motivo está en la línea de abajo, con **Probar de nuevo** |
+| **Sin clave** | El proveedor necesita una clave de API y no la tiene |
+| **Sin comprobar** | Nada le ha preguntado todavía: una suscripción hasta probarla, o una lista sin obtener |
+
+**El límite:** una insignia es tan reciente como su última comprobación. Un
+proveedor que dejó de responder hace una hora sigue en **Listo**
+hasta que algo vuelva a preguntarle; elige **Probar conexión** en su tarjeta para
+asegurarte. Una **CLI local** con ruta escrita queda en
+**Sin comprobar**, porque demostrar que funciona costaría un prompt.
+
+### El proveedor en uso
+
+Un proveedor responde a toda tarea que no tenga un proveedor propio en
+**Modelo por tarea**. Su fila lleva la marca **En uso** — una píldora rellena y
+un borde de acento — y se queda donde está en la lista. La IA general y un perfil
+con IA propia tienen cada uno su proveedor en uso; la lista cambia el que estás
+editando.
+
+Cada otro proveedor guardado tiene un botón **Usar** a la derecha de su fila,
+junto a su insignia. Un clic lo pone en uso y lo guarda al momento: qué proveedor
+responde es una elección, no una edición, así que no espera a **Probar y
+guardar**. No abre la tarjeta de ese proveedor, y una tarjeta con cambios sin
+guardar los conserva.
+
+**El límite:** **Usar** no prueba nada. Un proveedor marcado **Sin clave** o
+**No responde** puede ponerse en uso — a propósito, antes de arreglar la clave —
+y su insignia lo sigue diciendo; la siguiente tarea de IA falla con el motivo de
+ese proveedor. Un borrador no tiene **Usar**: no es un proveedor hasta guardarlo.
+
+### La IA en uso, desde la barra de estado
+
+Un perfil con IA propia ignora el proveedor en uso de la IA general: poner otro
+proveedor en uso en la IA general no cambia nada para ese perfil, y fuera de
+Ajustes nada lo decía. La barra de estado, al pie de un repositorio, ahora lo
+dice. Su botón **IA:** _proveedor_ nombra el proveedor que responde por el
+perfil en uso, con un punto para su estado — verde **Listo**, rojo **No
+responde**, ámbar **Sin clave**, gris **Sin comprobar**.
+
+Al pulsarlo se abre un pequeño panel:
+
+| Parte | Qué muestra |
+| --- | --- |
+| Cabecera | El perfil en uso, y si **sigue la IA general** o **tiene su propia IA** |
+| Una fila por proveedor | Cada proveedor guardado de esa IA, con su modelo y su estado; uno que no responde muestra el motivo en una segunda línea |
+| **En uso** / **Usar** | El proveedor que responde ahora, y el cambio con un clic en cada uno de los demás |
+| **Configurar IA** | Abre **Ajustes → IA** |
+| **Uso y coste** | Abre la pestaña *Analíticas* de los ajustes del repositorio |
+
+**Usar** escribe donde el perfil lee su IA. En un perfil que sigue la IA
+general cambia la IA general — y con ella todos los perfiles que la siguen; en
+un perfil con IA propia cambia solo la suya. Las tareas que tienen un proveedor
+propio lo conservan. **Esc** cierra el panel, y el botón se oculta mientras la
+IA está desactivada.
+
+![La IA en uso desde la barra de estado: el perfil, su IA y cada proveedor con su estado](../../screenshots/statusbar-ai.webp)
+
+**Los límites:** el punto se calcula con la lista de modelos que la app ya pidió
+(guardada hasta un día) y nunca prueba nada, así que un proveedor que dejó de
+responder puede seguir en **Listo** — probar la conexión en Ajustes es la forma
+de estar seguro. Hasta que se abren los Ajustes, la ventana no tiene las claves
+en sí, de modo que un proveedor sin clave puede verse como **Sin comprobar** o
+**No responde** en lugar de **Sin clave**. Como **Usar** en Ajustes, el cambio
+no prueba el proveedor que pone en uso.
+
 ### Usar una suscripción en vez de una clave de API
 
-Durante la configuración inicial o en Ajustes → IA, elige **Usar mi suscripción**. Selecciona ChatGPT o Claude e inicia sesión desde la terminal con el comando correspondiente. Pulsa **Probar conexión** y, cuando aparezca «Conectado», añade la cuenta. La primera cuenta de la IA general pasa a ser la predeterminada.
+Durante la configuración inicial o en Ajustes → IA, elige **Usar mi suscripción**. Selecciona ChatGPT o Claude e inicia sesión desde la terminal con el comando correspondiente. Pulsa **Probar conexión** y, cuando aparezca «Conectado», añade la cuenta. La primera cuenta de la IA general queda **En uso**.
 
 Una vez instalada la CLI, pulsa Conectar para abrir la página de inicio de sesión del proveedor. Puedes cancelar la conexión pendiente.
 
@@ -94,9 +233,9 @@ Si el comando no está en tu `PATH`, escribe su ruta completa en la cuenta.
 
 En **Modelo por tarea**, cada función — mensajes de commit, chat,
 explicar, revisión de PR, resolución de conflictos, wiki, temas — puede apuntar
-a su propia cuenta y modelo. Deja una fila en la predeterminada para seguir a la
-cuenta predeterminada. Modelo barato para los mensajes de commit y uno potente
-para el chat es el reparto habitual.
+a su propia cuenta y modelo. Deja una fila en **Proveedor en uso** para seguir al
+proveedor marcado **En uso**. Modelo barato para los mensajes de commit y uno
+potente para el chat es el reparto habitual.
 
 ### Aviso de actualización
 
@@ -151,7 +290,34 @@ por versión de archivo.
 **Los archivos de secretos enmascarados no se envían nunca.** Tampoco los
 archivos que cubren las reglas de enmascarado de secretos.
 
+## Cuando un modelo va lento, o deja de responder
+
+Un modelo local en un portátil puede tardar un minuto en un mensaje de commit, y
+un modelo que "piensa" antes de responder tarda todavía más — pero un servidor
+que se cerró a mitad de una petición no debería dejarte mirando un indicador que
+gira.
+
+| Qué ocurre | Qué ves |
+|---|---|
+| Sin respuesta tras 30 segundos | *"{cuenta} está tardando más de lo esperado en responder."*, con **Seguir esperando**, **Usar {otra cuenta}** y **Cancelar**. Seguir esperando vuelve a preguntar un minuto después si sigue en marcha |
+| Un servidor local (Ollama, LM Studio, llama.cpp…) se cierra mientras trabaja | En pocos segundos: *"{cuenta} no responde. ¿Sigue en ejecución?"*, con un botón por cada otra cuenta lista para usar, y **Cancelar** |
+| El servidor ya estaba cerrado cuando lo pediste | Lo mismo, de inmediato |
+
+**Usar {otra cuenta}** cancela la petición y envía la misma a esa cuenta, con su
+modelo predeterminado — el mensaje de commit, la revisión o la respuesta del
+chat llega como si la hubieras pedido allí. No cambia tu configuración: la
+siguiente petición vuelve a ir a la cuenta que elegiste para esa tarea.
+
+Esto cubre todas las funciones de IA — mensajes de commit, chat, revisión,
+explicar, conflictos, temas, la wiki — porque todas pasan por la misma llamada.
+
 ## Límites
+
+- **Solo se vigila si se cierran los servidores locales.** Un proveedor en la
+  nube que se cae falla con su propio error; una llamada a la nube que
+  simplemente va lenta recibe el aviso de *está tardando* como cualquier otra.
+  Un servidor local ocupado, pero no cerrado, cuenta como vivo: solo una
+  conexión rechazada o cortada termina la llamada antes de tiempo.
 
 - Las listas de modelos de reserva se quedan obsoletas entre versiones. Para eso
   está la consulta en vivo; la reserva solo cubre el caso en que consultar no es

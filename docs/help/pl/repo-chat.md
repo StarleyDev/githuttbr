@@ -2,8 +2,9 @@
 title: Czat repozytorium
 category: AI
 order: 82
-summary: Pytaj o to repozytorium, korzystając z plików i commitów przypiętych jako kontekst — i pozwól mu proponować akcje Gita, które zatwierdzasz przed uruchomieniem.
-keywords: czat pytanie pytaj asystent kontekst przypnij załącz przeciągnij upuść commit plik dowód ugruntowany ai panel akcje uruchom zatwierdź automatyczne uruchamianie pozwól napraw błąd toast
+summary: Pytaj o cokolwiek — o sprawy ogólne albo o to repozytorium — korzystając z plików i commitów przypiętych jako kontekst, i pozwól mu proponować akcje Gita, które zatwierdzasz przed uruchomieniem.
+keywords: czat pytanie pytaj asystent kontekst przypnij załącz przeciągnij upuść commit plik dowód ugruntowany ai panel akcje uruchom zatwierdź automatyczne uruchamianie pozwól napraw błąd toast pytanie ogólne dowolne pytanie myślę odczytywanie plików
+source: 14be127d45f76373e5ced5db32f7f21167e6f965
 ---
 
 # Czat repozytorium
@@ -13,6 +14,10 @@ odświeżany jest token? Co zmienił ten commit, w jednym zdaniu? Po co istnieje
 plik?* Czat repozytorium odpowiada na to w otwartym repozytorium i pokazuje
 wiersze, na których się oparł.
 
+To także zwykły czat AI. Powitanie, ogólne pytanie o programowanie czy
+cokolwiek innego dostaje bezpośrednią odpowiedź modelu, bez czytania
+repozytorium — do plików zagląda tylko wtedy, gdy pytanie ich dotyczy.
+
 Dzieli prawą kolumnę ze **Szczegółami**: karty u góry przełączają między nimi, więc
 graf nie traci zaznaczenia, gdy o coś pytasz.
 
@@ -20,19 +25,31 @@ graf nie traci zaznaczenia, gdy o coś pytasz.
 
 ## Co czyta
 
-Każda odpowiedź powstaje w dwóch przebiegach. Pierwszy wybiera niewielki zestaw
-ścieżek i dosłownych wyszukiwań z listy śledzonych plików repozytorium. Drugi
-odpowiada wyłącznie na podstawie zwróconych fragmentów i tylko je może cytować:
-zmyślony plik lub wiersz to błąd walidacji, a nie wiarygodnie brzmiąca odpowiedź.
+Działa jak każdy czat: **wysyłana jest twoja wiadomość**, a obok niej tylko
+nazwa i gałąź repozytorium — bez stanu Gita, bez listy plików, bez zawartości
+plików — a odpowiedź wraca jako zwykły tekst. Powitanie albo pytanie
+niedotyczące repozytorium dostaje odpowiedź od razu, w jednym wywołaniu, i nic
+z repozytorium nie opuszcza twojego komputera.
 
-**Drugie spojrzenie.** Pierwszy przebieg musi zgadywać po samych nazwach, które
-pliki są istotne — a to dokładnie ta zgadywanka, która zawodzi przy pytaniu
-„skąd to jest wywoływane”. Dlatego odpowiedź może dopytać zamiast zgadywać: może
-wskazać kolejne ścieżki, kolejne dosłowne wyszukiwania albo skróty commitów z
-najnowszej historii, a pytanie zostaje zadane ponownie z tym, co przyniosą. Może
-się to zdarzyć najwyżej dwa razy — każda runda to kolejne wywołanie modelu, na
-które czekasz — a w ostatniej musi odpowiedzieć tym, co ma. Nie zobaczysz z tego
-nic poza nieco dłuższym czekaniem i lepszą odpowiedzią.
+**Kiedy wchodzi repozytorium.** Jest otwierane dla modelu w trzech przypadkach:
+
+| Ty… | Co się dzieje |
+|------|--------------|
+| Wymieniasz śledzony plik (`config.json`, `src/app.ts`) | Ten plik jest odczytywany, zanim model odpowie |
+| Mówisz to wprost — „to repozytorium”, „moje zmiany”, „niezatwierdzone”, „bieżąca gałąź” | Wysyłany jest stan Gita i lista śledzonych plików |
+| Pytasz o coś, do czego model uzna je za potrzebne | Odpowiada pojedynczym wierszem `@repo`, a aplikacja otwiera mu repozytorium |
+
+Od tej chwili model prosi o to, czego jeszcze potrzebuje, zamiast zgadywać: o
+dokładne ścieżki z listy, dosłowne wyszukiwania albo skróty commitów z
+najnowszej historii. Aplikacja je odczytuje i zadaje pytanie ponownie z tym, co
+znalazła. Może się to zdarzyć najwyżej cztery razy — każda runda to kolejne
+wywołanie modelu, na które czekasz — a w ostatniej musi odpowiedzieć tym, co
+ma. Te odpowiedzi cytują fragmenty, z których skorzystały, a zmyślony plik lub
+wiersz to błąd walidacji, a nie wiarygodnie brzmiąca odpowiedź.
+
+Gdy czekasz, wiersz pod twoją wiadomością mówi, co się dzieje: **Myślę…**, gdy
+model pracuje, **Odczytywanie plików (N)…** albo **Przeszukiwanie
+repozytorium…** tylko wtedy, gdy aplikacja faktycznie czyta to, o co poprosił.
 
 | Uwzględnione | Pominięte |
 |---|---|
@@ -72,17 +89,21 @@ wykluczonej ścieżki wypadają z tego diffa, a nie cały commit.
 
 ## Ustawienia
 
-**Ustawienia → Profil → Preferencje pisania AI → Czat repozytorium** (każdy profil ma własne):
+**Ustawienia → AI → Czat repozytorium** — w ogólnej AI albo we własnej AI
+profilu, jeśli ją ma (pasek **Edytujesz** wybiera którą, zobacz [Jedna AI dla
+wszystkich profili](ai.md#jedna-ai-dla-wszystkich-profili)):
 
 | Ustawienie | Działanie |
 |---|---|
 | **Zadawaj pytania o repozytorium** | Wyłączone usuwa kartę, przycisk paska i cel skrótu. Reszta AI działa dalej |
-| **Model czatu** | Model tylko dla czatu. Puste oznacza model profilu — pytanie kosztuje mniej niż przegląd, mniejszy zwykle wystarcza |
+| **Czytanie repozytorium** | Pliki, historia i diffy, żeby ci odpowiedzieć. Pliki wyglądające na sekrety nigdy nie są czytane |
 | **Tylko zatwierdzona treść** | Odpowiada z ostatniego commita zamiast z katalogu roboczego: niezatwierdzone zmiany nigdy nie opuszczają komputera |
-| **Proponowanie akcji na plikach i w Git** | Wyłączone znów czyni czat czysto tylko do odczytu: żadnych kart akcji, żadnej listy zatwierdzania |
-| **Tryb plików tylko do odczytu** | Włączony blokuje tworzenie, edytowanie, zastępowanie i usuwanie plików, ale pozostawia dostępne akcje Git. Domyślnie jest włączony |
-| **Jak uruchamiane są proponowane akcje** | Tryb zatwierdzania — zobacz [Tryby zatwierdzania](#tryby-zatwierdzania). Akcje destrukcyjne i tak proszą o potwierdzenie |
-| **Pozwól czatowi proponować akcje zdalne** | Domyślnie wyłączone. Włączone dodaje fetch, pull, push, otwarcie pull requesta i wysłanie stosu |
+| **Lokalne akcje Git** | Stage, commit, gałąź, stash, merge i więcej, proponowane na karcie, którą sprawdzasz. Wyłączone: czat tylko odpowiada |
+| **Tworzenie, edycja i usuwanie plików** | Dokładne edycje, nowe pliki, zastąpienia i usunięcia, każde ze swoim diffem na karcie. Wymaga lokalnych akcji Git. Domyślnie wyłączone. Zastępuje *Tryb plików tylko do odczytu* z odwróconym znaczeniem: włączone tutaj to tamten tryb wyłączony, a zapisane ustawienie działa jak wcześniej |
+| **Gdy AI proponuje akcję** | Tryb zatwierdzania — zobacz [Tryby zatwierdzania](#tryby-zatwierdzania). Akcje destrukcyjne i tak proszą o potwierdzenie |
+| **Akcje zdalne** | Domyślnie wyłączone. Włączone dodaje fetch, pull, push, otwarcie pull requesta i wysłanie stosu |
+
+Nad listą jedno zdanie podsumowuje, co AI może teraz zrobić przy tych ustawieniach. Opisuje ustawienia, nie model: propozycja nadal jest sprawdzana i odrzucana, gdy łamie regułę.
 
 Gdy AI jest wyłączone w całości, czat znika razem z nim — żaden panel nie
 proponuje odpowiedzi, której nic nie może udzielić.
@@ -90,8 +111,25 @@ proponuje odpowiedzi, której nic nie może udzielić.
 To, który dostawca i model odpowiada w czacie, ustawia się na stronie **AI**,
 w sekcji **Model dla zadania** — zobacz [Funkcje AI](ai.md#model-dla-zadania).
 
-Model czatu można przełączyć także w nagłówku samego panelu, obok nazwy dostawcy
-— to to samo ustawienie, bez otwierania Ustawień.
+### Pigułki w nagłówku
+
+Pod tytułem panelu trzy pigułki mówią, co czat zrobi z twoją następną
+wiadomością, a każda zmienia to bez otwierania Ustawień:
+
+| Pigułka | Pokazuje | Kliknij, aby |
+|---|---|---|
+| **Konto · model** | Kto odpowiada, z kropką stanu konta — gotowy, nie odpowiada, brak klucza albo jeszcze nie sprawdzono | Wybrać inny model z menu pogrupowanego według kont albo wrócić do modelu profilu. To samo ustawienie co **Model dla zadania → Czat** |
+| **Może: …** | Co czat może robić — *czytać*, a także *Git*, *pliki* i *zdalne*, gdy są włączone | Przełączyć **Lokalne akcje Git**, **Tworzenie, edycja i usuwanie plików** oraz **Akcje zdalne** albo otworzyć **Wszystkie ustawienia czatu** |
+| **Zatwierdzanie** | *Pyta przed uruchomieniem*, *Uruchamia bezpieczne akcje* albo *Uruchamia wszystkie akcje* | Wybrać jeden z trzech trybów zatwierdzania (niżej). Ukryta, gdy lokalne akcje Git są wyłączone, bo nic nie jest proponowane |
+
+To te same ustawienia co **Ustawienia → AI → Czat repozytorium**, zapisywane w
+tej samej AI, więc nigdy się nie rozjeżdżają. Przeniesienie jednego pytania do
+mocniejszego modelu to jedno kliknięcie i nie rusza reszty aplikacji. Kropka
+stanu pochodzi z listy modeli, którą panel i tak pobrał — nigdy nie wysyła
+własnego żądania, więc *Nie sprawdzono* znaczy tylko, że nic jeszcze nie
+potwierdziło konta.
+
+![Otwarta pigułka uprawnień](../../screenshots/repo-chat-capabilities.webp)
 
 Przycisk różdżki obok tytułu panelu otwiera **kreator konfiguracji AI** —
 prowadzony przepływ, który generuje pliki konfiguracyjne asystenta
@@ -122,9 +160,7 @@ która nie prowadzi do czytelnego obrazu, po prostu nic nie pokazuje.
 
 Poproś o zmianę zamiast o fakt — *dodaj pliki markdown do przechowalni,
 zatwierdź to jako poprawkę, wpisz wynik builda na listę ignorowanych* — a
-odpowiedź przyjdzie z **kartą akcji**. Pusta rozmowa proponuje pod
-wprowadzeniem kilka przykładowych próśb w postaci chipów; kliknięcie jednego
-wypełnia pole wiadomości, więc możesz je zredagować przed wysłaniem. Karta
+odpowiedź przyjdzie z **kartą akcji**. Pusta rozmowa zaczyna się od **Zapytaj o cokolwiek** i trzech podpowiedzi — *Przejrzyj ostatni commit*, *Co się zmieniło od main?* (z nazwą domyślnej gałęzi repozytorium, jeśli ją ma) i *Napisz opis PR dla tej gałęzi*. Kliknięcie jednej wypełnia pole wiadomości i niczego nie wysyła, więc możesz ją najpierw zredagować. Karta
 wymienia konkretne kroki, które asystent chce
 wykonać, jeden wiersz na akcję, z przyciskami **Uruchom** i **Odrzuć**. Nic z
 karty jeszcze się nie wydarzyło; model może tylko proponować, a każda
@@ -144,6 +180,15 @@ pochodzić z przeczytanych dowodów; cele niebezpieczne, sekretne, ignorowane,
 generowane, binarne, nieaktualne, zbyt duże i osiągane przez dowiązania
 symboliczne są odrzucane. Reset, przepisywanie historii, kasowanie gałęzi i
 każda operacja wymuszona pozostają wyłącznie w swoim własnym interfejsie.
+
+**Tekst z rozmowy może stać się plikiem.** Poproś o tekst, a potem *utwórz
+plik*: poprzednia odpowiedź jest treścią, a gdy nie podasz nazwy pliku, asystent
+wybierze ją sam i pokaże na karcie. Przy włączonych akcjach na plikach model
+dostaje informację, że może pisać, więc wcześniejsza odpowiedź twierdząca, że
+nie ma dostępu, się nie powtarza. Jeśli ustrukturyzowana odpowiedź mimo to
+zawiedzie, odpowiedź mówi, że tym razem nie udało się przygotować zmiany i że
+ponowne wysłanie prośby spróbuje jeszcze raz; nigdy nie twierdzi, że plik został
+zapisany.
 
 Merge albo rebase może zatrzymać się na konflikcie. Wtedy przebieg kończy się w
 tym miejscu, karta oznacza ten wiersz jako nieudany i zachowuje licznik tego, co
@@ -173,7 +218,7 @@ każdego poziomu i informacją, czy wysyłka go otworzy, przekieruje, czy zostaw
 ### Akcje wychodzące poza tę maszynę
 
 Pobieranie, pull, push, otwarcie pull requesta i wysłanie stosu są **domyślnie
-wyłączone**, za opcją **Pozwól czatowi proponować akcje zdalne**. Publikowanie
+wyłączone**, za opcją **Akcje zdalne**. Publikowanie
 pracy zasługuje na świadomą decyzję, a przy wyłączonej opcji model nie dowiaduje
 się nawet, że takie akcje istnieją: nie może zaproponować jednej i zostać
 odrzucony — a to właśnie ta usterka uczy ludzi włączać ustawienia bez czytania.
@@ -205,10 +250,21 @@ co plan wytworzył — dlatego najpierw pyta i nazywa commit, do którego wraca.
 Otwarte pull requesty pozostają otwarte: zdalnego repozytorium lokalna migawka
 nie cofnie.
 
+W trybie **Automatycznie uruchamiaj wszystkie akcje** poprawna zmiana pliku
+wykonuje się od razu, a karta zapisuje ukończoną akcję:
+
+![Automatycznie ukończona akcja na pliku w czacie repozytorium](../../screenshots/repo-chat-file-action-auto-run.webp)
+
+W trybie **Zawsze pytaj** ten sam rodzaj zmiany czeka, aż wybierzesz **Uruchom**
+lub **Odrzuć**:
+
+![Akcja na pliku w czacie repozytorium czeka na zatwierdzenie](../../screenshots/repo-chat-file-action-approval.webp)
+
 ### Tryby zatwierdzania
 
-Lista z tarczą pod polem wiadomości (także w **Ustawienia → Profil → Czat
-repozytorium**) decyduje, jak karta zostanie uruchomiona:
+Pigułka zatwierdzania w nagłówku panelu (także w **Ustawienia → AI → Czat
+repozytorium**) decyduje, jak karta zostanie uruchomiona — dla każdego profilu
+na tej samej AI:
 
 | Tryb | Uruchamia |
 |---|---|
@@ -236,6 +292,12 @@ Szkic można edytować — nic nie zostanie wysłane, póki nie naciśniesz Wyś
   [maskowania sekretów](security.md).
 - **Pliki binarne i większe niż 512 KB** spoza repozytorium są pomijane tak samo.
   Wewnątrz obowiązują zwykłe reguły.
+- **Pytanie nie dostaje propozycji.** Akcje są oferowane modelowi tylko wtedy,
+  gdy twoja wiadomość prosi o zrobienie czegoś — „zrób commit plików w stage”,
+  „faça um stash”, „utwórz gałąź”. Pytanie o wersję albo o to, czym jest commit,
+  nigdy nie wróci z planem do uruchomienia. Krótka odpowiedź, która obstaje przy
+  prośbie tuż przed nią — „tak”, „dałem ci dostęp” — liczy się jako ta prośba;
+  pytanie albo podziękowanie nie.
 - **Nigdy nie zapisuje samodzielnie.** Model nie ma narzędzi, tylko tekst:
   zmiana przychodzi jako karta propozycji, uruchamia się wyłącznie według
   [twoich reguł zatwierdzania](#tryby-zatwierdzania), a krok destrukcyjny
@@ -243,6 +305,12 @@ Szkic można edytować — nic nie zostanie wysłane, póki nie naciśniesz Wyś
   akcji Gita na czacie** nawet nie proponuje.
 - **Rozmowy żyją tylko w pamięci.** Każde repozytorium ma własny wątek; wyjście z
   GitHuttBr je porzuca.
+- **Małe modele lokalne słabiej radzą sobie z pytaniami o repozytorium.**
+  Zmierzone na modelu 3B: na ogólne pytania odpowiada tak dobrze jak we własnym
+  terminalu, ale może nie poprosić o repozytorium, gdy powinien, a długa
+  odpowiedź zbudowana z plików może wrócić ucięta. Wymienienie pliku albo
+  napisanie „to repozytorium” sprawia, że aplikacja i tak je otworzy. Model 7B
+  lub większy radzi sobie wyraźnie lepiej.
 
 ## Jak otworzyć
 

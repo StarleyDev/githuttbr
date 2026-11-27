@@ -4,7 +4,7 @@ category: 工作区工具
 order: 95
 summary: 把一个仓库、一个文件，或者某一行代码，送到你真正写代码的那个编辑器里。
 keywords: 编辑器 editor vscode code cursor windsurf zed sublime jetbrains intellij webstorm xcode 在编辑器中打开 open in editor 行 line 列 column 自定义命令 custom command argv devin desktop
-source: e25ceb114b185e5aecb75a70b46cddd3f22d21bf
+source: 5bb8b224ab1beced6eb06d57e70e8c3cd0196faa
 ---
 
 # 外部编辑器
@@ -15,7 +15,7 @@ Git 客户端是你读代码的地方，很少是你修代码的地方。从在�
 
 ## 挑一个
 
-**设置 → 常规 → 外部编辑器。**下拉列表里是 GitHuttBr 在这台机器上能找到的编辑器——它先找每个编辑器的命令，然后在 macOS 上再去 `/Applications` 和 `~/Applications` 找应用包。每次打开设置时都会重新扫一遍，所以五分钟前才装好的编辑器不用重启就会出现。
+**设置 → Git 与同步 → 外部编辑器。**下拉列表里是 GitHuttBr 在这台机器上能找到的编辑器——它先找每个编辑器的命令，然后在 macOS 上再去 `/Applications` 和 `~/Applications` 找应用包。每次打开设置时都会重新扫一遍，所以五分钟前才装好的编辑器不用重启就会出现。
 
 开箱即认得的有：
 

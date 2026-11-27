@@ -61,5 +61,5 @@ sınırların nerede olduğunu — söyler.
 ## İlgili ayarlar
 
 **Azaltılmış hareket** işletim sistemi ayarından alınır — animasyonlar anlık
-geçişlere iner. Tema kontrastı [Ayarlar → Görünüm](themes.md) içinde tema
+geçişlere iner. Tema kontrastı [Ayarlar → Temalar](themes.md) içinde tema
 bazında ayarlanabilir.

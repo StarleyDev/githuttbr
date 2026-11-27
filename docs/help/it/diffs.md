@@ -52,7 +52,7 @@ La **vista File** di un file dell'albero di lavoro — in staging o no, tracciat
 
 ![Margine delle modifiche con un popup aperto, minimappa a destra](../../screenshots/change-gutter.webp)
 
-La **minimappa**, disattivata per impostazione predefinita, aggiunge una panoramica in scala di tutto il file sul bordo destro — clicca o trascinala per navigare, come farebbe una barra di scorrimento se potesse anche mostrarti la forma del file. Entrambe sono impostazioni per macchina sotto **Impostazioni → Generali → Visualizzatore file**.
+La **minimappa**, disattivata per impostazione predefinita, aggiunge una panoramica in scala di tutto il file sul bordo destro — clicca o trascinala per navigare, come farebbe una barra di scorrimento se potesse anche mostrarti la forma del file. Entrambe sono impostazioni per macchina sotto **Impostazioni → Layout e terminale → Visualizzatore file**.
 
 Nessuna delle due legge la cronologia: passa a Diff, Blame o a un commit più vecchio e il margine scompare — quelle viste mostrano già ogni modifica direttamente.
 

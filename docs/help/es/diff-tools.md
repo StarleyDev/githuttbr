@@ -13,7 +13,7 @@ GitHuttBr cubren casi todos los días. Algunos no: un archivo generado de 4.000
 líneas, una fusión donde necesitas ver cuatro columnas a la vez, o sencillamente
 la herramienta que llevas usando una década y lees más rápido que cualquier otra.
 
-**Ajustes → General → Herramientas externas de diff y merge.**
+**Ajustes → Git y sincronización → Herramientas externas de diff y merge.**
 
 ## Es la lista de git, no la nuestra
 

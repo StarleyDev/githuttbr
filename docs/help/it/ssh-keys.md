@@ -8,7 +8,7 @@ keywords: ssh chiave chiavi agent ssh-add ssh-keygen ed25519 publickey permissio
 
 # Chiavi SSH
 
-**Impostazioni → Sicurezza → Chiavi SSH.**
+**Impostazioni → Sicurezza e conferme → Chiavi SSH.**
 
 ## Perché questa sezione sta accanto ai token
 

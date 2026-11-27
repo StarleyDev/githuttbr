@@ -3,16 +3,18 @@ title: Branch, remote e barra laterale
 category: Branch e chirurgia
 order: 40
 summary: Tutto quello che fa la barra laterale sinistra, e i branch appuntati.
-keywords: branch ramo crea checkout rinomina elimina remote pinned appuntati sidebar presenza aggiungi remoto
+keywords: branch ramo crea checkout rinomina elimina remote pinned appuntati sidebar presenza aggiungi remoto filtro filter ricerca search riordinare reorder spostare sezione azioni rapide
 ---
 
 # Branch, remote e barra laterale
 
 Un'unica barra laterale, riordinabile e ricercabile, contiene **branch, remote,
 tag, stash, worktree e sottomoduli**. Ogni sezione può essere nascosta o
-riordinata (Impostazioni → Layout), e il filtro di ricerca vale per tutte.
+riordinata (Impostazioni → Layout e terminale), e il filtro di ricerca vale per tutte.
 Quali sezioni e cartelle restano aperte o chiuse viene ricordato per
 repository, anche dopo un riavvio.
+
+Per riordinare, trascina una sezione dalla sua intestazione — oppure, senza mouse, metti il focus sull'intestazione e premi <kbd>Alt</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd>. Le stesse voci *Sposta sezione su* e *Sposta sezione giù* sono nel menu contestuale dell'intestazione (<kbd>Shift</kbd>+<kbd>F10</kbd> lo apre da tastiera). Anche l'ordine viene ricordato per repository.
 
 La barra laterale è una pila di riquadri, non una lista lunga. Una sezione
 aperta prende l'altezza lasciata da quelle chiuse, che restano sotto come
@@ -31,6 +33,22 @@ volta e la scelta viene ricordata come le altre.
 
 ![La barra laterale, con i branch appuntati tenuti in cima](../../screenshots/pinned-branches.webp)
 
+## Un filtro per tutte le sezioni
+
+La casella in cima alla barra laterale filtra **tutte le sezioni insieme**: branch locali e remoti, tag, stash, worktree, sottomoduli, pull request, issue, milestone, release, segnalibri e todo. Confronta nomi, titoli e percorsi senza distinguere maiuscole e minuscole; una pull request corrisponde anche per `#numero`, branch di origine e autore. La riga sotto la casella conta i risultati di tutte le sezioni.
+
+Mentre un filtro è attivo:
+
+- ogni intestazione mostra **trovati su totale** — `2 di 10`;
+- una sezione senza risultati esce dall'elenco e si raccoglie in un'unica riga in fondo, così i risultati non si alternano a intestazioni vuote;
+- sezioni e cartelle con risultati si aprono da sole, a meno che ne contengano più di 300 — quelle le apri a mano. Ciò che apri o chiudi dura solo finché il filtro non viene cancellato; la disposizione salvata resta com'era.
+
+<kbd>Esc</kbd> nella casella la svuota.
+
+![La barra laterale filtrata per "pay": due sezioni con risultati, il resto raccolto in fondo](../../screenshots/sidebar-filter.webp)
+
+**Limiti:** è una semplice ricerca per sottostringa — niente caratteri jolly, niente ricerca approssimata, niente espressioni regolari. Cerca in ciò che la barra laterale ha già caricato: pull request e issue oltre l'elenco restituito dall'host non compaiono (la pagina delle [pull request](pull-requests.md) ha il suo filtro). I branch remoti corrispondono sul nome completo `remote/branch`, quindi digitare il nome di un remote trova tutti i suoi branch.
+
 ## Branch
 
 Crea, fai checkout, rinomina ed elimina — locali e remoti. Le righe dei branch
@@ -41,13 +59,15 @@ mostrano:
 - un **punto di rischio** dopo una scansione del [radar dei conflitti](conflict-radar.md),
 - un **marcatore ⟳** quando il remote ha [riscritto la storia](range-diff.md).
 
+Passa il mouse su una riga di branch locale, o raggiungila con Tab, per due azioni rapide: **Checkout** e **Crea pull request**. Sono le stesse azioni del menu contestuale, che mantiene tutto il resto; il branch corrente mostra solo la seconda.
+
 I branch con `/` nel nome si raggruppano automaticamente in cartelle
 richiudibili.
 Un prefisso con un solo figlio resta una cartella — `release/1.2.3` è `release`
 con `1.2.3` dentro — così aggiungere `release/1.2.4` dopo non ridisegna l’albero.
 Una sequenza di cartelle con un solo figlio si comprime in un’intestazione
 (`dependabot/npm_and_yarn`). Le intestazioni di cartella hanno il segno cartella;
-la ref, il segno branch, remoto o tag.
+la ref, il segno branch, remoto o tag. **Impostazioni → Layout e terminale → Raggruppa le ref per prefisso** disattiva le cartelle, per un elenco piatto.
 
 Un clic destro sull'intestazione di una cartella agisce sull'intero gruppo:
 *Elimina tutti i branch sotto `feature` (4 branch)* rimuove tutto il contenuto

@@ -37,6 +37,7 @@ import { ModalHost } from './components/ModalHost'
 import { CommandPalette } from './components/CommandPalette'
 import { RepoSwitcher } from './components/RepoSwitcher'
 import { Toasts } from './components/Toasts'
+import { AIRequestPrompt } from './components/AIRequestPrompt'
 import { CloneTray } from './components/CloneTray'
 import { UpdateBanner } from './components/UpdateBanner'
 import { RollbackNotices } from './components/RollbackNotices'
@@ -51,6 +52,7 @@ import { BootError, bootErrorKind } from './components/BootError'
 import { ChangelogPage } from './components/ChangelogPage'
 import { MissionControlPage } from './components/MissionControlPage'
 import { HelpPage } from './components/HelpPage'
+import { AIStatusChip } from './components/AIStatusChip'
 import { LogsPage } from './components/LogsPage'
 import { NotificationsPage } from './components/NotificationsPage'
 import { InsightsPage } from './components/InsightsPage'
@@ -1416,6 +1418,7 @@ export default function App(): React.JSX.Element {
               <ProblemsStatusChip path={repo.path} />
               <CodeTodosStatusChip path={repo.path} />
               <span className="status-sep" />
+              <AIStatusChip repoPath={repo.path} />
               <button
                 className="status-branch-profile status-branch-btn"
                 title={t('app.switchBranch')}
@@ -1482,6 +1485,7 @@ export default function App(): React.JSX.Element {
       <CommandPalette />
       <RepoSwitcher />
       <Toasts />
+      <AIRequestPrompt />
       <CloneTray />
       <UpdateBanner />
       <RollbackNotices />

@@ -121,6 +121,7 @@ git actually is.
 | **[Go to repository](docs/help/workspaces.md#going-to-a-repository)** (`⌘J`) | Jump to any open repository by name, folder or branch — group members included, most recently used first. Switching is instant even next to a huge `node_modules`: the file watcher follows only what git tracks, and a bar under the toolbar shows while the repository you switched to catches up. |
 | **[Groups & workspaces](docs/help/workspaces.md)** | Tabs with folders nested to any depth, colour-coded, fetch-all per subtree. Browser-like tab sizing, opt-in auto-grouping of [worktrees](docs/help/worktrees.md#grouping-worktrees-in-the-header). [Right-click a repository](docs/help/repo-menu.md) for alias, worktrees, GitHub, terminal and remove. |
 | **[Tab images](docs/help/repo-settings.md#tab-image)** | Give a repository a small picture from its own files, and show tabs as image, name or both. |
+| **[Repository settings](docs/help/repo-settings.md)** | One repository's own settings behind the gear — display name, profile, protected branches, its rules, vault and activity — in a side nav under a header naming the folder, branch and remote. |
 | **[Pull or push any branch](docs/help/syncing.md)** | Catch a branch up or publish it from its right-click menu, without checking it out first. |
 | **[Push several branches at once](docs/help/syncing.md#pushing-several-branches-at-once)** | Tick the branches you want and push them all to one remote in a single push. Each branch shows whether it is ahead, new or diverged, the secret guard checks every branch, and nothing is ever forced. |
 | **[Untracked-branch repair](docs/help/syncing.md)** | A pull that stops on "no tracking information" offers the fix as a button — link the branch to its remote, or push it if the remote has never seen it. |
@@ -176,7 +177,9 @@ as one plan (or from an error toast's "fix with AI").
 messages, Claude for chat, a local Ollama for the rest — with model lists fetched
 live from each provider. OpenAI, Anthropic, Google Gemini, OpenRouter, Groq,
 Mistral, Ollama, any compatible endpoint, or a [signed-in CLI](docs/help/ai.md)
-you already pay for. Connect your [ChatGPT or Claude subscription](docs/help/ai.md#using-a-subscription-instead-of-an-api-key) during onboarding or in Settings → AI.
+you already pay for. Connect your [ChatGPT or Claude subscription](docs/help/ai.md#using-a-subscription-instead-of-an-api-key) during [first-run setup](docs/help/first-run.md), which finds Claude Code or Codex on the machine and tests it, or in Settings → AI.
+A provider is [tested before it is saved](docs/help/ai.md#adding-and-editing-a-provider), and each one shows whether it is ready, missing a key or not responding.
+The status bar names [the AI in use](docs/help/ai.md#the-ai-in-use-from-the-status-bar) for the profile — general or its own — and switches its provider in one click.
 
 ### Make it yours
 
@@ -215,6 +218,9 @@ the sidebar and the status bar, and never written into the repo ·
 [**Sidebar panes**](docs/help/branching.md) — open sections share leftover height
 equally, each scrolling on its own; collapsed ones stay as headers, so they
 never drift off screen ·
+[**One sidebar filter**](docs/help/branching.md#one-filter-for-every-section) —
+narrows every section at once, counting "2 of 10" per header and folding the
+empty ones away ·
 [**Bookmarks**](docs/help/bookmarks.md) — remembered places in the code that
 re-locate themselves when the line moves, and say so when it is gone ·
 [**Open in your editor**](docs/help/editor.md) — repo, file, or the exact line

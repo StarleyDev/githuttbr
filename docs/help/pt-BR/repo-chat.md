@@ -2,8 +2,9 @@
 title: Chat do repositório
 category: IA
 order: 82
-summary: Faça perguntas sobre este repositório, fixe arquivos e commits como contexto e deixe que ele proponha mudanças revisáveis em arquivos seguidas de ações Git.
-keywords: chat pergunta perguntar assistente contexto anexar fixar arrastar soltar commit arquivo evidência ancorado ia painel ações executar aprovar aprovação automática permitir corrigir erro aviso
+summary: Pergunte qualquer coisa — perguntas gerais ou sobre este repositório —, fixe arquivos e commits como contexto e deixe que ele proponha mudanças revisáveis em arquivos seguidas de ações Git.
+keywords: chat pergunta perguntar assistente contexto anexar fixar arrastar soltar commit arquivo evidência ancorado ia painel ações executar aprovar aprovação automática permitir corrigir erro aviso pergunta geral qualquer pergunta pensando lendo arquivos
+source: 14be127d45f76373e5ced5db32f7f21167e6f965
 ---
 
 # Chat do repositório
@@ -13,6 +14,10 @@ o refresh do token acontece de verdade? O que este commit mudou, em uma frase?
 Por que este arquivo existe?* O chat do repositório responde sobre o repositório
 aberto e mostra as linhas em que se baseou.
 
+Ele também é um chat de IA comum. Uma saudação, uma pergunta geral de
+programação ou qualquer outra coisa recebe uma resposta direta do modelo, sem ler
+o repositório — ele só olha os arquivos quando a pergunta é sobre eles.
+
 Ele divide a coluna da direita com **Detalhes**: as abas no topo alternam entre
 os dois, então o grafo não perde a seleção quando você pergunta algo.
 
@@ -20,20 +25,31 @@ os dois, então o grafo não perde a seleção quando você pergunta algo.
 
 ## O que ele lê
 
-Cada resposta é montada em duas passagens. A primeira escolhe um conjunto
-pequeno de caminhos e buscas literais na lista de arquivos rastreados do próprio
-repositório. A segunda responde usando apenas os trechos trazidos, e só pode
-citar esses trechos: um arquivo ou linha inventados são erro de validação, não
-uma resposta plausível.
+Funciona como qualquer chat: **o que vai é a sua mensagem**, com nada além do
+nome e da branch do repositório ao lado — sem estado do Git, sem lista de
+arquivos, sem conteúdo de arquivo — e a resposta volta como texto simples. Uma
+saudação ou uma pergunta que não é sobre o repositório é respondida ali mesmo,
+em uma chamada, e nada do repositório sai da sua máquina.
 
-**Uma segunda olhada.** A primeira passada precisa adivinhar quais arquivos
-importam só pelo nome, que é exatamente o palpite que falha em “de onde isso é
-chamado”. Por isso uma resposta pode perguntar de volta em vez de adivinhar: ela
-pode nomear mais caminhos, mais buscas literais ou hashes de commits do
-histórico recente, e a pergunta é refeita com o que aquilo trouxer. Isso ocorre
-no máximo duas vezes — cada rodada é outra chamada ao modelo que você espera — e
-na última ela precisa responder com o que tem. Você não vê nada disso além de
-uma espera um pouco maior e uma resposta melhor.
+**Quando o repositório entra.** Ele é aberto para o modelo em três casos:
+
+| Você… | O que acontece |
+|------|--------------|
+| Cita um arquivo rastreado (`config.json`, `src/app.ts`) | Esse arquivo é lido antes de o modelo responder |
+| Diz isso com palavras — "este repositório", "minhas alterações", "não commitado", "branch atual" | O estado do Git e a lista de arquivos rastreados são enviados |
+| Pergunta algo de que o modelo decide que precisa | Ele responde com uma única linha `@repo`, e o app abre o repositório para ele |
+
+A partir daí o modelo pede o que mais precisar em vez de adivinhar: caminhos
+exatos da lista, buscas literais ou hashes de commits do histórico recente. O
+app lê isso e refaz a pergunta com o que foi encontrado. Isso ocorre no máximo
+quatro vezes — cada rodada é outra chamada ao modelo que você espera — e na
+última ele precisa responder com o que tem. Essas respostas citam os trechos
+que usaram, e um arquivo ou linha inventados são erro de validação, não uma
+resposta plausível.
+
+Enquanto você espera, a linha abaixo da sua mensagem diz o que está acontecendo:
+**Pensando…** enquanto o modelo trabalha, **Lendo arquivos (N)…** ou **Buscando
+no repositório…** só enquanto o app está de fato lendo o que ele pediu.
 
 | Incluído | Excluído |
 |---|---|
@@ -73,23 +89,48 @@ tocam um caminho excluído saem daquele diff, não o commit inteiro.
 
 ## Configurações
 
-**Configurações → Perfil → Preferências de escrita da IA → Chat do repositório** (cada perfil tem as suas):
+**Configurações → IA → Chat do repositório** — na IA geral, ou na própria de um
+perfil quando ele tem uma (a barra **Editando** escolhe qual, veja
+[Uma IA para todos os perfis](ai.md#uma-ia-para-todos-os-perfis)):
 
 | Configuração | O que faz |
 |---|---|
 | **Faça perguntas sobre o repositório** | Desligado tira a aba, o botão da barra e o alvo do atalho. O resto da IA continua |
-| **Modelo do chat** | Um modelo só para o chat. Vazio usa o do perfil: perguntar custa menos que revisar, um menor costuma bastar |
+| **Ler o repositório** | Arquivos, histórico e diffs, para te responder. Arquivos que parecem segredos nunca são lidos |
 | **Apenas conteúdo commitado** | Responde a partir do último commit em vez da árvore de trabalho: alterações não commitadas nunca saem da máquina |
-| **Propor ações de arquivo e Git no chat** | Desligado devolve o chat ao modo somente leitura: sem cartões de ações, sem menu de aprovação |
-| **Modo somente leitura de arquivos** | Ligado bloqueia criação, edição, substituição e exclusão de arquivos, mas mantém as ações Git disponíveis. Vem ligado por padrão |
-| **Como as ações propostas são executadas** | O modo de aprovação — veja [Modos de aprovação](#modos-de-aprovação). Ações destrutivas confirmam de qualquer jeito |
-| **Permitir que o chat proponha ações remotas** | Desligado por padrão. Ligado, acrescenta fetch, pull, push, abrir um pull request e enviar uma pilha |
+| **Ações Git locais** | Stage, commit, branch, stash, merge e mais, propostos num cartão que você revisa. Desligado: o chat só responde |
+| **Criar, editar e excluir arquivos** | Edições exatas, arquivos novos, substituições e exclusões, cada um com seu diff no cartão. Exige as ações Git locais. Desligado por padrão. Substitui *Modo somente leitura de arquivos* com o sentido invertido: ligado aqui é aquele modo desligado, e uma configuração salva continua valendo igual |
+| **Quando a IA propõe uma ação** | O modo de aprovação — veja [Modos de aprovação](#modos-de-aprovação). Ações destrutivas confirmam de qualquer jeito |
+| **Ações remotas** | Desligado por padrão. Ligado, acrescenta fetch, pull, push, abrir um pull request e enviar uma pilha |
+
+Acima da lista, uma frase resume o que a IA pode fazer agora com essas configurações. Ela descreve as configurações, não o modelo: uma proposta continua sendo conferida e recusada quando quebra uma regra.
+
+O provedor e o modelo que respondem no chat são definidos na página **IA**, em
+**Modelo por tarefa** — veja [Funções de IA](ai.md#modelo-por-tarefa). Perguntar
+custa menos que revisar, então um modelo menor costuma bastar.
 
 Com a IA desligada por completo, o chat some junto — nenhum painel oferecendo
 resposta quando nada pode responder.
 
-O modelo do chat também pode ser trocado no cabeçalho do próprio painel, ao lado
-do nome do provedor — a mesma configuração, sem abrir as Configurações.
+### As pílulas do cabeçalho
+
+Abaixo do título do painel, três pílulas dizem o que o chat vai fazer com a sua
+próxima mensagem, e cada uma muda isso sem abrir as Configurações:
+
+| Pílula | Mostra | Clique para |
+|---|---|---|
+| **Conta · modelo** | Quem responde, com um ponto para o estado da conta — pronto, não responde, sem chave ou ainda não verificado | Escolher outro modelo num menu agrupado por conta, ou voltar ao modelo do perfil. É a mesma configuração de **Modelo por tarefa → Chat** |
+| **Pode: …** | O que o chat pode fazer — *ler*, e também *Git*, *arquivos* e *remoto* quando estão ligados | Ligar ou desligar **Ações Git locais**, **Criar, editar e excluir arquivos** e **Ações remotas**, ou abrir **Todas as configurações do chat** |
+| **Aprovação** | *Pergunta antes de executar*, *Executa ações seguras* ou *Executa todas as ações* | Escolher um dos três modos de aprovação (abaixo). Fica oculta enquanto as ações Git locais estão desligadas, já que nada é proposto |
+
+São as mesmas configurações de **Configurações → IA → Chat do repositório**,
+gravadas na mesma IA, então as duas nunca discordam. Mandar uma única pergunta
+para um modelo mais forte é um clique e não mexe no resto do app. O ponto de
+status vem da lista de modelos que o painel já buscou — ele nunca faz uma
+requisição própria, então *Não verificado* só quer dizer que nada provou a conta
+ainda.
+
+![A pílula de capacidades aberta](../../screenshots/repo-chat-capabilities.webp)
 
 O botão de varinha ao lado do título do painel abre o **assistente de
 configuração de IA** — um fluxo guiado que gera arquivos de configuração do
@@ -121,9 +162,7 @@ legível simplesmente não mostra nada.
 
 Peça uma mudança em vez de um fato — *coloque os arquivos markdown no stage,
 commite isto como um fix, ponha a saída do build na lista de ignore* — e a
-resposta chega com um **cartão de ações**. Uma conversa vazia oferece alguns
-pedidos de exemplo como chips abaixo da introdução; clicar em um preenche a
-caixa de mensagem, para você editar antes de enviar. O cartão lista os passos
+resposta chega com um **cartão de ações**. Uma conversa vazia começa com **Pergunte qualquer coisa** e três sugestões — *Revise o último commit*, *O que mudou desde main?* (com o nome da branch padrão do repositório quando ela existe) e *Escreva a descrição do PR desta branch*. Clicar em uma preenche a caixa de mensagem e não envia nada, para você editar antes. O cartão lista os passos
 concretos que o assistente
 quer dar, uma linha por ação, com os botões **Executar** e **Dispensar**. Nada
 no cartão aconteceu ainda; o modelo só pode propor, e cada proposta é conferida
@@ -143,6 +182,15 @@ existentes precisam vir da evidência lida; alvos inseguros, secretos, ignorados
 gerados, binários, desatualizados, grandes demais ou alcançados por symlink são
 recusados. Reset, reescrita de histórico, exclusão de branch e toda operação
 forçada continuam apenas na interface dedicada.
+
+**Um texto da conversa pode virar um arquivo.** Peça um texto e depois *crie o
+arquivo*: a resposta anterior é o conteúdo e, quando você não dá nome ao
+arquivo, o assistente escolhe um e o mostra no cartão. Com as ações de arquivo
+ligadas, o modelo é avisado de que pode escrever, então uma resposta anterior
+que dizia não ter acesso não se repete. Se mesmo assim a resposta estruturada
+falhar, a resposta diz que a alteração não pôde ser preparada desta vez e que
+enviar o pedido de novo tenta outra vez; ela nunca afirma que o arquivo foi
+gravado.
 
 Um merge ou um rebase pode parar em um conflito. Quando isso acontece, a
 execução para ali, o cartão marca aquela linha como falha e mantém a contagem do
@@ -205,10 +253,21 @@ que o plano produziu — por isso confirma antes e nomeia o commit de destino. O
 pull requests abertos continuam abertos: um remoto não é algo que um snapshot
 local consiga retirar.
 
+Com **Executar todas as ações automaticamente**, uma mudança de arquivo válida é
+executada na hora e o cartão registra a ação concluída:
+
+![Ação de arquivo do chat do repositório concluída automaticamente](../../screenshots/repo-chat-file-action-auto-run.webp)
+
+Com **Sempre perguntar**, o mesmo tipo de mudança fica pendente até você
+escolher **Executar** ou **Dispensar**:
+
+![Ação de arquivo do chat do repositório aguardando aprovação](../../screenshots/repo-chat-file-action-approval.webp)
+
 ### Modos de aprovação
 
-O menu com escudo abaixo da caixa de mensagem (também em **Configurações → Perfil
-→ Chat do repositório**) decide como um cartão executa:
+A pílula de aprovação no cabeçalho do painel (também em **Configurações → IA →
+Chat do repositório**) decide como um cartão executa — para todo perfil na mesma
+IA:
 
 | Modo | Executa |
 |---|---|
@@ -236,12 +295,24 @@ editável — nada é enviado até você apertar Enviar.
   [mascaramento de segredos](security.md).
 - **Binários e arquivos acima de 512 KB** vindos de fora do repositório são
   ignorados do mesmo jeito. Dentro dele valem as regras de sempre.
+- **Uma pergunta não recebe propostas.** As ações só são oferecidas ao modelo
+  quando sua mensagem pede que algo seja feito — "faça commit dos arquivos em
+  stage", "faça um stash", "crie a branch". Perguntar qual é a versão, ou o que
+  é um commit, nunca volta com um plano para executar. Uma resposta curta que
+  insiste no pedido logo antes dela — "sim", "eu dei acesso" — conta como esse
+  pedido; uma pergunta ou um agradecimento, não.
 - **O modelo nunca escreve diretamente.** Ele devolve propostas estruturadas;
   o GitHuttBr valida, calcula o diff e executa apenas sob as
   [suas regras de aprovação](#modos-de-aprovação). Trabalho Git destrutivo sempre
   confirma. Com propostas de ações desligadas, o chat nem propõe mudanças.
 - **As conversas vivem só na memória.** Cada repositório mantém seu fio; sair do
   GitHuttBr descarta tudo.
+- **Modelos locais pequenos são mais fracos em perguntas sobre o repositório.**
+  Medido com um modelo de 3B: perguntas gerais são respondidas tão bem quanto no
+  próprio terminal dele, mas ele pode não pedir o repositório quando deveria, e
+  uma resposta longa montada a partir de arquivos pode voltar cortada. Citar o
+  arquivo, ou dizer "este repositório", faz o app abri-lo de qualquer forma. Um
+  modelo de 7B ou maior se sai bem melhor.
 
 ## Como abrir
 

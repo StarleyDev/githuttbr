@@ -2,8 +2,8 @@
 title: Repository chat
 category: AI
 order: 82
-summary: Ask questions about this repository, pin files and commits as context, and let it propose reviewed file changes followed by Git actions.
-keywords: chat ask question assistant context attach pin drag drop commit file evidence grounded ai panel actions run approve auto-approve allow fix error toast push pull fetch merge rebase revert cherry-pick pull request stacked pr stack undo plan snapshot second look
+summary: Ask anything — general questions or questions about this repository — pin files and commits as context, and let it propose reviewed file changes followed by Git actions.
+keywords: chat ask question assistant context attach pin drag drop commit file evidence grounded ai panel actions run approve auto-approve allow fix error toast push pull fetch merge rebase revert cherry-pick pull request stacked pr stack undo plan snapshot second look general question any question thinking reading files permissions create edit delete files read-only file read-only mode local git actions remote actions privacy approval header pills model pill status dot capabilities starters suggestions ask anything
 ---
 
 # Repository chat
@@ -13,6 +13,10 @@ refresh actually happen? What did this commit change, in one sentence? Why does
 this file exist?* Repository chat answers those against the repository that is
 open, and shows the lines it based each answer on.
 
+It is also an ordinary AI chat. A greeting, a general programming question or
+anything else gets a direct answer from the model, without reading the
+repository — it only looks at files when the question is about them.
+
 It shares the right-hand column with **Details**: the tab strip at the top
 switches between them, so the graph never loses its selection when you ask
 something.
@@ -21,19 +25,31 @@ something.
 
 ## What it reads
 
-Every answer is built in two passes. The first picks a small set of paths and
-literal searches from the repository's own tracked-file list. The second answers
-using only the excerpts that pass brings back, and may cite only those excerpts —
-a made-up file or line is a validation error, not a plausible-looking answer.
+It works like any chat: **your message is what is sent**, with nothing but the
+repository's name and branch beside it — no Git state, no file list, no file
+contents — and the reply comes back as plain text. A greeting or a question
+that is not about the repository is answered right there, in one call, and
+nothing from the repository leaves your machine.
 
-**A second look.** The first pass has to guess which files matter from their
-names alone, which is exactly the guess that fails on "where is this called
-from". So an answer is allowed to ask back instead of guessing: it can name more
-paths, more literal searches, or commit hashes from the recent history, and the
-question is put again with what those turn up. That happens at most twice — each
-round is another model call you wait for — and on the last one it must answer
-with what it has. You see none of this except a slightly longer wait and a
-better answer.
+**When the repository comes in.** It is opened for the model in three cases:
+
+| You… | What happens |
+|------|--------------|
+| Name a tracked file (`config.json`, `src/app.ts`) | That file is read before the model answers |
+| Say so in words — "this repository", "my changes", "uncommitted", "current branch" | The Git state and tracked-file list are sent |
+| Ask something the model decides needs it | It replies with a single `@repo` line, and the app opens the repository for it |
+
+From there the model asks for what else it needs instead of guessing: exact
+paths from the list, literal searches, or commit hashes from the recent
+history. The app reads those and puts the question again with what they turned
+up. That happens at most four times — each round is another model call you wait
+for — and on the last one it must answer with what it has. These answers cite
+the excerpts they used, and a made-up file or line is a validation error, not a
+plausible-looking answer.
+
+While you wait, the line under your message says what is happening:
+**Thinking…** while the model works, **Reading files (N)…** or **Searching the
+repository…** only while the app is actually reading what it asked for.
 
 What it can see:
 
@@ -74,16 +90,25 @@ touch an excluded path are dropped from that diff, not the whole commit.
 
 ## Settings
 
-**Settings → Profile → AI writing preferences → Repository chat** (each profile has its own):
+**Settings → AI → Repository chat** — on the general AI, or on a profile's own
+when it has one (the **Editing** bar picks which, see
+[One AI for every profile](ai.md#one-ai-for-every-profile)):
 
 | Setting | Does |
 |---|---|
-| **Ask questions about the repository** | Off removes the tab, the toolbar button and the shortcut target. The rest of the AI features keep working |
-| **Committed content only** | Answers from the last commit instead of the working tree: uncommitted edits and diffs never leave the machine |
-| **Propose file and Git actions in chat** | Off makes chat purely read-only again: no action cards, no approval dropdown |
-| **File read-only mode** | On blocks file creation, editing, replacement, and deletion while keeping Git actions available. It is on by default |
-| **Let chat propose remote actions** | Off by default. On adds fetch, pull, push, opening a pull request and submitting a stack to what chat may propose — see [Actions that leave the machine](#actions-that-leave-the-machine) |
-| **How proposed actions run** | The approval mode — see [Approval modes](#approval-modes). Destructive actions confirm regardless |
+| **Ask questions about the repository** | The switch in the section's header. Off removes the tab, the toolbar button and the shortcut target. The rest of the AI features keep working |
+| **Read the repository** | Always on while chat is. Files that look like secrets are never read |
+| **Local Git actions** | Off makes chat purely read-only again: no action cards, no approval choice. It was *Propose file and Git actions in chat* |
+| **Create, edit and delete files** | On lets chat propose exact edits, new files, replacements and deletions. **Off by default**, and only available with local Git actions on. It replaces *File read-only mode* with the meaning turned around: this switch on is that mode off, and a saved setting reads the same as before |
+| **Remote actions** | Off by default. On adds fetch, pull, push, opening a pull request and submitting a stack to what chat may propose — see [Actions that leave the machine](#actions-that-leave-the-machine). Needs local Git actions |
+| **When the AI proposes an action** | The approval mode, one card each — see [Approval modes](#approval-modes). Destructive actions confirm regardless |
+| **Committed content only** | Under *Privacy*. Answers from the last commit instead of the working tree: uncommitted edits and diffs never leave the machine |
+
+Above the list, one sentence sums up the current settings — *Right now the AI
+can read the repository, propose commits and branches and create or edit files —
+always asking for your approval* — so the effect of a switch reads in words, not
+only as its position. It describes these settings, not the model: a proposal is
+still checked and refused when it breaks a rule below.
 
 Which provider and model answers chat is set on the **AI** page, under **Model
 per task** — see [AI features](ai.md#model-per-task).
@@ -92,10 +117,24 @@ Questions are cheaper than reviews, so a smaller model is often enough.
 With AI switched off entirely, chat disappears with it — there is no panel
 offering to answer once nothing can.
 
-The panel's own header switches account and model without opening Settings: the
-dropdown groups every model by the account that serves it, so moving a single
-question to a stronger model is one click and does not disturb the rest of the
-app.
+### The header pills
+
+Under the panel's title, three pills say what the chat will do with your next
+message, and each one changes it without opening Settings:
+
+| Pill | Shows | Click to |
+|---|---|---|
+| **Account · model** | Who answers, with a dot for the account's state — ready, not responding, no key, or not checked yet | Pick another model from a menu grouped by account, or go back to the profile's model. Same setting as **Model per task → Chat** |
+| **Can: …** | What chat may do — *read*, plus *Git*, *files* and *remote* when those are on | Flip **Local Git actions**, **Create, edit and delete files** and **Remote actions**, or open **All chat settings** |
+| **Approval** | *Asks before running*, *Runs safe actions* or *Runs all actions* | Choose one of the three [approval modes](#approval-modes). Hidden while local Git actions are off, since nothing is proposed |
+
+These are the same settings as **Settings → AI → Repository chat**, written to
+the same AI, so the two never disagree. Moving a single question to a stronger
+model is one click and does not disturb the rest of the app. The status dot is
+read from the model list the panel fetched anyway — it never sends a request of
+its own, so *Not checked* only means nothing has proven the account yet.
+
+![The capabilities pill open](../screenshots/repo-chat-capabilities.webp)
 
 The wand button next to the panel title opens the **AI config wizard** — a
 guided flow that generates assistant configuration files (instructions, agents,
@@ -124,15 +163,17 @@ not resolve to a readable image simply shows nothing.
 
 Ask for a change instead of a fact — *stage the markdown files, commit this as
 a fix, put the build output on the ignore list* — and the reply arrives with an
-**action card**. An empty conversation offers a few example requests as chips
-under the introduction; clicking one fills the composer so you can edit it
-before sending. The card lists the concrete steps the assistant wants to take,
+**action card**. An empty conversation starts with **Ask anything** and three
+starters — *Review the last commit*, *What changed since main?* (named after
+the repository's default branch when it has one) and *Write the PR description
+for this branch*. Clicking one fills the composer and sends nothing, so you can
+edit it first. The card lists the concrete steps the assistant wants to take,
 one row per action, with **Run** and **Dismiss** buttons. Nothing in the card has happened
 yet; the model can only propose, and every proposal is checked against the
 working tree before you ever see it — an action naming a file that does not
 exist is rejected, not rendered.
 
-![Empty chat with example requests](../screenshots/repo-chat-empty.webp)
+![Empty chat with starter requests](../screenshots/repo-chat-empty.webp)
 
 ![Proposed actions in chat](../screenshots/repo-chat-actions.webp)
 
@@ -145,6 +186,14 @@ evidence the assistant read; unsafe, secret, ignored, generated, binary, stale,
 oversized, and symlinked targets are refused. Reset, history rewriting, deleting
 a branch and every force operation remain available only in their dedicated UI.
 
+**Text from the conversation can become a file.** Ask for a text, then *create
+the file*: the earlier reply is the content, and when you name no file the
+assistant picks a name and shows it on the card. With file actions on, the model
+is told it can write, so an earlier reply that claimed it had no access is not
+repeated. If its structured answer still fails, the reply says the change could
+not be prepared this time and that sending the request again retries it; it
+never claims the file was written.
+
 A merge or a rebase can stop on a conflict. When it does, the run stops there,
 the card marks the row failed and keeps the count of what already ran, and the
 conflict banner takes over exactly as it would for the same operation started
@@ -154,7 +203,7 @@ from the toolbar.
 [the repository's own config file](repo-config.md), so *add ticket links for
 JIRA-1234* or *protect the release branches* becomes a file action written
 against the real schema instead of plausible-looking keys the loader would
-reject. It needs file actions enabled — the same **File read-only mode** switch.
+reject. It needs file actions enabled — the same **Create, edit and delete files** switch.
 
 **Rows that need a picture get one.** A one-line summary is enough for "stage
 two files" and nowhere near enough for "open four pull requests against a
@@ -167,7 +216,7 @@ would open it, retarget it, or leave it alone.
 ### Actions that leave the machine
 
 Fetching, pulling, pushing, opening a pull request and submitting a stack are
-**off by default**, behind **Let chat propose remote actions**. Publishing work
+**off by default**, behind **Remote actions**. Publishing work
 is a decision worth opting into, and with the setting off the model is not told
 those actions exist — it cannot propose one and be refused, which is the failure
 mode that teaches people to turn things on without reading.
@@ -217,8 +266,8 @@ that summary fails, the card remains the authoritative record.
 
 ### Approval modes
 
-The shield dropdown under the composer (also in **Settings → Profile → Repository
-chat**) decides how a card runs:
+The approval pill in the panel's header (also in **Settings → AI → Repository
+chat**) decides how a card runs — for every profile on the same AI:
 
 | Mode | Runs |
 |---|---|
@@ -246,12 +295,23 @@ nothing is sent until you press Send.
   [secret masking](security.md).
 - **Binaries and files over 512 KB** from outside the repository are skipped the
   same way. Inside the repository the usual readable-source rules apply.
+- **A question gets no proposals.** Actions are offered to the model only when
+  your message asks for something to be done — "commit the staged files",
+  "faça um stash", "create the branch". Asking what the version is, or what a
+  commit is, can never come back with a plan to run. A short reply that insists
+  on the request just before it — "yes", "I gave you access" — counts as that
+  request; a question or a thank-you does not.
 - **The model never writes directly.** It returns structured proposals; GitHuttBr
   validates them, computes the diff, and runs them only under
   [your approval rules](#approval-modes). Destructive Git work always confirms.
   With action proposals off, chat does not even propose changes.
 - **Conversations live in memory only.** Switching repositories keeps each
   thread separate; quitting GitHuttBr discards them.
+- **Small local models are weaker at repository questions.** Measured with a
+  3B model: general questions are answered as well as in its own terminal, but
+  it may not ask for the repository when it should, and a long answer built from
+  files can come back cut short. Naming the file, or saying "this repository",
+  makes the app open it regardless. A 7B model or larger does noticeably better.
 
 ## Opening it
 

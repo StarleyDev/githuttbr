@@ -4,7 +4,7 @@ category: Buradan başlayın
 order: 3
 summary: Boğulmadan çok sayıda depo: sekmeler, gruplar, klasörler ve çalışma alanları.
 keywords: çalışma alanı sekmeler gruplar klasörler çoklu depo düzenleme geçiş yerleşim workspace tabs groups folders multiple repos organise switch layout depoya git değiştirici sekme boyutu go to repository switcher tab sizing
-source: 6fc6b6e0f1f3c8f6a3a638dc0388df5328222a41
+source: 0a7a79bf2fb89d3802683802c172c87da41b1909
 ---
 
 # Çalışma alanları, sekmeler ve gruplar
@@ -32,7 +32,7 @@ veya çakışmalar varken uyarı sizi bilerek düğmeye uzanmaya zorlar; böylec
 
 ### Sekme boyutu
 
-Varsayılan olarak (**Ayarlar → Yerleşim → Sekme boyutu → Sığdır**) sekmeler bir
+Varsayılan olarak (**Ayarlar → Yerleşim ve terminal → Sekme boyutu → Sığdır**) sekmeler bir
 tarayıcınınkiler gibi davranır: şerit yer kalmayınca eşit olarak bir en küçük
 genişliğe kadar daralırlar ve ancak o sınıra da ulaşılınca kaydırılırlar. **Sabit**
 klasik davranışı geri getirir — her sekme içeriğinin genişliğini korur ve hepsi

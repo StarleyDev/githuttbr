@@ -150,7 +150,7 @@ wieder. `rerere` — *reuse recorded resolution* — ist gits Antwort darauf: Es
 merkt sich, wie du einen Konflikt beigelegt hast, und spielt diese Antwort beim
 nächsten Auftreten des identischen Konflikts wieder ein.
 
-**Einstellungen → Allgemein → Konfliktlösungen merken.** Das schreibt
+**Einstellungen → Git & Synchronisierung → Konfliktlösungen merken.** Das schreibt
 `rerere.enabled` in deine globale git-Konfiguration, damit sich die
 Kommandozeile genauso verhält.
 

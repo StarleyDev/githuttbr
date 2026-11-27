@@ -42,7 +42,7 @@ terminalde çalıştırır.
 Yüzen bir araç çubuğu size **duraklat / sürdür, yeniden başlat, durdur**
 düğmelerini verir ve çalışan oturumlar arasında geçiş yapar.
 
-**Ayarlar → Genel → launch.json'ı etkinleştir** ile açın. **LAUNCH** düğmesi
+**Ayarlar → Kod analizcileri → launch.json'ı etkinleştir** ile açın. **LAUNCH** düğmesi
 Git / Dosyalar sekmelerinin yanında belirir.
 
 Bir compound üyesi *compound › üye* olarak görünür ve yeniden başlatmak

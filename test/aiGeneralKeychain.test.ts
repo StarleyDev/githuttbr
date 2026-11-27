@@ -140,3 +140,56 @@ describe('a settings file from before the general AI', () => {
     expect(storeJson()[GENERAL_AI_SECRETS_ID]).toEqual({ aiKeys: { anthropic: 'sk-p' } })
   })
 })
+
+describe('a settings file from before the behaviour followed the general AI (4.5x)', () => {
+  // A settled general AI (own keychain entry) with only its engine counting, and
+  // each profile's styles on the profile — 'own' with an AI of its own.
+  const withStyle = (id: string, extra: Partial<AIConfig>, own = false): Profile => ({
+    ...profile(id),
+    ai: { ...anthropic(), ...extra },
+    ...(own ? { ownAI: true } : {})
+  })
+  const file = {
+    ...defaultSettings(),
+    onboardingCompleted: true,
+    ai: anthropic(),
+    profiles: [
+      withStyle('home', { commitStyle: 'gitmoji' }),
+      withStyle('work', { commitStyle: 'haiku', customInstructions: 'cite tickets' }),
+      withStyle('own', { commitStyle: 'caveman' }, true)
+    ],
+    activeProfileId: 'work'
+  }
+  const store = { [GENERAL_AI_SECRETS_ID]: { aiKeys: { anthropic: 'sk-general' } }, own: { aiKeys: { anthropic: 'sk-own' } } }
+
+  it('moves the active profile’s behaviour onto the general AI once, keys untouched', async () => {
+    const mod = await startOn(file, store)
+    const locked = (await call('settings:get')) as AppSettings
+    expect(locked.aiBehaviourShared).toBe(true)
+    expect(locked.ai.commitStyle).toBe('haiku')
+    expect(locked.ai.customInstructions).toBe('cite tickets')
+    expect(await mod.activeProfileAiKey('anthropic')).toBe('sk-general')
+
+    const unlocked = (await call('settings:unlock')) as AppSettings
+    expect(unlocked.ai.accounts[0].apiKey).toBe('sk-general')
+    const own = unlocked.profiles.find((p) => p.id === 'own')!
+    expect(own.ownAI).toBe(true)
+    expect(own.ai.commitStyle).toBe('caveman')
+    expect(own.ai.accounts[0].apiKey).toBe('sk-own')
+
+    // Saved, the marker is on disk; switched to another profile and restarted,
+    // nothing is copied again.
+    await call('settings:set', { ...unlocked, activeProfileId: 'home' })
+    const onDisk = JSON.parse(readFileSync(settingsFile(), 'utf8')) as AppSettings
+    expect(onDisk.aiBehaviourShared).toBe(true)
+    expect(onDisk.ai.commitStyle).toBe('haiku')
+    expect(JSON.stringify(onDisk)).not.toContain('sk-general')
+    await restart()
+    const again = (await call('settings:unlock')) as AppSettings
+    expect(again.activeProfileId).toBe('home')
+    expect(again.ai.commitStyle).toBe('haiku')
+    expect(again.ai.accounts[0].apiKey).toBe('sk-general')
+    expect(storeJson()[GENERAL_AI_SECRETS_ID]).toEqual({ aiKeys: { anthropic: 'sk-general' } })
+    expect(storeJson().own).toEqual({ aiKeys: { anthropic: 'sk-own' } })
+  })
+})

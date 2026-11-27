@@ -4,7 +4,7 @@ category: ワークスペースツール
 order: 95
 summary: リポジトリ、ファイル、あるいはコードの 1 行を、実際に書いているエディターへ送ります。
 keywords: editor vscode code cursor windsurf zed sublime jetbrains intellij webstorm xcode open in editor line column custom command argv 外部エディター エディター カスタムコマンド 行 列 引数 devin desktop
-source: e25ceb114b185e5aecb75a70b46cddd3f22d21bf
+source: 5bb8b224ab1beced6eb06d57e70e8c3cd0196faa
 ---
 
 # 外部エディター
@@ -18,7 +18,7 @@ Git クライアントはコードを読む場所であって、直す場所で�
 
 ## 選び方
 
-**設定 → 一般 → 外部エディター。** ドロップダウンには、このマシンで GitHuttBr が見つけ
+**設定 → Git と同期 → 外部エディター。** ドロップダウンには、このマシンで GitHuttBr が見つけ
 られたエディターが並びます。まず各エディターのコマンドを探し、次に macOS では
 `/Applications` と `~/Applications` のアプリケーションバンドルを探します。この走査は
 設定を開くたびに走るので、5 分前にインストールしたエディターも再起動なしに現れます。

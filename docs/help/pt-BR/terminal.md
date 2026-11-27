@@ -18,7 +18,7 @@ prompt, seus aliases.
   tamanho dele.
 - A visibilidade do terminal é por repositório: mudar para uma aba que nunca abriu
   um terminal o mantém fechado.
-- **Ele abre junto com o repositório e fica embaixo do grafo por padrão.** Na primeira vez que um repositório vira a aba ativa na sessão, o terminal dele abre com um shell naquela pasta. Se você fechar, ele fica fechado para aquele repositório até a próxima inicialização. Cada repositório visitado custa um processo de shell; desligue **Abrir o terminal quando um repositório abrir** ou mude a posição em Configurações → Layout.
+- **Ele abre junto com o repositório e fica embaixo do grafo por padrão.** Na primeira vez que um repositório vira a aba ativa na sessão, o terminal dele abre com um shell naquela pasta. Se você fechar, ele fica fechado para aquele repositório até a próxima inicialização. Cada repositório visitado custa um processo de shell; desligue **Abrir o terminal quando um repositório abrir** ou mude a posição em Configurações → Layout e terminal.
 - As abas se nomeiam conforme o que está rodando nelas.
 - Colapsar a lista de terminais a encolhe num **trilho**: um ícone por terminal
   (terminais divididos mostram um mini mapa de painéis), clique para trocar, botão
@@ -102,7 +102,7 @@ colidir — o app se atualiza a partir do disco quando o terminal muda alguma co
 
 ## Shell, tema e Oh My Posh
 
-No Windows, Configurações → Layout escolhe o shell que cada terminal novo abre —
+No Windows, Configurações → Layout e terminal escolhe o shell que cada terminal novo abre —
 PowerShell, PowerShell Core (`pwsh`), `cmd`, Git Bash, WSL ou um executável
 próprio. O visual do terminal (tema, tamanho e família da fonte) fica em
 Configurações → Temas → Tema do terminal e vale na hora para todas as sessões.

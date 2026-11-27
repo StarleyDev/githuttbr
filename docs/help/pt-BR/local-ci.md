@@ -21,7 +21,7 @@ disparou depois do push, veja [Execuções de CI](ci-runs.md).
 
 O GitHuttBr deliberadamente **não** embute act nem Docker — um app que carrega
 um runtime de contêiner junto é o oposto de um cliente git. É uma integração
-opt-in: ative em **Configurações → Integrações** (ou no próprio diálogo), e o
+opt-in: ative em **Configurações → Contas conectadas** (ou no próprio diálogo), e o
 GitHuttBr detecta o que está instalado e guia você pelo resto —
 `brew install act`, um daemon do Docker rodando, pronto. Nada roda até que as
 três condições sejam verdadeiras: ativada, act instalado, Docker acessível.

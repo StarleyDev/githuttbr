@@ -151,7 +151,7 @@ interface PreloadApi {
     signInSubscription(binary: string, path: string, requestId: string): Promise<unknown>
     cancelSubscriptionSignIn(requestId: string): Promise<void>
     testSubscription(binary: string, path: string): Promise<unknown>
-    detectCli(): Promise<unknown>
+    detectCli(opts?: { versions?: boolean }): Promise<unknown>
     explainCode(code: string, lang: string, cfg: unknown): Promise<unknown>
     editSelection(req: unknown, cfg: unknown): Promise<unknown>
     hoverExplain(req: unknown, cfg: unknown): Promise<unknown>
@@ -168,6 +168,10 @@ interface PreloadApi {
     planActions(prompt: string, status: unknown, cfg: unknown): Promise<unknown>
     repoChat(repoPath: string, messages: unknown, cfg: unknown, attachments: unknown): Promise<unknown>
     repoChatFinalize(repoPath: string, messages: unknown, result: unknown, cfg: unknown): Promise<unknown>
+    onRepoChatProgress(cb: (p: import('../../shared/types').RepoChatProgress) => void): () => void
+    onRequestEvent(cb: (event: import('../../shared/types').AIRequestEvent) => void): () => void
+    answerSlow(id: number, choice: import('../../shared/types').AISlowChoice): Promise<unknown>
+    cancelRequest(tag: string): Promise<unknown>
   }
   wiki: {
     facts(repoPath: string): Promise<unknown>

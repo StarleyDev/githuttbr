@@ -144,7 +144,7 @@ za cofnięte logowanie i nigdy nie porzuca danych logowania, których używa git
 
 ## GitLab na własnym serwerze
 
-Firmowy GitLab ma własny adres. Podaj go w profilu w **Ustawienia → Integracje →
+Firmowy GitLab ma własny adres. Podaj go w profilu w **Ustawienia → Połączone konta →
 GitLab → Adres GitLab**, na przykład `git.example.org` albo
 `https://example.net/gitlab` dla instancji pod ścieżką. Od tej chwili zdalne na
 tym hoście to GitLab: merge requesty są wyświetlane, otwierane, recenzowane i
@@ -180,7 +180,7 @@ Ustaw adres instancji, zanim wpiszesz jej token. Zmiana adresu usuwa poprzednie 
 
 Forgejo — i Gitea, która dzieli z nim API — zawsze działa pod adresem wybranym
 przez właściciela: Twoim własnym serwerem albo publicznym, jak codeberg.org.
-Podaj ten adres w profilu w **Ustawienia → Integracje → Forgejo**, razem z
+Podaj ten adres w profilu w **Ustawienia → Połączone konta → Forgejo**, razem z
 tokenem dostępu. **Utwórz token** otwiera stronę tokenów tego serwera. Nadaj tokenowi odczyt i zapis dla *repository*, *issue* i *notification* oraz
 odczyt dla *user* i *organization*. Uprawnień tokenu nie da się później zmienić:
 token bez *issue* lub *notification* nie pokaże issues ani powiadomień, a
@@ -250,7 +250,7 @@ dziesięć minut. Token, który nie może odczytać własnego użytkownika (np. 
 
 ![Pull requesty czekające na Twoją recenzję, oznaczone okiem](../../screenshots/pr-awaiting-review.webp)
 
-Z włączonym **Ustawienia → Powiadomienia systemowe** pull request w GitLabie lub
+Z włączonym **Ustawienia → Ogólne → Powiadomienia systemowe** pull request w GitLabie lub
 Forgejo, który *zaczyna* na ciebie czekać, wywołuje jedno; kliknięcie otwiera
 stronę PR. Pierwsze spojrzenie na repozytorium tylko odnotowuje, co już czeka,
 więc otwarcie aplikacji nie odtwarza zaległości. Prośby o recenzję z GitHuba
@@ -277,7 +277,7 @@ twojego systemu. GitHuttBr potrafi też pożyczyć to, co już trzyma twój
 uwierzytelniłeś, często nie wymaga w ogóle żadnej konfiguracji. Zobacz
 [Bezpieczeństwo i sekrety](security.md).
 
-Każdy profil **wiąże własne konto**. W Ustawienia → Integracje przycisk
+Każdy profil **wiąże własne konto**. W Ustawienia → Połączone konta przycisk
 **Połącz z profilem** szuka logowania, które już jest na komputerze — w
 credential helperze gita, potem aktywne konto **GitHub CLI**, potem okno
 logowania samego helpera — i wiąże to konto z profilem. Nic nie jest dzielone

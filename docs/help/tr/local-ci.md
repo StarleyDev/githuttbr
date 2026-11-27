@@ -20,7 +20,7 @@ makinenizden ayrılmadan.
 
 GitHuttBr bilerek act veya Docker **içermez** — yanında bir konteyner çalışma
 zamanı sürükleyen bir uygulama, git istemcisinin tam zıddıdır. Bu isteğe bağlı
-bir entegrasyondur: **Ayarlar → Entegrasyonlar**'dan (veya diyaloğun
+bir entegrasyondur: **Ayarlar → Bağlı hesaplar**'dan (veya diyaloğun
 kendisinden) etkinleştirin; GitHuttBr neyin kurulu olduğunu algılar ve gerisi
 için size yol gösterir — `brew install act`, çalışan bir Docker daemon'ı,
 bitti. Üç koşul da sağlanana kadar hiçbir şey çalışmaz: etkin, act kurulu,

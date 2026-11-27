@@ -4,7 +4,7 @@ category: Ferramentas de workspace
 order: 95
 summary: Mande um repositório, um arquivo ou uma linha de código para o editor em que você realmente escreve.
 keywords: editor vscode code cursor windsurf devin desktop zed sublime jetbrains intellij webstorm xcode abrir no editor linha coluna comando personalizado argv
-source: e25ceb114b185e5aecb75a70b46cddd3f22d21bf
+source: 5bb8b224ab1beced6eb06d57e70e8c3cd0196faa
 ---
 
 # Editor externo
@@ -19,7 +19,7 @@ linha.
 
 ## Escolhendo um
 
-**Configurações → Geral → Editor externo.** O dropdown lista os editores que o
+**Configurações → Git e sincronização → Editor externo.** O dropdown lista os editores que o
 GitHuttBr consegue encontrar nesta máquina — ele procura primeiro pelo comando de cada
 editor e depois, no macOS, pelo bundle da aplicação em `/Applications` e
 `~/Applications`. A varredura roda toda vez que você abre as Configurações, então um

@@ -3,14 +3,16 @@ title: Commit almak
 category: Değişikliklerle çalışma
 order: 31
 summary: Mesaj biçemleri, şablonlar, ortak yazarlar ve linter.
-keywords: commit mesaj besteci conventional gitmoji ticket amend şablon ortak yazar linter template co-author geri al sıfırla undo reset
+keywords: commit mesaj besteci conventional gitmoji ticket amend şablon ortak yazar linter template co-author geri al sıfırla undo reset generate with ai cancel undo
 ---
 
 # Commit almak
 
 ## Mesaj biçemleri
 
-Ayarlar'dan birini seçin; besteci paneli ona uyum sağlar.
+**Ayarlar → Yapay zekâ → Commit mesajları** içinden ya da doğrudan besteci
+panelinden birini seçin; besteci paneli ona uyum sağlar. Biçem, profilin
+kullandığı yapay zekâya aittir — genel olana ya da profilin kendisininkine.
 
 | Biçem | Nasıl görünür |
 |---|---|
@@ -60,6 +62,41 @@ Sınırlar:
 - `commit-msg` hook'u commitlint'i standart Conventional ön ayarıyla çalıştıran
   bir depo, baştaki emojiyi reddeder. Bu GitHuttBr'nun değil, hook'un kuralıdır:
   commitlint'i gitmoji için yapılandırın ya da orada saf Conventional kullanın.
+
+## Mesajı yapay zekâyla yazmak
+
+Yapay zekâ açıkken **Yapay zekâyla oluştur** açıklamanın altında durur.
+Hazırlanmış (staged) diff’i okur ve özeti ile açıklamayı yukarıdaki stilde
+yazar. Düğme kimin yanıt vereceğini söyler — *hesap · model*, **Ayarlar →
+Yapay zekâ → Görev başına model** altında commit mesajları için seçilen çift —
+böylece yavaş bir yerel model ya da pahalı bir model hiç sürpriz olmaz.
+
+- Adın yanındaki **▾** kayıtlı hesaplarınızı, her birinin birkaç modeliyle
+  listeler. Seçim **yalnızca o oluşturma için** geçerlidir; Ayarlar değişmez.
+- Çalışırken kutu *hesap · model ile oluşturuluyor… 12 sn* ve isteğin kendisini
+  durduran **İptal**’i gösterir; yalnızca göstergeyi değil. 30 saniye sonra
+  ayrıca başka hazır bir hesabı **Kullan** seçeneği çıkar; aynı oluşturma orada
+  çalışır. Uygulama genelindeki *beklenenden uzun sürüyor* uyarısı
+  ([Yapay zekâ](ai.md)) yine de görünür.
+- Yeni metin eskisinin **yerine geçer** ve eskisi saklanır: bir şerit *hesap ·
+  model tarafından 7 sn içinde oluşturuldu* der ve özetinizi ile açıklamanızı
+  geri getiren **Geri al** ile **Yeniden oluştur** sunar. Metni düzenlediğiniz
+  ya da commit ettiğiniz anda kaybolur.
+
+![Yapay zekâyla oluştur ve hesap menüsü](../../screenshots/commit-ai-generate.webp)
+
+[Commit düzenleme](commit-edit.md) aynı düğmeye sahiptir; o commit’in kendi
+diff’inden çalışır.
+
+Sınırlar:
+
+- Yalnızca hazırlanmış diff gönderilir, çok büyükse kırpılır — hazırlanmamış
+  değişiklikler veya başka dosyalar asla.
+- Geri al tek adım tutar: art arda ilk oluşturmadan önceki metin. Şerit
+  gidince o kopya da gider.
+- İptal, sağlayıcının istek için harcadığı token’ları geri getirmez.
+- ▾ listesi, henüz anahtarı olmayanlar dahil tüm kayıtlı hesapları gösterir;
+  böyle birini seçmek o hesabın kendi hatasıyla başarısız olur.
 
 ## Besteci panelinin sizin için yaptıkları
 

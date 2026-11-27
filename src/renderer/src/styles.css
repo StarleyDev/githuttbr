@@ -78,12 +78,20 @@ body {
   user-select: none;
 }
 
+/* No sharp corners anywhere: a button that gains a hover or selected fill
+   would otherwise light up as a hard-edged rectangle. Rules that must stay
+   square (rows and bars that touch the window edge) say so explicitly. */
 button {
   font-family: inherit;
   background: none;
   border: none;
+  border-radius: 6px;
   color: inherit;
   cursor: pointer;
+}
+
+select {
+  border-radius: 6px;
 }
 
 input,
@@ -1633,6 +1641,50 @@ textarea:focus {
   box-shadow: none !important;
 }
 
+.sb-filter-status {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: -4px 12px 6px;
+  font-size: 11px;
+  min-width: 0;
+}
+.sb-filter-results {
+  color: var(--text-1);
+  font-weight: 600;
+}
+.sb-filter-hint {
+  color: var(--text-2);
+  overflow-wrap: anywhere;
+}
+/* Sections the filter found nothing in: one compact line under the panes,
+   so the result list is not interleaved with empty headers. */
+.sb-nomatch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+  flex: none;
+  margin: 0;
+  padding: 6px 10px 8px;
+  list-style: none;
+  border-top: 1px solid var(--border-soft, var(--border));
+  color: var(--text-2);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+}
+.sb-nomatch-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  opacity: 0.75;
+}
+.sb-nomatch-item .sb-count {
+  background: transparent;
+  padding: 0;
+  color: var(--text-2);
+}
+
 .sb-scroll {
   flex: 1;
   overflow-y: auto;
@@ -2149,6 +2201,24 @@ textarea:focus {
 .sb-pin-action.pinned {
   opacity: 1;
   color: var(--fav-ring);
+}
+
+/* Checkout / Create PR on a branch row. Not laid out at all until the row is
+ * hovered or holds focus — on a ten-thousand-branch list a hidden-but-sized
+ * pair per row would cost layout and squeeze every name for nothing. Focus
+ * reaches the row first, which reveals the buttons for the next Tab. */
+.sb-quick {
+  display: none;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 1px;
+}
+.sb-item:hover > .sb-quick,
+.sb-item:focus-within > .sb-quick {
+  display: inline-flex;
+}
+.sb-quick-btn {
+  padding: 1px 3px;
 }
 
 .pr-open {
@@ -3151,25 +3221,219 @@ body.col-resizing .node-ava {
   border-bottom: 1px solid var(--border-soft);
 }
 
-.repo-chat-header > div {
+.repo-chat-header {
+  flex-wrap: wrap;
+}
+
+.repo-chat-title {
   flex: 1;
   min-width: 0;
+  overflow: hidden;
+  color: var(--text-0);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The pills under the title: who answers, what the chat may do, how its
+   proposals run. Their own row, wrapping when the column is narrow. */
+.repo-chat-pills {
+  position: relative;
+  flex-basis: 100%;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.repo-chat-pill {
+  max-width: 100%;
+  min-width: 0;
+  height: 22px;
+  padding: 0 7px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid var(--border-soft);
+  border-radius: 999px;
+  color: var(--text-2);
+  background: var(--bg-2);
+  font: inherit;
+  font-size: 10.5px;
+  cursor: pointer;
+}
+
+.repo-chat-pill:hover,
+.repo-chat-pill.open {
+  border-color: var(--border);
+  color: var(--text-0);
+}
+
+.repo-chat-pill:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.repo-chat-pill-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.repo-chat-pill-caret {
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+/* Status dot: the same four states as the provider rows in Settings → AI. */
+.repo-chat-dot {
+  width: 7px;
+  height: 7px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--text-3);
+}
+.repo-chat-dot.ready { background: var(--ok, #2ea043); }
+.repo-chat-dot.failing { background: var(--danger); }
+.repo-chat-dot.no-key { background: var(--warn); }
+
+.repo-chat-pop {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 30;
+  width: min(300px, 100%);
+  max-height: 340px;
+  overflow: auto;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-1);
+  background: var(--bg-2);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+}
+
+.repo-chat-pop-heading {
+  padding: 7px 8px 3px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-0);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.repo-chat-pop-heading small {
+  margin-inline-start: auto;
+  color: var(--text-3);
+  font-size: 10px;
+  font-weight: 400;
+}
+
+.repo-chat-pop-item {
+  width: 100%;
+  padding: 5px 8px;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  border: none;
+  border-radius: 5px;
+  color: var(--text-1);
+  background: transparent;
+  font: inherit;
+  font-size: 11px;
+  text-align: start;
+  cursor: pointer;
+}
+
+.repo-chat-pop-item:hover,
+.repo-chat-pop-item:focus-visible {
+  outline: none;
+  color: var(--text-0);
+  background: var(--accent-soft);
+}
+
+.repo-chat-pop-check {
+  flex-shrink: 0;
+  margin-top: 1px;
+  visibility: hidden;
+  color: var(--accent);
+}
+
+.repo-chat-pop-item[aria-checked='true'] .repo-chat-pop-check {
+  visibility: visible;
+}
+
+.repo-chat-pop-item.two-line > span {
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
-.repo-chat-header strong {
-  color: var(--text-0);
-  font-size: 12px;
-}
-
-.repo-chat-header span {
-  overflow: hidden;
+.repo-chat-pop-item.two-line small {
   color: var(--text-3);
   font-size: 10px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.4;
+}
+
+.repo-chat-perms {
+  margin: 0;
+  padding: 2px 4px;
+  list-style: none;
+}
+
+.repo-chat-perms li {
+  padding: 6px 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.repo-chat-perms li > span {
+  flex: 1;
+  min-width: 0;
+}
+
+.repo-chat-perms li.disabled {
+  color: var(--text-3);
+}
+
+.repo-chat-perms label.ai-switch {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  cursor: pointer;
+}
+
+.repo-chat-perms label.ai-switch.disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.repo-chat-pop-link {
+  width: 100%;
+  margin-top: 2px;
+  padding: 7px 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  border-top: 1px solid var(--border-soft);
+  border-radius: 0 0 5px 5px;
+  color: var(--accent);
+  background: transparent;
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.repo-chat-pop-link:hover,
+.repo-chat-pop-link:focus-visible {
+  outline: none;
+  background: var(--accent-soft);
 }
 
 .repo-chat-messages {
@@ -3428,24 +3692,6 @@ body.col-resizing .node-ava {
 
 /* Approval-mode picker in the composer row — reads as a quiet label, like the
    header's model switcher. */
-.repo-chat-approval {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  color: var(--text-3);
-  min-width: 0;
-}
-
-.repo-chat-approval select {
-  max-width: 170px;
-  border: none;
-  background: transparent;
-  color: var(--text-2);
-  font: inherit;
-  font-size: 10px;
-  cursor: pointer;
-}
-
 .repo-chat-sources {
   margin-top: 9px;
   padding-top: 8px;
@@ -3570,34 +3816,6 @@ body.col-resizing .node-ava {
 .repo-chat-composer-actions > span {
   color: var(--text-3);
   font-size: 10px;
-}
-
-/* The header's model switcher writes the same setting as Settings → AI →
-   Repository chat, so it has to read as a label, not as a form field. */
-.repo-chat-model {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  min-width: 0;
-}
-
-.repo-chat-model select {
-  max-width: 190px;
-  padding: 1px 4px;
-  height: auto;
-  border: 1px solid transparent;
-  border-radius: 4px;
-  color: inherit;
-  background: transparent;
-  font: inherit;
-  font-size: inherit;
-  cursor: pointer;
-}
-
-.repo-chat-model select:hover,
-.repo-chat-model select:focus {
-  border-color: var(--border-soft);
-  background: var(--bg-1);
 }
 
 /* Pinned context: the chips above the composer, the "+" that adds one, and
@@ -4368,27 +4586,81 @@ body.col-resizing .node-ava {
 .commit-ticket { width: 88px; flex: 0 0 auto; text-transform: uppercase; }
 .commit-ticket::placeholder { text-transform: none; }
 
-.ai-btn {
+/* Generate with AI: the action, and beside it who answers. */
+.commit-ai {
+  --ai-tint: color-mix(in srgb, var(--accent) 10%, var(--bg-1));
+  --ai-edge: color-mix(in srgb, var(--accent) 34%, var(--border));
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.commit-ai-split {
+  display: flex;
+  min-width: 0;
+  border: 1px solid var(--ai-edge);
+  border-radius: 8px;
+  background: var(--ai-tint);
+  overflow: hidden;
+}
+.commit-ai-split button {
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 38px;
-  flex-shrink: 0;
-  padding: 0;
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--accent) 10%, var(--bg-1));
-  border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--border));
+  gap: 6px;
+  min-width: 0;
+  padding: 5px 10px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   color: var(--text-0);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
-  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+  font-size: 12px;
+  cursor: pointer;
 }
-.ai-btn:hover:not(:disabled) {
+.commit-ai-split button:hover:not(:disabled) {
   background: color-mix(in srgb, var(--accent) 16%, var(--bg-1));
-  border-color: color-mix(in srgb, var(--accent) 54%, var(--border));
 }
-.ai-btn:disabled {
-  opacity: 0.4;
+.commit-ai-split button:disabled {
+  opacity: 0.45;
   cursor: default;
+}
+.commit-ai-main {
+  flex: 0 0 auto;
+  font-weight: 600;
+}
+.commit-ai-target {
+  flex: 1 1 auto;
+  justify-content: space-between;
+  border-inline-start: 1px solid var(--ai-edge) !important;
+  color: var(--text-1) !important;
+}
+.commit-ai-target-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.commit-ai-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-1);
+  color: var(--text-1);
+  font-size: 12px;
+}
+.commit-ai-status.done {
+  border-color: var(--ai-edge);
+}
+.commit-ai-status-text {
+  flex: 1 1 140px;
+  min-width: 0;
+}
+.commit-ai-status .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .commit-description {
@@ -5612,6 +5884,149 @@ body.col-resizing .node-ava {
   background: var(--bg-2);
   color: var(--text-0);
   opacity: 1;
+}
+
+/* ─── AI in the status bar ─────────────────────────────────────────────── */
+
+.status-ai-btn {
+  max-width: 220px;
+}
+.status-ai-btn > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ai-chip-dot {
+  flex-shrink: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text-2);
+  opacity: 0.7;
+}
+.ai-chip-dot.ready {
+  background: var(--ok, var(--green));
+  opacity: 1;
+}
+.ai-chip-dot.failing {
+  background: var(--danger);
+  opacity: 1;
+}
+.ai-chip-dot.no-key {
+  background: var(--warn);
+  opacity: 1;
+}
+
+.ai-chip-popover {
+  position: fixed;
+  z-index: 990;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg-3);
+  color: var(--text-1);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  box-shadow: 0 14px 42px rgba(0, 0, 0, 0.35);
+  font-size: 12px;
+}
+
+.ai-chip-head {
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.ai-chip-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+.ai-chip-profile {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ai-chip-scope {
+  margin: 4px 0 0;
+  color: var(--text-0);
+}
+
+.ai-chip-rows {
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  overflow-y: auto;
+  min-height: 0;
+}
+.ai-chip-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+}
+.ai-chip-row.in-use {
+  background: var(--accent-soft);
+}
+.ai-chip-row-text {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+}
+.ai-chip-row-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-0);
+}
+.ai-chip-row-reason {
+  font-size: 11px;
+  color: var(--danger);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.ai-chip-in-use {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+}
+.ai-chip-use {
+  flex-shrink: 0;
+}
+
+.ai-chip-foot {
+  display: flex;
+  gap: 4px;
+  padding: 6px;
+  border-top: 1px solid var(--border-soft);
+}
+.ai-chip-link {
+  all: unset;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  border-radius: 5px;
+  color: var(--text-1);
+}
+.ai-chip-link:hover {
+  background: var(--bg-2);
+  color: var(--text-0);
+}
+.ai-chip-link:focus-visible,
+.status-ai-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }
 
 /* ─── Zoom control ──────────────────────────────────────────────────────── */
@@ -7314,6 +7729,24 @@ body.col-resizing .node-ava {
   pointer-events: auto;
 }
 
+/* A decision an AI call is waiting on — bottom corner, clear of the toasts. */
+.ai-prompts {
+  position: fixed;
+  bottom: 40px;
+  inset-inline-end: 18px;
+  z-index: 1100;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+}
+.ai-prompt-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
 .toast {
   display: flex;
   align-items: flex-start;
@@ -7790,10 +8223,11 @@ body.col-resizing .node-ava {
 
 /* Settings keep one size while you move between sections: the modal is fixed,
    and only the section column scrolls. It used to grow and shrink with each
-   section's content. */
+   section's content. 20% over the 900 × 760 it had, so the grouped pages'
+   rows stop wrapping; the viewport still caps it on a small screen. */
 .modal-settings {
-  width: min(900px, calc(100vw - 60px));
-  height: min(760px, calc(100vh - 80px));
+  width: min(1080px, calc(100vw - 60px));
+  height: min(912px, calc(100vh - 80px));
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -7814,8 +8248,10 @@ body.col-resizing .node-ava {
   padding-inline-end: 6px;
 }
 
+/* Wide enough for the longest page name ("Security & confirmations") in English
+   without an ellipsis; longer translations still truncate rather than wrap. */
 .settings-profiles {
-  width: 170px;
+  width: 214px;
   flex-shrink: 0;
   border-inline-end: 1px solid var(--border-soft);
   padding-inline-end: 12px;
@@ -7985,6 +8421,12 @@ body.col-resizing .node-ava {
    dialog's own fixed title and tabs: one pinned header is enough. */
 .modal .page-head {
   position: static;
+}
+/* Full-window pages are square because they fill the window; embedded in a
+   dialog the darker page reads as a card and gets the dialog's rounded corners. */
+.modal .changelog-page {
+  border-radius: 12px;
+  border: 1px solid var(--border-soft);
 }
 
 .changelog-inner {
@@ -8206,6 +8648,243 @@ body.col-resizing .node-ava {
   max-width: 220px;
   font-weight: 700;
 }
+/* Settings → Profile & identity: the header card — the bar's switcher, with
+   the profile's picture and an editable name. */
+.settings-profile-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-2);
+}
+.settings-profile-card-name {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 180px;
+}
+.settings-form .settings-profile-card-name label {
+  margin: 0;
+}
+.settings-profile-card-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.settings-form .settings-profile-card-row input {
+  font-size: 14px;
+  font-weight: 700;
+  max-width: 240px;
+}
+.settings-profile-card-row .settings-profile-state {
+  margin-top: 0;
+}
+.settings-profile-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.settings-form .settings-profile-card-actions select {
+  width: auto;
+  max-width: 200px;
+}
+/* "This repository commits as someone else" — with the button that fixes it. */
+.settings-identity-hint {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 8px 12px;
+  border: 1px solid color-mix(in srgb, var(--warn) 35%, var(--border));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--warn) 7%, var(--bg-2));
+}
+.settings-identity-hint p {
+  flex: 1;
+  margin: 0;
+}
+.settings-identity-hint strong {
+  color: var(--text-0);
+}
+
+/* Small status pills: Connected / expired / not connected, and the Security strip. */
+.settings-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-3);
+  color: var(--text-2);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.settings-pill.ok {
+  color: var(--green);
+  border-color: color-mix(in srgb, var(--green) 40%, var(--border));
+  background: color-mix(in srgb, var(--green) 10%, var(--bg-2));
+}
+.settings-pill.warn {
+  color: var(--warn);
+  border-color: color-mix(in srgb, var(--warn) 40%, var(--border));
+  background: color-mix(in srgb, var(--warn) 10%, var(--bg-2));
+}
+.settings-pill.bad {
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 40%, var(--border));
+  background: color-mix(in srgb, var(--danger) 10%, var(--bg-2));
+}
+.settings-pill-note {
+  font-weight: 500;
+  font-style: normal;
+  opacity: 0.85;
+}
+.settings-pill-note::before {
+  content: '· ';
+}
+
+/* Settings → Profile & identity → Connected accounts: one row per host. */
+/* flex: none — the page is a flex column, and overflow: hidden would let it
+   squeeze the list to nothing. */
+.settings-accounts-summary {
+  flex: none;
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.settings-accounts-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 12px;
+  font-size: 12.5px;
+}
+.settings-accounts-row + .settings-accounts-row {
+  border-top: 1px solid var(--border-soft, var(--border));
+}
+.settings-accounts-host {
+  min-width: 96px;
+  font-weight: 600;
+}
+.settings-accounts-who {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-2);
+}
+
+/* Settings → Security & confirmations: what holds right now, above the switches. */
+.settings-status-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 4px 0 6px;
+}
+/* A rule that is not a switch, set like a toggle row so it is read as one. */
+.settings-readonly-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  color: var(--text-2);
+}
+.settings-readonly-row > svg {
+  margin-top: 2px;
+  flex: none;
+}
+
+/* Settings → General: where the options that left this page went. */
+.settings-moved-note {
+  margin-top: 22px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+}
+.settings-moved-note p {
+  margin: 0 0 6px;
+}
+.settings-moved-note ul {
+  margin: 0;
+  padding-inline-start: 18px;
+}
+.settings-moved-note li {
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+/* Settings → Data & backup: import / export up front, the wipes fenced off. */
+.settings-feature-card {
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-2);
+}
+.settings-feature-card .settings-section-title {
+  margin-top: 0;
+}
+.settings-danger-zone {
+  margin-top: 28px;
+}
+.settings-danger-list {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--danger) 40%, var(--border));
+  border-radius: 10px;
+}
+.settings-danger-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+}
+.settings-danger-list li + li {
+  border-top: 1px solid color-mix(in srgb, var(--danger) 25%, var(--border));
+}
+.settings-danger-list .settings-toggle-copy {
+  flex: 1;
+}
+.settings-danger-list strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.settings-danger-list .btn.danger {
+  color: var(--danger);
+}
+
+/* The side menu's groups: headings set in capitals by CSS, so every locale writes them normally. */
+.settings-nav-group .settings-side-header {
+  text-transform: uppercase;
+}
+/* `.profile-item span` stretches the label; the warning must not stretch with it. */
+.profile-item .settings-nav-warn {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-inline-start: auto;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--warn);
+  background: color-mix(in srgb, var(--warn) 14%, transparent);
+}
 .settings-profile-bar-spacer {
   flex: 1;
 }
@@ -8301,6 +8980,154 @@ body.col-resizing .node-ava {
 .settings-form .settings-ai-scope label { flex: none; flex-direction: row; margin: 0; font-weight: 600; font-size: 12.5px; }
 .settings-form .settings-ai-scope select { width: auto; min-width: 200px; font-weight: 700; }
 .settings-ai-scope .settings-hint { flex: 1 1 220px; margin: 0; }
+.settings-form .settings-ai-active-own {
+  display: flex; align-items: center; gap: 8px 10px; flex-wrap: wrap;
+  margin-top: 8px; padding: 8px 12px; border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--warn) 45%, var(--border));
+  background: color-mix(in srgb, var(--warn) 10%, var(--bg-2));
+  font-size: 12.5px;
+}
+.settings-ai-active-own > span { flex: 1 1 240px; }
+
+/* AI page, below the accounts: how the AI writes and what the chat may do.
+   One card per section, so each reads as a unit; examples sit in monospace
+   right under the control that shapes them. */
+.ai-behaviour { display: flex; flex-direction: column; gap: 14px; margin-top: 18px; }
+.ai-behaviour-scope {
+  margin: 0; padding: 8px 12px; border-radius: 8px; font-size: 12.5px; font-weight: 600;
+  color: var(--text-1); background: var(--bg-2); border: 1px dashed var(--border);
+}
+.ai-card {
+  display: flex; flex-direction: column; gap: 12px;
+  padding: 4px 14px 14px; border-radius: 10px;
+  border: 1px solid var(--border-soft); background: color-mix(in srgb, var(--bg-2) 45%, transparent);
+}
+.ai-card > h4, .ai-card-header h4 { margin-top: 10px; }
+.ai-card-header { display: flex; align-items: center; gap: 12px; }
+.ai-card-header h4 { flex: 1; min-width: 0; }
+.ai-card-header + .settings-hint { margin-top: -6px; }
+
+/* Flex, not an auto-fit grid: the grid gave "More styles" one equal 150px
+   column, too narrow for options like "Auto — ticket from branch, else conventional".
+   Its card asks for 320px and takes the slack; on a narrow window it wraps to a
+   full-width row of its own. */
+.ai-style-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.ai-style-row .ai-style-card { flex: 1 1 150px; }
+.settings-form .ai-style-row .ai-style-card.more { flex: 2 1 min(320px, 100%); }
+.ai-style-cards { display: contents; }
+.settings-form .ai-style-card {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
+  min-width: 0; padding: 10px 12px; border-radius: 9px; text-align: start;
+  background: var(--bg-2); border: 1px solid var(--border-soft); color: var(--text-0);
+  font: inherit; cursor: pointer; transition: border-color 0.15s, background 0.15s;
+}
+.ai-style-card strong { font-size: 12.5px; }
+.ai-style-card code {
+  max-width: 100%; font-family: var(--mono); font-size: 11.5px; color: var(--text-1);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ai-style-card:hover { border-color: color-mix(in srgb, var(--accent) 35%, var(--border)); }
+.ai-style-card.active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 9%, var(--bg-2));
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.ai-style-card:focus-visible, .ai-pill:focus-visible, .ai-approval-card:focus-visible {
+  outline: none; box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.settings-form .ai-style-card.more { justify-content: center; cursor: default; }
+.settings-form .ai-style-card.more select { width: 100%; }
+/* The co-author hint carries an e-mail address with no break opportunity. */
+.ai-card .settings-toggle-copy .settings-hint { overflow-wrap: anywhere; }
+
+.ai-preview-message, .ai-example pre {
+  margin: 0; padding: 10px 12px; border-radius: 8px; white-space: pre-wrap; word-break: break-word;
+  font-family: var(--mono); font-size: 11.5px; line-height: 1.55; color: var(--text-0);
+  background: var(--bg-1); border: 1px solid var(--border-soft);
+}
+.ai-example { display: flex; flex-direction: column; gap: 4px; }
+.ai-example-label { font-size: 10.5px; font-weight: 600; color: var(--text-2); }
+.ai-example pre { padding: 6px 10px; }
+
+.ai-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.settings-form .ai-pill {
+  padding: 5px 12px; border-radius: 999px; font: inherit; font-size: 12px; font-weight: 600;
+  color: var(--text-1); background: var(--bg-2); border: 1px solid var(--border-soft); cursor: pointer;
+}
+.ai-pill:hover { color: var(--text-0); border-color: color-mix(in srgb, var(--accent) 35%, var(--border)); }
+.ai-pill.active { color: #fff; background: var(--accent); border-color: var(--accent); }
+
+.ai-hover-row {
+  display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border-radius: 10px;
+  background: var(--bg-2); border: 1px solid var(--border-soft);
+}
+.ai-hover-sentence { font-size: 12.5px; font-weight: 600; color: var(--text-0); line-height: 1.9; }
+.settings-form select.ai-kbd {
+  display: inline-block; width: auto; margin: 0 4px; padding: 1px 6px; vertical-align: baseline;
+  font-family: var(--mono); font-size: 11.5px; font-weight: 700; color: var(--text-0);
+  background: var(--bg-1); border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 5px;
+}
+
+/* A bare switch: the toggle card's control without the card. */
+.settings-form label.ai-switch { position: relative; display: inline-flex; flex: none; cursor: pointer; }
+.ai-switch input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: inherit; }
+.ai-switch input:checked ~ .settings-toggle-control {
+  background: color-mix(in srgb, var(--accent) 24%, var(--bg-4));
+  border-color: color-mix(in srgb, var(--accent) 54%, var(--border));
+}
+.ai-switch input:checked ~ .settings-toggle-control .settings-toggle-thumb {
+  transform: translateX(calc(18px * var(--dir))); background: var(--accent);
+}
+.ai-switch input:focus-visible ~ .settings-toggle-control { box-shadow: 0 0 0 3px var(--accent-soft); }
+.settings-form label.ai-switch.disabled { cursor: not-allowed; opacity: 0.5; }
+
+.ai-chat-summary {
+  margin: 0; padding: 10px 12px; border-radius: 8px; font-size: 12.5px; line-height: 1.5; color: var(--text-0);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border));
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg-2));
+}
+.ai-chat-summary.off { color: var(--text-2); border-color: var(--border); background: var(--bg-2); }
+.ai-chat-body { display: flex; flex-direction: column; gap: 12px; margin: 0; padding: 0; border: none; min-width: 0; }
+.ai-chat-body:disabled { opacity: 0.5; }
+.ai-permissions {
+  list-style: none; margin: 0; padding: 0; border-radius: 10px; overflow: hidden;
+  border: 1px solid var(--border-soft);
+}
+.ai-permission { display: flex; align-items: center; gap: 12px; padding: 10px 12px; background: var(--bg-2); }
+.ai-permission + .ai-permission { border-top: 1px solid var(--border-soft); }
+.ai-permission.disabled .settings-toggle-copy { opacity: 0.55; }
+.ai-permission-icon {
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+  width: 28px; height: 28px; border-radius: 7px; color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.ai-permission-always {
+  flex: none; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700;
+  color: var(--green); background: color-mix(in srgb, var(--green) 14%, transparent);
+}
+.ai-approval-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.settings-form .ai-approval-card {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 10px 12px;
+  text-align: start; font: inherit; color: var(--text-0); cursor: pointer; border-radius: 9px;
+  background: var(--bg-2); border: 1px solid var(--border-soft);
+}
+.ai-approval-card strong { font-size: 12.5px; }
+.ai-approval-card .settings-hint { margin: 0; }
+.ai-approval-card.active {
+  border-color: var(--accent); background: color-mix(in srgb, var(--accent) 9%, var(--bg-2));
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.ai-approval-card:disabled, .ai-pill:disabled, .ai-style-card:disabled { cursor: not-allowed; }
+.ai-approval-note { display: inline-flex; align-items: center; gap: 6px; margin: 0; }
+.ai-privacy {
+  display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--green) 35%, var(--border));
+  background: color-mix(in srgb, var(--green) 5%, transparent);
+}
+.ai-privacy .settings-field-label { display: inline-flex; align-items: center; gap: 6px; }
+@media (max-width: 720px) {
+  .ai-approval-cards { grid-template-columns: 1fr; }
+}
 
 .settings-form {
   flex: 1;
@@ -9022,14 +9849,37 @@ body.col-resizing .node-ava {
   color: var(--text-1);
 }
 .md-preview table {
-  border-collapse: collapse;
   margin: 0.8em 0;
   font-size: 0.9em;
 }
 .md-preview th,
 .md-preview td {
-  border: 1px solid var(--border);
   padding: 6px 10px;
+}
+/* Rounded tables: a collapsed border cannot take a radius, so the grid is drawn
+   with separate borders — the table owns the outer edge, each cell only its
+   end and bottom lines, and the last column and row drop theirs. */
+.md-preview table,
+.help-article table {
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.md-preview :is(th, td),
+.help-article :is(th, td) {
+  border: 0;
+  border-inline-end: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.md-preview tr > :last-child,
+.help-article tr > :last-child {
+  border-inline-end: 0;
+}
+.md-preview tr:last-child > :is(th, td),
+.help-article tr:last-child > :is(th, td) {
+  border-bottom: 0;
 }
 .md-preview th {
   background: var(--bg-2);
@@ -9641,10 +10491,6 @@ input.is-invalid {
   gap: 8px;
   margin: 8px 0;
 }
-.ai-accounts-bar select {
-  flex: 1;
-  min-width: 0;
-}
 .ai-accounts-bar .btn {
   flex-shrink: 0;
 }
@@ -9698,8 +10544,227 @@ input.is-invalid {
   border-radius: 999px;
   padding: 2px 8px;
 }
+.ai-account-badge.in-use {
+  font-weight: 700;
+  color: #fff;
+  background: var(--accent);
+}
 .ai-account .btn.danger:not(:disabled):hover {
   color: var(--danger);
+}
+
+/* The provider list: one row per account, its status pill at the right. A
+   failing row carries the reason on a second line, with a way to retry. */
+.ai-accounts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 8px 0;
+}
+.ai-accounts-item {
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 6px 10px;
+  background: var(--bg-1);
+  cursor: pointer;
+  outline: none;
+}
+.ai-accounts-item:hover {
+  background: var(--bg-2);
+}
+.ai-accounts-item:focus-visible {
+  border-color: var(--accent);
+}
+.ai-accounts-item.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.ai-accounts-item.draft {
+  border-style: dashed;
+}
+.ai-accounts-item-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.ai-accounts-item-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-0);
+}
+/* The provider in use keeps its place in the list — moving it on "Use" would
+   pull the row out from under the pointer — and stands out by its accent edge
+   and a filled pill right after its name. */
+.ai-accounts-item.in-use {
+  border-inline-start: 3px solid var(--accent);
+  padding-inline-start: 8px;
+}
+.ai-accounts-item-in-use {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+  margin-inline-end: auto;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 2px 8px;
+  color: #fff;
+  background: var(--accent);
+}
+/* The name takes the slack — and ellipsizes first at a narrow width — so the
+   pill sits right after it and the status and "Use" stay at the right edge. */
+.ai-accounts-item-name:has(+ .ai-accounts-item-in-use) {
+  flex: 0 1 auto;
+}
+.ai-accounts-item-use {
+  flex-shrink: 0;
+  padding: 2px 12px;
+}
+.ai-accounts-item-unsaved {
+  display: inline-flex;
+  color: var(--warn);
+}
+.ai-accounts-item-reason {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 3px;
+  font-size: 11.5px;
+  color: var(--danger);
+  min-width: 0;
+}
+.ai-accounts-item-reason > span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Status pills: green ready, red not responding, amber no key, grey unchecked. */
+.ai-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 2px 8px;
+  border: 1px solid currentColor;
+  color: var(--text-2);
+  background: color-mix(in srgb, currentColor 10%, transparent);
+}
+.ai-status.ready {
+  color: var(--ok, #2ea043);
+}
+.ai-status.failing {
+  color: var(--danger);
+}
+.ai-status.no-key {
+  color: var(--warn);
+}
+.ai-status.draft {
+  border-style: dashed;
+  color: var(--text-1);
+}
+
+/* A draft is not a provider yet: the dashed edge says so before any text does. */
+.ai-account.draft {
+  border-style: dashed;
+  border-color: var(--border);
+}
+.ai-account-badge.draft {
+  color: var(--text-1);
+  border-color: var(--border);
+  border-style: dashed;
+}
+.ai-account-fields {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  display: contents;
+}
+.ai-account-banner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--warn);
+  background: color-mix(in srgb, var(--warn) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--warn) 40%, transparent);
+}
+.ai-field-label {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.ai-field-changed {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--warn);
+  flex-shrink: 0;
+}
+.ai-account label.changed input,
+.ai-account label.changed select,
+.ai-account-name.changed {
+  border-color: var(--warn);
+}
+.ai-account-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.ai-account-actions-spacer {
+  flex: 1;
+}
+.ai-account-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.ai-account-error {
+  display: grid;
+  gap: 4px;
+  margin-top: 10px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid color-mix(in srgb, var(--danger) 45%, transparent);
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+}
+.ai-account-error strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  color: var(--danger);
+}
+.ai-account-error-reason {
+  font-size: 12px;
+  color: var(--text-0);
+  overflow-wrap: anywhere;
+}
+.ai-account-error .ai-account-actions {
+  margin-top: 4px;
+}
+.settings-hint.ok {
+  color: var(--ok, #2ea043);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
 }
 
 /* One row per AI feature: which account answers it, and with which model. */
@@ -11697,40 +12762,123 @@ input[type='range']:focus-visible {
 }
 
 .onboarding-card {
-  width: 720px;
+  width: 980px;
   max-width: calc(100vw - 40px);
-  max-height: calc(100vh - 60px);
+  height: min(680px, calc(100vh - 60px));
   background: var(--bg-2);
   border: 1px solid var(--border);
   border-radius: 18px;
   box-shadow: 0 32px 80px rgba(0, 0, 0, 0.65);
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
   overflow: hidden;
 }
 
-.onboarding-progress {
+/* Stepper: the left column */
+.onboarding-stepper {
   display: flex;
-  gap: 6px;
+  flex-direction: column;
+  gap: 18px;
+  padding: 28px 22px 22px;
+  background: var(--bg-1);
+  border-inline-end: 1px solid var(--border-soft);
+  min-height: 0;
+}
+.onboarding-stepper-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--text-0);
+  line-height: 1.25;
+}
+.onboarding-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.onboarding-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 9px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+.onboarding-step.current {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--text-0);
+}
+.onboarding-step.done,
+.onboarding-step.skipped {
+  color: var(--text-1);
+}
+.onboarding-step-mark {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
-  padding: 20px 0 4px;
+  font-size: 11px;
+  font-weight: 700;
+  border: 1.5px solid var(--border);
+  color: var(--text-2);
+}
+.onboarding-step.current .onboarding-step-mark {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--bg-0);
+}
+.onboarding-step.done .onboarding-step-mark,
+.onboarding-summary li.ok .onboarding-step-mark {
+  border-color: var(--green);
+  background: var(--green);
+  color: var(--bg-0);
+}
+.onboarding-step.skipped .onboarding-step-mark,
+.onboarding-summary li.empty .onboarding-step-mark {
+  border-style: dashed;
+}
+.onboarding-stepper-hint {
+  margin: auto 0 0;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--text-2);
+}
+.onboarding-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 
-.onboarding-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--border);
-  transition: width 0.2s, background 0.2s;
+/* The right column: the step and its footer */
+.onboarding-main {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
 }
-.onboarding-dot.active {
-  width: 22px;
-  border-radius: 3px;
-  background: var(--accent);
+
+.onboarding-eyebrow {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--accent);
 }
-.onboarding-dot.done {
-  background: var(--accent);
-  opacity: 0.4;
+
+/* A narrow window keeps the step, not the list of steps. */
+@media (max-width: 760px) {
+  .onboarding-card { grid-template-columns: minmax(0, 1fr); }
+  .onboarding-stepper { display: none; }
 }
 
 .onboarding-body {
@@ -12083,6 +13231,113 @@ input[type='range']:focus-visible {
 }
 
 /* Integrations */
+/* AI step */
+.onboarding-ai {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.onboarding-ai-choices {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.onboarding-ai-choice {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  padding: 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-3);
+  color: var(--text-1);
+  text-align: start;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s;
+}
+.onboarding-ai-choice:hover { border-color: var(--accent); }
+.onboarding-ai-choice.selected {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 9%, var(--bg-3));
+}
+.onboarding-ai-choice strong { font-size: 13px; color: var(--text-0); }
+.onboarding-ai-choice span { font-size: 11.5px; line-height: 1.45; color: var(--text-2); }
+.onboarding-ai-choice-icon { color: var(--accent); margin-bottom: 2px; }
+.onboarding-ai-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.onboarding-ai-detail .onboarding-section { margin: 4px 0 0; }
+.onboarding-ai-found {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-1);
+}
+.onboarding-ai-found-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.onboarding-ai-found-head > svg { color: var(--accent); flex-shrink: 0; }
+.onboarding-ai-found-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.onboarding-ai-found-copy strong { font-size: 13px; color: var(--text-0); }
+.onboarding-ai-result {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--text-1);
+}
+.onboarding-ai-result.ok { color: var(--green); }
+.onboarding-ai-result.warn { color: var(--yellow); }
+.onboarding-ai-result svg { flex-shrink: 0; }
+.onboarding-ai-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.onboarding-ai-chips .onboarding-provider-card { padding: 7px 12px; }
+.onboarding-ai-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.onboarding-ai-row .modal-input { flex: 1; min-width: 0; }
+
+/* Done step */
+.onboarding-summary {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.onboarding-summary li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text-1);
+}
+.onboarding-summary li.empty { color: var(--text-2); }
+.onboarding-done-art {
+  margin-top: 22px;
+  color: var(--accent);
+}
+
 .onboarding-integration {
   background: var(--bg-3);
   border-radius: 10px;
@@ -12549,9 +13804,8 @@ input[type='range']:focus-visible {
 .help-article code { font-family: var(--mono, monospace); font-size: 12px; background: var(--bg-2); padding: 1px 5px; border-radius: 4px; }
 .help-article pre { background: var(--bg-2); padding: 12px 14px; border-radius: 8px; overflow-x: auto; }
 .help-article pre code { background: none; padding: 0; font-size: 11.5px; line-height: 1.6; }
-.help-article table { border-collapse: collapse; width: 100%; margin: 10px 0; }
+.help-article table { width: 100%; margin: 10px 0; }
 .help-article th, .help-article td {
-  border: 1px solid var(--border);
   padding: 6px 10px;
   font-size: 12.5px;
   text-align: start;
@@ -17700,8 +18954,177 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 
 /* ─── Repo settings tabs ───────────────────────────────────────────────── */
 .repo-settings { display: flex; flex-direction: column; min-height: 0; }
-.repo-settings-tabs { display: flex; gap: 6px; margin: 10px 0; flex-wrap: wrap; }
 .repo-settings-body { overflow-y: auto; min-height: 0; flex: 1; --modal-foot-inset: 0px; }
+/* Repository settings: a summary header over a side nav and one page at a time.
+   The modal keeps one size while you move between pages, like global Settings. */
+.modal:has(> .modal-scroll > .repo-settings-shell) {
+  width: min(1000px, calc(100vw - 48px));
+  height: min(760px, calc(100vh - 80px));
+}
+.repo-settings-shell { flex: 1; }
+.repo-settings-summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  /* Room for the modal's own close button in the corner. */
+  padding: 0 36px 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+.repo-settings-avatar {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+}
+.repo-settings-summary-text { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.modal-scroll .repo-settings-summary h3.repo-settings-name {
+  position: static;
+  margin: 0;
+  padding: 0;
+  font-size: 15px;
+  cursor: default;
+  user-select: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.repo-settings-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px 12px;
+  flex-wrap: wrap;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--text-2);
+}
+.repo-settings-path {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: ltr;
+  font-family: var(--mono);
+}
+.repo-settings-meta-item { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.repo-settings-host {
+  margin-inline-start: 4px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--bg-4);
+  color: var(--text-1);
+  font-size: 11px;
+}
+.repo-settings-pills { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.repo-settings-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-3);
+  color: var(--text-1);
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+.repo-settings-layout { display: flex; flex: 1; min-height: 0; gap: 18px; padding-top: 14px; }
+.repo-settings-nav {
+  flex: 0 0 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+  padding-inline-end: 14px;
+  border-inline-end: 1px solid var(--border);
+}
+.repo-settings-nav-group { display: flex; flex-direction: column; gap: 2px; }
+.repo-settings-nav-heading {
+  padding: 0 10px 4px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3, var(--text-2));
+}
+.repo-settings-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  border-radius: 7px;
+  color: var(--text-1);
+  font-size: 13px;
+  text-align: start;
+}
+.repo-settings-nav-item:hover { background: var(--bg-3); color: var(--text-0); }
+.repo-settings-nav-item.active { background: var(--accent-soft); color: var(--text-0); }
+.repo-settings-nav-item.active svg { color: var(--accent); }
+.repo-settings-content { flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 0; }
+.repo-settings-page-head { margin-bottom: 12px; }
+.repo-settings-page-head h4 { margin: 0 0 3px; font-size: 15px; }
+.repo-settings-page-head p { margin: 0; font-size: 12.5px; color: var(--text-2); }
+.repo-settings-content .repo-settings-body { padding-inline-end: 6px; }
+.repo-settings-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 9px 12px;
+  border-radius: 9px;
+  border: 1px solid var(--accent-soft);
+  background: var(--accent-soft);
+  font-size: 12.5px;
+  color: var(--text-1);
+}
+.repo-settings-banner > svg { flex: none; color: var(--accent); }
+.repo-settings-banner > span { flex: 1; min-width: 0; }
+.repo-settings-banner .btn { flex: none; }
+.repo-settings-rows {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-1, var(--bg-2));
+}
+.repo-settings-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  padding: 12px 14px;
+}
+.repo-settings-row + .repo-settings-row { border-top: 1px solid var(--border); }
+.repo-settings-row-text { flex: 1 1 42%; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.repo-settings-row-label { font-size: 13px; font-weight: 600; color: var(--text-0); }
+.repo-settings-row-hint { font-size: 12px; line-height: 1.45; color: var(--text-2); }
+.repo-settings-row-control { flex: 1 1 58%; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.repo-settings-row-control > .modal-input { width: 100%; margin: 0; }
+.repo-settings-row-control > select {
+  background: var(--bg-0);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  color: var(--text-0);
+  font-size: 13px;
+  padding: 8px 9px;
+  font-family: inherit;
+}
+.repo-settings-row-control > select:focus { outline: none; border-color: var(--accent); }
+.repo-settings-danger { margin-top: 18px; border-color: color-mix(in srgb, var(--danger) 40%, var(--border)); }
+.repo-settings-row.danger .repo-settings-row-label { color: var(--danger); }
+.repo-settings-row.danger .repo-settings-row-control { align-items: flex-end; }
+@media (max-width: 760px) {
+  .repo-settings-layout { flex-direction: column; }
+  .repo-settings-nav { flex: none; flex-direction: row; flex-wrap: wrap; border-inline-end: 0; padding: 0 0 10px; border-bottom: 1px solid var(--border); }
+  .repo-settings-row { flex-direction: column; gap: 8px; }
+}
 .repo-image-row { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
 .rip-field { position: relative; flex: 1; min-width: 0; display: flex; }
 .rip-field input { flex: 1; min-width: 0; padding-inline-end: 26px; }
@@ -17791,7 +19214,18 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .prd-file:hover { background: var(--bg-3); }
 .prd-file.viewed { opacity: 0.55; }
 .prd-file.viewed .prd-file-name { text-decoration: line-through; }
-.prd-file-status { width: 14px; text-align: center; font-family: var(--mono, monospace); font-weight: 600; flex: 0 0 auto; color: var(--text-3); }
+.prd-file-status {
+  width: 16px; height: 16px; line-height: 16px; text-align: center; flex: 0 0 auto;
+  font-family: var(--mono, monospace); font-size: 10.5px; font-weight: 700;
+  border-radius: 4px; color: var(--text-3);
+}
+/* The host's status words (GitHub: added/removed/renamed/copied/modified/changed)
+   tint the letter like the other file trees do, on a chip of the same hue. */
+.prd-file-status.st-added { --st: var(--green); }
+.prd-file-status.st-removed { --st: var(--red); }
+.prd-file-status:is(.st-renamed, .st-copied) { --st: var(--blue, #4da3ff); }
+.prd-file-status:is(.st-modified, .st-changed) { --st: var(--yellow); }
+.prd-file-status[class*='st-'] { color: var(--st, var(--text-3)); background: color-mix(in srgb, var(--st, transparent) 16%, transparent); }
 .prd-file-name { flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--mono, monospace); }
 .prd-file-stat { flex: 0 0 auto; font-size: 11px; }
 
@@ -19508,6 +20942,14 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 /* A folder row: same columns as a file row, so the checkboxes and the +/- line up. */
 .prp-folder-row { gap: 5px; color: var(--text-1); }
 .prp-folder-row svg { color: var(--text-2); flex: 0 0 auto; }
+/* The folder glyph follows Settings → Themes → icon colours, like the sidebar:
+   mono keeps it grey, soft mixes the folder hue in, full paints it whole. */
+:root[data-icon-colors='soft'] .prp-folder-row .prp-folder-icon {
+  color: color-mix(in srgb, var(--yellow) 72%, var(--text-2));
+}
+:root[data-icon-colors='full'] .prp-folder-row .prp-folder-icon {
+  color: var(--yellow);
+}
 .prp-folder-row .prp-folder-name { font-family: inherit; font-weight: 600; }
 /* A fully viewed folder dims like a viewed file, without the strike-through. */
 .prp-folder-row.viewed .prd-file-name { text-decoration: none; }
@@ -20595,3 +22037,45 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .prp-file-diff-head .icon-btn { flex: none; }
 /* An SVG shows its picture above its text diff: the picture gets a share, the diff scrolls. */
 .prp-file-diff > .image-diff:not(:last-child) { flex: none; max-height: 45%; overflow: auto; }
+
+/* The commit editor is wide: the split button keeps a button's size there. */
+.commitedit .commit-ai-split {
+  align-self: flex-start;
+  width: min(100%, 460px);
+}
+
+/* Corner policy (see the base button rule): underline tabs round only the top,
+   so the active underline stays a straight line; rows separated by a rule,
+   segments split by a divider, stripes and edge-to-edge bars stay square,
+   because a radius there would bend the separator at both ends. Their
+   containers carry the rounded edge instead. */
+.right-panel-tab,
+.theme-tab,
+.prp-tab,
+.prl-tab,
+.sheet-tab {
+  border-radius: 6px 6px 0 0;
+}
+.back-btn,
+.commit-note-add,
+.commit-ai-target,
+.repo-row,
+.fv-mode,
+.blame-meta,
+.conflict-output-gutter .cog,
+.snapshot-file-row,
+.share-row,
+.licenses-row,
+.todo-row,
+.prp-commit,
+.prl-row,
+.compare-commit,
+/* Segments of one control: the container is rounded and clips them, so a
+   rounded active segment would show the container's colour at the seam. */
+.view-toggle button,
+.fs-mode-switch button,
+.radar-scope-btn,
+.tl-speed,
+.mc-sort {
+  border-radius: 0;
+}

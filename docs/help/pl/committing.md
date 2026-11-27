@@ -3,14 +3,16 @@ title: Commitowanie
 category: Praca ze zmianami
 order: 31
 summary: Style wiadomości, szablony, współautorzy i linter.
-keywords: commit wiadomość kompozytor szablon współautor linter amend conventional gitmoji ticket template co-author cofnij reset undo
+keywords: commit wiadomość kompozytor szablon współautor linter amend conventional gitmoji ticket template co-author cofnij reset undo generate with ai cancel undo
 ---
 
 # Commitowanie
 
 ## Style wiadomości
 
-Wybierz jeden w Ustawieniach; kompozytor się do niego dostosuje.
+Wybierz jeden w **Ustawienia → AI → Komunikaty commitów** albo prosto z
+kompozytora; kompozytor się do niego dostosuje. Styl należy do AI, której używa
+profil — ogólnej albo własnej AI profilu.
 
 | Styl | Wygląda tak |
 |---|---|
@@ -62,6 +64,42 @@ Ograniczenia:
   presetem Conventional, odrzuca emoji na początku. To reguła hooka, nie
   GitHuttBr — skonfiguruj commitlint pod gitmoji albo używaj tam czystego
   Conventional.
+
+## Pisanie wiadomości z AI
+
+Gdy AI jest włączone, **Wygeneruj z AI** znajduje się pod opisem. Czyta diff
+zmian w stage i pisze podsumowanie oraz opis w stylu wybranym wyżej. Przycisk
+mówi, kto odpowie — *konto · model*, para wybrana dla wiadomości commitów w
+**Ustawienia → AI → Model dla zadania** — więc wolny model lokalny czy drogi
+model nigdy nie zaskakuje.
+
+- **▾** obok nazwy pokazuje zapisane konta, każde z kilkoma swoimi modelami.
+  Wybór obowiązuje **tylko dla tego jednego generowania**; Ustawienia się nie
+  zmieniają.
+- W trakcie pole pokazuje *Generowanie przez konto · model… 12 s* i
+  **Anuluj**, które zatrzymuje samo żądanie, nie tylko wskaźnik. Po 30
+  sekundach proponuje też **Użyj** innego gotowego konta, które uruchamia to
+  samo generowanie tam. Ogólnoaplikacyjny komunikat *trwa dłużej niż
+  oczekiwano* ([AI](ai.md)) nadal się pojawia.
+- Nowy tekst **zastępuje** poprzedni, a stary zostaje zachowany: pasek mówi
+  *Wygenerowane przez konto · model w 7 s* i oferuje **Cofnij**, które
+  przywraca twoje podsumowanie i opis, oraz **Wygeneruj ponownie**. Znika, gdy
+  tylko edytujesz tekst lub zrobisz commit.
+
+![Wygeneruj z AI i menu kont](../../screenshots/commit-ai-generate.webp)
+
+[Edycja commita](commit-edit.md) ma ten sam przycisk, na podstawie diffu tego
+commita.
+
+Ograniczenia:
+
+- Wysyłany jest tylko diff ze stage, przycięty, gdy jest bardzo duży — nigdy
+  zmiany spoza stage ani inne pliki.
+- Cofnij pamięta jeden krok: tekst sprzed pierwszego generowania z serii. Gdy
+  pasek zniknie, znika też ta kopia.
+- Anulowanie nie zwraca tokenów, które dostawca już zużył.
+- Lista ▾ pokazuje wszystkie zapisane konta, także konto bez klucza; wybranie
+  go kończy się błędem tego konta.
 
 ## Co kompozytor robi za ciebie
 

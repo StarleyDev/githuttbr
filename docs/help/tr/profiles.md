@@ -20,33 +20,32 @@ olduğunda işe yarar.
 
 ## Profili düzenlemek, profili kullanmak
 
-Ayarlar sayfalarını ikiye ayırır. **Bu profil**, profille birlikte değişen
-sayfaları tutar — **Profil** ve **Entegrasyonlar**. **Uygulama** geri kalan her
-şeyi tutar; bunlar her profilde geçerlidir ve sayfanın başında bunu söyler.
+Ayarların iki sayfası profille birlikte değişir — **Profil ve kimlik** ve **Bağlı hesaplar**; bunlar, başlığı düzenlenen profilin adını taşıyan **Sen** grubunun en üstündedir. Diğer tüm sayfalar her profilde geçerlidir ve bunu üstte söyler.
 
-İki profil sayfası bir çubukla açılır: *Düzenlenen profil* ve bir seçici. Seçici
-hangi profili **düzenlediğinizi** belirler; uygulamanın **kullandığı** profili
-değiştirmez. İkisi farklı olduğunda kehribar renkli bir şerit bunu söyler —
-*İş profilini düzenliyorsunuz. Uygulama Kişisel profilini kullanıyor* — ve geçiş
-için **Bu profili kullan** sunar. Bir hesabın en kolay yanlış profile bağlandığı
-an budur; bu yüzden Entegrasyonlar sayfası da her kartta ve düğmenin kendisinde
-profilin adını verir: **İş profiline bağla**, onay da bunu tekrarlar. Yeni ve
-silme aynı çubuktadır; silmeden önce sorar.
+**Profil ve kimlik** profil kartıyla açılır: resmi, adı (yerinde düzenlenir), uygulama kullanıyorsa *kullanımda*, seçici ve **Yeni profil**. **Bağlı hesaplar** aynı seçiciyle bir çubukta açılır: *Düzenlenen profil*. Seçici hangi profili **düzenlediğini** belirler; uygulamanın **kullandığını** değiştirmez. İkisi farklı olduğunda kehribar renkli bir şerit bunu söyler ve geçmek için **Bu profili kullan** sunar. Bir hesabın yanlış profile bağlanması en kolay bu anda olur; bu yüzden Bağlı hesaplar profili her kartta ve düğmenin kendisinde de adlandırır, onay da bunu tekrarlar. Profil silmek de aynı yerdedir ve önce sorar.
+
+Kartın altında git kimliği ve commit imzalama gelir. Açık bir depo başkası olarak commit atıyorsa — git yapılandırması başka bir yazar gösteriyorsa — bir satır bunu söyler ve **Kimliği geçerli depoya uygula** sunar; ikisi aynıysa uygulanacak bir şey yoktur ve satır görünmez. Ardından profil resmi, **bağlı hesaplarının** özeti — her sunucu için *Bağlı*, *Token’ın süresi doldu veya hata*, *Ulaşılamadı* ya da *Bağlı değil* ve o sunucuda Bağlı hesaplar sayfasını açan **Bağlan** ya da **Yenile** — ve profilin hangi yapay zekâyı kullandığı gelir.
+
+Özet sessizce, oturum açma penceresi olmadan, sayfa her açıldığında ya da bir token değiştiğinde denetler; asla düzenli aralıklarla sormaz. Bulduğunu kenar menüsü de kullanır: bir token reddedildiğinde ya da denetim başarısız olduğunda **Bağlı hesaplar** küçük bir uyarı sayısı gösterir — yalnızca Ayarların zaten yaptığı denetimler için. Ulaşılamayan bir sunucu sayılmaz; token sağlam olabilir.
 
 ![Uygulama başka bir profili kullanırken Work profilini düzenlemek: kehribar şerit ve Work adını taşıyan bağlama düğmesi](../../screenshots/settings-profile-band.webp)
 
 ## Yapay zekâ ortaktır
 
-Bir profilin kendi yapay zekâsına ihtiyacı yoktur: tek bir
-[genel yapay zekâ](ai.md#her-profil-için-tek-yapay-zekâ) her profile hizmet eder
-ve bir profil yalnızca gerektiğinde kendi yapay zekâsına geçer. Bir profilin her
-zaman koruduğu şey, yapay zekânın onun için nasıl yazdığıdır — commit stili, özel
-talimatlar ve *Yapay zekânın yazım tercihleri* bölümünün geri kalanı.
+Bir profilin kendi yapay zekâsına ihtiyacı yoktur: tek bir [genel yapay
+zekâ](ai.md#her-profil-için-tek-yapay-zekâ) her profile hizmet eder ve bir
+profil yalnızca gerektiğinde kendi yapay zekâsına geçer. Bu seçim her şeyi
+kapsar: genel yapay zekâdaki bir profil, genel yapay zekâ nasıl ayarlandıysa
+öyle yazar — commit stili, commit’ler için ek kurallar, depo sohbeti. Başka bir stile
+ihtiyaç duyan profil kendi yapay zekâsını alır: genel olanın, sonradan
+değiştirebileceği bir kopyası. Hepsi **Yapay zekâ** sayfasında düzenlenir;
+Profil sayfası yalnızca profilin hangi yapay zekâyı kullandığını söyler ve oraya
+bağlantı verir.
 
 ## Her profilin kendi hesapları
 
 Bir profil, belirtecin yanı sıra makinede zaten bulunan bir oturumu — git'in
-credential helper'ından ya da GitHub CLI'dan — Ayarlar → Entegrasyonlar'da
+credential helper'ından ya da GitHub CLI'dan — Ayarlar → Bağlı hesaplar'da
 **bağlayabilir**. Bir bağlantı tek bir profile aittir: yeni bir profil
 bağlantısız başlar ve başka bir profilin zaten tuttuğu hesap reddedilir. Böylece
 iki profil iki GitHub (ya da Azure DevOps) hesabını yan yana tutabilir. Bkz.

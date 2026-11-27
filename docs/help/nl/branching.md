@@ -3,16 +3,18 @@ title: Branches, remotes & de zijbalk
 category: Branches & ingrepen
 order: 40
 summary: Alles wat de linkerzijbalk doet, en vastgezette branches.
-keywords: branch branches aanmaken checkout hernoemen verwijderen remote pinned vastgezet zijbalk sidebar presence remote toevoegen
+keywords: branch branches aanmaken checkout hernoemen verwijderen remote pinned vastgezet zijbalk sidebar presence remote toevoegen filter filteren zoeken search herschikken reorder verplaatsen sectie snelle acties
 ---
 
 # Branches, remotes & de zijbalk
 
 Eén herschikbare, doorzoekbare zijbalk bevat **branches, remotes, tags, stashes,
 worktrees en submodules**. Elke sectie kan verborgen of verplaatst worden
-(Instellingen → Indeling), en het filterveld werkt op alle secties tegelijk.
+(Instellingen → Indeling & terminal), en het filterveld werkt op alle secties tegelijk.
 Welke secties en mappen je open of dicht laat staan wordt per repository
 onthouden, ook na een herstart.
+
+Om te herschikken sleep je een sectie aan de kop — of, zonder muis, geef je de kop focus en druk je op <kbd>Alt</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd>. Dezelfde items *Sectie omhoog* en *Sectie omlaag* staan in het rechtsklikmenu van de kop (<kbd>Shift</kbd>+<kbd>F10</kbd> opent het met het toetsenbord). Ook de volgorde wordt per repository onthouden.
 
 De zijbalk is een stapel van panelen, geen lange lijst. Een open sectie neemt de
 hoogte die de ingeklapte overlaten — die zitten eronder als kopregels. Meerdere
@@ -29,6 +31,22 @@ hem één keer uit en die keuze wordt net als elke andere onthouden.
 
 ![De zijbalk, met vastgezette branches bovenaan](../../screenshots/pinned-branches.webp)
 
+## Eén filter voor alle secties
+
+Het vak boven in de zijbalk filtert **alle secties tegelijk**: lokale en remote branches, tags, stashes, worktrees, submodules, pull requests, issues, mijlpalen, releases, bladwijzers en todo's. Het vergelijkt namen, titels en paden zonder op hoofdletters te letten; een pull request komt ook overeen op zijn `#nummer`, bronbranch en auteur. De regel onder het vak telt de resultaten over alle secties.
+
+Zolang er een filter actief is:
+
+- telt elke kop **gevonden van totaal** — `2 van 10`;
+- verlaat een sectie zonder resultaten de lijst en klapt ze in tot één regel onderaan, zodat de resultaten niet onderbroken worden door lege koppen;
+- gaan secties en mappen met resultaten vanzelf open, tenzij ze er meer dan 300 bevatten — die open je met de hand. Wat je opent of sluit, geldt alleen tot het filter gewist is; je opgeslagen indeling blijft onaangeroerd.
+
+<kbd>Esc</kbd> in het vak wist het.
+
+![De zijbalk gefilterd op "pay": twee secties met resultaten, de rest onderaan ingeklapt](../../screenshots/sidebar-filter.webp)
+
+**Grenzen:** het is een eenvoudige zoektocht naar een deeltekst — geen jokertekens, geen fuzzy zoeken, geen reguliere expressies. Het zoekt in wat de zijbalk al geladen heeft: pull requests en issues buiten de lijst die de host teruggaf, vind je hier niet (de pagina [pull requests](pull-requests.md) heeft een eigen filter). Remote branches komen overeen op de volledige naam `remote/branch`, dus de naam van een remote typen vindt elke branch daarop.
+
 ## Branches
 
 Aanmaken, uitchecken, hernoemen en verwijderen — lokaal en remote. Branchrijen
@@ -39,11 +57,13 @@ tonen:
 - een **risicostip** na een scan van de [conflictradar](conflict-radar.md),
 - een **⟳-markering** wanneer de remote [de geschiedenis herschreef](range-diff.md).
 
+Beweeg over een lokale branch-rij, of bereik hem met Tab, voor twee snelle acties: **Uitchecken** en **Pull request aanmaken**. Het zijn dezelfde acties als in het rechtsklikmenu, dat al het andere houdt; de huidige branch toont alleen de tweede.
+
 Branches met een `/` in hun naam vouwen zich automatisch in inklapbare mappen.
 Een prefix met één kind blijft een map — `release/1.2.3` is `release` met
 `1.2.3` erin — zodat `release/1.2.4` de boom later niet herschikt. Een reeks
 mappen met één kind klapt in tot één kop (`dependabot/npm_and_yarn`).
-Mapkoppen dragen een mapteken; de ref zelf een branch-, remote- of tagteken.
+Mapkoppen dragen een mapteken; de ref zelf een branch-, remote- of tagteken. **Instellingen → Indeling & terminal → Refs groeperen op prefix** zet de mappen uit, voor een platte lijst.
 
 Rechtsklik op een mapkop om op de hele groep te werken: *Alle branches onder
 `feature` verwijderen (4 branches)* verwijdert alles erin na één bevestiging

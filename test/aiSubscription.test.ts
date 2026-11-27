@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { chatCompleteJson } from '../src/main/ai'
-import { runCliModel, signInSubscription, testSubscription } from '../src/main/aiCli'
+import { parseCliVersion, runCliModel, signInSubscription, testSubscription } from '../src/main/aiCli'
 import { migrateAIConfig, newAccount, resolveAI } from '../src/shared/aiAccounts'
 import { defaultAIConfig } from '../src/shared/types'
 
@@ -99,5 +99,14 @@ if [ "$1" = login ]; then echo "Logged in using ChatGPT"; else echo OK; fi`)
     expect(chat.subscription).toBe(true)
     expect(await testSubscription('codex', account.cliPath)).toBe('login')
     await expect(runCliModel(chat, [{ role: 'user', content: 'Hello' }])).rejects.toThrow('codex login')
+  })
+})
+
+describe('CLI version line', () => {
+  it('reads the number out of each CLI’s own --version format', () => {
+    expect(parseCliVersion('2.1.0 (Claude Code)\n')).toBe('2.1.0')
+    expect(parseCliVersion('codex-cli 0.46.0')).toBe('0.46.0')
+    expect(parseCliVersion('gemini 0.9.0-preview.1')).toBe('0.9.0-preview.1')
+    expect(parseCliVersion('no version here')).toBeUndefined()
   })
 })

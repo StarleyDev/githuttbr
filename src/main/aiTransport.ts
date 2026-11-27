@@ -2,6 +2,8 @@ import type { AIConfig } from '../shared/types'
 import { aiProviderPreset } from '../shared/types'
 import type { TokenUsage } from './analytics'
 import { runCliModel } from './aiCli'
+import { accountLabel } from '../shared/aiAccounts'
+import { AI_UNREACHABLE, trackAIRequest } from './aiRequests'
 
 /**
  * The wire layer for every model call.
@@ -28,6 +30,8 @@ export interface ModelCallOptions {
   maxTokens?: number
   /** Structured tasks need the answer, not a model's visible reasoning prelude. */
   disableThinking?: boolean
+  /** Aborts the request — set by the in-flight tracker (aiRequests.ts). */
+  signal?: AbortSignal
 }
 
 /** Token-usage block as returned by OpenAI-compatible and native Anthropic APIs. */
@@ -138,6 +142,16 @@ export function usesMaxCompletionTokens(model: string): boolean {
   return /^(?:o[1-9](?:[-.]|$)|gpt-5(?:[-.]|$))/.test(base)
 }
 
+/**
+ * A failed fetch. Only a local server is tagged "unreachable" — that prompt
+ * asks whether Ollama is still running. A cloud host keeps its own reason (a
+ * proxy's self-signed certificate, DNS) instead of "is it still running?".
+ */
+function unreachableMessage(base: string, reason: string | null): string {
+  const text = `Could not reach ${base}.${reason ? ` ${reason}` : ''}`
+  return isLocal(base) ? `${AI_UNREACHABLE} ${text}` : text
+}
+
 export function fetchFailureReason(err: unknown): string | null {
   const cause = err instanceof Error && 'cause' in err ? (err.cause as { code?: string; message?: string } | undefined) : null
   if (cause?.code === 'SELF_SIGNED_CERT_IN_CHAIN') {
@@ -219,11 +233,13 @@ async function callOpenAI(
       return await fetch(`${base}/chat/completions`, {
         method: 'POST',
         headers: authHeaders(cfg),
-        body: JSON.stringify(body)
+        body: JSON.stringify(body),
+        ...(options?.signal ? { signal: options.signal } : {})
       })
     } catch (err) {
+      if (options?.signal?.aborted) throw err
       const reason = fetchFailureReason(err)
-      throw new Error(`Could not reach ${base}.${reason ? ` ${reason}` : ''}`)
+      throw new Error(unreachableMessage(base, reason))
     }
   }
 
@@ -283,11 +299,13 @@ async function callAnthropic(
         temperature,
         ...(system ? { system } : {}),
         messages: turns
-      })
+      }),
+      ...(options?.signal ? { signal: options.signal } : {})
     })
   } catch (err) {
+    if (options?.signal?.aborted) throw err
     const reason = fetchFailureReason(err)
-    throw new Error(`Could not reach ${base}.${reason ? ` ${reason}` : ''}`)
+    throw new Error(unreachableMessage(base, reason))
   }
   if (!res.ok) throw new Error(await readError(res))
   const json = (await res.json()) as {
@@ -301,19 +319,34 @@ async function callAnthropic(
   return { text, usage: parseUsage(json.usage) }
 }
 
-/** One model call, whatever the provider speaks. */
+/** One model call, whatever the provider speaks, watched while it runs (aiRequests.ts). */
 export async function callModel(
   cfg: AIConfig,
   messages: ChatMessage[],
   temperature: number,
   options?: ModelCallOptions
 ): Promise<ModelReply> {
-  switch (transportOf(cfg)) {
-    case 'anthropic':
-      return callAnthropic(cfg, messages, temperature, options)
-    case 'cli':
-      return runCliModel(cfg, messages)
-    default:
-      return callOpenAI(cfg, messages, temperature, options)
-  }
+  const transport = transportOf(cfg)
+  const base = transport === 'cli' ? '' : baseUrl(cfg)
+  const account = (cfg.accounts ?? []).find((a) => a.id === cfg.accountId)
+  const label = account ? accountLabel(account) : aiProviderPreset(cfg.provider ?? 'custom').label
+  return trackAIRequest(
+    {
+      label,
+      accountId: cfg.accountId ?? '',
+      // A CLI is its own child process — its exit already ends the call.
+      ...(transport !== 'cli' && isLocal(base) ? { probeUrl: `${base}/models` } : {})
+    },
+    (signal) => {
+      const watched = { ...options, signal }
+      switch (transport) {
+        case 'anthropic':
+          return callAnthropic(cfg, messages, temperature, watched)
+        case 'cli':
+          return runCliModel(cfg, messages, signal)
+        default:
+          return callOpenAI(cfg, messages, temperature, watched)
+      }
+    }
+  )
 }

@@ -62,4 +62,4 @@ Questa pagina dice cosa significa in concreto — e dove stanno i confini.
 
 **Il movimento ridotto** viene rispettato dall'impostazione di sistema — le
 animazioni collassano in transizioni istantanee. Il contrasto si può regolare
-tema per tema in [Impostazioni → Aspetto](themes.md).
+tema per tema in [Impostazioni → Temi](themes.md).

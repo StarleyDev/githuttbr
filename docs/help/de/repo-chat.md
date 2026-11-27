@@ -2,8 +2,9 @@
 title: Repository-Chat
 category: KI
 order: 82
-summary: Stelle Fragen zu diesem Repository — mit den Dateien und Commits, die du als Kontext anheftest — und lass ihn Git-Aktionen vorschlagen, die du vor dem Ausführen freigibst.
-keywords: chat frage fragen assistent kontext anheften anhängen ziehen ablegen commit datei beleg belegt ki panel aktionen ausführen freigeben freigabe automatisch erlauben beheben fehler toast
+summary: Frag alles — allgemeine Fragen oder Fragen zu diesem Repository — mit den Dateien und Commits, die du als Kontext anheftest, und lass ihn Git-Aktionen vorschlagen, die du vor dem Ausführen freigibst.
+keywords: chat frage fragen assistent kontext anheften anhängen ziehen ablegen commit datei beleg belegt ki panel aktionen ausführen freigeben freigabe automatisch erlauben beheben fehler toast allgemeine frage beliebige frage denkt nach dateien werden gelesen
+source: 14be127d45f76373e5ced5db32f7f21167e6f965
 ---
 
 # Repository-Chat
@@ -13,6 +14,11 @@ Token-Erneuerung wirklich? Was hat dieser Commit geändert, in einem Satz? Warum
 gibt es diese Datei?* Der Repository-Chat beantwortet das für das geöffnete
 Repository und zeigt die Zeilen, auf die er sich stützt.
 
+Er ist auch ein ganz normaler KI-Chat. Eine Begrüßung, eine allgemeine
+Programmierfrage oder alles andere bekommt eine direkte Antwort vom Modell, ohne
+dass das Repository gelesen wird — Dateien sieht er sich nur an, wenn die Frage
+sie betrifft.
+
 Er teilt sich die rechte Spalte mit **Details**: die Reiter oben wechseln
 zwischen beiden, ohne dass der Graph seine Auswahl verliert.
 
@@ -20,21 +26,34 @@ zwischen beiden, ohne dass der Graph seine Auswahl verliert.
 
 ## Was er liest
 
-Jede Antwort entsteht in zwei Durchgängen. Der erste wählt wenige Pfade und
-wörtliche Suchen aus der Liste der versionierten Dateien des Repositorys. Der
-zweite antwortet nur mit den Ausschnitten, die dabei herauskommen, und darf auch
-nur diese zitieren: eine erfundene Datei oder Zeile ist ein Validierungsfehler,
+Er funktioniert wie jeder Chat: **gesendet wird Ihre Nachricht**, daneben nur
+der Name und der Branch des Repositorys — kein Git-Zustand, keine Dateiliste,
+keine Dateiinhalte —, und die Antwort kommt als reiner Text zurück. Eine
+Begrüßung oder eine Frage, die nicht das Repository betrifft, wird gleich dort
+beantwortet, in einem Aufruf, und nichts aus dem Repository verlässt Ihren
+Rechner.
+
+**Wann das Repository dazukommt.** Es wird dem Modell in drei Fällen geöffnet:
+
+| Sie … | Was passiert |
+|------|--------------|
+| Nennen eine versionierte Datei (`config.json`, `src/app.ts`) | Diese Datei wird gelesen, bevor das Modell antwortet |
+| Sagen es in Worten — „dieses Repository“, „meine Änderungen“, „nicht committet“, „aktueller Branch“ | Der Git-Zustand und die Liste der versionierten Dateien werden gesendet |
+| Fragen etwas, wofür das Modell es nach eigenem Urteil braucht | Es antwortet mit einer einzigen Zeile `@repo`, und die App öffnet ihm das Repository |
+
+Von da an fordert das Modell an, was es sonst noch braucht, statt zu raten:
+exakte Pfade aus der Liste, wörtliche Suchen oder Commit-Hashes aus der
+jüngsten Historie. Die App liest sie und stellt die Frage mit dem Gefundenen
+erneut. Das passiert höchstens viermal — jede Runde ist ein weiterer
+Modellaufruf, auf den Sie warten — und in der letzten muss es mit dem
+antworten, was es hat. Diese Antworten zitieren die Ausschnitte, die sie
+verwendet haben, und eine erfundene Datei oder Zeile ist ein Validierungsfehler,
 keine plausibel klingende Antwort.
 
-**Ein zweiter Blick.** Der erste Durchgang muss allein am Namen raten, welche
-Dateien zählen — genau die Vermutung, die bei „von wo wird das aufgerufen“
-scheitert. Eine Antwort darf deshalb zurückfragen, statt zu raten: Sie kann
-weitere Pfade, weitere wörtliche Suchen oder Commit-Hashes aus der jüngsten
-Historie nennen, und die Frage wird mit dem Ergebnis erneut gestellt. Das
-passiert höchstens zweimal — jede Runde ist ein weiterer Modellaufruf, auf den
-Sie warten — und in der letzten muss sie mit dem antworten, was sie hat. Sie
-sehen davon nichts außer einer etwas längeren Wartezeit und einer besseren
-Antwort.
+Während Sie warten, sagt die Zeile unter Ihrer Nachricht, was gerade passiert:
+**Denkt nach…**, solange das Modell arbeitet, **Dateien werden gelesen (N)…**
+oder **Repository wird durchsucht…** nur, während die App tatsächlich liest, was
+es angefordert hat.
 
 | Enthalten | Ausgeschlossen |
 |---|---|
@@ -74,17 +93,21 @@ Commit.
 
 ## Einstellungen
 
-**Einstellungen → Profil → Schreibstil der KI → Repository-Chat** (jedes Profil hat seine eigenen):
+**Einstellungen → KI → Repository-Chat** — bei der allgemeinen KI oder bei der
+eigenen eines Profils, wenn es eine hat (die Leiste **Bearbeitet wird** wählt,
+welche, siehe [Eine KI für alle Profile](ai.md#eine-ki-für-alle-profile)):
 
 | Einstellung | Wirkung |
 |---|---|
 | **Fragen zum Repository stellen** | Aus entfernt Reiter, Symbolleisten-Knopf und Kürzelziel. Der Rest der KI bleibt |
-| **Chat-Modell** | Ein Modell nur für den Chat. Leer heißt: das des Profils — Fragen kosten weniger als Reviews, ein kleineres reicht oft |
+| **Das Repository lesen** | Dateien, Verlauf und Diffs, um dir zu antworten. Dateien, die nach Geheimnissen aussehen, werden nie gelesen |
 | **Nur committete Inhalte** | Antwortet aus dem letzten Commit statt aus dem Arbeitsverzeichnis: nicht committete Änderungen verlassen den Rechner nie |
-| **Datei- und Git-Aktionen im Chat vorschlagen** | Aus macht den Chat wieder rein lesend: keine Aktionskarten, kein Freigabe-Menü |
-| **Dateien nur lesen** | Ein verhindert Erstellen, Bearbeiten, Ersetzen und Löschen von Dateien; Git-Aktionen bleiben verfügbar. Standardmäßig eingeschaltet |
-| **Wie vorgeschlagene Aktionen ausgeführt werden** | Der Freigabemodus — siehe [Freigabemodi](#freigabemodi). Destruktive Aktionen bestätigen in jedem Fall |
-| **Chat darf Remote-Aktionen vorschlagen** | Standardmäßig aus. Eingeschaltet kommen Fetch, Pull, Push, das Öffnen eines Pull Requests und das Einreichen eines Stapels hinzu |
+| **Lokale Git-Aktionen** | Stagen, committen, Branch, Stash, Merge und mehr, vorgeschlagen als Karte, die du prüfst. Aus: der Chat antwortet nur |
+| **Dateien erstellen, bearbeiten und löschen** | Genaue Änderungen, neue Dateien, Ersetzungen und Löschungen, jeweils mit Diff auf der Karte. Braucht lokale Git-Aktionen. Standardmäßig aus. Ersetzt *Dateien nur lesen* mit umgekehrter Bedeutung: hier an heißt dieser Modus aus, und eine gespeicherte Einstellung gilt wie zuvor |
+| **Wenn die KI eine Aktion vorschlägt** | Der Freigabemodus — siehe [Freigabemodi](#freigabemodi). Destruktive Aktionen bestätigen in jedem Fall |
+| **Remote-Aktionen** | Standardmäßig aus. Eingeschaltet kommen Fetch, Pull, Push, das Öffnen eines Pull Requests und das Einreichen eines Stapels hinzu |
+
+Über der Liste fasst ein Satz zusammen, was die KI mit diesen Einstellungen gerade tun kann. Er beschreibt die Einstellungen, nicht das Modell: ein Vorschlag wird weiterhin geprüft und abgelehnt, wenn er eine Regel verletzt.
 
 Ist die KI ganz aus, verschwindet der Chat mit ihr — kein Panel, das etwas
 anbietet, was niemand beantworten kann.
@@ -92,8 +115,26 @@ anbietet, was niemand beantworten kann.
 Welcher Anbieter und welches Modell im Chat antworten, wird auf der Seite **KI**
 unter **Modell je Aufgabe** festgelegt — siehe [KI-Funktionen](ai.md#modell-je-aufgabe).
 
-Das Chat-Modell lässt sich auch in der Kopfzeile des Panels umstellen, neben dem
-Anbieternamen — dieselbe Einstellung, ohne die Einstellungen zu öffnen.
+### Die Pillen in der Kopfzeile
+
+Unter dem Paneltitel sagen drei Pillen, was der Chat mit deiner nächsten
+Nachricht tun wird, und jede ändert das, ohne die Einstellungen zu öffnen:
+
+| Pille | Zeigt | Klicken, um |
+|---|---|---|
+| **Konto · Modell** | Wer antwortet, mit einem Punkt für den Zustand des Kontos — bereit, antwortet nicht, kein Schlüssel oder noch nicht geprüft | Ein anderes Modell aus einem nach Konto gruppierten Menü zu wählen oder zum Modell des Profils zurückzukehren. Dieselbe Einstellung wie **Modell je Aufgabe → Chat** |
+| **Darf: …** | Was der Chat darf — *lesen*, dazu *Git*, *Dateien* und *Remote*, wenn sie an sind | **Lokale Git-Aktionen**, **Dateien erstellen, bearbeiten und löschen** und **Remote-Aktionen** umzuschalten oder **Alle Chat-Einstellungen** zu öffnen |
+| **Freigabe** | *Fragt vor dem Ausführen*, *Führt sichere Aktionen aus* oder *Führt alle Aktionen aus* | Einen der drei Freigabemodi (unten) zu wählen. Ausgeblendet, solange lokale Git-Aktionen aus sind, weil nichts vorgeschlagen wird |
+
+Es sind dieselben Einstellungen wie unter **Einstellungen → KI →
+Repository-Chat**, auf dieselbe KI geschrieben, sodass beide nie
+widersprechen. Eine einzelne Frage an ein stärkeres Modell zu geben ist ein
+Klick und stört den Rest der App nicht. Der Statuspunkt stammt aus der
+Modellliste, die das Panel ohnehin geholt hat — er schickt nie eine eigene
+Anfrage, *Nicht geprüft* heißt also nur, dass noch nichts das Konto bestätigt
+hat.
+
+![Die geöffnete Fähigkeiten-Pille](../../screenshots/repo-chat-capabilities.webp)
 
 Der Zauberstab-Knopf neben dem Paneltitel öffnet den
 **KI-Konfigurationsassistenten** — einen geführten Ablauf, der
@@ -125,9 +166,7 @@ Erwähnung, die nicht zu einem lesbaren Bild führt, zeigt einfach nichts.
 
 Bitte um eine Änderung statt um eine Auskunft — *stage die Markdown-Dateien,
 committe das als Fix, setz die Build-Ausgabe auf die Ignore-Liste* — und die
-Antwort kommt mit einer **Aktionskarte**. Eine leere Unterhaltung bietet unter
-der Einführung ein paar Beispielanfragen als Chips an; ein Klick darauf füllt
-das Eingabefeld, sodass du sie vor dem Senden bearbeiten kannst. Die Karte
+Antwort kommt mit einer **Aktionskarte**. Eine leere Unterhaltung beginnt mit **Frag einfach** und drei Vorschlägen — *Prüfe den letzten Commit*, *Was hat sich seit main geändert?* (mit dem Namen des Standard-Branches des Repositorys, wenn es einen hat) und *Schreib die PR-Beschreibung für diesen Branch*. Ein Klick füllt das Eingabefeld und sendet nichts, sodass du den Text vorher bearbeiten kannst. Die Karte
 listet die konkreten Schritte, die der
 Assistent gehen will, eine Zeile pro Aktion, mit den Knöpfen **Ausführen** und
 **Ablehnen**. Nichts auf der Karte ist schon passiert; das Modell kann nur
@@ -149,6 +188,16 @@ geheime, ignorierte, generierte, binäre, veraltete, zu große und über Symlink
 erreichte Ziele werden abgelehnt. Reset, das Umschreiben von Historie, das
 Löschen von Branches und jede Force-Operation bleiben ihrer eigenen Oberfläche
 vorbehalten.
+
+**Text aus dem Gespräch kann zur Datei werden.** Bitte um einen Text und dann
+*erstelle die Datei*: die vorige Antwort ist der Inhalt, und nennst du keinen
+Dateinamen, wählt der Assistent einen und zeigt ihn auf der Karte. Mit
+eingeschalteten Datei-Aktionen wird dem Modell gesagt, dass es schreiben kann,
+also wiederholt sich eine frühere Antwort nicht, die behauptete, keinen Zugriff
+zu haben. Scheitert die strukturierte Antwort trotzdem, sagt die Antwort, dass
+die Änderung diesmal nicht vorbereitet werden konnte und dass ein erneutes
+Senden der Bitte es noch einmal versucht; sie behauptet nie, die Datei sei
+geschrieben worden.
 
 Ein Merge oder ein Rebase kann an einem Konflikt stehenbleiben. Dann endet der
 Lauf dort, die Karte markiert die Zeile als fehlgeschlagen und behält die Zahl
@@ -180,7 +229,7 @@ täte: öffnen, neu ausrichten oder in Ruhe lassen.
 ### Aktionen, die den Rechner verlassen
 
 Abrufen, Pullen, Pushen, einen Pull Request öffnen und einen Stapel einreichen
-sind **standardmäßig aus**, hinter **Chat darf Remote-Aktionen vorschlagen**.
+sind **standardmäßig aus**, hinter **Remote-Aktionen**.
 Arbeit zu veröffentlichen ist eine Entscheidung, die man bewusst trifft, und mit
 ausgeschalteter Option erfährt das Modell nicht einmal, dass es diese Aktionen
 gibt: Es kann keine vorschlagen und abgelehnt werden — der Fehlerfall, der
@@ -213,10 +262,21 @@ stellt den Baum wieder her — was der Plan erzeugt hat, ist damit weg, also fra
 sie vorher nach und nennt den Ziel-Commit. Geöffnete Pull Requests bleiben
 offen: Ein Remote kann ein lokaler Schnappschuss nicht zurückholen.
 
+Mit **Alle Aktionen automatisch ausführen** läuft eine gültige Dateiänderung
+sofort, und die Karte hält die abgeschlossene Aktion fest:
+
+![Automatisch abgeschlossene Dateiaktion im Repository-Chat](../../screenshots/repo-chat-file-action-auto-run.webp)
+
+Mit **Immer fragen** bleibt dieselbe Art von Änderung offen, bis Sie
+**Ausführen** oder **Ablehnen** wählen:
+
+![Dateiaktion im Repository-Chat wartet auf Freigabe](../../screenshots/repo-chat-file-action-approval.webp)
+
 ### Freigabemodi
 
-Das Schild-Menü unter dem Eingabefeld (auch in **Einstellungen → Profil →
-Repository-Chat**) entscheidet, wie eine Karte läuft:
+Die Freigabe-Pille in der Kopfzeile des Panels (auch in **Einstellungen → KI →
+Repository-Chat**) entscheidet, wie eine Karte läuft — für jedes Profil auf
+derselben KI:
 
 | Modus | Führt aus |
 |---|---|
@@ -245,6 +305,13 @@ Entwurf bleibt bearbeitbar; nichts wird gesendet, bis du Senden drückst.
   [Geheimnis-Maskierung](security.md) nicht.
 - **Binärdateien und Dateien über 512 KB** von außerhalb des Repositorys werden
   genauso übersprungen. Innerhalb gelten die üblichen Regeln.
+- **Eine Frage bekommt keine Vorschläge.** Aktionen werden dem Modell nur
+  angeboten, wenn deine Nachricht darum bittet, etwas zu tun — „committe die
+  gestagten Dateien“, „faça um stash“, „erstelle den Branch“. Die Frage nach der
+  Version oder danach, was ein Commit ist, kann nie mit einem Plan zum Ausführen
+  zurückkommen. Eine kurze Antwort, die auf der Bitte direkt davor besteht —
+  „ja“, „ich habe dir Zugriff gegeben“ — zählt als diese Bitte; eine Frage oder
+  ein Dank nicht.
 - **Er schreibt nie von allein.** Das Modell hat keine Werkzeuge, nur Text:
   eine Änderung kommt als Vorschlagskarte, läuft nur nach
   [deinen Freigaberegeln](#freigabemodi), und ein destruktiver Schritt
@@ -252,6 +319,12 @@ Entwurf bleibt bearbeitbar; nichts wird gesendet, bis du Senden drückst.
   nicht einmal vor.
 - **Unterhaltungen liegen nur im Speicher.** Jedes Repository hat seinen eigenen
   Verlauf; beim Beenden von GitHuttBr sind sie weg.
+- **Kleine lokale Modelle tun sich mit Repository-Fragen schwerer.** Gemessen mit
+  einem 3B-Modell: Allgemeine Fragen beantwortet es so gut wie in seinem eigenen
+  Terminal, aber es fordert das Repository womöglich nicht an, wenn es sollte,
+  und eine lange, aus Dateien gebaute Antwort kann abgeschnitten zurückkommen.
+  Die Datei zu nennen oder „dieses Repository“ zu sagen, lässt die App es
+  trotzdem öffnen. Ein Modell ab 7B schlägt sich deutlich besser.
 
 ## Öffnen
 

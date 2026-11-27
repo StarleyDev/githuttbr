@@ -4,7 +4,7 @@ category: Sicurezza
 order: 73
 summary: L'archivio password di git — il terzo — e perché https continua a chiedertele.
 keywords: credential helper password https chiede di nuovo osxkeychain wincred manager libsecret store cache git-credentials testo in chiaro dimentica revocato token 401 verifica accesso quale account token nell’url del remote password incorporata rimuovilo dall’url token in remote url embedded password invalid username or token authentication failed set-url
-source: ec745a4eb35cb3d23b0af6a36d6a540b8254df62
+source: a0a28af33433dfe90ae3dfb2e99a003c13ae5f36
 ---
 
 # Credential helper
@@ -149,7 +149,7 @@ succede dopo dipende da cos’altro può autenticarsi:
 |---------------|-------------------------|
 | Il profilo del repository ha un token o un account collegato per quell’host | Quel token — la conferma non dice altro |
 | Nessun token di profilo, ma l’helper di git ha un accesso per l’host | L’accesso dell’helper |
-| Nessuno dei due | Niente: fetch e push falliscono finché non aggiungi un token. La conferma lo dice prima e offre **Aggiungi prima un token**, che apre Impostazioni → Integrazioni |
+| Nessuno dei due | Niente: fetch e push falliscono finché non aggiungi un token. La conferma lo dice prima e offre **Aggiungi prima un token**, che apre Impostazioni → Account collegati |
 
 Quando è partita da un’operazione fallita, offre **Riprova**.
 

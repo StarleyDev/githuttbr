@@ -187,7 +187,10 @@ import type {
   RepoFacts,
   RepoChatAttachment,
   RepoChatMessage,
+  RepoChatProgress,
   RepoChatReply,
+  AIRequestEvent,
+  AISlowChoice,
   RepoChatExecutionResult,
   PreparedRepoChatFileAction,
   RepoFileBatchResult,
@@ -212,6 +215,7 @@ import type { MenuSpec } from '../../../shared/menu'
 import type { EditMenuLabels } from '../../../shared/editMenu'
 import type { CliOpenPayload } from '../../../shared/cli'
 import type { TranslationKey } from '../i18n'
+import { guardAI, type GuardDeps } from '../lib/aiGuard'
 
 // Typed adapter over the IPC bridge — the only place that talks to window.api.
 const call = <T>(method: string, ...args: unknown[]): Promise<T> => window.api.git(method, ...args) as Promise<T>
@@ -835,56 +839,91 @@ export interface ArtifactSuggestion {
   reason: string
 }
 
+/**
+ * How an AI call answers a cancel, a switch of account or a dead local server.
+ * Registered by AIRequestPrompt once it mounts: the prompts and their wording
+ * live in the renderer, and importing them here would loop back through the
+ * settings store. Until then (and in tests) a call simply runs.
+ */
+let aiGuardDeps: GuardDeps | null = null
+export function setAIGuardDeps(deps: GuardDeps | null): void {
+  aiGuardDeps = deps
+}
+function guarded<T>(cfg: AIConfig, call: (cfg: AIConfig) => Promise<T>): Promise<T> {
+  return aiGuardDeps ? guardAI(cfg, call, aiGuardDeps) : call(cfg)
+}
+
 export const aiApi = {
-  commitMessage: (diff: string, cfg: AIConfig, ctx: { branch: string }) =>
-    window.api.ai.commitMessage(diff, cfg, ctx) as Promise<{ summary: string; description: string }>,
+  /**
+   * `ctx.requestTag` names the generation so `cancelRequest` can end it in main;
+   * `onAttempt` hears each config actually tried — the slow prompt's "use
+   * another account" re-runs the call elsewhere — and may throw to stop a retry.
+   */
+  commitMessage: (
+    diff: string,
+    cfg: AIConfig,
+    ctx: { branch: string; requestTag?: string },
+    onAttempt?: (cfg: AIConfig) => void
+  ) =>
+    guarded(cfg, (c) => {
+      onAttempt?.(c)
+      return window.api.ai.commitMessage(diff, c, ctx) as Promise<{ summary: string; description: string }>
+    }),
+  /** Ends a tagged generation in main: its in-flight call and any retry it would make. */
+  cancelRequest: (tag: string) => window.api.ai.cancelRequest(tag) as Promise<void>,
   listModels: (cfg: AIConfig, force = false) => window.api.ai.listModels(cfg, force) as Promise<ModelCatalog>,
   signInSubscription: (binary: SubscriptionCli, path: string, requestId: string) =>
     window.api.ai.signInSubscription(binary, path, requestId) as Promise<SubscriptionTest>,
   cancelSubscriptionSignIn: (requestId: string) => window.api.ai.cancelSubscriptionSignIn(requestId),
   testSubscription: (binary: SubscriptionCli, path: string) =>
     window.api.ai.testSubscription(binary, path) as Promise<SubscriptionTest>,
-  detectCli: () => window.api.ai.detectCli() as Promise<DetectedCli[]>,
+  /** `versions` also runs each found CLI's `--version` — one spawn per CLI, so only where it is shown. */
+  detectCli: (opts?: { versions?: boolean }) => window.api.ai.detectCli(opts) as Promise<DetectedCli[]>,
   explainCode: (code: string, lang: string, cfg: AIConfig) =>
-    window.api.ai.explainCode(code, lang, cfg) as Promise<string>,
+    guarded(cfg, (c) => window.api.ai.explainCode(code, lang, c) as Promise<string>),
   editSelection: (req: EditSelectionRequest, cfg: AIConfig) =>
-    window.api.ai.editSelection(req, cfg) as Promise<string>,
+    guarded(cfg, (c) => window.api.ai.editSelection(req, c) as Promise<string>),
   hoverExplain: (req: HoverExplainRequest, cfg: AIConfig) =>
-    window.api.ai.hoverExplain(req, cfg) as Promise<HoverExplainResult>,
+    guarded(cfg, (c) => window.api.ai.hoverExplain(req, c) as Promise<HoverExplainResult>),
   resolveConflict: (file: string, content: string, cfg: AIConfig) =>
-    window.api.ai.resolveConflict(file, content, cfg) as Promise<string>,
+    guarded(cfg, (c) => window.api.ai.resolveConflict(file, content, c) as Promise<string>),
   generateConfig: (repoName: string, artifacts: ArtifactRequest[], context: string, cfg: AIConfig) =>
-    window.api.ai.generateConfig(repoName, artifacts, context, cfg) as Promise<{ files: GeneratedFile[] }>,
+    guarded(cfg, (c) => window.api.ai.generateConfig(repoName, artifacts, context, c) as Promise<{ files: GeneratedFile[] }>),
   suggestArtifacts: (repoName: string, selectedTools: string[], context: string, alreadySelected: ArtifactRequest[], cfg: AIConfig) =>
-    window.api.ai.suggestArtifacts(repoName, selectedTools, context, alreadySelected, cfg) as Promise<{ suggestions: ArtifactSuggestion[] }>,
+    guarded(cfg, (c) => window.api.ai.suggestArtifacts(repoName, selectedTools, context, alreadySelected, c) as Promise<{ suggestions: ArtifactSuggestion[] }>),
   smartStage: (files: { path: string; status: string }[], cfg: AIConfig) =>
-    window.api.ai.smartStage(files, cfg) as Promise<{ toStage: string[]; reason: string }>,
+    guarded(cfg, (c) => window.api.ai.smartStage(files, c) as Promise<{ toStage: string[]; reason: string }>),
   generateAppTheme: (prompt: string, cfg: AIConfig) =>
-    window.api.ai.generateAppTheme(prompt, cfg) as Promise<{ name: string; light: AppThemeColors; dark: AppThemeColors }>,
+    guarded(cfg, (c) => window.api.ai.generateAppTheme(prompt, c) as Promise<{ name: string; light: AppThemeColors; dark: AppThemeColors }>),
   generateCodeTheme: (prompt: string, cfg: AIConfig) =>
-    window.api.ai.generateCodeTheme(prompt, cfg) as Promise<{ name: string; light: CodeThemeColors; dark: CodeThemeColors }>,
+    guarded(cfg, (c) => window.api.ai.generateCodeTheme(prompt, c) as Promise<{ name: string; light: CodeThemeColors; dark: CodeThemeColors }>),
   generateGraphPalette: (prompt: string, cfg: AIConfig) =>
-    window.api.ai.generateGraphPalette(prompt, cfg) as Promise<{ name: string; colors: string[] }>,
+    guarded(cfg, (c) => window.api.ai.generateGraphPalette(prompt, c) as Promise<{ name: string; colors: string[] }>),
   generateBranchName: (description: string, cfg: AIConfig, ctx: { username?: string }) =>
-    window.api.ai.generateBranchName(description, cfg, ctx) as Promise<string>,
+    guarded(cfg, (c) => window.api.ai.generateBranchName(description, c, ctx) as Promise<string>),
   reviewPR: (diff: string, cfg: AIConfig) =>
-    window.api.ai.reviewPR(diff, cfg) as Promise<PRReviewResult>,
+    guarded(cfg, (c) => window.api.ai.reviewPR(diff, c) as Promise<PRReviewResult>),
   prDescription: (commits: string, diff: string, cfg: AIConfig) =>
-    window.api.ai.prDescription(commits, diff, cfg) as Promise<{ title: string; body: string }>,
+    guarded(cfg, (c) => window.api.ai.prDescription(commits, diff, c) as Promise<{ title: string; body: string }>),
   planActions: (prompt: string, status: RepoStatus, cfg: AIConfig) =>
-    window.api.ai.planActions(prompt, status, cfg) as Promise<AskPlan>,
+    guarded(cfg, (c) => window.api.ai.planActions(prompt, status, c) as Promise<AskPlan>),
   repoChat: (
     repoPath: string,
     messages: RepoChatMessage[],
     cfg: AIConfig,
     attachments: RepoChatAttachment[] = []
-  ) => window.api.ai.repoChat(repoPath, messages, cfg, attachments) as Promise<RepoChatReply>,
+  ) => guarded(cfg, (c) => window.api.ai.repoChat(repoPath, messages, c, attachments) as Promise<RepoChatReply>),
   repoChatFinalize: (
     repoPath: string,
     messages: RepoChatMessage[],
     result: RepoChatExecutionResult,
     cfg: AIConfig
-  ) => window.api.ai.repoChatFinalize(repoPath, messages, result, cfg) as Promise<RepoChatReply>
+  ) => guarded(cfg, (c) => window.api.ai.repoChatFinalize(repoPath, messages, result, c) as Promise<RepoChatReply>),
+  /** What a pending chat request is doing — thinking, or reading files it asked for. */
+  onRepoChatProgress: (cb: (p: RepoChatProgress) => void): (() => void) => window.api.ai.onRepoChatProgress(cb),
+  /** A call has been running long (or ended after being announced). */
+  onRequestEvent: (cb: (event: AIRequestEvent) => void): (() => void) => window.api.ai.onRequestEvent(cb),
+  answerSlow: (id: number, choice: AISlowChoice) => window.api.ai.answerSlow(id, choice) as Promise<void>
 }
 
 export const wikiApi = {
@@ -896,7 +935,8 @@ export const wikiApi = {
       freshness: 'current' | 'behind' | 'outdated'
       headSha: string
     }>,
-  generate: (repoPath: string, cfg: AIConfig) => window.api.wiki.generate(repoPath, cfg) as Promise<RepoWiki>,
+  generate: (repoPath: string, cfg: AIConfig) =>
+    guarded(cfg, (c) => window.api.wiki.generate(repoPath, c) as Promise<RepoWiki>),
   export: (repoPath: string) => window.api.wiki.export(repoPath) as Promise<string[]>,
   clear: (repoPath: string) => window.api.wiki.clear(repoPath) as Promise<void>,
   onProgress: (cb: (payload: { repoPath: string; progress: WikiProgress }) => void) =>

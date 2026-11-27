@@ -49,6 +49,6 @@ y te toca leerlos antes de ejecutarlos. Después, pulsa **Comprobar de nuevo**.
 - Comprueba lo que la app ve desde su propio proceso. Un perfil de shell que
   cambia el `PATH` solo dentro de tu terminal puede hacer que ambos discrepen.
 - La fila de la CLI de GitHub refleja la sesión propia de `gh`, no las cuentas
-  conectadas en **Ajustes → Integraciones**. Son credenciales distintas. Si allí
+  conectadas en **Ajustes → Cuentas conectadas**. Son credenciales distintas. Si allí
   falta el scope `workflow`, se nota como un push rechazado.
 - Informa de lo que está instalado. No instala ni actualiza nada.

@@ -18,7 +18,7 @@ invite, vos alias.
   souvient de sa taille.
 - La visibilité du terminal est propre à chaque dépôt : passer sur un onglet qui
   n'en a jamais ouvert le laisse fermé.
-- **Il s'ouvre avec le dépôt et s'ancre sous le graphe par défaut.** La première fois qu'un dépôt devient l'onglet actif pendant la session, son terminal s'ouvre avec un shell dans ce dossier. Fermé, il le reste pour ce dépôt jusqu'au prochain lancement. Chaque dépôt visité coûte un processus shell ; désactivez **Ouvrir le terminal à l’ouverture d’un dépôt** ou changez la position dans Paramètres → Disposition.
+- **Il s'ouvre avec le dépôt et s'ancre sous le graphe par défaut.** La première fois qu'un dépôt devient l'onglet actif pendant la session, son terminal s'ouvre avec un shell dans ce dossier. Fermé, il le reste pour ce dépôt jusqu'au prochain lancement. Chaque dépôt visité coûte un processus shell ; désactivez **Ouvrir le terminal à l’ouverture d’un dépôt** ou changez la position dans Paramètres → Disposition et terminal.
 - Les onglets se nomment d'après ce qui tourne dedans.
 - Replier la liste des terminaux la réduit à un **rail** : une icône par terminal
   (les terminaux divisés affichent une mini-carte des panneaux), clic pour
@@ -99,7 +99,7 @@ le terminal change quelque chose.
 
 ## Shell, thème et Oh My Posh
 
-Sous Windows, Paramètres → Disposition choisit le shell lancé par chaque nouveau
+Sous Windows, Paramètres → Disposition et terminal choisit le shell lancé par chaque nouveau
 terminal — PowerShell, PowerShell Core (`pwsh`), `cmd`, Git Bash, WSL ou un
 exécutable personnalisé. L’apparence du terminal (thème, taille et famille de
 police) se règle dans Paramètres → Thèmes → Thème du terminal et s’applique en

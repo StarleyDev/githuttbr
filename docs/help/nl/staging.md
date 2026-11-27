@@ -64,7 +64,7 @@ steeds het mappad.
 GitHuttBr controleert een paar dingen en vraagt één keer, nooit in stilte:
 
 - een bestand dat op een **geheim** lijkt (`.env`, `*.pem`, `id_rsa`…),
-- een **erg grote** blob (drempel in Instellingen → Beveiliging),
+- een **erg grote** blob (drempel in Instellingen → Beveiliging & bevestigingen),
 - **rechtstreeks naar een beschermde branch** committen (`main`/`master`
   standaard).
 

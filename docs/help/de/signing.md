@@ -8,7 +8,7 @@ keywords: signieren signierung signing gpg ssh x509 verifiziert verified signatu
 
 # Signierte Commits
 
-Schalte die Signierung pro Repository ein (**Einstellungen → Profil → Commit-Signierung**, mit dem Repository geöffnet — jede Änderung wird sofort darin gespeichert): GPG, SSH oder X.509, mit dem Schlüssel deiner Wahl. GitHuttBr schreibt
+Schalte die Signierung pro Repository ein (**Einstellungen → Profil & Identität → Commit-Signierung**, mit dem Repository geöffnet — jede Änderung wird sofort darin gespeichert): GPG, SSH oder X.509, mit dem Schlüssel deiner Wahl. GitHuttBr schreibt
 `commit.gpgsign`, `gpg.format` und `user.signingkey` für dieses Repository —
 dieselbe Konfiguration, die jedes andere Werkzeug auch liest.
 

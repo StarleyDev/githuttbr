@@ -17,8 +17,7 @@ Midnight, Contrast ve Daltonic — her biri açık ve koyu varyantıyla.
 - **Özel temalar** ve bir istemden **yapay zekâ üretimi** temalar.
 - Ayarlanabilir **kod yazı tipi boyutu**.
 - Araç çubuğu ve kenar çubuğu bölümleri için **simge renkleri** — aşağıya bakın.
-- Ayrı bir **grafik stili**: şerit paleti, köşe stili, satır yoğunluğu ve çizgi
-  kalınlığı — canlı bir mini grafik önizlemesiyle.
+- **Grafiğin görünümü** — şerit paleti, köşeler, satır yoğunluğu ve çizgi kalınlığı, canlı önizlemeyle — kendi sayfasında: **Ayarlar → Grafik**; bkz. [commit grafiği](graph.md).
 
 ![Tema ayarları](../../screenshots/settings-themes.webp)
 
@@ -46,9 +45,7 @@ böylece grup tek bir aile gibi okunur:
   karşılaştırmalar) vurgu renginde; ve her gruba bir renk: İncele camgöbeği,
   Dallar ve geçmiş vurgu rengi, Dosyalar ve yamalar yeşil, Depo turuncu, Sırlar
   ve paylaşım kırmızı.
-- **Ayarlar sayfaları** — Yerleşim, Çalışma alanları ve Yapay zekâ vurgu
-  renginde; Profil ve Ortam yeşil; Entegrasyonlar ve Veri camgöbeği; Temalar
-  turuncu; Güvenlik kırmızı. Genel ve Kısayollar gri kalır.
+- **Ayarlar sayfaları** — Yerleşim ve terminal, Çalışma alanları ve Yapay zekâ vurgu renginde; Profil ve kimlik, Kod analizcileri ve Ortam yeşil; Bağlı hesaplar, Git ve eşitleme ve Veri ve yedek camgöbeği; Temalar ve Grafik turuncu; Güvenlik ve onaylar kırmızı. Genel, Kısayollar ve Hakkında gri kalır.
 
 Etiketsiz bir simge düğmeleri sırası tersini yapar — her düğme kendi rengini alır,
 böylece birbirinden ayırt edilebilirler. [Pull request sayfasında](pull-requests.md)
@@ -73,6 +70,29 @@ renklenir; diğer menüler, bir bölümün içindeki satırlar ve commit grafiğ
 renklenmez. Üzerine gelinen menü satırı, simgesi dahil her zamanki görünümünü korur.
 Renk asla tek ipucu değildir — her simge etiketini korur.
 
+## Ayarlar nasıl düzenlenir
+
+Kenar menüsü sayfaları konularına göre gruplar:
+
+| Grup | Sayfalar |
+|---|---|
+| **Sen** | Profil ve kimlik · Bağlı hesaplar · Yapay zekâ — ilk ikisi başlıkta adı geçen profili düzenler ([profiller](profiles.md)) |
+| **Görünüm** | Temalar · Grafik · Yerleşim ve terminal |
+| **Davranış** | Genel · Git ve eşitleme · Güvenlik ve onaylar · Kod analizcileri |
+| **Sistem** | Çalışma alanları · Kısayollar · Ortam · Veri ve yedek · Hakkında |
+
+Genel yalnızca uygulamanın bütününü ilgilendirenleri tutar — Dil, Depo sekmelerinde gösterilen, Masaüstü bildirimleri, Güncellemelerden sonra değişiklik günlüğünü aç, Kapatırken uyar. Geri kalanı ait olduğu sayfaya taşındı ve sayfadaki not oraya götürür:
+
+| Seçenek | Artık burada |
+|---|---|
+| Başlangıçta yüklenen commit sayısı, “Daha fazla yükle” başına commit, Kaydırınca otomatik yükle, Göreli tarihler, Avatarları göster, GitHub profil fotoğraflarını kullan | **Grafik** — Şerit paleti, Çizgi köşeleri, Satır yoğunluğu, Düğüm biçemi, Grafik odağı, Stash yerleşimi, Çizgi kalınlığı ile birlikte; bunlar Temalar içindeki Grafik sekmesiydi |
+| Otomatik getirme aralığı (dakika), Her zaman birleştirme commit’i oluştur, Çakışma çözümlerini hatırla, Harici fark ve birleştirme araçları, Harici düzenleyici, Varsayılan “Birlikte aç” uygulaması | **Git ve eşitleme** |
+| Force push öncesi onay iste | **Güvenlik ve onaylar** |
+| Kod çözümleyicileri, launch.json | **Kod analizcileri** |
+| Dosya görüntüleyici, Profil avatarını canlandır, Tamamlanan görevleri gizle, Ref’leri öneke göre grupla | **Yerleşim ve terminal** |
+
+Entegrasyonlar artık **Bağlı hesaplar**, Veri ise **Veri ve yedek**. Bir seçeneğin ne yaptığı değişmedi ve kaydedilmiş ayarlar olduğu gibi kalır. Bir sayfayı eski adıyla açan bağlantı yine doğru sayfaya varır.
+
 ## Bir ayarı bulmak
 
 Ayarlar birçok sayfaya yayılır ve aradığınız seçenek nadiren tahmin ettiğiniz
@@ -87,14 +107,10 @@ Siz yazdıkça sağ taraf eşleşen ayarları sayfaya göre gruplanmış olarak 
 çubuğu eşleşmesi olmayan sayfaları soluklaştırır, eşleşmesi olanlarda bir sayı
 gösterir.
 
-- Ayarın adı, açıklaması ve sayfanın adı karşılaştırılır. Büyük/küçük harf ve
-  aksanlar dikkate alınmaz; yazdığınız her sözcük geçmelidir, yani "terminal
-  yazı tipi" sonucu terminalin yazı tipi ayarlarına daraltır.
+- Ayarın adını, açıklamasını ve sayfanın adını karşılaştırır — menü yeniden gruplanmadan önce bulunduğu sayfayı da: "general fetch" otomatik fetch’i Git ve eşitleme altında hâlâ bulur, "integrations" da Bağlı hesaplar sayfasını bulur. Büyük/küçük harf ve aksanlar önemsenmez ve yazılan her kelime geçmelidir: "terminal font" terminalin yazı tipi ayarlarına daralır.
 - Arama, arayüz dilinde ve aynı anda İngilizce yapılır: uygulama Türkçe iken
   "token" ya da "font" yazmak da ayarı bulur.
-- Bir sonuca tıklayın ya da ilki için **Enter**'a basın; sayfası açılır
-  (Temalar'da doğru sekme de — Tema ya da Grafik), ayara kaydırılır ve ayar
-  kısa bir süre vurgulanır.
+- Sayfasını açmak, ayara kaydırmak ve onu bir an vurgulamak için bir sonuca tıkla ya da ilki için **Enter**’a bas.
 - **Esc** aramayı temizler; ikinci bir **Esc** Ayarlar'ı kapatır.
 
 Adlar ve açıklamalar aranır, ayarladığınız değerler değil. Entegrasyonlar'daki
@@ -108,5 +124,7 @@ düzenleyicisi onları listeleyen Kısayollar sayfasını bulur.
 Kenar çubuğu solda ya da sağda, her yerde yeniden boyutlandırılabilir paneller,
 grafiğin tüm pencereyi hak ettiği anlar için katlanabilir bir kenar çubuğu ve
 depo başına terminal konumu.
+
+Aynı sayfa, **Ayarlar → Yerleşim ve terminal**, başlık çubuğu ve kenar çubuğu eklerini de tutar — **Profil avatarını canlandır**, **Tamamlanan görevleri gizle**, **Ref’leri öneke göre grupla** — ve dosya görüntüleyicinin değişiklik kenarlığı ile mini haritasını.
 
 **Ayrıca bakınız:** [Commit grafiği](graph.md) · [Profiller](profiles.md)

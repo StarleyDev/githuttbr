@@ -8,7 +8,7 @@ keywords: ssh clave claves key keys agente agent ssh-add ssh-keygen ed25519 publ
 
 # Claves SSH
 
-**Ajustes → Seguridad → Claves SSH.**
+**Ajustes → Seguridad y confirmaciones → Claves SSH.**
 
 ## Por qué esto vive al lado de los tokens
 

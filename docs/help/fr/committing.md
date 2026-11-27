@@ -3,14 +3,16 @@ title: Faire des commits
 category: Travailler sur les changements
 order: 31
 summary: Styles de message, modèles, co-auteurs et le linter.
-keywords: commit valider message compositeur composer conventional gitmoji ticket amend amender modèle template co-auteur co-author linter annuler undo réinitialisation reset
+keywords: commit valider message compositeur composer conventional gitmoji ticket amend amender modèle template co-auteur co-author linter annuler undo réinitialisation reset generate with ai cancel undo
 ---
 
 # Faire des commits
 
 ## Styles de message
 
-Choisissez-en un dans les paramètres ; le compositeur s'y adapte.
+Choisissez-en un dans **Paramètres → IA → Messages de commit**, ou directement
+depuis le compositeur ; le compositeur s'y adapte. Le style appartient à l'IA
+qu'utilise le profil — la générale, ou celle du profil.
 
 | Style | Ce que ça donne |
 |---|---|
@@ -62,6 +64,42 @@ Limites :
 - Un dépôt dont le hook `commit-msg` lance commitlint avec le preset
   Conventional standard refuse un emoji en tête. C'est la règle du hook, pas de
   GitHuttBr : configurez commitlint pour gitmoji ou utilisez du Conventional pur.
+
+## Écrire le message avec l’IA
+
+Quand l’IA est active, **Générer avec l’IA** se trouve sous la description. Il
+lit le diff indexé (staged) et écrit le résumé et la description dans le style
+ci-dessus. Le bouton nomme qui répondra — *compte · modèle*, la paire choisie
+pour les messages de commit dans **Réglages → IA → Modèle par tâche** — pour
+qu’un modèle local lent ou un modèle coûteux ne soit jamais une surprise.
+
+- **▾** à côté du nom liste vos comptes enregistrés, chacun avec quelques-uns
+  de ses modèles. Le choix vaut **pour cette génération seulement** ; les
+  Réglages ne changent pas.
+- Pendant l’exécution, la zone affiche *Génération avec compte · modèle… 12 s*
+  et **Annuler**, qui arrête la requête elle-même, pas seulement l’indicateur.
+  Au bout de 30 secondes elle propose aussi **Utiliser** un autre compte prêt,
+  qui lance la même génération sur celui-ci. L’invite globale *prend plus de
+  temps que prévu* ([IA](ai.md)) apparaît toujours aussi.
+- Le nouveau texte **remplace** l’ancien, qui est conservé : un bandeau indique
+  *Généré par compte · modèle en 7 s* et propose **Annuler**, qui remet votre
+  résumé et votre description, et **Générer à nouveau**. Il disparaît dès que
+  vous modifiez le texte ou faites le commit.
+
+![Générer avec l’IA et le menu des comptes](../../screenshots/commit-ai-generate.webp)
+
+[Modifier un commit](commit-edit.md) a le même bouton, à partir du diff de ce
+commit.
+
+Limites :
+
+- Seul le diff indexé est envoyé, tronqué s’il est très gros — jamais les
+  modifications non indexées ni d’autres fichiers.
+- L’annulation garde une étape : le texte d’avant la première génération d’une
+  série. Quand le bandeau disparaît, cette copie aussi.
+- Annuler ne rend pas les jetons qu’un fournisseur a déjà consommés.
+- La liste ▾ montre tous les comptes enregistrés, y compris un compte encore
+  sans clé ; le choisir échoue avec l’erreur propre à ce compte.
 
 ## Ce que le compositeur fait pour vous
 

@@ -10,6 +10,7 @@ import {
   searchSettings,
   type SettingsTextReader
 } from '../src/renderer/src/lib/settingsSearch'
+import { SETTINGS_PAGE_ORDER } from '../src/renderer/src/lib/settingsNav'
 
 const ROOT = join(__dirname, '..')
 const COMPONENTS = join(ROOT, 'src/renderer/src/components')
@@ -64,6 +65,35 @@ describe('settings search', () => {
     expect(pages.has('layout')).toBe(true)
   })
 
+  it('still finds a renamed setting by the name it had before', () => {
+    expect(keys('custom instructions', inEnglish)[0]).toBe('settings.commitRules')
+    expect(keys('extra rules', inEnglish)[0]).toBe('settings.commitRules')
+    // "Read-only" was the old, inverted name of the file switch.
+    expect(keys('read-only', inEnglish)).toContain('settings.repoChatFiles')
+    expect(keys('file read-only mode', inEnglish)[0]).toBe('settings.repoChatFiles')
+    expect(keys('instruções personalizadas', inPortuguese)[0]).toBe('settings.commitRules')
+    expect(keys('somente leitura', inPortuguese)).toContain('settings.repoChatFiles')
+  })
+
+  it('finds a moved setting by the page it used to live on', () => {
+    // Auto-fetch moved from General to Git & sync; "general fetch" still finds it.
+    const hits = searchSettings('general fetch', inEnglish)
+    expect(hits).toContainEqual(expect.objectContaining({ key: 'settings.autoFetch', page: 'git' }))
+    // Force push confirmation moved to Security & confirmations.
+    expect(searchSettings('general force push', inEnglish).map((e) => e.page)).toContain('security')
+  })
+
+  it('finds pages by the names they had before the menu was regrouped', () => {
+    expect(new Set(searchSettings('integrations', inEnglish).map((e) => e.page)).has('integrations')).toBe(true)
+    expect(new Set(searchSettings('integrações', inPortuguese).map((e) => e.page)).has('integrations')).toBe(true)
+  })
+
+  it('puts the graph settings on the Graph page', () => {
+    for (const key of ['settings.graphPalette', 'settings.initialCommitCount', 'settings.relativeDates'] as const) {
+      expect(SETTINGS_INDEX.find((e) => e.key === key)?.page).toBe('graph')
+    }
+  })
+
   it('counts matches per page for the sidebar', () => {
     const counts = countSettingsByPage(searchSettings('terminal', inEnglish))
     expect(counts.layout).toBeGreaterThan(0)
@@ -78,8 +108,13 @@ describe('settings index', () => {
     expect(new Set(seen).size).toBe(seen.length)
   })
 
-  it('puts a tab only on the Themes page', () => {
-    for (const e of SETTINGS_INDEX) if (e.tab) expect(e.page).toBe('themes')
+  it('names a former page only for a setting that moved', () => {
+    for (const e of SETTINGS_INDEX) if (e.was) expect(e.was).not.toBe(e.page)
+  })
+
+  it('puts every page in the menu', () => {
+    const indexed = new Set(SETTINGS_INDEX.map((e) => e.page))
+    for (const page of SETTINGS_PAGE_ORDER) expect(indexed.has(page)).toBe(true)
   })
 
   // The guard with teeth: a labelled setting added to a Settings screen but not
@@ -87,11 +122,13 @@ describe('settings index', () => {
   it('covers every labelled setting the Settings screens render', () => {
     const files = [
       'SettingsPanel.tsx',
+      'AIBehaviourSettings.tsx',
       'EnvironmentSettings.tsx',
       'GithubEnterpriseSettings.tsx',
       'GitlabServersSettings.tsx',
       'BitbucketServerSettings.tsx',
       'ProfileAvatarSettings.tsx',
+      'ProfileAccountsSummary.tsx',
       'AboutSettingsPage.tsx'
     ]
     // Only what a Settings page actually renders: SettingsPanel.tsx also hosts
@@ -108,7 +145,10 @@ describe('settings index', () => {
       'IntegrationsPage',
       'AIPage',
       'ThemesPage',
+      'GraphPage',
       'GeneralPage',
+      'GitSyncPage',
+      'AnalyzersPage',
       'LayoutPage',
       'WorkspacesPage',
       'SecurityPage',

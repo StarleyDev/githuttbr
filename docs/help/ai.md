@@ -3,7 +3,7 @@ title: AI features
 category: AI
 order: 80
 summary: Optional, provider-agnostic, and grounded in your actual code.
-keywords: ai openai anthropic gemini google ollama local llm accounts api key subscription cli claude codex devin commit message explain review wiki grounded model picker
+keywords: ai draft unsaved changes test and save status ready no key not checked not responding openai anthropic gemini google ollama local llm accounts api key subscription cli claude codex devin commit message explain review wiki grounded model picker slow timeout taking longer keep waiting cancel not responding ollama closed switch account fallback writing preferences commit style extra rules for commits custom instructions preview co-author hover explain own ai general ai bar in use popover profile follows
 ---
 
 # AI features
@@ -20,29 +20,65 @@ uses it: a profile you create later already has the AI, with no account to add
 again. The page lists each profile and whether it follows this **general AI**.
 
 A profile can use **its own AI** instead — a work profile that must go through
-the company's account, for cost or data policy. On that profile's **Profile**
-page, under *AI of this profile*, switch **General** to **Own**: it starts as a
-copy of the general AI, and its providers and keys from then on are its alone.
-Switching back to **General** removes them, after a confirmation, and leaves the
+the company's account, for cost or data policy, or that writes its commits
+another way. On that profile's **Profile** page, under *AI of this profile*,
+switch **General** to **Own**: it starts as a copy of the whole general AI —
+accounts, keys and preferences — and from then on all of it is its alone.
+Switching back to **General** removes it, after a confirmation, and leaves the
 general AI as it was.
+
+A profile uses one AI **whole**: the general one, or its own, never a mix. The
+accounts and models *and* how the AI writes and what the chat may do come from
+the same place, so changing the commit style on the general AI changes it for
+every profile that follows it.
 
 Every AI is set up on this one page. The **Editing** bar at the top picks whose:
 the general AI, or a profile's own (*Own AI of Work*). **Set up its own AI** on
-the Profile page, or **Edit its own AI** in the list of profiles, opens the page
-on that one. The Profile page itself only shows which AI the profile uses and
-what answers — it never hosts the editor.
+the Profile & identity page, or **Edit its own AI** in the list of profiles, opens the page
+on that one. The Profile & identity page itself only shows which AI the profile uses and
+what answers — it never hosts the editor, and holds no AI option of its own.
 
-![A profile's AI on its Profile page: General or Own, what answers, and the way to set it up](../screenshots/settings-profile-ai.webp)
+![A profile's AI on its Profile & identity page: General or Own, what answers, and the way to set it up](../screenshots/settings-profile-ai.webp)
 
-How the AI **writes** stays per profile either way: commit message style,
-explanation style, conflict and branch naming styles, custom instructions,
-co-author line and repository chat. They are on the **Profile** page, under
-*AI writing preferences*, so a work profile can write `ticket` commits
-while a personal one writes `conventional` ones, both on the same AI.
+Below the accounts, the same page holds how that AI **writes** and what it may
+do, in sections:
+
+| Section | Holds |
+|---|---|
+| **Commit messages** | The commit style — Conventional, Gitmoji and Ticket as cards with a sample line, the rest under *More styles* — *Generate commit description*, the co-author line, **Extra rules for commits**, and a preview |
+| **Explain & hover** | The explanation style, one button per tone, and *Explain on hover while holding* a key you pick |
+| **Conflicts & branches** | Conflict resolution style and branch naming style, each with an example of the result |
+| **Repository chat** | Whether chat is on, what it may do, how its proposals run, what it reads — see [Repository chat](repo-chat.md#settings) |
+
+A line above the sections says whose AI you are editing and who it reaches:
+*General AI · applies to Work and Personal*, or one profile's own.
+
+**Extra rules for commits** — *Custom instructions* until 4.60 — are added to
+commit message generation only. Chat, explanations, reviews and branch names do
+not read them, so a rule like "write in Spanish" there changes commits and
+nothing else. The setting search still finds it by its old name.
+
+**The preview is a fixed sample**, not a model call: it shows the shape of the
+chosen style, with a body when *Generate commit description* is on and the
+co-author line when that is on. What the AI writes for your change depends on
+the diff and on your extra rules, which the preview does not apply.
+
+![Commit messages: style cards, extra rules and the preview](../screenshots/settings-ai-commits.webp)
+
+The composer's style switch and the chat's model and approval pickers write to
+the same AI the profile reads: the general one, or the profile's own.
 
 Upgrading from a version where each profile had its own AI loses nothing: the
 AI of the profile in use becomes the general AI, and any other profile whose AI
 was different keeps it as its own.
+
+**Upgrading from 4.59 or earlier**, where the writing preferences lived on each
+profile: once, the preferences of the profile in use (or, if that one has its
+own AI, of the first profile on the general AI) move onto the general AI.
+Profiles with their own AI keep theirs. **The limit:** if two profiles on the
+general AI wrote differently — a `ticket` work profile and a `conventional`
+personal one — both now write like the one that was moved. To keep the
+difference, give one of them its own AI and set its style again there.
 
 ## Providers
 
@@ -64,9 +100,118 @@ Anthropic uses its own `/v1/messages` API rather than an OpenAI-shaped call, so
 Claude models work directly instead of only appearing to. Gemini is reached
 through Google's OpenAI-compatible endpoint.
 
+### Adding and editing a provider
+
+A provider that was saved half-filled used to be a quiet trap: an empty key
+could end up in use, and nothing answered. So nothing on this card is
+saved as you type.
+
+**Add provider** opens a card marked **Draft · not saved**, with a dashed edge.
+Fill in the provider, key, endpoint and model, then choose **Test and save**.
+GitHuttBr first lists the provider's models with that key — the same request
+**Fetch models** makes — and only saves when it answers. You see
+**Connected · N models**, and the provider joins the list as **Ready**.
+
+When the test fails, the card says **Could not connect** with the provider's
+reason (a refused key, `401`; a server that is not running) and **Nothing was
+saved.** Fix the field and test again, choose **Save anyway** to keep it as it
+is — it then shows as **Not responding** — or **Cancel**, which leaves no trace.
+
+Editing a saved provider works the same way. A banner says **Unsaved changes —
+nothing changes until you save**, and each field you touched is marked
+**· changed**. **Discard** puts the saved values back; **Test and save** tests
+and saves. Picking another provider, adding one or opening **Use my
+subscription** with changes pending asks **Save changes to …?** — **Save**,
+**Discard** or **Keep editing**. Closing Settings keeps the draft in memory, so
+it is still there when you come back; it is never written to disk.
+
+Keys are saved exactly as before, to your keychain, and only at save time. A
+provider's error is shown with the key and anything shaped like a token
+masked.
+
+![Adding and editing a provider](../screenshots/ai-provider-draft.webp)
+
+| Provider type | What **Test and save** checks |
+| --- | --- |
+| API key or local server (Ollama, custom endpoint) | Lists the models; success means the endpoint answered with this key |
+| Subscription (Codex, Claude Code) | Sends the short test prompt described below, from your plan allowance |
+| Local CLI | Looks for the command on your `PATH`; a typed path is saved without a check |
+
+### Status badges
+
+Every provider in the list carries one badge, worked out from what the page
+already knows — the last test, or the model list it fetched anyway. Nothing is
+polled in the background.
+
+| Badge | Meaning |
+| --- | --- |
+| **Ready** | The last test or model listing succeeded |
+| **Not responding** | The last attempt failed; the reason is on the line below, with **Test again** |
+| **No key** | The provider needs an API key and has none |
+| **Not checked** | Nothing has asked it yet — a subscription until it is tested, or a list not fetched |
+
+**The limit:** a badge is only as fresh as its last check. A provider that
+stopped answering an hour ago still reads **Ready** until something asks it
+again — choose **Test connection** on its card to be sure. A **Local CLI**
+with a typed path stays **Not checked**, since proving it works would cost a
+prompt.
+
+### The provider in use
+
+One provider answers every task that has no provider of its own under
+**Model per task**. Its row is marked **In use** — a filled pill and an accent
+edge — and stays where it is in the list. The general AI and a profile with its
+own AI each have their own provider in use; the list changes the one you are
+editing.
+
+Every other saved provider has a **Use** button at the right of its row, next
+to its badge. One click puts it in use and saves at once: which provider
+answers is a choice, not an edit, so it never waits for **Test and save**. It
+does not open that provider's card, and a card with unsaved changes keeps them.
+
+**The limit:** **Use** tests nothing. A provider marked **No key** or **Not
+responding** can be put in use — on purpose, before fixing its key — and its
+badge keeps saying so; the next AI task fails with that provider's reason. A
+draft has no **Use**: it is not a provider until it is saved.
+
+### The AI in use, from the status bar
+
+A profile with its own AI ignores the general AI's provider in use: putting
+another provider in use on the general AI changes nothing for that profile, and
+outside Settings nothing said so. The status bar at the bottom of a repository
+now does. Its **AI:** _provider_ button names the provider that answers for
+the profile in use, with a dot for its status — green **Ready**, red **Not
+responding**, amber **No key**, grey **Not checked**.
+
+Clicking it opens a small panel:
+
+| Part | What it shows |
+| --- | --- |
+| Header | The profile in use, and whether it **follows the general AI** or **has its own AI** |
+| One row per provider | Every saved provider of that AI, with its model and status; a provider that is not responding shows why on a second line |
+| **In use** / **Use** | The provider answering now, and a one-click switch on every other one |
+| **Configure AI** | Opens **Settings → AI** |
+| **Usage and cost** | Opens the *Metrics* page of the repository settings |
+
+**Use** writes where the profile reads its AI. On a profile that follows the
+general AI it changes the general AI — and so every profile that follows it; on
+a profile with its own AI it changes that one only. Tasks that have a provider of
+their own keep it. **Esc** closes the panel, and the
+button is hidden while AI is turned off.
+
+![The AI in use from the status bar: the profile, its AI, and every provider with its status](../screenshots/statusbar-ai.webp)
+
+**The limits:** the dot is worked out from the model list the app fetched
+anyway (kept for up to a day) and never tests anything, so a provider that
+stopped answering can still read **Ready** — testing the connection in Settings
+is the way to be sure. Until Settings has been opened, the window does not hold
+the keys themselves, so a provider with no key can read **Not checked** or **Not
+responding** there instead of **No key**. Like **Use** in Settings, the switch
+does not test the provider it puts in use.
+
 ### Using a subscription instead of an API key
 
-In onboarding’s AI step or **Settings → AI**, choose **Use my subscription**.
+In **Settings → AI**, choose **Use my subscription**. On [first run](first-run.md), the AI step's **My subscription** card finds Claude Code or Codex and tests it in one step, and falls back to this same setup when neither is found.
 Select the plan you use, then open **Documentation** for the provider's installation instructions.
 Once installed, choose **Connect ChatGPT (Codex)** or **Connect Claude (Claude Code)**.
 The provider's CLI opens its sign-in page in your browser and stores its own session.
@@ -80,9 +225,9 @@ A sign-in that takes more than three minutes stops and can be retried.
 
 Connecting also tests the session. If you signed in from a terminal, choose **Test connection**. GitHuttBr checks the CLI’s sign-in method and sends a short test
 prompt from an empty temporary directory. The request counts toward your provider’s allowance.
-After **Connected**, choose **Add account**. The first account of the general AI becomes the default.
-For an existing setup, use **Make default** or assign individual features below.
-To skip setup, continue onboarding and return to Settings when ready.
+After **Connected**, choose **Add account**. The first account of the general AI is put **In use**.
+For an existing setup, choose **Use** on its row or assign individual features below.
+To skip setup on first run, choose **Skip, no AI** and return to Settings when ready.
 
 If GitHuttBr cannot find the CLI, install it or enter its full executable path and test again.
 If sign-in has expired or the CLI is using an API key, sign in with the subscription account.
@@ -113,7 +258,8 @@ If the command is not on your `PATH`, type its full path on the account.
 
 Under **Model per task**, each feature — commit messages, chat,
 explain, PR review, conflict resolution, wiki, themes — can point at its own
-account and model. Leave a row on the default to follow the default account.
+account and model. Leave a row on **Provider in use** to follow the provider
+marked **In use**.
 Cheap model for commit messages, strong one for chat, is the common setup.
 
 ### Upgrade notice
@@ -189,7 +335,33 @@ then runs any following Git actions under the configured approval policy.
 rules cover — including a file you pin to chat by hand, which is refused with a
 reason rather than read.
 
+## When a model is slow, or stops answering
+
+A local model on a laptop can take a minute for a commit message, and a model
+that "thinks" before it answers takes longer still — but a server that was
+closed mid-request should not leave you staring at a spinner.
+
+| What happens | What you see |
+|--------------|--------------|
+| No answer after 30 seconds | *"{account} is taking longer than expected"*, with **Keep waiting**, **Use {another account}** and **Cancel**. Keep waiting asks again a minute later if it is still running |
+| A local server (Ollama, LM Studio, llama.cpp…) is closed while it works | Within a few seconds: *"{account} is not responding"*, with a button for each other account that is ready to use, and **Cancel** |
+| The server was already closed when you asked | The same, straight away |
+
+**Use {another account}** cancels the request and sends the same one to that
+account, with its default model — the commit message, the review or the chat
+answer arrives as if you had asked it there. It does not change your settings:
+the next request goes to the account you chose for that task again.
+
+This covers every AI feature — commit messages, chat, review, explain,
+conflicts, themes, the wiki — because they all go through the same call.
+
 ## Limits
+
+- **Only local servers are watched for being closed.** A cloud provider that
+  goes down fails with its own error; a cloud call that is merely slow gets the
+  *taking longer* prompt like any other. A local server that is busy rather
+  than closed counts as alive: only a refused or dropped connection ends the
+  call early.
 
 - The bundled fallback model lists go stale between releases. That is what the
   live fetch is for; the fallback only covers the case where fetching cannot

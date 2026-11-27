@@ -3,14 +3,16 @@ title: Commitando
 category: Trabalhando com mudanças
 order: 31
 summary: Estilos de mensagem, templates, coautores e o linter.
-keywords: commit mensagem message compositor composer conventional gitmoji ticket amend template coautor co-author linter desfazer undo reset
+keywords: commit mensagem message compositor composer conventional gitmoji ticket amend template coautor co-author linter desfazer undo reset generate with ai cancel undo
 ---
 
 # Commitando
 
 ## Estilos de mensagem
 
-Escolha um nas Configurações; o compositor se adapta a ele.
+Escolha um em **Configurações → IA → Mensagens de commit**, ou direto no
+compositor; o compositor se adapta a ele. O estilo é da IA que o perfil usa — a
+geral ou a própria do perfil.
 
 | Estilo | Se parece com |
 |---|---|
@@ -62,6 +64,42 @@ Limites:
 - Um repositório cujo hook `commit-msg` roda o commitlint com o preset
   Conventional padrão rejeita um emoji no início. A regra é do hook, não do
   GitHuttBr: configure o commitlint para gitmoji ou use Conventional puro ali.
+
+## Escrevendo a mensagem com IA
+
+Com a IA ligada, **Gerar com IA** fica abaixo da descrição. Ele lê o diff
+preparado (staged) e escreve o resumo e a descrição no estilo acima. O botão
+diz quem vai responder — *conta · modelo*, o par escolhido para mensagens de
+commit em **Configurações → IA → Modelo por tarefa** — para que um modelo local
+lento ou um caro nunca seja surpresa.
+
+- **▾** ao lado do nome lista as contas salvas, cada uma com alguns dos seus
+  modelos. A escolha vale **só para aquela geração**; as Configurações não
+  mudam.
+- Enquanto roda, a caixa mostra *Gerando com conta · modelo… 12s* e
+  **Cancelar**, que interrompe a própria requisição, não só o indicador. Depois
+  de 30 segundos também oferece **Usar** outra conta pronta, que roda a mesma
+  geração nela. O aviso global *está demorando mais que o esperado*
+  ([IA](ai.md)) continua aparecendo também.
+- O texto novo **substitui** o que havia, e o antigo é guardado: uma faixa diz
+  *Gerado por conta · modelo em 7 s* e oferece **Desfazer**, que devolve o seu
+  resumo e a sua descrição, e **Gerar de novo**. Ela some assim que você edita o
+  texto ou faz o commit.
+
+![Gerar com IA e o menu de contas](../../screenshots/commit-ai-generate.webp)
+
+[Editar commit](commit-edit.md) tem o mesmo botão, a partir do diff daquele
+commit.
+
+Limites:
+
+- Só o diff preparado é enviado, cortado quando é muito grande — nunca mudanças
+  não preparadas nem outros arquivos.
+- Desfazer guarda um passo: o texto de antes da primeira geração seguida.
+  Quando a faixa some, essa cópia some junto.
+- Cancelar não devolve tokens que o provedor já gastou na requisição.
+- A lista do ▾ mostra todas as contas salvas, inclusive uma ainda sem chave;
+  escolhê-la falha com o erro daquela conta.
 
 ## Coisas que o compositor faz por você
 

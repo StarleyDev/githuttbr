@@ -3,16 +3,18 @@ title: Ramas, remotos y la barra lateral
 category: Ramas y cirugía
 order: 40
 summary: Todo lo que hace la barra lateral izquierda, y las ramas fijadas.
-keywords: rama ramas branch branches crear checkout renombrar borrar remoto fijada pinned barra lateral sidebar presencia añadir remoto paneles panes
+keywords: rama ramas branch branches crear checkout renombrar borrar remoto fijada pinned barra lateral sidebar presencia añadir remoto paneles panes filtro filter buscar search reordenar reorder mover sección acciones rápidas
 ---
 
 # Ramas, remotos y la barra lateral
 
 Una única barra lateral, reordenable y con búsqueda, contiene **ramas, remotos,
 etiquetas, stashes, worktrees y submódulos**. Cada sección se puede esconder o
-reordenar (Ajustes → Disposición), y la caja de filtro se aplica a todas.
+reordenar (Ajustes → Diseño y terminal), y la caja de filtro se aplica a todas.
 Qué secciones y carpetas dejas abiertas o cerradas se recuerda por repositorio,
 incluso tras reiniciar.
+
+Para reordenar, arrastra una sección por su cabecera — o, sin ratón, enfoca la cabecera y pulsa <kbd>Alt</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd>. Las mismas opciones *Subir sección* y *Bajar sección* están en el menú contextual de la cabecera (<kbd>Shift</kbd>+<kbd>F10</kbd> lo abre desde el teclado). El orden también se recuerda por repositorio.
 
 La barra lateral es un apilado de paneles, no una lista larga. Una sección
 abierta ocupa la altura que dejan las cerradas, que quedan debajo como filas de
@@ -30,6 +32,22 @@ nunca, lo contrario significa tenerlas todas en pantalla sin haberlas pedido;
 
 ![La barra lateral, con las ramas fijadas arriba del todo](../../screenshots/pinned-branches.webp)
 
+## Un filtro para todas las secciones
+
+La caja de la parte superior de la barra lateral filtra **todas las secciones a la vez**: ramas locales y remotas, etiquetas, stashes, worktrees, submódulos, pull requests, issues, milestones, releases, marcadores y tareas. Compara nombres, títulos y rutas sin distinguir mayúsculas; un pull request también coincide por su `#número`, su rama de origen y su autor. La línea bajo la caja cuenta los resultados de todas las secciones.
+
+Mientras hay un filtro activo:
+
+- cada cabecera muestra **coincidencias de total** — `2 de 10`;
+- una sección sin coincidencias sale de la lista y se pliega en una única línea al final, para que los resultados no se mezclen con cabeceras vacías;
+- las secciones y carpetas con coincidencias se abren solas, salvo que tengan más de 300 — esas las abres a mano. Lo que abras o cierres dura solo hasta limpiar el filtro; tu disposición guardada no se toca.
+
+<kbd>Esc</kbd> en la caja lo limpia.
+
+![La barra lateral filtrada por "pay": dos secciones con coincidencias, el resto plegado al final](../../screenshots/sidebar-filter.webp)
+
+**Límites:** es una búsqueda simple por subcadena — sin comodines, sin búsqueda difusa, sin expresiones regulares. Busca en lo que la barra lateral ya cargó: los pull requests e issues que el host no devolvió en la lista no aparecen aquí (la página de [pull requests](pull-requests.md) tiene su propio filtro). Las ramas remotas coinciden por el nombre completo `remote/rama`, así que escribir el nombre de un remoto encuentra todas sus ramas.
+
 ## Ramas
 
 Crea, haz checkout, renombra y borra — en local y en el remoto. Las filas de
@@ -40,12 +58,14 @@ rama muestran:
 - un **punto de riesgo** tras un escaneo del [radar de conflictos](conflict-radar.md),
 - un **marcador ⟳** cuando el remoto [reescribió el historial](range-diff.md).
 
+Pasa el ratón por una fila de rama local, o llega a ella con Tab, para dos acciones rápidas: **Checkout** y **Crear pull request**. Son las mismas acciones del menú contextual, que conserva todo lo demás; la rama actual solo muestra la segunda.
+
 Las ramas con `/` en el nombre se pliegan en carpetas plegables automáticamente.
 Un prefijo con un solo hijo sigue siendo carpeta — `release/1.2.3` es `release`
 con `1.2.3` dentro — así que añadir `release/1.2.4` después no redibuja el árbol.
 Una racha de carpetas de un solo hijo se comprime en una cabecera
 (`dependabot/npm_and_yarn`). Las cabeceras de carpeta llevan marca de carpeta;
-la ref, marca de rama, remoto o tag.
+la ref, marca de rama, remoto o tag. **Ajustes → Diseño y terminal → Agrupar refs por prefijo** desactiva las carpetas, para una lista plana.
 
 Haz clic derecho en la cabecera de una carpeta para actuar sobre el grupo
 entero: *Eliminar todas las ramas bajo `feature` (4 ramas)* borra todo lo que

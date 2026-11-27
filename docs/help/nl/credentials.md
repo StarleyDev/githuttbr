@@ -4,7 +4,7 @@ category: Beveiliging
 order: 73
 summary: De eigen wachtwoordkluis van git — de derde — en waarom https het steeds opnieuw vraagt.
 keywords: credential helper wachtwoord password https vraagt opnieuw osxkeychain wincred manager libsecret store cache git-credentials platte tekst plaintext vergeten ingetrokken revoked token 401 aanmelding controleren welk account token in de remote-url ingebed wachtwoord uit de url verwijderen token in remote url embedded password invalid username or token authentication failed set-url
-source: ec745a4eb35cb3d23b0af6a36d6a540b8254df62
+source: a0a28af33433dfe90ae3dfb2e99a003c13ae5f36
 ---
 
 # Credential helper
@@ -152,7 +152,7 @@ fetch-URL en elke push-URL die er een bevat — en schrijft niets anders dan
 |---------------|-------------------------|
 | Het profiel van de repository heeft een token of gekoppeld account voor die host | Dat token — de bevestiging zegt verder niets |
 | Geen profieltoken, maar de eigen helper van git heeft een aanmelding voor de host | De aanmelding van de helper |
-| Geen van beide | Niets: fetch en push mislukken tot je een token toevoegt. De bevestiging zegt dat eerst en biedt **Eerst een token toevoegen** aan, wat Instellingen → Integraties opent |
+| Geen van beide | Niets: fetch en push mislukken tot je een token toevoegt. De bevestiging zegt dat eerst en biedt **Eerst een token toevoegen** aan, wat Instellingen → Gekoppelde accounts opent |
 
 Als ze vanuit een mislukte bewerking is gestart, biedt ze **Opnieuw proberen** aan.
 

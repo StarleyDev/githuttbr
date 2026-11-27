@@ -57,4 +57,4 @@ This page says what that means concretely — and where the edges are.
 
 **Reduced motion** is honoured from the OS setting — animations collapse to
 instant transitions. Theme contrast can be tuned per-theme in
-[Settings → Appearance](themes.md).
+[Settings → Themes](themes.md).

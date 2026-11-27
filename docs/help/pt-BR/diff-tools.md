@@ -14,7 +14,7 @@ gerado de 4.000 linhas, um merge em que você precisa ver quatro colunas ao mesm
 tempo, ou simplesmente a ferramenta que você usa há uma década e lê mais rápido do
 que qualquer novidade.
 
-**Configurações → Geral → Ferramentas externas de diff e merge.**
+**Configurações → Git e sincronização → Ferramentas externas de diff e merge.**
 
 ## A lista é do git, não nossa
 

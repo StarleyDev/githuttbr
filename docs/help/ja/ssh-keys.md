@@ -8,7 +8,7 @@ keywords: ssh 鍵 key keys エージェント agent ssh-add ssh-keygen ed25519 p
 
 # SSH 鍵
 
-**設定 → セキュリティ → SSH 鍵。**
+**設定 → セキュリティと確認 → SSH 鍵。**
 
 ## なぜトークンの隣にこれがあるのか
 

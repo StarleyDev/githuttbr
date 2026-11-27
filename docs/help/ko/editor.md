@@ -4,7 +4,7 @@ category: 작업 공간 도구
 order: 95
 summary: 저장소, 파일, 또는 코드 한 줄을 실제로 코드를 쓰는 편집기로 보내요.
 keywords: 편집기 editor vscode code cursor windsurf zed sublime jetbrains intellij webstorm xcode 외부 편집기로 열기 open in editor 줄 line 열 column 사용자 지정 명령 custom command argv devin desktop
-source: e25ceb114b185e5aecb75a70b46cddd3f22d21bf
+source: 5bb8b224ab1beced6eb06d57e70e8c3cd0196faa
 ---
 
 # 외부 편집기
@@ -18,7 +18,7 @@ GitHuttBr에 편집기를 한 번 지정해 두면 그 틈이 사라져요. 파�
 
 ## 편집기 고르기
 
-**설정 → 일반 → 외부 편집기.** 드롭다운에는 GitHuttBr가 이 컴퓨터에서 찾아낸
+**설정 → Git 및 동기화 → 외부 편집기.** 드롭다운에는 GitHuttBr가 이 컴퓨터에서 찾아낸
 편집기가 나열돼요 — 먼저 각 편집기의 명령을 찾고, macOS에서는 그다음
 `/Applications` 와 `~/Applications` 의 애플리케이션 번들을 찾아요. 이 검색은
 설정을 열 때마다 실행되므로, 5분 전에 설치한 편집기도 재시작 없이 나타나요.

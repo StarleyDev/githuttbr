@@ -1,9 +1,10 @@
-import { ipcMain } from 'electron'
-import type { AIConfig, AppThemeColors, AskAction, AskPlan, BranchNamingStyle, CodeThemeColors, ConflictStyle, EditSelectionRequest, ExplainStyle, PRReviewResult, RepoStatus } from '../shared/types'
+import { BrowserWindow, ipcMain } from 'electron'
+import type { AIConfig, AISlowChoice, AppThemeColors, AskAction, AskPlan, BranchNamingStyle, CodeThemeColors, ConflictStyle, EditSelectionRequest, ExplainStyle, PRReviewResult, RepoStatus } from '../shared/types'
 import { recordAIUsage } from './analytics'
 import { activeProfileAiKey } from './settings'
 import { callModel, missingCredential, transportOf, type ChatMessage, type ModelCallOptions } from './aiTransport'
 import { listAccountModels } from './aiModels'
+import { answerSlowAIRequest, cancelAIRequestsByTag, runWithAIRequestTag, setAIRequestListener } from './aiRequests'
 import { detectCliBinaries, signInSubscription, testSubscription } from './aiCli'
 import { createHash } from 'node:crypto'
 import { PRODUCT_NAME } from '../shared/brand'
@@ -53,6 +54,13 @@ export interface AICommitMessage {
 
 export interface AICommitContext {
   branch: string
+  /** The renderer's name for this generation, so its Cancel can end it (`ai:cancelRequest`). */
+  requestTag?: string
+}
+
+/** A renderer-chosen job name, checked: it crosses IPC as untyped data. */
+function isRequestTag(value: unknown): value is string {
+  return typeof value === 'string' && value.length > 0 && value.length <= 64
 }
 
 const TICKET_RE = /([A-Z][A-Z0-9]+-\d+)/
@@ -200,7 +208,7 @@ function shapeSummary(summary: string, cfg: AIConfig): string {
 }
 
 /** One chat completion against the account's provider, as raw message text. */
-async function chatComplete(
+export async function chatComplete(
   input: AIConfig,
   messages: ChatMessage[],
   feature: string,
@@ -263,7 +271,15 @@ export class InvalidAIResponse extends Error {
 /** True when native json_schema was rejected or exhausted its own validation retries. */
 function rejectsJsonSchema(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err)
-  const rejectedFormat = /failed \(4\d\d\)/.test(msg) && /response_format|json[_ ]schema|structured/i.test(msg)
+  // Every OpenAI-compatible provider words a refused schema its own way — Gemini
+  // says "The specified schema produces a constraint that has too many states",
+  // naming neither response_format nor json_schema — and a gateway relays
+  // whatever the model behind it says. So any 400/422 to a request that carried
+  // the schema earns one retry without it; auth (401/403), a missing model (404)
+  // and rate limits (429) do not, since dropping the schema cannot fix those.
+  const rejectedFormat =
+    /failed \((400|422)\)/.test(msg) ||
+    (/failed \(4\d\d\)/.test(msg) && /response_format|json[_ ]schema|structured/i.test(msg))
   const exhaustedValidation =
     /structured_output_validation_error|failed to produce a schema-valid structured response/i.test(msg)
   return rejectedFormat || exhaustedValidation
@@ -1052,7 +1068,27 @@ Rules:
   }
 }
 
+/** The renderer's answer, checked: it crosses IPC as untyped data. */
+function isSlowChoice(value: unknown): value is AISlowChoice {
+  if (!value || typeof value !== 'object') return false
+  const kind = (value as { kind?: unknown }).kind
+  if (kind === 'wait' || kind === 'cancel') return true
+  const accountId = (value as { accountId?: unknown }).accountId
+  return kind === 'switch' && typeof accountId === 'string' && accountId.length > 0 && accountId.length <= 128
+}
+
 export function registerAiHandlers(): void {
+  // A slow call is announced to every window: the prompt is app-wide, whichever
+  // surface started the call.
+  setAIRequestListener((event) => {
+    for (const win of BrowserWindow.getAllWindows()) {
+      if (!win.isDestroyed()) win.webContents.send('ai:request', event)
+    }
+  })
+  ipcMain.handle('ai:answerSlow', (_e, id: unknown, choice: unknown) => {
+    if (typeof id !== 'number' || !isSlowChoice(choice)) return
+    answerSlowAIRequest(id, choice)
+  })
   const signIns = new Map<string, AbortController>()
   ipcMain.handle('ai:signInSubscription', async (event, binary, path, requestId: unknown) => {
     if (typeof requestId !== 'string' || requestId.length > 64) return 'failed'
@@ -1075,14 +1111,23 @@ export function registerAiHandlers(): void {
   ipcMain.handle('ai:planActions', (_e, prompt: string, status: RepoStatus, cfg: AIConfig) =>
     planRepoActions(prompt, status, cfg)
   )
-  ipcMain.handle('ai:commitMessage', (_e, diff: string, cfg: AIConfig, ctx: AICommitContext) =>
-    generateCommitMessage(diff, cfg, ctx)
-  )
+  ipcMain.handle('ai:commitMessage', (event, diff: string, cfg: AIConfig, ctx: AICommitContext) => {
+    const tag = ctx?.requestTag
+    if (!isRequestTag(tag)) return generateCommitMessage(diff, cfg, ctx)
+    // Scoped to the window that asked, so one window cannot cancel another's job.
+    return runWithAIRequestTag(`${event.sender.id}:${tag}`, () => generateCommitMessage(diff, cfg, ctx))
+  })
+  ipcMain.handle('ai:cancelRequest', (event, tag: unknown) => {
+    if (isRequestTag(tag)) cancelAIRequestsByTag(`${event.sender.id}:${tag}`)
+  })
   ipcMain.handle('ai:listModels', async (_e, cfg: AIConfig, force?: boolean) =>
     listAccountModels(await withStoredKey(cfg), force === true)
   )
   ipcMain.handle('ai:testSubscription', (_event, binary, path) => testSubscription(binary, path))
-  ipcMain.handle('ai:detectCli', () => detectCliBinaries())
+  // Renderer input: only a literal `versions: true` asks for the extra spawns.
+  ipcMain.handle('ai:detectCli', (_event, opts: unknown) =>
+    detectCliBinaries({ versions: !!opts && typeof opts === 'object' && (opts as { versions?: unknown }).versions === true })
+  )
   ipcMain.handle('ai:explainCode', (_e, code: string, lang: string, cfg: AIConfig) => explainCode(code, lang, cfg))
   ipcMain.handle('ai:editSelection', (_e, req: EditSelectionRequest, cfg: AIConfig) => editSelection(req, cfg))
   ipcMain.handle('ai:hoverExplain', (_e, req: HoverExplainRequest, cfg: AIConfig) => hoverExplain(req, cfg))

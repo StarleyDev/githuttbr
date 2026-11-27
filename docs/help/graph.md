@@ -32,7 +32,7 @@ with a hundred.
 
 ## Making it show what you want
 
-- **Graph focus** decides how much history is drawn — Settings → Themes →
+- **Graph focus** decides how much history is drawn — Settings →
   **Graph**, or the gear menu in the graph header. *Everything* draws it all;
   *Linear history* (first-parent) leaves only the trunk; *Hide merged branches*
   keeps the trunk plus the branches that are still unmerged; *Solo* keeps your
@@ -52,20 +52,30 @@ with a hundred.
 
 - **Columns**: show, hide, resize and reorder branch, message, author, date,
   SHA, signature and deployment columns.
-- **Style**: Settings → Themes → **Graph** — lane palette (8 built-ins, custom,
+- **Style**: Settings → **Graph** — lane palette (8 built-ins, custom,
   or AI-generated), corner style, row density and line thickness, with a live
   mini-graph preview.
 
 ![Graph style settings with live preview](../screenshots/settings-graph.webp)
 
-- **How much history loads**: Settings → General → **Initial commits loaded**
+- **How much history loads**: Settings → Graph → **Initial commits loaded**
   and **Commits per "load more"**, each from 50 to 5,000. A number outside that
   range is outlined in red with the range beneath it while you type, and snaps
   to the nearest bound when you leave the field or press Enter; Escape puts the
   saved value back.
 
-![Settings → General with 20 typed into Initial commits loaded: the field is
+![Settings → Graph with 20 typed into Initial commits loaded: the field is
 outlined in red with "From 50 to 5,000" beneath it](../screenshots/number-field-range.webp)
+
+- **What a row shows**: Settings → Graph → **Row content** — **Relative dates**
+  ("3d ago" instead of the date), **Show avatars** and **Use GitHub profile
+  pictures** (see [author avatars](avatars.md) for what each one asks the
+  network). **Auto-load more on scroll** sits with the history counts above it.
+  **Group refs by prefix** folds the sidebar's branch and tag lists, not the
+  graph, so it is on Settings → Layout & terminal.
+
+All of the graph's settings live on that one page; until 4.60 they were split
+between General and a Graph tab on Themes.
 
 ## Where stashes sit
 

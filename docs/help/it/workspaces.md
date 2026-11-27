@@ -4,7 +4,7 @@ category: Per iniziare
 order: 3
 summary: Tanti repository senza affogare: schede, gruppi, cartelle e aree di lavoro.
 keywords: area di lavoro workspace schede tabs gruppi cartelle più repo organizza cambia layout vai al repository selettore dimensione delle schede go to repository switcher tab sizing
-source: 6fc6b6e0f1f3c8f6a3a638dc0388df5328222a41
+source: 0a7a79bf2fb89d3802683802c172c87da41b1909
 ---
 
 # Aree di lavoro, schede e gruppi
@@ -33,7 +33,7 @@ può chiudere lavoro che avevi ancora fra le mani.
 
 ### Dimensione delle schede
 
-Per impostazione predefinita (**Impostazioni → Disposizione → Dimensione delle
+Per impostazione predefinita (**Impostazioni → Layout e terminale → Dimensione delle
 schede → Adatta**) le schede si comportano come quelle di un browser: quando la
 striscia resta senza spazio si restringono in modo uguale fino a una larghezza
 minima, e scorrono solo quando anche quel minimo è raggiunto. **Fissa** riporta il

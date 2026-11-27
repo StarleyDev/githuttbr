@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Settings,
-  ShieldCheck,
   Loader2,
   BarChart3,
   History,
@@ -10,11 +9,25 @@ import {
   Info,
   KeyRound,
   FileCog,
-  Image as ImageIcon,
-  AlertTriangle
+  AlertTriangle,
+  GitBranch,
+  Globe,
+  ArrowRight
 } from 'lucide-react'
 import { gitApi, logApi } from '../infrastructure/api'
 import { applyRepoImage, lookupRepoImage, normalizeImagePath } from '../lib/repoImage'
+import { lookupRepoAlias, repoDisplayName } from '../lib/repoAlias'
+import {
+  REPO_SETTINGS_NAV,
+  findRepoSettingsNavItem,
+  getMainRemote,
+  getRepoInitials,
+  getRepoSettingsPills,
+  resolveRepoSettingsPage,
+  type RepoSettingsPage
+} from '../lib/repoSettingsNav'
+import { activeRepoPath } from '../appCommands'
+import { useReposStore } from '../stores/repos'
 import { loadRepoImage } from './RepoTabLabel'
 import { RepoImagePicker } from './RepoImagePicker'
 import { useUIStore } from '../stores/ui'
@@ -27,7 +40,7 @@ import { RepoVaultTab } from './RepoVaultTab'
 import { useT, t as tr, interp } from '../i18n'
 import { BranchMultiSelect } from './BranchMultiSelect'
 import { RepoConfigTab } from './RepoConfigTab'
-import type { LogEntry } from '../../../shared/types'
+import type { HostingProvider, LogEntry } from '../../../shared/types'
 
 function relTime(ms: number): string {
   const m = Math.round((Date.now() - ms) / 60000)
@@ -89,23 +102,73 @@ function RepoLogsTab({ repoPath }: { repoPath: string }): React.JSX.Element {
   )
 }
 
-type Tab = 'general' | 'config' | 'info' | 'vault' | 'analytics' | 'insights' | 'history' | 'logs'
+// Product names: the same in every language.
+const HOST_NAME: Record<Exclude<HostingProvider, null>, string> = {
+  github: 'GitHub',
+  gitlab: 'GitLab',
+  bitbucket: 'Bitbucket',
+  azure: 'Azure DevOps',
+  forgejo: 'Forgejo'
+}
 
-function GeneralTab({ repoPath }: { repoPath: string }): React.JSX.Element {
+const PAGE_ICON: Record<RepoSettingsPage, React.ReactNode> = {
+  general: <Settings size={14} />,
+  config: <FileCog size={14} />,
+  info: <Info size={14} />,
+  vault: <KeyRound size={14} />,
+  analytics: <BarChart3 size={14} />,
+  insights: <Flame size={14} />,
+  history: <History size={14} />,
+  logs: <ScrollText size={14} />
+}
+
+/** One setting: what it is and why on the left, the control on the right. */
+function SettingRow({
+  label,
+  hint,
+  children,
+  danger
+}: {
+  label: string
+  hint: string
+  children: React.ReactNode
+  danger?: boolean
+}): React.JSX.Element {
+  return (
+    <div className={`repo-settings-row ${danger ? 'danger' : ''}`}>
+      <div className="repo-settings-row-text">
+        <span className="repo-settings-row-label">{label}</span>
+        <span className="repo-settings-row-hint">{hint}</span>
+      </div>
+      <div className="repo-settings-row-control">{children}</div>
+    </div>
+  )
+}
+
+function GeneralTab({ repoPath, onOpenPage }: { repoPath: string; onOpenPage: (p: RepoSettingsPage) => void }): React.JSX.Element {
   const closeModal = useUIStore((s) => s.closeModal)
+  const openModal = useUIStore((s) => s.openModal)
   const toast = useUIStore((s) => s.toast)
   const t = useT()
   const repo = useRepoStore((s) => s.repos[repoPath])
+  const profiles = useSettingsStore((s) => s.settings.profiles)
   const branchOptions = useMemo(() => repo?.branches.locals.map((b) => b.name) ?? [], [repo])
   const [protectedBranches, setProtected] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [alias, setAlias] = useState(
+    () => lookupRepoAlias(repoPath, useSettingsStore.getState().settings.repoAliases) ?? ''
+  )
+  // '' is Auto: no binding, the repository follows the active profile.
+  const [profileId, setProfileId] = useState(() => useSettingsStore.getState().settings.repoProfiles[repoPath] ?? '')
   const [imagePath, setImagePath] = useState(
     () => lookupRepoImage(repoPath, useSettingsStore.getState().settings.repoImages) ?? ''
   )
   const [preview, setPreview] = useState<{ file: string; url: string | null } | null>(null)
   const imageFile = normalizeImagePath(imagePath)
   const imageBroken = imageFile !== '' && preview?.file === imageFile && preview.url === null
+  const config = repo?.config
+  const configFile = config?.exists ? (config.path.split(/[\\/]/).pop() ?? '') : ''
 
   useEffect(() => {
     gitApi
@@ -132,9 +195,21 @@ function GeneralTab({ repoPath }: { repoPath: string }): React.JSX.Element {
   const save = async (): Promise<void> => {
     setSaving(true)
     try {
-      useSettingsStore
-        .getState()
-        .update((s) => ({ ...s, repoImages: applyRepoImage(s.repoImages, repoPath, imageFile || null) }))
+      const store = useSettingsStore.getState()
+      store.update((s) => ({ ...s, repoImages: applyRepoImage(s.repoImages, repoPath, imageFile || null) }))
+      // Only what changed: re-applying an unchanged alias would still rewrite
+      // every tab chip that names this repository.
+      if (alias.trim() !== (lookupRepoAlias(repoPath, store.settings.repoAliases) ?? '')) {
+        store.setRepoAlias(repoPath, alias.trim() || null)
+      }
+      const bound = store.settings.repoProfiles[repoPath] ?? ''
+      if (profileId !== bound) {
+        store.setRepoProfile(repoPath, profileId || null)
+        // The title-bar switcher activates a profile as it binds it; do the same
+        // when this repository is the one on screen, or the binding would only
+        // take effect on the next tab switch.
+        if (profileId && activeRepoPath() === repoPath) store.setActiveProfile(profileId)
+      }
       await gitApi.setProtectedBranches(repoPath, protectedBranches)
       toast('success', t('repoSettings.saved'))
       closeModal()
@@ -145,35 +220,85 @@ function GeneralTab({ repoPath }: { repoPath: string }): React.JSX.Element {
     }
   }
 
+  const name = repoDisplayName(repoPath, useSettingsStore.getState().settings.repoAliases, repo?.name)
+  // "Remove from list" reads as "delete"; the confirm says the folder stays.
+  const confirmForget = (): void => {
+    openModal({
+      kind: 'confirm',
+      title: t('repos.forget'),
+      message: interp(t('repos.forgetConfirm'), { name }),
+      danger: true,
+      confirmLabel: t('repos.forgetAction'),
+      onConfirm: () => {
+        void useReposStore
+          .getState()
+          .forget(repoPath)
+          .then(() => {
+            toast('success', interp(t('repoSettings.removedFromList'), { name }))
+            closeModal()
+          })
+          .catch((err: unknown) => toast('error', err instanceof Error ? err.message : String(err)))
+      }
+    })
+  }
+
   return (
     <>
-      <h4 style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-        <ShieldCheck size={14} /> {t('repoSettings.protectedBranches')}
-      </h4>
-      <span className="settings-hint">{t('repoSettings.protectedBranchesHint')}</span>
-      {loading ? (
-        <div style={{ padding: 12 }}>
-          <Loader2 size={15} className="spin" />
+      {configFile && (
+        <div className="repo-settings-banner" role="note">
+          <FileCog size={15} />
+          <span>{interp(t('repoSettings.configBanner'), { file: configFile })}</span>
+          <button className="btn ghost small" onClick={() => onOpenPage('config')}>
+            {t('repoSettings.configBannerOpen')} <ArrowRight size={13} />
+          </button>
         </div>
-      ) : (
-        <BranchMultiSelect options={branchOptions} value={protectedBranches} onChange={setProtected} placeholder={t('repoSettings.addBranch')} />
       )}
-      <h4 style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 18 }}>
-        <ImageIcon size={14} /> {t('repoSettings.tabImage')}
-      </h4>
-      <span className="settings-hint">{t('repoSettings.tabImageHint')}</span>
-      <RepoImagePicker
-        repoPath={repoPath}
-        value={imagePath}
-        onChange={setImagePath}
-        preview={imageFile && preview?.file === imageFile ? preview.url : null}
-        invalid={imageBroken}
-      />
-      {imageBroken && (
-        <p className="repo-image-warning" role="alert">
-          <AlertTriangle size={13} /> {t('repoSettings.tabImageBroken')}
-        </p>
-      )}
+      <div className="repo-settings-rows">
+        <SettingRow label={t('repoSettings.displayName')} hint={t('repoSettings.displayNameHint')}>
+          <input
+            className="modal-input"
+            value={alias}
+            placeholder={repo?.name ?? ''}
+            onChange={(e) => setAlias(e.target.value)}
+          />
+        </SettingRow>
+        <SettingRow label={t('repoSettings.profile')} hint={t('repoSettings.profileHint')}>
+          <select className="modal-input" value={profileId} onChange={(e) => setProfileId(e.target.value)}>
+            <option value="">{t('profile.auto')}</option>
+            {profiles.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        </SettingRow>
+        <SettingRow label={t('repoSettings.protectedBranches')} hint={t('repoSettings.protectedBranchesHint')}>
+          {loading ? (
+            <Loader2 size={15} className="spin" />
+          ) : (
+            <BranchMultiSelect
+              options={branchOptions}
+              value={protectedBranches}
+              onChange={setProtected}
+              placeholder={t('repoSettings.addBranch')}
+            />
+          )}
+        </SettingRow>
+        <SettingRow label={t('repoSettings.tabImage')} hint={t('repoSettings.tabImageHint')}>
+          <RepoImagePicker
+            repoPath={repoPath}
+            value={imagePath}
+            onChange={setImagePath}
+            preview={imageFile && preview?.file === imageFile ? preview.url : null}
+            invalid={imageBroken}
+          />
+          {imageBroken && (
+            <p className="repo-image-warning" role="alert">
+              <AlertTriangle size={13} /> {t('repoSettings.tabImageBroken')}
+            </p>
+          )}
+        </SettingRow>
+      </div>
       <div className="modal-actions">
         <button className="btn ghost" onClick={closeModal} disabled={saving}>
           {t('common.cancel')}
@@ -182,19 +307,34 @@ function GeneralTab({ repoPath }: { repoPath: string }): React.JSX.Element {
           {saving ? <Loader2 size={14} className="spin" /> : null} {t('common.save')}
         </button>
       </div>
+      <div className="repo-settings-rows repo-settings-danger">
+        <SettingRow label={t('repoSettings.removeFromList')} hint={t('repoSettings.removeFromListHint')} danger>
+          <button className="btn danger" onClick={confirmForget}>
+            {t('repoSettings.removeFromListAction')}
+          </button>
+        </SettingRow>
+      </div>
     </>
   )
 }
 
-export function RepoSettingsModal({ repoPath, initialTab }: { repoPath: string; initialTab?: Tab }): React.JSX.Element {
+export function RepoSettingsModal({ repoPath, initialTab }: { repoPath: string; initialTab?: string }): React.JSX.Element {
   const repo = useRepoStore((s) => s.repos[repoPath])
+  const aliases = useSettingsStore((s) => s.settings.repoAliases)
   const aiEnabled = useSettingsStore((s) => s.activeAI().enabled !== false)
   const t = useT()
-  const [tab, setTab] = useState<Tab>(initialTab ?? 'general')
+  const [page, setPage] = useState<RepoSettingsPage>(() => resolveRepoSettingsPage(initialTab))
+  const [vaultCount, setVaultCount] = useState<number | null>(null)
+  const onVaultCount = useCallback((n: number) => setVaultCount(n), [])
   // Easter egg: five title clicks inside 1.5s open the cosmos view. Deliberately
   // undocumented — finding it is the point, so it stays out of docs/help and the
   // screenshot manifest.
   const titleClicks = useRef<number[]>([])
+
+  // A second deep link while the modal is open (palette → Insights) moves it.
+  useEffect(() => {
+    if (initialTab) setPage(resolveRepoSettingsPage(initialTab))
+  }, [initialTab])
 
   const onTitleClick = (): void => {
     const now = Date.now()
@@ -207,39 +347,90 @@ export function RepoSettingsModal({ repoPath, initialTab }: { repoPath: string; 
     }
   }
 
-  const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
-    { id: 'general', label: t('repoSettings.general'), icon: <Settings size={13} /> },
-    { id: 'config', label: t('repoSettings.config'), icon: <FileCog size={13} /> },
-    { id: 'info', label: t('repoSettings.info'), icon: <Info size={13} /> },
-    { id: 'vault', label: t('repoSettings.vault'), icon: <KeyRound size={13} /> },
-    { id: 'analytics', label: t('repoSettings.analytics'), icon: <BarChart3 size={13} /> },
-    { id: 'insights', label: t('repoSettings.insights'), icon: <Flame size={13} /> },
-    { id: 'history', label: t('repoSettings.history'), icon: <History size={13} /> },
-    { id: 'logs', label: t('repoSettings.logs'), icon: <ScrollText size={13} /> }
-  ]
+  const name = repoDisplayName(repoPath, aliases, repo?.name)
+  const remote = getMainRemote(repo?.remotes ?? [], repo?.prProvider ?? null)
+  const hostLabel = remote ? (remote.kind ? HOST_NAME[remote.kind] : remote.hostname) : null
+  const pills = getRepoSettingsPills({ branchCount: repo ? repo.branches.locals.length : null, vaultCount })
+  const current = findRepoSettingsNavItem(page)
 
   return (
-    <div className="repo-settings">
-      <h3 onClick={onTitleClick} style={{ cursor: 'default', userSelect: 'none' }}>
-        <Settings size={16} style={{ verticalAlign: '-3px', marginRight: 6 }} />
-        {t('repoSettings.title')} — {repo?.name}
-      </h3>
-      <div className="repo-settings-tabs">
-        {tabs.map((tb) => (
-          <button key={tb.id} className={`codesearch-tab ${tab === tb.id ? 'active' : ''}`} onClick={() => setTab(tb.id)}>
-            {tb.icon} {tb.label}
-          </button>
-        ))}
-      </div>
-      <div className="repo-settings-body">
-        {tab === 'general' && <GeneralTab repoPath={repoPath} />}
-        {tab === 'config' && <RepoConfigTab repoPath={repoPath} />}
-        {tab === 'info' && <RepoInfoTab repoPath={repoPath} />}
-        {tab === 'vault' && <RepoVaultTab repoPath={repoPath} />}
-        {tab === 'analytics' && <AnalyticsSection aiEnabled={aiEnabled} />}
-        {tab === 'insights' && <InsightsPage repoPath={repoPath} />}
-        {tab === 'history' && <RepoHistorySection />}
-        {tab === 'logs' && <RepoLogsTab repoPath={repoPath} />}
+    <div className="repo-settings repo-settings-shell">
+      <header className="repo-settings-summary">
+        <span className="repo-settings-avatar" aria-hidden="true">
+          {getRepoInitials(name)}
+        </span>
+        <div className="repo-settings-summary-text">
+          <h3 className="repo-settings-name" onClick={onTitleClick}>
+            {name}
+          </h3>
+          <div className="repo-settings-meta">
+            <span className="repo-settings-path" title={repoPath}>
+              {repoPath}
+            </span>
+            {repo?.branches.current && (
+              <span className="repo-settings-meta-item">
+                <GitBranch size={12} /> {repo.branches.current}
+              </span>
+            )}
+            <span className="repo-settings-meta-item">
+              <Globe size={12} />
+              {remote ? (
+                <>
+                  {remote.name}
+                  {hostLabel && <span className="repo-settings-host">{hostLabel}</span>}
+                </>
+              ) : (
+                t('repoSettings.noRemote')
+              )}
+            </span>
+          </div>
+        </div>
+        {pills.length > 0 && (
+          <div className="repo-settings-pills">
+            {pills.map((p) => (
+              <span key={p.id} className="repo-settings-pill" title={interp(t(p.titleKey), { n: p.count })}>
+                {p.id === 'branches' ? <GitBranch size={12} /> : <KeyRound size={12} />}
+                {interp(t(p.titleKey), { n: p.count })}
+              </span>
+            ))}
+          </div>
+        )}
+      </header>
+      <div className="repo-settings-layout">
+        <nav className="repo-settings-nav" aria-label={t('repoSettings.title')}>
+          {REPO_SETTINGS_NAV.map((group) => (
+            <div key={group.id} className="repo-settings-nav-group">
+              <span className="repo-settings-nav-heading">{t(group.labelKey)}</span>
+              {group.items.map((item) => (
+                <button
+                  key={item.id}
+                  className={`repo-settings-nav-item ${page === item.id ? 'active' : ''}`}
+                  aria-current={page === item.id ? 'page' : undefined}
+                  onClick={() => setPage(item.id)}
+                >
+                  {PAGE_ICON[item.id]}
+                  <span>{t(item.labelKey)}</span>
+                </button>
+              ))}
+            </div>
+          ))}
+        </nav>
+        <section className="repo-settings-content">
+          <div className="repo-settings-page-head">
+            <h4>{t(current.labelKey)}</h4>
+            <p>{t(current.descriptionKey)}</p>
+          </div>
+          <div className="repo-settings-body">
+            {page === 'general' && <GeneralTab repoPath={repoPath} onOpenPage={setPage} />}
+            {page === 'config' && <RepoConfigTab repoPath={repoPath} />}
+            {page === 'info' && <RepoInfoTab repoPath={repoPath} />}
+            {page === 'vault' && <RepoVaultTab repoPath={repoPath} onCount={onVaultCount} />}
+            {page === 'analytics' && <AnalyticsSection aiEnabled={aiEnabled} />}
+            {page === 'insights' && <InsightsPage repoPath={repoPath} />}
+            {page === 'history' && <RepoHistorySection />}
+            {page === 'logs' && <RepoLogsTab repoPath={repoPath} />}
+          </div>
+        </section>
       </div>
     </div>
   )

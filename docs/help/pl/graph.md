@@ -35,8 +35,7 @@ commitów przewija się tak jak to ze stoma.
 
 ## Ustawianie tego, co ma pokazywać
 
-- **Fokus grafu** decyduje, ile historii jest rysowane — Ustawienia → Motywy →
-  **Graf**, albo menu koła zębatego w nagłówku grafu. *Wszystko* rysuje całość;
+- **Fokus grafu** decyduje, ile historii jest rysowane — Ustawienia → **Graf**, albo menu koła zębatego w nagłówku grafu. *Wszystko* rysuje całość;
   *Historia liniowa* (first-parent) zostawia sam pień; *Ukryj scalone gałęzie*
   zostawia pień plus gałęzie jeszcze niescalone; *Tryb solo* zostawia twoją
   gałąź, gałęzie oznaczone gwiazdką i gałąź domyślną.
@@ -56,11 +55,15 @@ commitów przewija się tak jak to ze stoma.
 
 - **Kolumny**: pokaż, ukryj, zmień rozmiar i kolejność kolumn gałęzi,
   wiadomości, autora, daty, SHA, podpisu i wdrożenia.
-- **Styl**: Ustawienia → Motywy → **Graf** — paleta torów (8 wbudowanych, własna
+- **Styl**: Ustawienia → **Graf** — paleta torów (8 wbudowanych, własna
   albo wygenerowana przez AI), styl narożników, gęstość wierszy i grubość linii,
   z podglądem mini-grafu na żywo.
 
 ![Ustawienia stylu grafu z podglądem na żywo](../../screenshots/settings-graph.webp)
+
+- **Co pokazuje wiersz**: Ustawienia → Graf → **Zawartość wierszy** — **Daty względne**, **Pokaż awatary** i **Używaj zdjęć profilowych z GitHuba** (co każda z nich pobiera z sieci, opisują [awatary](avatars.md)). **Doczytuj automatycznie przy przewijaniu** jest przy ilościach historii. **Grupuj refy po prefiksie** grupuje listy paska bocznego, nie graf, dlatego jest w Ustawienia → Układ i terminal.
+
+Wszystkie ustawienia grafu są na tej stronie; do wersji 4.60 dzieliły się między Ogólne a kartę Graf w Motywy.
 
 ## Gdzie siedzą schowki
 

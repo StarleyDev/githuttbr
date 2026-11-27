@@ -54,7 +54,7 @@ GitHuttBr. Arrancan cuando abres el panel o pulsas actualizar, nunca por su
 cuenta. Por eso la lista es una foto fija: edita un archivo y queda obsoleta
 hasta que la vuelvas a ejecutar.
 
-**Ajustes → General → Analizadores de código** decide cuánta iniciativa tiene:
+**Ajustes → Analizadores de código** decide cuánta iniciativa tiene:
 barrer al abrir el panel (por defecto), solo al pulsar refrescar, o desactivado —
 que esconde del todo la mitad de analizadores del panel, su contador en la barra
 de estado y su comando.

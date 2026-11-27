@@ -19,7 +19,7 @@ tuo prompt, i tuoi alias.
   ricorda la propria dimensione.
 - La visibilità del terminale è per repository: passando a una scheda che non ne
   ha mai aperto uno, resta chiuso.
-- **Si apre con il repository e sta sotto il grafo per impostazione predefinita.** La prima volta che un repository diventa la scheda attiva nella sessione, il suo terminale si apre con una shell in quella cartella. Se lo chiudi, resta chiuso per quel repository fino al prossimo avvio. Ogni repository visitato costa un processo shell; disattiva **Apri il terminale all’apertura di un repository** o cambia la posizione in Impostazioni → Disposizione.
+- **Si apre con il repository e sta sotto il grafo per impostazione predefinita.** La prima volta che un repository diventa la scheda attiva nella sessione, il suo terminale si apre con una shell in quella cartella. Se lo chiudi, resta chiuso per quel repository fino al prossimo avvio. Ogni repository visitato costa un processo shell; disattiva **Apri il terminale all’apertura di un repository** o cambia la posizione in Impostazioni → Layout e terminale.
 - Le schede si danno il nome in base a ciò che vi sta girando.
 - Richiudere l'elenco dei terminali lo riduce a una **guida laterale**:
   un'icona per terminale (i terminali divisi mostrano una mini mappa dei

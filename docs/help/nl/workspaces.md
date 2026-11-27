@@ -4,7 +4,7 @@ category: Begin hier
 order: 3
 summary: Veel repository's zonder te verdrinken: tabbladen, groepen, mappen en workspaces.
 keywords: workspace werkruimte tabbladen tabs groepen mappen meerdere repos organiseren wisselen indeling ga naar repository wisselaar tabbladgrootte go to repository switcher tab sizing
-source: 6fc6b6e0f1f3c8f6a3a638dc0388df5328222a41
+source: 0a7a79bf2fb89d3802683802c172c87da41b1909
 ---
 
 # Workspaces, tabbladen & groepen
@@ -33,7 +33,7 @@ sluiten dat je nog vasthield.
 
 ### Tabbladgrootte
 
-Standaard (**Instellingen → Indeling → Tabbladgrootte → Passend**) gedragen
+Standaard (**Instellingen → Indeling & terminal → Tabbladgrootte → Passend**) gedragen
 tabbladen zich als die van een browser: als de strook te weinig ruimte heeft,
 krimpen ze gelijk tot een minimale breedte, en scrollen ze pas als ook die grens
 bereikt is. **Vast** zet het klassieke gedrag terug — elk tabblad houdt de breedte

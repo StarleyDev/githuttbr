@@ -20,7 +20,7 @@ cokolwiek opuści Twój komputer.
 
 GitHuttBr celowo **nie** dostarcza act ani Dockera — aplikacja ciągnąca za sobą
 środowisko kontenerów to przeciwieństwo klienta gita. To integracja opt-in:
-włącz ją w **Ustawienia → Integracje** (albo w samym oknie dialogowym), a
+włącz ją w **Ustawienia → Połączone konta** (albo w samym oknie dialogowym), a
 GitHuttBr wykryje, co jest zainstalowane, i przeprowadzi Cię przez resztę —
 `brew install act`, działający demon Dockera, gotowe. Nic się nie uruchomi,
 dopóki nie są spełnione wszystkie trzy warunki: integracja włączona, act

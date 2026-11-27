@@ -3,7 +3,7 @@ title: Funkcje AI
 category: AI
 order: 80
 summary: Opcjonalne, niezależne od dostawcy i osadzone w twoim prawdziwym kodzie.
-keywords: ai openai anthropic ollama lokalny llm wiadomość commita wyjaśnij recenzja wiki osadzone commit message explain review grounded konta konto klucz api subskrypcja cli claude codex gemini modele
+keywords: ai openai anthropic ollama lokalny llm wiadomość commita wyjaśnij recenzja wiki osadzone commit message explain review grounded konta konto klucz api subskrypcja cli claude codex gemini modele wolno timeout dłużej niż oczekiwano czekaj dalej anuluj nie odpowiada ollama zamknięty zmień konto inne konto preferencje pisania styl commitów własne instrukcje współautor najechanie wyjaśnianie własna ai ogólna ai
 ---
 
 # Funkcje AI
@@ -21,29 +21,56 @@ używa: profil utworzony później już ma AI, bez ponownego dodawania konta. St
 wymienia każdy profil i to, czy korzysta z tej **ogólnej AI**.
 
 Profil może zamiast tego używać **własnej AI** — profil służbowy, który musi
-przechodzić przez konto firmy ze względu na koszty albo politykę danych. Na
-stronie **Profil** tego profilu, w sekcji *AI tego profilu*, przełącz **Ogólna**
-na **Własna**: zaczyna jako kopia ogólnej AI, a jej dostawcy i klucze od tej
-pory należą tylko do niej. Powrót do **Ogólna** usuwa je, po potwierdzeniu,
-i zostawia ogólną AI bez zmian.
+przechodzić przez konto firmy ze względu na koszty albo politykę danych, albo
+który pisze commity inaczej. Na stronie **Profil** tego profilu, w sekcji *AI
+tego profilu*, przełącz **Ogólna** na **Własna**: zaczyna jako kopia całej
+ogólnej AI — kont, kluczy i preferencji — a od tej pory wszystko to należy tylko
+do tego profilu. Powrót do **Ogólna** usuwa ją, po potwierdzeniu, i zostawia
+ogólną AI bez zmian.
+
+Profil używa jednej AI **w całości**: ogólnej albo własnej, nigdy mieszanki.
+Konta i modele *oraz* to, jak AI pisze i co wolno czatowi, pochodzą z tego
+samego miejsca, więc zmiana stylu commitów w ogólnej AI zmienia go dla każdego
+profilu, który z niej korzysta.
 
 Każdą AI konfiguruje się na tej jednej stronie. Pasek **Edytujesz** na górze
 wybiera którą: ogólną AI albo własną AI profilu (*Własna AI profilu Praca*).
 **Skonfiguruj własną AI** na stronie Profil albo **Edytuj własną AI** na liście
 profili otwiera stronę na tej właśnie AI. Sama strona Profil pokazuje tylko,
-której AI profil używa i co odpowiada — nigdy nie zawiera edytora.
+której AI profil używa i co odpowiada — nigdy nie zawiera edytora ani żadnej
+własnej opcji AI.
 
 ![AI profilu na jego stronie Profil: Ogólna albo Własna, co odpowiada i jak ją skonfigurować](../../screenshots/settings-profile-ai.webp)
 
-Sposób, w jaki AI **pisze**, w obu przypadkach zostaje osobny dla każdego
-profilu: styl opisów commitów, styl wyjaśnień, style rozwiązywania konfliktów
-i nazywania branchy, własne instrukcje, wiersz współautora i czat repozytorium.
-Są na stronie **Profil**, w sekcji *Preferencje pisania AI*, więc profil służbowy
-może pisać commity `ticket`, a prywatny `conventional`, oba na tej samej AI.
+Pod kontami ta sama strona zawiera to, jak ta AI **pisze** i co może robić, w
+sekcjach:
+
+| Sekcja | Zawiera |
+|---|---|
+| **Komunikaty commitów** | Styl commitów — Conventional, Gitmoji i Ticket jako karty z linią przykładu, reszta w *Więcej stylów* — *Generuj opis commita*, linia współautora, **Dodatkowe zasady dla commitów** i podgląd |
+| **Wyjaśnianie i najechanie** | Styl wyjaśnień, *Wyjaśniaj kod po najechaniu* i jego klawisz modyfikujący |
+| **Konflikty i gałęzie** | Styl rozwiązywania konfliktów, styl nazywania gałęzi, każdy z przykładem wyniku |
+| **Czat repozytorium** | Czy czat jest włączony, co czyta, jakie akcje może proponować — zobacz [Czat repozytorium](repo-chat.md#ustawienia) |
+
+**Dodatkowe zasady dla commitów** — do wersji 4.60 *Własne instrukcje* — trafiają tylko do generowania komunikatów commitów: czat, wyjaśnienia, recenzje i nazwy gałęzi ich nie czytają. Podgląd to stały przykład, nie wywołanie modelu: pokazuje kształt wybranego stylu, a nie to, co AI napisze dla twojej zmiany.
+
+![Komunikaty commitów](../../screenshots/settings-ai-commits.webp)
+
+Przełącznik stylu w kompozytorze oraz wybór modelu i trybu zatwierdzania w
+czacie zapisują do tej samej AI, którą czyta profil: ogólnej albo własnej AI
+profilu.
 
 Aktualizacja z wersji, w której każdy profil miał własną AI, niczego nie gubi:
 AI używanego profilu staje się ogólną AI, a każdy inny profil, którego AI była
 inna, zachowuje ją jako własną.
+
+**Aktualizacja z 4.59 lub starszej**, gdy preferencje pisania były w każdym
+profilu: jednorazowo preferencje używanego profilu (albo, jeśli ma on własną AI,
+pierwszego profilu na ogólnej AI) przechodzą do ogólnej AI. Profile z własną AI
+zachowują swoje. **Ograniczenie:** jeśli dwa profile na ogólnej AI pisały
+inaczej — służbowy w stylu `ticket`, a prywatny w `conventional` — oba piszą
+teraz jak ten, którego preferencje przeniesiono. Aby zachować różnicę, daj
+jednemu z nich własną AI i ustaw tam ponownie jego styl.
 
 ## Dostawcy
 
@@ -60,9 +87,123 @@ Anthropic używa własnego API `/v1/messages`, a nie wywołania w kształcie Ope
 więc modele Claude naprawdę działają, zamiast tylko na to wyglądać. Gemini jest
 osiągane przez zgodny z OpenAI endpoint Google.
 
+### Dodawanie i edycja dostawcy
+
+Dostawca zapisany w połowie był cichą pułapką: pusty klucz mógł trafić
+do użycia i nic nie odpowiadało. Dlatego nic na tej karcie nie zapisuje się
+w trakcie pisania.
+
+**Dodaj dostawcę** otwiera kartę oznaczoną **Szkic · niezapisany**, z przerywaną
+ramką. Uzupełnij dostawcę, klucz, endpoint i model, a potem wybierz
+**Testuj i zapisz**. GitHuttBr najpierw pobiera listę modeli dostawcy
+z tym kluczem — to samo żądanie co **Pobierz modele** — i zapisuje dopiero, gdy
+dostawca odpowie. Zobaczysz **Połączono · modele: N**, a dostawca trafi na listę
+jako **Gotowy**.
+
+Gdy test się nie uda, karta pokazuje **Nie udało się połączyć** z powodem
+podanym przez dostawcę (odrzucony klucz, `401`; serwer, który nie działa) oraz
+**Nic nie zostało zapisane.** Popraw pole i przetestuj ponownie, wybierz
+**Zapisz mimo to**, aby zostawić go tak, jak jest — będzie wtedy
+oznaczony **Nie odpowiada** — albo **Anuluj**, które nie zostawia
+śladu.
+
+Edycja zapisanego dostawcy działa tak samo. Pasek informuje
+**Niezapisane zmiany — nic się nie zmieni, dopóki nie zapiszesz**, a każde zmienione pole jest oznaczone
+**· zmieniono**. **Odrzuć zmiany** przywraca zapisane wartości;
+**Testuj i zapisz** testuje i zapisuje. Wybranie innego dostawcy, dodanie
+nowego lub otwarcie **Użyj mojej subskrypcji** przy niezapisanych zmianach pyta
+**Zapisać zmiany w „…”?** — **Zapisz**, **Odrzuć zmiany** lub
+**Edytuj dalej**. Zamknięcie Ustawień zachowuje szkic w pamięci, więc
+czeka po powrocie; nigdy nie jest zapisywany na dysk.
+
+Klucze zapisują się dokładnie jak dotąd, w pęku kluczy, i tylko przy zapisie.
+Błąd dostawcy jest pokazywany z zamaskowanym kluczem i wszystkim, co wygląda na
+token.
+
+![Dodawanie i edycja dostawcy](../../screenshots/ai-provider-draft.webp)
+
+| Rodzaj dostawcy | Co sprawdza **Testuj i zapisz** |
+| --- | --- |
+| Klucz API lub serwer lokalny (Ollama, własny endpoint) | Pobiera listę modeli; sukces oznacza, że endpoint odpowiedział z tym kluczem |
+| Subskrypcja (Codex, Claude Code) | Wysyła krótki prompt testowy opisany niżej, z limitu Twojego planu |
+| Lokalne CLI | Szuka polecenia w `PATH`; wpisana ścieżka jest zapisywana bez sprawdzania |
+
+### Plakietki stanu
+
+Każdy dostawca na liście ma jedną plakietkę, wyliczoną z tego, co strona już
+wie — z ostatniego testu albo z listy modeli pobranej i tak. Nic nie jest
+odpytywane w tle.
+
+| Plakietka | Znaczenie |
+| --- | --- |
+| **Gotowy** | Ostatni test lub pobranie listy modeli się udało |
+| **Nie odpowiada** | Ostatnia próba się nie udała; powód jest w wierszu niżej, z **Testuj ponownie** |
+| **Brak klucza** | Dostawca wymaga klucza API, a go nie ma |
+| **Nie sprawdzono** | Nic go jeszcze nie pytało — subskrypcja do czasu testu albo niepobrana lista |
+
+**Ograniczenie:** plakietka jest tak świeża jak ostatnie sprawdzenie. Dostawca,
+który przestał odpowiadać godzinę temu, nadal ma **Gotowy**,
+dopóki coś go znowu nie zapyta — wybierz **Testuj połączenie** na jego karcie,
+żeby mieć pewność. **Lokalne CLI** z wpisaną ścieżką zostaje
+**Nie sprawdzono**, bo udowodnienie, że działa, kosztowałoby prompt.
+
+### Dostawca w użyciu
+
+Jeden dostawca odpowiada na każde zadanie, które w sekcji **Model dla zadania**
+nie ma własnego dostawcy. Jego wiersz ma oznaczenie **W użyciu** — wypełnioną
+pigułkę i akcentową krawędź — i zostaje na swoim miejscu na liście. Ogólne AI i
+profil z własnym AI mają każde własnego dostawcę w użyciu; lista zmienia tego,
+którego właśnie edytujesz.
+
+Każdy inny zapisany dostawca ma przycisk **Użyj** po prawej stronie wiersza, obok
+plakietki. Jedno kliknięcie ustawia go w użyciu i od razu zapisuje: który
+dostawca odpowiada, to wybór, a nie edycja, więc nie czeka na **Testuj i
+zapisz**. Karta tego dostawcy się nie otwiera, a karta z niezapisanymi zmianami
+je zachowuje.
+
+**Ograniczenie:** **Użyj** niczego nie testuje. Dostawcę oznaczonego **Brak
+klucza** lub **Nie odpowiada** można ustawić w użyciu — celowo, przed
+poprawieniem klucza — a jego plakietka dalej to pokazuje; następne zadanie AI
+kończy się błędem z powodem tego dostawcy. Szkic nie ma **Użyj**: staje się
+dostawcą dopiero po zapisaniu.
+
+### Używane AI, z paska stanu
+
+Profil z własnym AI ignoruje dostawcę używanego przez ogólne AI: ustawienie
+innego dostawcy w ogólnym AI niczego dla tego profilu nie zmienia, a poza
+Ustawieniami nic o tym nie mówiło. Pasek stanu na dole repozytorium mówi o tym
+teraz. Przycisk **AI:** _dostawca_ podaje dostawcę, który odpowiada dla
+aktywnego profilu, z kropką oznaczającą stan — zielona **Gotowy**, czerwona
+**Nie odpowiada**, bursztynowa **Brak klucza**, szara **Nie sprawdzono**.
+
+Kliknięcie otwiera mały panel:
+
+| Część | Co pokazuje |
+| --- | --- |
+| Nagłówek | Aktywny profil i to, czy **korzysta z ogólnego AI**, czy **ma własne AI** |
+| Wiersz na dostawcę | Każdy zapisany dostawca tego AI z modelem i stanem; ten, który nie odpowiada, podaje powód w drugiej linii |
+| **W użyciu** / **Użyj** | Dostawca, który teraz odpowiada, i przełączenie jednym kliknięciem przy każdym innym |
+| **Skonfiguruj AI** | Otwiera **Ustawienia → AI** |
+| **Użycie i koszt** | Otwiera kartę *Analityka* w ustawieniach repozytorium |
+
+**Użyj** zapisuje tam, skąd profil czyta swoje AI. W profilu korzystającym z
+ogólnego AI zmienia ogólne AI — a więc każdy profil, który z niego korzysta; w
+profilu z własnym AI zmienia tylko jego. Zadania z własnym dostawcą go
+zachowują. **Esc** zamyka panel, a przycisk jest ukryty, gdy AI jest wyłączone.
+
+![Używane AI z paska stanu: profil, jego AI i każdy dostawca ze swoim stanem](../../screenshots/statusbar-ai.webp)
+
+**Ograniczenia:** kropka wynika z listy modeli, którą aplikacja i tak pobrała
+(przechowywanej do jednego dnia), i niczego nie testuje, więc dostawca, który
+przestał odpowiadać, może nadal pokazywać **Gotowy** — pewność daje test
+połączenia w Ustawieniach. Dopóki Ustawienia nie zostały otwarte, okno nie ma
+samych kluczy, więc dostawca bez klucza może tam pokazywać **Nie sprawdzono**
+lub **Nie odpowiada** zamiast **Brak klucza**. Tak jak **Użyj** w Ustawieniach,
+przełączenie nie testuje dostawcy, którego ustawia.
+
 ### Subskrypcja zamiast klucza API
 
-Podczas pierwszej konfiguracji lub w Ustawieniach → AI wybierz **Użyj mojej subskrypcji**. Wybierz ChatGPT lub Claude i zaloguj się w terminalu odpowiednim poleceniem. Przetestuj połączenie, a następnie dodaj konto. Pierwsze konto ogólnej AI staje się domyślnym.
+Podczas pierwszej konfiguracji lub w Ustawieniach → AI wybierz **Użyj mojej subskrypcji**. Wybierz ChatGPT lub Claude i zaloguj się w terminalu odpowiednim poleceniem. Przetestuj połączenie, a następnie dodaj konto. Pierwsze konto ogólnej AI jest od razu **W użyciu**.
 
 Po zainstalowaniu CLI kliknij Połącz, aby otworzyć stronę logowania dostawcy. Możesz anulować trwające łączenie.
 
@@ -92,9 +233,9 @@ Jeśli polecenia nie ma w `PATH`, wpisz jego pełną ścieżkę przy koncie.
 
 W sekcji **Model dla zadania** każda funkcja — opisy commitów, czat,
 wyjaśnianie kodu, recenzja PR, rozwiązywanie konfliktów, wiki, motywy — może
-wskazywać własne konto i model. Zostaw wiersz na wartości domyślnej, aby szedł
-za kontem domyślnym. Tani model do opisów commitów i mocny do czatu to typowy
-podział.
+wskazywać własne konto i model. Zostaw wiersz na **Dostawca w użyciu**, aby szedł
+za dostawcą oznaczonym **W użyciu**. Tani model do opisów commitów i mocny do
+czatu to typowy podział.
 
 ### Powiadomienie o aktualizacji
 
@@ -149,7 +290,34 @@ wersji pliku.
 **Zamaskowane pliki z sekretami nigdy nie są wysyłane.** Tak samo pliki objęte
 regułami maskowania sekretów.
 
+## Gdy model działa wolno albo przestaje odpowiadać
+
+Lokalny model na laptopie może potrzebować minuty na wiadomość commita, a model,
+który „myśli” przed odpowiedzią, jeszcze dłużej — ale serwer zamknięty w trakcie
+żądania nie powinien zostawiać cię z kręcącym się kółkiem.
+
+| Co się dzieje | Co widzisz |
+|---|---|
+| Brak odpowiedzi po 30 sekundach | *„{konto} odpowiada dłużej, niż oczekiwano.”*, z przyciskami **Czekaj dalej**, **Użyj {innego konta}** i **Anuluj**. Czekaj dalej pyta ponownie minutę później, jeśli żądanie wciąż trwa |
+| Lokalny serwer (Ollama, LM Studio, llama.cpp…) zostaje zamknięty w trakcie pracy | W ciągu kilku sekund: *„{konto} nie odpowiada. Czy nadal działa?”*, z przyciskiem dla każdego innego konta gotowego do użycia oraz **Anuluj** |
+| Serwer był już zamknięty, gdy wysłano prośbę | To samo, od razu |
+
+**Użyj {innego konta}** anuluje żądanie i wysyła to samo do tamtego konta, z
+jego domyślnym modelem — wiadomość commita, recenzja albo odpowiedź czatu
+przychodzi tak, jakbyś zapytał właśnie tam. Twoje ustawienia się nie zmieniają:
+następne żądanie znów trafia do konta wybranego dla tego zadania.
+
+Dotyczy to każdej funkcji AI — wiadomości commitów, czatu, recenzji,
+wyjaśniania, konfliktów, motywów, wiki — bo wszystkie przechodzą przez to samo
+wywołanie.
+
 ## Ograniczenia
+
+- **Tylko lokalne serwery są obserwowane pod kątem zamknięcia.** Dostawca
+  chmurowy, który padnie, kończy się własnym błędem; wywołanie chmurowe, które
+  jest po prostu wolne, dostaje komunikat *dłużej, niż oczekiwano* jak każde
+  inne. Lokalny serwer zajęty, a nie zamknięty, liczy się jako żywy: tylko
+  odrzucone lub zerwane połączenie kończy wywołanie wcześniej.
 
 - Wbudowane listy zapasowe starzeją się między wydaniami. Po to właśnie jest
   pobieranie na żywo; zapas obejmuje tylko sytuację, gdy pobranie jest

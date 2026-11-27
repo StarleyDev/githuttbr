@@ -4,7 +4,7 @@ category: Narzędzia środowiska pracy
 order: 95
 summary: Wyślij repozytorium, plik albo jedną linię kodu do edytora, w którym naprawdę piszesz.
 keywords: edytor vscode code cursor windsurf zed sublime jetbrains intellij webstorm xcode otwórz w edytorze linia kolumna własne polecenie argv devin desktop
-source: e25ceb114b185e5aecb75a70b46cddd3f22d21bf
+source: 5bb8b224ab1beced6eb06d57e70e8c3cd0196faa
 ---
 
 # Zewnętrzny edytor
@@ -19,7 +19,7 @@ przyciskiem w widoku pliku albo blame, a otworzy się tam, na tej linii.
 
 ## Wybieranie
 
-**Ustawienia → Ogólne → Zewnętrzny edytor.** Lista wypisuje edytory, które
+**Ustawienia → Git i synchronizacja → Zewnętrzny edytor.** Lista wypisuje edytory, które
 GitHuttBr potrafi znaleźć na tej maszynie — szuka najpierw polecenia każdego
 edytora, a potem, na macOS, pakietu aplikacji w `/Applications`
 i `~/Applications`. Skanowanie uruchamia się przy każdym otwarciu Ustawień, więc

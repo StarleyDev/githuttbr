@@ -3,14 +3,16 @@ title: Hacer commits
 category: Trabajar con cambios
 order: 31
 summary: Estilos de mensaje, plantillas, coautores y el linter.
-keywords: commit mensaje compositor convencional conventional gitmoji ticket amend enmendar plantilla template coautor co-author linter deshacer undo reset
+keywords: commit mensaje compositor convencional conventional gitmoji ticket amend enmendar plantilla template coautor co-author linter deshacer undo reset generate with ai cancel undo
 ---
 
 # Hacer commits
 
 ## Estilos de mensaje
 
-Elige uno en Ajustes; el compositor se adapta a él.
+Elige uno en **Ajustes → IA → Mensajes de commit**, o directamente en el
+compositor; el compositor se adapta a él. El estilo pertenece a la IA que usa el
+perfil — la general o la propia del perfil.
 
 | Estilo | Tiene esta pinta |
 |---|---|
@@ -61,6 +63,42 @@ Límites:
 - Un repositorio cuyo hook `commit-msg` ejecuta commitlint con el preset
   Conventional estándar rechaza un emoji al inicio. Es la regla del hook, no de
   GitHuttBr: configura commitlint para gitmoji o usa Conventional puro allí.
+
+## Escribir el mensaje con IA
+
+Con la IA activada, **Generar con IA** aparece bajo la descripción. Lee el diff
+preparado (staged) y escribe el resumen y la descripción en el estilo de
+arriba. El botón dice quién responderá — *cuenta · modelo*, la pareja elegida
+para los mensajes de commit en **Ajustes → IA → Modelo por tarea** — para que
+un modelo local lento o uno caro nunca sea una sorpresa.
+
+- **▾** junto al nombre lista tus cuentas guardadas, cada una con algunos de
+  sus modelos. La elección vale **solo para esa generación**; los Ajustes no
+  cambian.
+- Mientras se ejecuta, el cuadro muestra *Generando con cuenta · modelo… 12s*
+  y **Cancelar**, que detiene la propia solicitud, no solo el indicador. A los
+  30 segundos también ofrece **Usar** otra cuenta lista, que ejecuta la misma
+  generación allí. El aviso global *está tardando más de lo esperado*
+  ([IA](ai.md)) sigue apareciendo también.
+- El texto nuevo **reemplaza** al que había, y el anterior se guarda: un aviso
+  dice *Generado por cuenta · modelo en 7 s* y ofrece **Deshacer**, que
+  devuelve tu resumen y tu descripción, y **Generar de nuevo**. Desaparece en
+  cuanto editas el texto o haces el commit.
+
+![Generar con IA y el menú de cuentas](../../screenshots/commit-ai-generate.webp)
+
+[Editar commit](commit-edit.md) tiene el mismo botón, a partir del diff de ese
+commit.
+
+Límites:
+
+- Solo se envía el diff preparado, recortado cuando es muy grande — nunca
+  cambios sin preparar ni otros archivos.
+- Deshacer guarda un paso: el texto de antes de la primera generación seguida.
+  Cuando el aviso desaparece, esa copia también.
+- Cancelar no devuelve los tokens que el proveedor ya gastó en la solicitud.
+- La lista de ▾ muestra todas las cuentas guardadas, incluida una sin clave
+  todavía; elegirla falla con el error de esa cuenta.
 
 ## Cosas que el compositor hace por ti
 

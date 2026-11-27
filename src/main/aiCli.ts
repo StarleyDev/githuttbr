@@ -102,13 +102,15 @@ function run(
   input: string,
   timeout = CLI_TIMEOUT_MS,
   cwd?: string,
-  env = process.env
+  env = process.env,
+  signal?: AbortSignal
 ): Promise<{ code: number; stdout: string; stderr: string }> {
   return new Promise((resolve, reject) => {
     const child = execFile(
       file,
       args,
-      { timeout, maxBuffer: CLI_MAX_BUFFER, windowsHide: true, cwd, env },
+      // The signal kills the child when the user cancels or switches account.
+      { timeout, maxBuffer: CLI_MAX_BUFFER, windowsHide: true, cwd, env, ...(signal ? { signal } : {}) },
       (err, stdout, stderr) => {
         if (err && (err as NodeJS.ErrnoException).code === 'ENOENT') {
           reject(new Error(`\`${file}\` was not found. Install it, or set an explicit path on the account.`))
@@ -177,22 +179,26 @@ function parseClaudeReply(stdout: string): ModelReply | null {
 const NO_USAGE: TokenUsage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 }
 
 /** One answer from a locally installed, already signed-in agent CLI. */
-export async function runCliModel(cfg: AIConfig, messages: ChatMessage[]): Promise<ModelReply> {
+export async function runCliModel(
+  cfg: AIConfig,
+  messages: ChatMessage[],
+  signal?: AbortSignal
+): Promise<ModelReply> {
   const stamped = (cfg.cliCwd ?? '').trim()
   const cwd = stamped && existsSync(stamped) ? stamped : undefined
   if (cfg.subscription && !cwd) {
     const directory = await mkdtemp(join(tmpdir(), 'githuttbr-model-'))
     try {
-      return await invokeCli(cfg, messages, directory, true)
+      return await invokeCli(cfg, messages, directory, true, signal)
     } finally {
       await rm(directory, { recursive: true, force: true })
     }
   }
-  return invokeCli(cfg, messages, cwd)
+  return invokeCli(cfg, messages, cwd, false, signal)
 }
 
 async function invokeCli(
-  cfg: AIConfig, messages: ChatMessage[], cwd?: string, emptyDirectory = false
+  cfg: AIConfig, messages: ChatMessage[], cwd?: string, emptyDirectory = false, signal?: AbortSignal
 ): Promise<ModelReply> {
   await shellPathReady()
   const binary = cfg.cli ?? 'claude'
@@ -213,7 +219,7 @@ async function invokeCli(
     try {
       const promptPath = join(dir, 'prompt.txt')
       await writeFile(promptPath, prompt, 'utf8')
-      ;({ code, stdout, stderr } = await run(file, [...spec.args(model), ...spec.promptFile(promptPath)], '', undefined, cwd))
+      ;({ code, stdout, stderr } = await run(file, [...spec.args(model), ...spec.promptFile(promptPath)], '', undefined, cwd, process.env, signal))
     } finally {
       await rm(dir, { recursive: true, force: true }).catch(() => {})
     }
@@ -223,7 +229,7 @@ async function invokeCli(
       if (emptyDirectory) args.splice(1, 0, '--skip-git-repo-check')
       args.unshift(...CODEX_SUBSCRIPTION)
     }
-    ;({ code, stdout, stderr } = await run(file, args, prompt, undefined, cwd, env))
+    ;({ code, stdout, stderr } = await run(file, args, prompt, undefined, cwd, env, signal))
   }
   if (code !== 0) {
     const detail = (stderr || stdout).trim().slice(0, 300)
@@ -335,15 +341,26 @@ export async function testSubscription(binary: SubscriptionCli, path: string): P
   }
 }
 
+/** The version number in a CLI's `--version` line — "2.1.0 (Claude Code)", "codex-cli 0.46.0". */
+export function parseCliVersion(output: string): string | undefined {
+  return /\b(\d+\.\d+(?:\.\d+)?(?:[-+][\w.]+)?)\b/.exec(output)?.[1]
+}
+
 /**
  * Which agent CLIs are on PATH. Used to populate the account editor — it
  * resolves the executable's location and nothing more, so listing has no side
  * effect on the user's session or usage.
+ *
+ * `versions` also asks each found binary for `--version` — first-run setup
+ * names what it found. Opt-in, so the status bar and the account editor, which
+ * only need the path, do not spawn a process per CLI on every look.
  */
-export async function detectCliBinaries(): Promise<{ binary: AICliBinary; label: string; path: string }[]> {
+export async function detectCliBinaries(
+  opts: { versions?: boolean } = {}
+): Promise<{ binary: AICliBinary; label: string; path: string; version?: string }[]> {
   await shellPathReady()
   const lookup = process.platform === 'win32' ? 'where' : 'which'
-  const found: { binary: AICliBinary; label: string; path: string }[] = []
+  const found: { binary: AICliBinary; label: string; path: string; version?: string }[] = []
   for (const binary of CLI_BINARIES) {
     const spec = CLIS[binary]
     try {
@@ -354,5 +371,17 @@ export async function detectCliBinaries(): Promise<{ binary: AICliBinary; label:
       // Not installed, or the lookup tool is missing: simply not offered.
     }
   }
-  return found
+  if (!opts.versions) return found
+  return Promise.all(
+    found.map(async (cli) => {
+      try {
+        const { code, stdout } = await run(cli.path, ['--version'], '', 5_000)
+        const version = code === 0 ? parseCliVersion(stdout) : undefined
+        return version ? { ...cli, version } : cli
+      } catch {
+        // A CLI that cannot say its version is still found.
+        return cli
+      }
+    })
+  )
 }

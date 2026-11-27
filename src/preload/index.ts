@@ -166,7 +166,7 @@ const api = {
     cancelSubscriptionSignIn: (requestId: string): Promise<void> =>
       ipcRenderer.invoke('ai:cancelSubscriptionSignIn', requestId),
     testSubscription: (binary: string, path: string): Promise<unknown> => ipcRenderer.invoke('ai:testSubscription', binary, path),
-    detectCli: (): Promise<unknown> => ipcRenderer.invoke('ai:detectCli'),
+    detectCli: (opts?: { versions?: boolean }): Promise<unknown> => ipcRenderer.invoke('ai:detectCli', opts),
     explainCode: (code: string, lang: string, cfg: unknown): Promise<unknown> =>
       ipcRenderer.invoke('ai:explainCode', code, lang, cfg),
     editSelection: (req: unknown, cfg: unknown): Promise<unknown> =>
@@ -198,7 +198,19 @@ const api = {
     repoChat: (repoPath: string, messages: unknown, cfg: unknown, attachments: unknown): Promise<unknown> =>
       ipcRenderer.invoke('ai:repoChat', repoPath, messages, cfg, attachments),
     repoChatFinalize: (repoPath: string, messages: unknown, result: unknown, cfg: unknown): Promise<unknown> =>
-      ipcRenderer.invoke('ai:repoChatFinalize', repoPath, messages, result, cfg)
+      ipcRenderer.invoke('ai:repoChatFinalize', repoPath, messages, result, cfg),
+    onRepoChatProgress: (cb: (p: unknown) => void): (() => void) => {
+      const listener = (_e: unknown, p: unknown): void => cb(p)
+      ipcRenderer.on('ai:repoChatProgress', listener)
+      return () => ipcRenderer.removeListener('ai:repoChatProgress', listener)
+    },
+    onRequestEvent: (cb: (event: unknown) => void): (() => void) => {
+      const listener = (_e: unknown, event: unknown): void => cb(event)
+      ipcRenderer.on('ai:request', listener)
+      return () => ipcRenderer.removeListener('ai:request', listener)
+    },
+    answerSlow: (id: number, choice: unknown): Promise<unknown> => ipcRenderer.invoke('ai:answerSlow', id, choice),
+    cancelRequest: (tag: string): Promise<unknown> => ipcRenderer.invoke('ai:cancelRequest', tag)
   },
 
   wiki: {

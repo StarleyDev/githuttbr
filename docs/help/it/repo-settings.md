@@ -2,8 +2,9 @@
 title: Impostazioni per repository
 category: Strumenti dell'area di lavoro
 order: 94
-summary: Branch protetti, informazioni, analytics, cronologia e registro delle operazioni.
-keywords: impostazioni repo branch protetti analytics registro operazioni cronologia info ingranaggio immagine della scheda tab image icona logo
+summary: Nome visualizzato, profilo, branch protetti e immagine della scheda di un repository, più le sue regole, la cassaforte e l’attività.
+keywords: impostazioni repo branch protetti analytics registro operazioni cronologia info ingranaggio immagine della scheda tab image icona logo nome visualizzato alias profilo rimuovi dall’elenco dimentica metriche configurazione del progetto
+source: 6cd23a3db24f4869df7d1b881fb15155bd0a0a8b
 ---
 
 # Impostazioni per repository
@@ -13,19 +14,51 @@ appartengono a **questo** repository, non all'applicazione.
 
 ![Le impostazioni per repository](../../screenshots/repo-settings.webp)
 
-| Scheda | Cosa contiene |
-|---|---|
-| **Generali** | Branch protetti (una selezione multipla di branch, conservata nella configurazione git), firma, l’immagine della scheda |
-| **Config** | Le [regole che questo repository porta con sé](repo-config.md) in `.githuttbr.json`, e il doctor che le controlla |
-| **Info** | Note e campi liberi su questo repository, conservati in locale |
-| **Cassaforte** | Le voci della [cassaforte](vault.md) di questo repository |
-| **Insight** | Il [cruscotto della storia](insights.md) |
-| **Analytics** | Quello che hai fatto in questo repository, conteggiato in locale |
-| **Cronologia** · **Log** | Il registro delle operazioni: ogni comando git eseguito da GitHuttBr, con il suo output |
+L’intestazione dice quale repository stai per modificare: il nome, la cartella,
+il branch corrente, il remoto principale (`origin` se c’è) con l’host su cui
+vive, e qualche conteggio. Il numero di branch viene dall’elenco già caricato.
+Quello della cassaforte compare solo dopo aver aperto **Cassaforte**, perché
+leggerla interpella il portachiavi di sistema, e aprire le impostazioni non
+dovrebbe. Non c’è il numero di commit: contare una lunga cronologia è una
+chiamata git a sé, e un’intestazione non la vale.
+
+Le pagine stanno in una navigazione laterale, in tre gruppi:
+
+| Gruppo | Pagina | Cosa contiene |
+|---|---|---|
+| Repository | **Generali** | Nome visualizzato, profilo, branch protetti, l’immagine della scheda e Rimuovi dall’elenco |
+| Repository | **Configurazione del progetto** | Le [regole che questo repository porta con sé](repo-config.md) in `.githuttbr.json`, e il doctor che le controlla |
+| Repository | **Informazioni** | Note e campi liberi su questo repository, conservati in locale |
+| Sicurezza | **Cassaforte** | Le voci della [cassaforte](vault.md) di questo repository |
+| Attività | **Metriche** | Quello che hai fatto in GitHuttBr, contato in locale |
+| Attività | **Analisi** | La [dashboard della cronologia](insights.md) |
+| Attività | **Cronologia delle operazioni** | I commit nel tempo e chi li ha fatti, per i repository che hai aperto |
+| Attività | **Registro** | Il log delle operazioni: ogni comando git che GitHuttBr ha eseguito qui, con il risultato |
 
 Il registro delle operazioni è quello onesto: quando qualcosa si comporta in modo
 strano, mostra il comando esatto e l'errore esatto, così una segnalazione di bug
 può portare fatti invece di aggettivi.
+
+## Generali
+
+Ogni impostazione è una riga: cosa fa a sinistra, il controllo a destra.
+Nulla viene salvato finché non premi **Salva**.
+
+| Riga | Cosa fa | Dove è salvata |
+|---|---|---|
+| **Nome visualizzato** | Il nome su schede ed elenchi. La cartella sul disco non viene mai rinominata; se vuoto, si usa il nome della cartella | Impostazioni di GitHuttBr, su questo computer |
+| **Profilo** | L’identità, i token e l’IA a cui passa questo repository quando la sua scheda è attiva. **Auto** segue il profilo attivo | Impostazioni di GitHuttBr, su questo computer |
+| **Branch protetti** | Avvisa prima di un commit o di un force push diretto su questi branch | Il git config del repository |
+| **Immagine della scheda** | Una piccola immagine sulla scheda, più sotto | Impostazioni di GitHuttBr, su questo computer |
+
+Quando il repository ha un `.githuttbr.json`, un avviso in cima a Generale lo
+dice e porta a **Configurazione del progetto**. Quelle regole viaggiano con il
+repository verso chiunque lo cloni; le righe sotto l’avviso sono solo tue.
+
+**Rimuovi dall’elenco…** toglie il repository da [Repository](repositories.md).
+Chiede prima, e la domanda dice cosa non fa: la cartella sul disco non viene
+toccata, e una scheda aperta resta aperta. Riaprire il repository lo rimette
+nell’elenco.
 
 ## Immagine della scheda
 

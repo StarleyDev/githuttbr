@@ -64,7 +64,7 @@ aktywne — te akcje kopiują tylko tekst. Foldery nadal kopiują ścieżkę fol
 GitHuttBr sprawdza kilka rzeczy i pyta raz, nigdy po cichu:
 
 - plik, który wygląda na **sekret** (`.env`, `*.pem`, `id_rsa`…),
-- **bardzo duży** blob (próg w Ustawienia → Bezpieczeństwo),
+- **bardzo duży** blob (próg w Ustawienia → Bezpieczeństwo i potwierdzenia),
 - commit **prosto na chronioną gałąź** (domyślnie `main`/`master`).
 
 Każde z tych ostrzeżeń oferuje *Ignoruj i przestań śledzić* jednym kliknięciem.

@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { repoParentAndName } from '../lib/branchMenu'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
@@ -46,7 +46,9 @@ import {
   Eraser,
   Eye,
   List,
-  KeyRound
+  KeyRound,
+  LogIn,
+  GitPullRequestCreate
 } from 'lucide-react'
 import { FileTree } from './FileTree'
 import { FileSearchBar, EMPTY_FILTER, type FileFilter } from './FileSearchBar'
@@ -84,6 +86,21 @@ import {
 } from '../lib/worktrees'
 import { WorktreeStatusBadge } from './WorktreeStatusBadge'
 import { HUGE_SECTION, openUnlessHuge } from '../lib/sidebarSections'
+import {
+  buildSearchIndex,
+  canMoveSection,
+  filterSearchIndex,
+  mergeSectionOrder,
+  moveSectionBefore,
+  moveSectionBy,
+  normalizeSidebarQuery,
+  resolveSectionOpen,
+  sectionCount,
+  splitSectionsByMatches,
+  totalMatches,
+  type SearchFields,
+  type SectionTally
+} from '../lib/sidebarFilter'
 import {
   buildPrefixTree,
   collapseFolderRun,
@@ -127,6 +144,33 @@ const keyActivate = (e: React.KeyboardEvent): void => {
   e.preventDefault()
   e.stopPropagation()
   ;(e.currentTarget as HTMLElement).click()
+}
+
+// What the one filter box matches in each section. Module-level so the
+// search indexes below memoize on a stable function.
+const LOCAL_FIELDS: SearchFields<BranchInfo> = (b) => [b.name]
+const REMOTE_FIELDS: SearchFields<RemoteBranchInfo> = (b) => [b.fullName]
+const TAG_FIELDS: SearchFields<TagInfo> = (tg) => [tg.name]
+const RELEASE_FIELDS: SearchFields<ReleaseInfo> = (r) => [r.name, r.tag]
+const STASH_FIELDS: SearchFields<StashInfo> = (s) => [s.message, s.branch, `stash@{${s.index}}`]
+const WORKTREE_FIELDS: SearchFields<WorktreeInfo> = (w) => [w.path, w.branch]
+const SUBMODULE_FIELDS: SearchFields<SubmoduleInfo> = (sm) => [sm.path, sm.name]
+const PR_FIELDS: SearchFields<PullRequest> = (pr) => [`#${pr.id}`, pr.title, pr.sourceBranch, pr.author]
+const ISSUE_FIELDS: SearchFields<IssueInfo> = (i) => [`#${i.number}`, i.title, i.author]
+const MILESTONE_FIELDS: SearchFields<MilestoneInfo> = (m) => [m.title]
+const BOOKMARK_FIELDS: SearchFields<RepoBookmark> = (b) => [bookmarkLabel(b), b.file]
+const TODO_FIELDS: SearchFields<RepoTodo> = (td) => [td.title]
+
+/**
+ * One list narrowed by the sidebar filter. The lowercased index is built once
+ * when a filter starts (and again only when the list itself changes), so a
+ * keystroke is a substring scan; with no filter the list comes back as is,
+ * keeping the identity every memo downstream depends on.
+ */
+function useSidebarFiltered<T>(items: T[], fields: SearchFields<T>, query: string): T[] {
+  const filtering = query !== ''
+  const index = useMemo(() => (filtering ? buildSearchIndex(items, fields) : null), [items, fields, filtering])
+  return useMemo(() => (index ? filterSearchIndex(index, query) : items), [index, items, query])
 }
 
 type RefKind = 'folder' | 'branch' | 'remote' | 'tag'
@@ -182,6 +226,8 @@ interface SectionProps {
   /** Extra class on the section root — prefix folders use `sb-folder`. */
   className?: string
   count: number
+  /** Shown in the count pill instead of `count` — "3 of 41" while filtering. */
+  countLabel?: string
   /**
    * A thunk builds the body only when the section is open. JSX children are an
    * argument, so `{open && children}` still pays for constructing them — and on
@@ -201,6 +247,8 @@ interface SectionProps {
   onReorderDrop?: () => void
   onReorderEnd?: () => void
   onHeaderContextMenu?: (e: React.MouseEvent) => void
+  /** Keyboard reorder (Alt+↑/↓ on the focused header) — dragging alone is not accessible. */
+  onMoveBy?: (delta: -1 | 1) => void
   nested?: boolean
   /** Nesting level (0 = top). Drives compounding left-indent so deep folders
    *  (feature/payments/…) read as children, not siblings. */
@@ -218,6 +266,7 @@ function Section({
   openIcon,
   className,
   count,
+  countLabel,
   children,
   defaultOpen = true,
   actions,
@@ -230,6 +279,7 @@ function Section({
   onReorderDrop,
   onReorderEnd,
   onHeaderContextMenu,
+  onMoveBy,
   nested,
   depth = 0,
   open: openProp,
@@ -242,6 +292,7 @@ function Section({
   return (
     <div
       className={`sb-section ${nested ? 'nested' : ''} ${open ? 'is-open' : ''} ${dragging ? 'dragging' : ''} ${dragOver ? 'drag-over' : ''}${className ? ` ${className}` : ''}`}
+      data-section={sectionId}
       style={depth > 0 ? ({ '--sb-indent': depth } as React.CSSProperties) : undefined}
       onDragOver={draggable ? onReorderOver : undefined}
       onDrop={
@@ -259,9 +310,18 @@ function Section({
         role="button"
         tabIndex={0}
         aria-expanded={open}
+        aria-keyshortcuts={onMoveBy ? 'Alt+ArrowUp Alt+ArrowDown' : undefined}
         draggable={draggable}
         onClick={toggle}
-        onKeyDown={keyActivate}
+        onKeyDown={(e) => {
+          if (onMoveBy && e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+            e.preventDefault()
+            e.stopPropagation()
+            onMoveBy(e.key === 'ArrowUp' ? -1 : 1)
+            return
+          }
+          keyActivate(e)
+        }}
         onContextMenu={onHeaderContextMenu}
         onDragStart={draggable ? onReorderStart : undefined}
         onDragEnd={draggable ? onReorderEnd : undefined}
@@ -279,7 +339,7 @@ function Section({
           {title}
         </span>
         {actions && <span className="sb-actions">{actions}</span>}
-        <span className="sb-count">{count}</span>
+        <span className="sb-count">{countLabel ?? count}</span>
       </div>
       {nested ? (
         <AnimatePresence initial={false}>
@@ -499,7 +559,16 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   const setDragRef = useUIStore((s) => s.setDraggingRef)
   const [dropBranch, setDropBranch] = useState<string | null>(null)
   const path = repo.path
-  const f = filter.trim().toLowerCase()
+  // Typing stays on the urgent path; the narrowing of every section trails it,
+  // so a burst of keys over ten thousand refs never blocks the input.
+  const f = normalizeSidebarQuery(useDeferredValue(filter))
+  const filtering = f !== ''
+  // Folds opened or closed while a filter is active. Kept out of the persisted
+  // layout so clearing the box restores the arrangement the user had.
+  const [filterOpen, setFilterOpen] = useState<Record<string, boolean>>({})
+  useEffect(() => {
+    if (!filtering) setFilterOpen({})
+  }, [filtering])
 
   // ─── Multi-select (Cmd/Ctrl-click toggle, Shift-click range) ───
   // One section "owns" the selection at a time; `kind` namespaces the ids.
@@ -760,10 +829,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     requestScrollTo(hash, path)
   }
 
-  const locals = useMemo(
-    () => repo.branches.locals.filter((b) => !f || b.name.toLowerCase().includes(f)),
-    [repo.branches.locals, f]
-  )
+  const locals = useSidebarFiltered(repo.branches.locals, LOCAL_FIELDS, f)
   // Starred branches surface in a dedicated group at the top of Local; the pin
   // list is per-repo (RepoLayout) and rows also stay in their normal spot below.
   const pinnedNames = useMemo(() => repoLayout?.pinnedBranches ?? [], [repoLayout])
@@ -777,16 +843,22 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   // Top-level sections default closed except Local: open panes share the
   // sidebar's height, so a fresh repo showing every section would be a stack
   // of slivers. Nested folders keep opening by default — they only cost rows.
+  // While a filter is active a fold opens when it holds matches (unless that
+  // is enough rows to stall the sidebar), and a toggle lasts only as long as
+  // the filter does — see resolveSectionOpen.
   const sidebarExpanded = repoLayout?.sidebarExpanded
-  const persistOpen = (key: string, defaultOpen = true): Pick<SectionProps, 'open' | 'onToggle'> => ({
-    open: sidebarExpanded?.[key] ?? defaultOpen,
+  const persistOpen = (
+    key: string,
+    defaultOpen = true,
+    filterDefault = defaultOpen
+  ): Pick<SectionProps, 'open' | 'onToggle'> => ({
+    open: resolveSectionOpen({ key, persisted: sidebarExpanded, defaultOpen, filtering, session: filterOpen, filterDefault }),
     onToggle: (o: boolean) =>
-      updateRepoLayout(path, (l) => ({ ...l, sidebarExpanded: { ...(l.sidebarExpanded ?? {}), [key]: o } }))
+      filtering
+        ? setFilterOpen((prev) => ({ ...prev, [key]: o }))
+        : updateRepoLayout(path, (l) => ({ ...l, sidebarExpanded: { ...(l.sidebarExpanded ?? {}), [key]: o } }))
   })
-  const remotes = useMemo(
-    () => repo.branches.remotes.filter((b) => !f || b.fullName.toLowerCase().includes(f)),
-    [repo.branches.remotes, f]
-  )
+  const remotes = useSidebarFiltered(repo.branches.remotes, REMOTE_FIELDS, f)
   // Verdict from the last Conflict Radar scan, if any. `merged` branches get no
   // dot — a row of grey dots on everything already in main is just noise.
   const riskByRef = useMemo(() => {
@@ -801,17 +873,16 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   }
   // Local branches arranged into a folder tree by their "/"-separated prefix.
   const branchTree = useMemo(() => buildPrefixTree(locals, (b) => b.name), [locals])
-  const tags = useMemo(
-    () => repo.branches.tags.filter((t) => !f || t.name.toLowerCase().includes(f)),
-    [repo.branches.tags, f]
-  )
-  const releases = useMemo(
-    () =>
-      repo.releases.filter(
-        (r) => !f || (r.name ?? '').toLowerCase().includes(f) || (r.tag ?? '').toLowerCase().includes(f)
-      ),
-    [repo.releases, f]
-  )
+  const tags = useSidebarFiltered(repo.branches.tags, TAG_FIELDS, f)
+  const releases = useSidebarFiltered(repo.releases, RELEASE_FIELDS, f)
+  const stashes = useSidebarFiltered(repo.stashes, STASH_FIELDS, f)
+  const worktrees = useSidebarFiltered(repo.worktrees, WORKTREE_FIELDS, f)
+  const submodules = useSidebarFiltered(repo.submodules, SUBMODULE_FIELDS, f)
+  const prs = useSidebarFiltered(repo.prs, PR_FIELDS, f)
+  const upstreamPrs = useSidebarFiltered(repo.upstreamPrs, PR_FIELDS, f)
+  const issues = useSidebarFiltered(repo.issues, ISSUE_FIELDS, f)
+  const openMilestones = useMemo(() => repo.milestones.filter((m) => m.state === 'open'), [repo.milestones])
+  const milestones = useSidebarFiltered(openMilestones, MILESTONE_FIELDS, f)
   // Tag name → its release, so the Tags section can jump straight to a release.
   const releaseByTag = useMemo(() => {
     const map = new Map<string, (typeof repo.releases)[number]>()
@@ -1041,11 +1112,20 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       .getState()
       .openWorktreeRepo({ path: w.path, name: worktreeTabName(worktreeRootPath, w) }, worktreeRootPath)
 
+  // Shared by the context menu and the row's hover actions, so the two can
+  // never wire a branch to different git paths.
+  const checkoutBranch = (b: BranchInfo): void => void repoActions.checkout(path, b.name)
+  const createPrFromBranch = (b: BranchInfo): void => openModal({ kind: 'create-pr', repoPath: path, source: b.name })
+  const checkoutLabel = (b: BranchInfo): string =>
+    interp(t(worktreeForBranch(repo.worktrees, b.name) ? 'sidebar.goToWorktree' : 'sidebar.checkoutBranch'), {
+      branch: b.name
+    })
+
   const localMenu = (b: BranchInfo): MenuItem[] => [
     ...(worktreeForBranch(repo.worktrees, b.name)
-      ? [{ label: interp(t('sidebar.goToWorktree'), { branch: b.name }), onClick: () => void repoActions.checkout(path, b.name) }]
+      ? [{ label: checkoutLabel(b), onClick: () => checkoutBranch(b) }]
       : [
-          { label: interp(t('sidebar.checkoutBranch'), { branch: b.name }), disabled: b.isCurrent, onClick: () => void repoActions.checkout(path, b.name) },
+          { label: checkoutLabel(b), disabled: b.isCurrent, onClick: () => checkoutBranch(b) },
           { label: interp(t('sidebar.openInWorktree'), { branch: b.name }), onClick: () => void openInWorktree(b.name) }
         ]),
     // Merge / merge with options / rebase / compare — the same block the graph's
@@ -1105,7 +1185,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     },
     {
       label: t('sidebar.createPRFromBranch'),
-      onClick: () => openModal({ kind: 'create-pr', repoPath: path, source: b.name })
+      onClick: () => createPrFromBranch(b)
     },
     { separator: true },
     {
@@ -1643,18 +1723,50 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       }
     })
 
+  // Both gestures write the same per-repository `sidebarOrder`, reconciled
+  // with the sections that exist first, so a section added after the order was
+  // saved can be moved like any other.
   const reorder = (from: string, to: string): void => {
     if (from === to) return
-    updateRepoLayout(repo.path, (l) => {
-      const next = (l.sidebarOrder ?? baseSidebarOrder).filter((id) => id !== from)
-      const idx = next.indexOf(to)
-      next.splice(idx < 0 ? next.length : idx, 0, from)
-      return { ...l, sidebarOrder: next }
-    })
+    updateRepoLayout(repo.path, (l) => ({
+      ...l,
+      sidebarOrder: moveSectionBefore(mergeSectionOrder(l.sidebarOrder ?? baseSidebarOrder, order), from, to)
+    }))
+  }
+  const moveBy = (id: string, delta: -1 | 1): void => {
+    updateRepoLayout(repo.path, (l) => ({
+      ...l,
+      sidebarOrder: moveSectionBy(mergeSectionOrder(l.sidebarOrder ?? baseSidebarOrder, order), id, delta, shown)
+    }))
+    // The header is re-inserted at its new place and can lose focus on the
+    // way; put it back so Alt+↑ can be pressed again.
+    requestAnimationFrame(() =>
+      document.querySelector<HTMLElement>(`.sidebar [data-section="${CSS.escape(id)}"] > .sb-header`)?.focus()
+    )
+  }
+  /** Move up / Move down — the header menu's keyboard-and-mouse twin of dragging. */
+  const moveItems = (id: string): MenuItem[] => [
+    { label: t('sidebar.moveSectionUp'), disabled: !canMoveSection(shown, id, -1), onClick: () => moveBy(id, -1) },
+    { label: t('sidebar.moveSectionDown'), disabled: !canMoveSection(shown, id, 1), onClick: () => moveBy(id, 1) }
+  ]
+  const openHeaderMenu = (e: React.MouseEvent, items: MenuItem[]): void => {
+    e.preventDefault()
+    // From the keyboard (Menu key, Shift+F10) there is no pointer: anchor the
+    // menu to the header instead of the window's corner.
+    let { clientX: x, clientY: y } = e
+    if (x === 0 && y === 0) {
+      const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
+      x = r.left
+      y = r.bottom
+    }
+    openContextMenu(x, y, items)
   }
 
   const dragProps = (id: string): Partial<SectionProps> => ({
     sectionId: id,
+    countLabel: countLabel(id),
+    onMoveBy: (delta) => moveBy(id, delta),
+    onHeaderContextMenu: (e) => openHeaderMenu(e, moveItems(id)),
     dragging: dragId === id,
     dragOver: overId === id && dragId !== null && dragId !== id,
     reorderHint: t('sidebar.reorderHint'),
@@ -1677,7 +1789,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   const localIds = locals.map((b) => b.name)
   const remoteIds = remotes.map((b) => b.fullName)
   const tagIds = tags.map((t) => t.name)
-  const stashIds = repo.stashes.map((s) => String(s.index))
+  const stashIds = stashes.map((s) => String(s.index))
   orderedRef.current = { local: localIds, remote: remoteIds, tag: tagIds, stash: stashIds }
 
   // One row in the local-branches list. `label` is the displayed text (the last
@@ -1716,6 +1828,41 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         }}
       >
         <Star size={11} fill={isPinned(b.name) ? 'currentColor' : 'none'} />
+      </span>
+      {/* Revealed on hover and keyboard focus; the same handlers as the menu. */}
+      <span className="sb-quick">
+        {!b.isCurrent && (
+          <span
+            className="icon-btn sb-quick-btn"
+            role="button"
+            tabIndex={0}
+            aria-label={checkoutLabel(b)}
+            title={checkoutLabel(b)}
+            onKeyDown={keyActivate}
+            onDoubleClick={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation()
+              checkoutBranch(b)
+            }}
+          >
+            <LogIn size={11} />
+          </span>
+        )}
+        <span
+          className="icon-btn sb-quick-btn"
+          role="button"
+          tabIndex={0}
+          aria-label={t('sidebar.createPRFromBranch')}
+          title={t('sidebar.createPRFromBranch')}
+          onKeyDown={keyActivate}
+          onDoubleClick={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation()
+            createPrFromBranch(b)
+          }}
+        >
+          <GitPullRequestCreate size={11} />
+        </span>
       </span>
     </div>
   )
@@ -2181,6 +2328,36 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     </div>
   )
 
+  const filteredTodos = useSidebarFiltered(sortedTodos, TODO_FIELDS, f)
+  const filteredBookmarks = useSidebarFiltered(bookmarks, BOOKMARK_FIELDS, f)
+
+  // What each header counts. Remotes counts remotes when idle (how many places
+  // you push to) and remote branches while filtering (what the filter found).
+  const tallies: Record<string, SectionTally> = {
+    local: { matched: locals.length, total: repo.branches.locals.length },
+    remotes: filtering
+      ? { matched: remotes.length, total: repo.branches.remotes.length }
+      : { matched: repo.remotes.length, total: repo.remotes.length },
+    prs: { matched: prs.length + upstreamPrs.length, total: repo.prs.length + repo.upstreamPrs.length },
+    issues: { matched: issues.length, total: repo.issues.length },
+    milestones: { matched: milestones.length, total: openMilestones.length },
+    tags: { matched: tags.length, total: repo.branches.tags.length },
+    releases: { matched: releases.length, total: repo.releases.length },
+    todos: filtering
+      ? { matched: filteredTodos.length, total: sortedTodos.length }
+      : { matched: todoCounts.open, total: todoCounts.open },
+    bookmarks: { matched: filteredBookmarks.length, total: bookmarks.length },
+    stashes: { matched: stashes.length, total: repo.stashes.length },
+    worktrees: { matched: worktrees.length, total: repo.worktrees.length },
+    submodules: { matched: submodules.length, total: repo.submodules.length }
+  }
+  function countLabel(id: string): string | undefined {
+    const tally = tallies[id]
+    if (!tally) return undefined
+    const c = sectionCount(tally, filtering)
+    return c.kind === 'plain' ? String(c.n) : interp(t('sidebar.countOf'), { n: c.n, total: c.total })
+  }
+
   const sections: Record<string, React.JSX.Element> = {
     local: (
       <Section
@@ -2190,16 +2367,17 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         count={locals.length}
         {...dragProps('local')}
         {...persistOpen('local', openUnlessHuge(locals.length))}
-        onHeaderContextMenu={(e) => {
-          e.preventDefault()
-          openContextMenu(e.clientX, e.clientY, [
+        onHeaderContextMenu={(e) =>
+          openHeaderMenu(e, [
             {
               label: t('push.branches'),
               disabled: repo.remotes.length === 0,
               onClick: () => openModal({ kind: 'push-branches', repoPath: path })
-            }
+            },
+            { separator: true },
+            ...moveItems('local')
           ])
-        }}
+        }
         actions={
           <span
             className="icon-btn"
@@ -2236,9 +2414,9 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         title={t('sidebar.remotes')}
         icon={<Cloud size={13} />}
         tone="incoming"
-        count={repo.remotes.length}
+        count={tallies.remotes.matched}
         {...dragProps('remotes')}
-        {...persistOpen('remotes', false)}
+        {...persistOpen('remotes', false, openUnlessHuge(remotes.length))}
         actions={
           <span
             className="icon-btn"
@@ -2261,6 +2439,8 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
             {repo.remotes.length === 0 && <div className="sb-empty">{t('sidebar.noRemotes')}</div>}
             {repo.remotes.map((remote) => {
           const branches = remoteGroups.get(remote.name) ?? []
+          // A remote the filter found nothing in is noise in a result list.
+          if (filtering && branches.length === 0) return null
           return (
             <Section
               key={remote.name}
@@ -2269,7 +2449,11 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
               title={remote.name}
               icon={<RemoteIcon url={remote.url} />}
               count={branches.length}
-              {...persistOpen(`remote:${remote.name}`, openUnlessHuge(branches.length, remote.name === 'origin'))}
+              {...persistOpen(
+                `remote:${remote.name}`,
+                openUnlessHuge(branches.length, remote.name === 'origin'),
+                openUnlessHuge(branches.length)
+              )}
               onHeaderContextMenu={(e) => {
                 e.preventDefault()
                 openContextMenu(e.clientX, e.clientY, remoteMgmtMenu(remote.name, remote.url))
@@ -2336,9 +2520,9 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         title={t('sidebar.pullRequests')}
         icon={<GitPullRequest size={13} />}
         tone="ref"
-        count={repo.prs.length + repo.upstreamPrs.length}
+        count={tallies.prs.matched}
         {...dragProps('prs')}
-        {...persistOpen('prs', false)}
+        {...persistOpen('prs', false, true)}
         actions={
           <>
             {/* The whole list, filterable, as a page — the sidebar's rows say too little to triage nineteen. */}
@@ -2392,7 +2576,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
             {!repo.prProvider && prServerUnmatched ? t(UNMATCHED_HINT[prServerUnmatched]) : t('sidebar.noPRs')}
           </div>
         )}
-        {groupPrStacks(repo.prs).map((group) =>
+        {groupPrStacks(prs).map((group) =>
           group.kind === 'single' ? (
             prRow(group.pr)
           ) : (
@@ -2437,13 +2621,13 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         )}
         {(() => {
           const fork = forkUpstream(repo.remotes, githubEnterprise())
-          if (!fork || repo.upstreamPrs.length === 0) return null
+          if (!fork || upstreamPrs.length === 0) return null
           return (
             <>
               <div className="sb-pr-upstream-head" title={interp(t('sidebar.upstreamPRsTitle'), { repo: fork.parent })}>
                 {interp(t('sidebar.upstreamPRs'), { repo: fork.parent })}
               </div>
-              {repo.upstreamPrs.map((pr) => prRow(pr, undefined, fork.upstream))}
+              {upstreamPrs.map((pr) => prRow(pr, undefined, fork.upstream))}
             </>
           )
         })()}
@@ -2454,9 +2638,9 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         title={t('sidebar.issues')}
         icon={<CircleDot size={13} />}
         tone="outgoing"
-        count={repo.issues.length}
+        count={issues.length}
         {...dragProps('issues')}
-        {...persistOpen('issues', false)}
+        {...persistOpen('issues', false, true)}
         actions={
           <>
             {(() => {
@@ -2496,7 +2680,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         }
       >
         {repo.issues.length === 0 && <div className="sb-empty">{t('sidebar.noIssues')}</div>}
-        {repo.issues.map((issue) => (
+        {issues.map((issue) => (
           <div
             key={issue.number}
             className="sb-item pr"
@@ -2541,9 +2725,9 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         title={t('sidebar.milestones')}
         icon={<Milestone size={13} />}
         tone="ref"
-        count={repo.milestones.filter((m) => m.state === 'open').length}
+        count={milestones.length}
         {...dragProps('milestones')}
-        {...persistOpen('milestones', false)}
+        {...persistOpen('milestones', false, true)}
         actions={
           <span
             className="icon-btn"
@@ -2561,12 +2745,8 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
           </span>
         }
       >
-        {repo.milestones.filter((m) => m.state === 'open').length === 0 && (
-          <div className="sb-empty">{t('sidebar.noMilestones')}</div>
-        )}
-        {repo.milestones
-          .filter((m) => m.state === 'open')
-          .map((m) => {
+        {milestones.length === 0 && <div className="sb-empty">{t('sidebar.noMilestones')}</div>}
+        {milestones.map((m) => {
           const total = m.openIssues + m.closedIssues
           const pct = total > 0 ? Math.round((m.closedIssues / total) * 100) : 0
           return (
@@ -2618,7 +2798,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         tone="ref"
         count={tags.length}
         {...dragProps('tags')}
-        {...persistOpen('tags', false)}
+        {...persistOpen('tags', false, openUnlessHuge(tags.length))}
         actions={
           <span
             className="icon-btn"
@@ -2657,7 +2837,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
           tone="outgoing"
           count={releases.length}
           {...dragProps('releases')}
-          {...persistOpen('releases', false)}
+          {...persistOpen('releases', false, true)}
           actions={
             <>
               {releasesUrl && (
@@ -2739,9 +2919,9 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         title={t('sidebar.todos')}
         icon={<CheckSquare size={13} />}
         tone="outgoing"
-        count={todoCounts.open}
+        count={tallies.todos.matched}
         {...dragProps('todos')}
-        {...persistOpen('todos', false)}
+        {...persistOpen('todos', false, true)}
         actions={
           <span
             className="icon-btn"
@@ -2761,8 +2941,8 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       >
         {() => (
           <>
-            {sortedTodos.length === 0 && <div className="sb-empty">{t('sidebar.noTodos')}</div>}
-            {sortedTodos.map(todoItem)}
+            {filteredTodos.length === 0 && <div className="sb-empty">{t('sidebar.noTodos')}</div>}
+            {filteredTodos.map(todoItem)}
           </>
         )}
       </Section>
@@ -2772,12 +2952,12 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         title={t('sidebar.bookmarks')}
         icon={<BookmarkIcon size={13} />}
         tone="shelf"
-        count={bookmarks.length}
+        count={filteredBookmarks.length}
         {...dragProps('bookmarks')}
-        {...persistOpen('bookmarks', false)}
+        {...persistOpen('bookmarks', false, true)}
       >
-        {bookmarks.length === 0 && <div className="sb-empty">{t('sidebar.noBookmarks')}</div>}
-        {bookmarks.map((b) => (
+        {filteredBookmarks.length === 0 && <div className="sb-empty">{t('sidebar.noBookmarks')}</div>}
+        {filteredBookmarks.map((b) => (
           <div
             key={b.id}
             className="sb-item"
@@ -2802,9 +2982,16 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       </Section>
     ),
     stashes: (
-      <Section title={t('sidebar.stashes')} icon={<Archive size={13} />} tone="shelf" count={repo.stashes.length} {...dragProps('stashes')} {...persistOpen('stashes', false)}>
-        {repo.stashes.length === 0 && <div className="sb-empty">{t('sidebar.noStashes')}</div>}
-        {repo.stashes.map((s) => (
+      <Section
+        title={t('sidebar.stashes')}
+        icon={<Archive size={13} />}
+        tone="shelf"
+        count={stashes.length}
+        {...dragProps('stashes')}
+        {...persistOpen('stashes', false, true)}
+      >
+        {stashes.length === 0 && <div className="sb-empty">{t('sidebar.noStashes')}</div>}
+        {stashes.map((s) => (
           <div
             key={s.index}
             data-kbkind="stash"
@@ -2833,9 +3020,9 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         title={t('sidebar.worktrees')}
         icon={<FolderGit2 size={13} />}
         tone="incoming"
-        count={repo.worktrees.length}
+        count={worktrees.length}
         {...dragProps('worktrees')}
-        {...persistOpen('worktrees', false)}
+        {...persistOpen('worktrees', false, true)}
         actions={
           <>
             {prunableWorktreeCount(repo.worktrees) > 0 && (
@@ -2871,8 +3058,8 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
           </>
         }
       >
-        {repo.worktrees.length === 0 && <div className="sb-empty">{t('sidebar.noWorktrees')}</div>}
-        {repo.worktrees.map((w) => (
+        {worktrees.length === 0 && <div className="sb-empty">{t('sidebar.noWorktrees')}</div>}
+        {worktrees.map((w) => (
           <div
             key={w.path}
             className={`sb-item ${w.isCurrent ? 'current' : ''} ${w.prunable ? 'worktree-missing' : ''}`}
@@ -2908,9 +3095,9 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         title={t('sidebar.submodules')}
         icon={<Boxes size={13} />}
         tone="ref"
-        count={repo.submodules.length}
+        count={submodules.length}
         {...dragProps('submodules')}
-        {...persistOpen('submodules', false)}
+        {...persistOpen('submodules', false, true)}
         actions={
           <>
             {repo.submodules.length > 0 && (
@@ -2946,8 +3133,8 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
           </>
         }
       >
-        {repo.submodules.length === 0 && <div className="sb-empty">{t('sidebar.noSubmodules')}</div>}
-        {repo.submodules.map((sm) => {
+        {submodules.length === 0 && <div className="sb-empty">{t('sidebar.noSubmodules')}</div>}
+        {submodules.map((sm) => {
           const statusIcon =
             sm.status === 'initialized' ? (
               <Check size={13} className="sb-sm-icon ok" />
@@ -3000,9 +3187,12 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     delete sections.releases
   }
 
-  const order = sidebarOrder.filter((id) => sections[id])
-  for (const id of Object.keys(sections)) if (!order.includes(id)) order.push(id)
+  const order = mergeSectionOrder(sidebarOrder, Object.keys(sections))
   const visibleOrder = order.filter((id) => !sidebarHidden.includes(id))
+  // While filtering, a section with nothing to show folds into one line at the
+  // bottom instead of spending a header row on "0 of 41".
+  const { shown, empty: emptySections } = splitSectionsByMatches(visibleOrder, tallies, filtering)
+  const resultCount = totalMatches(visibleOrder, tallies)
 
   const openSectionsMenu = (x: number, y: number): void => {
     const items: MenuItem[] = order.map((id) => ({
@@ -3095,7 +3285,19 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
           <div className="sb-filter-row">
             <div className="sb-filter">
               <Search size={13} />
-              <input placeholder={t('sidebar.filter')} value={filter} onChange={(e) => setFilter(e.target.value)} />
+              <input
+                placeholder={t('sidebar.filter')}
+                aria-label={t('sidebar.filter')}
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape' && filter) {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setFilter('')
+                  }
+                }}
+              />
             </div>
             <span
               className="icon-btn sb-sections-btn"
@@ -3113,11 +3315,31 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
             </span>
           </div>
 
+          {filtering && (
+            <div className="sb-filter-status" role="status" aria-live="polite">
+              <span className="sb-filter-results">
+                {resultCount === 1 ? t('sidebar.filterResultOne') : interp(t('sidebar.filterResults'), { n: resultCount })}
+              </span>
+              <span className="sb-filter-hint">{t('sidebar.filterHint')}</span>
+            </div>
+          )}
+
           <div className="sb-panes">
-            {visibleOrder.map((id) => (
+            {shown.map((id) => (
               <Fragment key={id}>{sections[id]}</Fragment>
             ))}
           </div>
+          {emptySections.length > 0 && (
+            <ul className="sb-nomatch" aria-label={t('sidebar.noMatchSections')}>
+              {emptySections.map((id) => (
+                <li key={id} className="sb-nomatch-item">
+                  <ChevronRight size={11} />
+                  <span>{sectionLabels[id] ?? id}</span>
+                  <span className="sb-count">0</span>
+                </li>
+              ))}
+            </ul>
+          )}
         </>
       ) : (
         <>

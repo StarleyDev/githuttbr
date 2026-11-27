@@ -26,11 +26,11 @@ You do not have to write it by hand: [repository chat](repo-chat.md) is given
 this file's schema, so *add ticket links for JIRA-1234* or *protect the release
 branches* comes back as a reviewable file action.
 
-![The repository's Config tab, with its doctor rows and rule sections](../screenshots/repo-config.webp)
+![The repository's Project configuration page, with its doctor rows and rule sections](../screenshots/repo-config.webp)
 
 ## Where to edit it
 
-The gear next to the toolbar tools → **Config**. That editor writes the file
+The gear next to the toolbar tools → **Project configuration**. That editor writes the file
 into your working tree; it is not saved anywhere else, so **commit it** to
 share the rules with the team.
 
@@ -85,7 +85,7 @@ does the same thing (see [the command line](cli.md)).
 
 `requires` is the part that answers *"I cloned it and it does not run."* GitHuttBr
 checks it when you open the repository and shows a stethoscope chip in the
-status bar when something is off. Clicking the chip opens the Config tab at the
+status bar when something is off. Clicking the chip opens the Project configuration page at the
 doctor rows; **Check again** re-runs them.
 
 | Check | Passes when | Offers to fix by |
@@ -148,7 +148,7 @@ message:
   chips into a panel.
 
 A bad field is dropped, not fatal. The rest of the file still applies, and what
-was dropped is listed under **Ignored by GitHuttBr** in the Config tab with the
+was dropped is listed under **Ignored by GitHuttBr** on the Project configuration page with the
 reason. The one exception is invalid JSON or an unknown `version`, where there
 is nothing to salvage.
 

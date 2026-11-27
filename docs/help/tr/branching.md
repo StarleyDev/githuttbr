@@ -3,17 +3,19 @@ title: Dallar, uzak depolar ve kenar çubuğu
 category: Dallanma ve cerrahi
 order: 40
 summary: Sol kenar çubuğunun yaptığı her şey ve sabitlenmiş dallar.
-keywords: dal dallar oluşturma checkout yeniden adlandırma silme uzak sabitlenmiş kenar çubuğu branch branches remote pinned sidebar presence uzak sunucu ekle
+keywords: dal dallar oluşturma checkout yeniden adlandırma silme uzak sabitlenmiş kenar çubuğu branch branches remote pinned sidebar presence uzak sunucu ekle filtre filter arama search sıralama reorder taşı bölüm hızlı eylemler
 ---
 
 # Dallar, uzak depolar ve kenar çubuğu
 
 Yeniden sıralanabilir, aranabilir tek bir kenar çubuğu **dalları, uzak
 depoları, etiketleri, stash'leri, çalışma ağaçlarını ve alt modülleri** barındırır.
-Her bölüm gizlenebilir ya da yeniden sıralanabilir (Ayarlar → Düzen) ve filtre
+Her bölüm gizlenebilir ya da yeniden sıralanabilir (Ayarlar → Yerleşim ve terminal) ve filtre
 kutusu hepsine birden uygulanır.
 Hangi bölümleri ve klasörleri açık ya da kapalı bıraktığınız depo başına
 hatırlanır; yeniden başlatınca da korunur.
+
+Sıralamak için bir bölümü başlığından sürükleyin — ya da fare olmadan başlığa odaklanıp <kbd>Alt</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> tuşlarına basın. Aynı *Bölümü yukarı taşı* ve *Bölümü aşağı taşı* seçenekleri başlığın sağ tık menüsünde de var (<kbd>Shift</kbd>+<kbd>F10</kbd> klavyeden açar). Sıra da her depo için hatırlanır.
 
 Kenar çubuğu uzun bir liste değil, üst üste paneller. Açık bir bölüm, kapalı
 olanların bıraktığı yüksekliği alır — onlar altta başlık satırları olarak durur.
@@ -31,6 +33,22 @@ hatırlanır.
 
 ![Sabitlenmiş dalların en üstte tutulduğu kenar çubuğu](../../screenshots/pinned-branches.webp)
 
+## Tüm bölümler için tek filtre
+
+Kenar çubuğunun üstündeki kutu **tüm bölümleri aynı anda** süzer: yerel ve uzak dallar, etiketler, stash'ler, worktree'ler, alt modüller, pull request'ler, issue'lar, kilometre taşları, sürümler, yer imleri ve yapılacaklar. Adları, başlıkları ve yolları büyük/küçük harf ayırmadan karşılaştırır; bir pull request ayrıca `#numara`sı, kaynak dalı ve yazarıyla da eşleşir. Kutunun altındaki satır tüm bölümlerdeki sonuçları sayar.
+
+Bir filtre etkinken:
+
+- her başlık **eşleşen / toplam** gösterir — `2 / 10`;
+- eşleşmesi olmayan bir bölüm listeden çıkar ve en altta tek bir satıra katlanır; böylece sonuçlar boş başlıklarla bölünmez;
+- eşleşme içeren bölümler ve klasörler kendiliğinden açılır, 300'den fazla öğe tutmadıkça — onları elle açarsınız. Açıp kapattığınız şey yalnızca filtre temizlenene kadar geçerlidir; kayıtlı düzeniniz olduğu gibi kalır.
+
+Kutuda <kbd>Esc</kbd> filtreyi temizler.
+
+!["pay" ile süzülmüş kenar çubuğu: eşleşmesi olan iki bölüm, gerisi en altta katlanmış](../../screenshots/sidebar-filter.webp)
+
+**Sınırlar:** düz bir alt dize aramasıdır — joker karakter, bulanık eşleşme ya da düzenli ifade yoktur. Kenar çubuğunun zaten yüklediği şeylerde arar: barındırıcının döndürdüğü listenin ötesindeki pull request'ler ve issue'lar burada bulunmaz ([pull request'ler](pull-requests.md) sayfasının kendi filtresi vardır). Uzak dallar tam `remote/dal` adıyla eşleşir; bu yüzden bir uzak deponun adını yazmak oradaki her dalı bulur.
+
 ## Dallar
 
 Yerel ve uzak dalları oluşturun, checkout edin, yeniden adlandırın ve silin.
@@ -41,11 +59,13 @@ Dal satırları şunları gösterir:
 - bir [çakışma radarı](conflict-radar.md) taramasından sonra bir **risk noktası**,
 - uzak depo [geçmişi yeniden yazdığında](range-diff.md) bir **⟳ işareti**.
 
+Yerel bir dal satırının üzerine gelin ya da Tab ile ona ulaşın; iki hızlı eylem çıkar: **Checkout** ve **Pull request oluştur**. Bunlar sağ tık menüsündeki eylemlerin aynısıdır, menü geri kalan her şeyi korur; geçerli dal yalnızca ikincisini gösterir.
+
 Adında `/` bulunan dallar otomatik olarak katlanabilir klasörlere toplanır.
 Tek çocuklu bir önek yine klasördür — `release/1.2.3`, içinde `1.2.3` olan
 `release`dır — sonra `release/1.2.4` eklemek ağacı yeniden çizmez. Tek çocuklu
 klasör zinciri tek başlıkta toplanır (`dependabot/npm_and_yarn`). Klasör
-başlıkları klasör işareti taşır; ref’in kendisi dal, uzak veya etiket işareti.
+başlıkları klasör işareti taşır; ref’in kendisi dal, uzak veya etiket işareti. **Ayarlar → Yerleşim ve terminal → Ref’leri öneke göre grupla** klasörleri kapatır, düz bir liste verir.
 
 Bir klasör başlığına sağ tıklamak tüm grup üzerinde çalışır: *`feature`
 altındaki tüm dalları sil (4 dal)*, tam olarak hangi dalların gideceğini

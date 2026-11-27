@@ -51,7 +51,7 @@ przeciągasz między „przed" a „po".
 
 ![Pasek zmian z otwartym okienkiem, minimapa po prawej](../../screenshots/change-gutter.webp)
 
-**Minimapa**, domyślnie wyłączona, dodaje pomniejszony podgląd całego pliku przy prawej krawędzi — kliknij lub przeciągnij, aby po nim przeskakiwać, tak jak robiłby to pasek przewijania, gdyby dodatkowo pokazywał kształt pliku. Oba ustawienia są lokalne dla urządzenia, w **Ustawienia → Ogólne → Podgląd pliku**.
+**Minimapa**, domyślnie wyłączona, dodaje pomniejszony podgląd całego pliku przy prawej krawędzi — kliknij lub przeciągnij, aby po nim przeskakiwać, tak jak robiłby to pasek przewijania, gdyby dodatkowo pokazywał kształt pliku. Oba ustawienia są lokalne dla urządzenia, w **Ustawienia → Układ i terminal → Podgląd pliku**.
 
 Żadne z nich nie czyta historii: przełącz się na Diff, Blame albo starszy commit, a pasek zniknie — te widoki już pokazują każdą zmianę bezpośrednio.
 

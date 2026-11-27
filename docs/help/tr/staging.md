@@ -63,7 +63,7 @@ kopyalar. Klasörler hâlâ klasör yolunu kopyalar.
 GitHuttBr birkaç şeyi denetler ve bir kez sorar, asla sessizce geçmez:
 
 - **gizli bilgi** gibi görünen bir dosya (`.env`, `*.pem`, `id_rsa`…),
-- **çok büyük** bir blob (eşik değeri Ayarlar → Güvenlik altında),
+- **çok büyük** bir blob (eşik değeri Ayarlar → Güvenlik ve onaylar altında),
 - doğrudan **korumalı bir dala commit'leme** (öntanımlı olarak `main`/`master`).
 
 Bunların her biri tek tıkla bir *Yok say ve izlemeyi bırak* seçeneği sunar.

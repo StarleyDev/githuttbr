@@ -16,7 +16,6 @@ import {
   RotateCcw,
   Send,
   Settings,
-  ShieldCheck,
   Trash2,
   Wand2,
   X
@@ -27,10 +26,11 @@ import type {
   RepoChatAction,
   RepoChatActionErrorCode,
   RepoChatAttachment,
-  RepoChatExecutionResult
+  RepoChatExecutionResult,
+  RepoChatProgressStep
 } from '../../../shared/types'
-import { modelFor, resolveAI } from '../../../shared/aiAccounts'
-import { useModelCatalogs } from './useModelCatalogs'
+import { resolveAI } from '../../../shared/aiAccounts'
+import { RepoChatPills } from './RepoChatPills'
 import { useT, interp, type TranslationKey } from '../i18n'
 import { renderMarkdown } from '../preview/markdown'
 import { usePendingHighlight } from '../preview/pendingHighlight'
@@ -45,7 +45,7 @@ import {
   attachmentKey,
   attachmentLabel,
   attachmentTitle,
-  chatModelGroups,
+  chatProgressLabel,
   parseChatDrop,
   suggestedAttachments
 } from '../lib/repoChatContext'
@@ -53,8 +53,9 @@ import { annotateChatHtml, tokenizeChatText } from '../lib/chatText'
 import { askActionDetail, askActionsAutoRun, destructiveAskFiles } from '../lib/askActions'
 import { actionErrorText, executeRepoChatActions, planGuardSnapshot } from '../lib/askActionRun'
 import { repoChatActionMeta } from '../lib/askActionMeta'
+import { chatBaseBranch, chatStarterPrompts } from '../lib/repoChatHeader'
 import { ActionResultLinks, ActionWidget } from './ActionWidgets'
-import { gitApi } from '../infrastructure/api'
+import { aiApi, gitApi } from '../infrastructure/api'
 import { useRepoChatStore, type RepoChatEntry } from '../stores/chat'
 import { repoActions, useRepoStore } from '../stores/repo'
 import { useSettingsStore } from '../stores/settings'
@@ -340,7 +341,24 @@ function AssistantMessage({
         <Bot size={14} />
       </div>
       <div className="repo-chat-bubble" onContextMenu={copyMenu}>
-        <div ref={htmlRef} className="repo-chat-markdown" dangerouslySetInnerHTML={{ __html: html }} />
+        {message.content.trim() !== '' && (
+          <div ref={htmlRef} className="repo-chat-markdown" dangerouslySetInnerHTML={{ __html: html }} />
+        )}
+        {message.notice === 'file-not-prepared' && (
+          <div className="repo-chat-skipped" role="status">
+            <span>{t('chat.fileNotPreparedNotice')}</span>
+          </div>
+        )}
+        {message.notice === 'file-read-only' && (
+          <div className="repo-chat-skipped" role="status">
+            <span>
+              {interp(t('chat.fileReadOnlyNotice'), {
+                setting: t('settings.repoChatFiles'),
+                section: t('settings.repoChat')
+              })}
+            </span>
+          </div>
+        )}
         {!!message.actions?.length && (
           <ChatActionCard
             message={message}
@@ -406,7 +424,6 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
   const t = useT()
   const profile = useSettingsStore((state) => state.activeProfile())
   const ai = useSettingsStore((state) => state.activeAI())
-  const saveAIFor = useSettingsStore((state) => state.saveAIFor)
   const thread = useRepoChatStore((state) => state.threads[repoPath])
   const send = useRepoChatStore((state) => state.send)
   const retry = useRepoChatStore((state) => state.retry)
@@ -421,6 +438,7 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
   const consumeChatPrompt = useUIStore((state) => state.consumeChatPrompt)
   const openFile = useUIStore((state) => (state.fileView?.repoPath === repoPath ? state.fileView.file : null))
   const selected = useRepoStore((state) => state.repos[repoPath]?.selected ?? null)
+  const branches = useRepoStore((state) => state.repos[repoPath]?.branches)
   const [draft, setDraft] = useState('')
   const [dropActive, setDropActive] = useState(false)
   const [imgPreview, setImgPreview] = useState<{ ref: string; url: string; x: number; y: number } | null>(null)
@@ -439,16 +457,19 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
   const pending = thread?.pending ?? false
   const attachments = thread?.attachments ?? []
   const skipped = thread?.skipped ?? []
-  const { catalogs } = useModelCatalogs(ai)
-  const modelGroups = useMemo(
-    () => chatModelGroups(ai, Object.fromEntries(Object.entries(catalogs).map(([id, c]) => [id, c.models]))),
-    [ai, catalogs]
-  )
-  // The header shows the account the chat is actually pointed at, so switching
-  // account elsewhere is visible here rather than silently changing the answer.
-  const chatAssignment = ai.assignments?.chat
-  const chatSelection = chatAssignment ? `${chatAssignment.accountId}\u0000${chatAssignment.model}` : ''
-  const defaultChatModel = modelFor(ai)
+  const [progress, setProgress] = useState<RepoChatProgressStep | null>(null)
+  // Only this repository's request moves the line; a new request starts at "thinking".
+  useEffect(() => {
+    if (!pending) {
+      setProgress(null)
+      return
+    }
+    return aiApi.onRepoChatProgress(({ repoPath: from, ...step }) => {
+      if (from === repoPath) setProgress(step as RepoChatProgressStep)
+    })
+  }, [pending, repoPath])
+  const progressLabel = chatProgressLabel(progress)
+  const starters = useMemo(() => chatStarterPrompts(chatBaseBranch(branches)), [branches])
   const suggestions = useMemo(
     () =>
       suggestedAttachments({
@@ -473,7 +494,6 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
   }, [chatPrompt, repoPath, consumeChatPrompt])
 
   const approval: ChatActionApproval = ai.repoChatApproval ?? 'ask'
-  const actionsEnabled = ai.repoChatActions !== false
 
   const runActions = (message: RepoChatEntry, auto = false): void => {
     const actions = message.actions
@@ -609,6 +629,8 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
     if (!canSubmitRepoChat(ai.enabled !== false, pending, content)) return
     setDraft('')
     void send(repoPath, content, { ...resolveAI(ai, 'chat'), cliCwd: repoPath })
+    // Sent with the button: back to the field, ready for the next message.
+    draftRef.current?.focus()
   }
 
   const resolveImg = (ref: string): Promise<string | null> => {
@@ -710,36 +732,7 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
         >
           <Wand2 size={14} />
         </button>
-        <div>
-          <strong>{t('chat.title')}</strong>
-          <span className="repo-chat-model">
-            <select
-              value={chatSelection}
-              aria-label={t('chat.modelLabel')}
-              title={t('chat.modelLabel')}
-              onChange={(event) => {
-                const [accountId, model] = event.target.value.split('\u0000')
-                const assignments = { ...(ai.assignments ?? {}) }
-                if (!accountId) delete assignments.chat
-                else assignments.chat = { accountId, model }
-                // The chat model is engine: it lands on the general AI unless
-                // this profile has its own.
-                saveAIFor(profile.id, { assignments })
-              }}
-            >
-              <option value="">{interp(t('chat.modelDefault'), { model: defaultChatModel })}</option>
-              {modelGroups.map((group) => (
-                <optgroup key={group.accountId} label={group.label}>
-                  {group.models.map((model) => (
-                    <option key={`${group.accountId}-${model}`} value={`${group.accountId}\u0000${model}`}>
-                      {model}
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
-          </span>
-        </div>
+        <strong className="repo-chat-title">{t('chat.title')}</strong>
         <button
           type="button"
           className="icon-btn"
@@ -750,6 +743,7 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
         >
           <Trash2 size={14} />
         </button>
+        {ai.enabled !== false && <RepoChatPills ai={ai} profileId={profile.id} />}
       </header>
 
       {ai.enabled === false ? (
@@ -771,24 +765,27 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
             {messages.length === 0 && (
               <div className="repo-chat-empty">
                 <Bot size={28} />
-                <strong>{interp(t('chat.emptyTitle'), { repo: repoName })}</strong>
+                <strong>{t('chat.emptyTitle')}</strong>
                 <p>{t('chat.emptyHint')}</p>
                 <small>{t('chat.privacyHint')}</small>
                 <div className="ai-ask-examples repo-chat-examples">
-                  {[t('aiWizard.example1'), t('aiWizard.example2'), t('aiWizard.example3')].map((example) => (
-                    <button
-                      key={example}
-                      type="button"
-                      className="ai-ask-chip"
-                      disabled={pending}
-                      onClick={() => {
-                        setDraft(example)
-                        draftRef.current?.focus()
-                      }}
-                    >
-                      {example}
-                    </button>
-                  ))}
+                  {starters.map((starter) => {
+                    const text = interp(t(starter.key), starter.vars ?? {})
+                    return (
+                      <button
+                        key={starter.key}
+                        type="button"
+                        className="ai-ask-chip"
+                        onClick={() => {
+                          // Fills, never sends: a starter is a draft to edit.
+                          setDraft(text)
+                          draftRef.current?.focus()
+                        }}
+                      >
+                        {text}
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
             )}
@@ -814,7 +811,7 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
                   <Bot size={14} />
                 </div>
                 <div className="repo-chat-bubble repo-chat-thinking">
-                  <Loader2 size={14} className="spin" /> {t('chat.thinking')}
+                  <Loader2 size={14} className="spin" /> {interp(t(progressLabel.key), progressLabel.vars ?? {})}
                 </div>
               </div>
             )}
@@ -878,7 +875,9 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
               rows={3}
               maxLength={8000}
               placeholder={t('chat.placeholder')}
-              disabled={pending}
+              // Never disabled: a disabled field drops focus, so every message
+              // cost a click back into it. While a reply is pending, typing
+              // goes on and only sending waits (canSubmitRepoChat).
               onChange={(event) => setDraft(event.target.value)}
               onKeyDown={(event) => {
                 if (shouldSubmitRepoChatOnKeyDown(event.nativeEvent)) {
@@ -888,24 +887,7 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
               }}
             />
             <div className="repo-chat-composer-actions">
-              {actionsEnabled ? (
-                <span className="repo-chat-approval" title={t('chat.approvalTitle')}>
-                  <ShieldCheck size={12} />
-                  <select
-                    value={approval}
-                    aria-label={t('chat.approvalTitle')}
-                    onChange={(event) =>
-                      saveAIFor(profile.id, { repoChatApproval: event.target.value as ChatActionApproval })
-                    }
-                  >
-                    <option value="ask">{t('chat.approvalAsk')}</option>
-                    <option value="auto-safe">{t('chat.approvalSafe')}</option>
-                    <option value="auto-all">{t('chat.approvalAll')}</option>
-                  </select>
-                </span>
-              ) : (
-                <span>{t('chat.sendHint')}</span>
-              )}
+              <span>{t('chat.sendHint')}</span>
               <button
                 type="button"
                 className="btn primary small"

@@ -19,33 +19,31 @@ twee GitHub-accounts hebt.
 
 ## Een profiel bewerken, een profiel gebruiken
 
-Instellingen verdeelt zijn pagina's in tweeën. **Dit profiel** bevat de pagina's
-die met het profiel meeveranderen — **Profiel** en **Integraties**. **App** bevat
-al het andere, dat in elk profiel geldt en dat bovenaan de pagina ook zegt.
+Twee pagina’s van Instellingen veranderen met het profiel — **Profiel & identiteit** en **Gekoppelde accounts**, bovenaan de groep **Jij**, waarvan de kop het bewerkte profiel noemt. Alle andere pagina’s gelden in elk profiel en zeggen dat bovenaan.
 
-De twee profielpagina's openen met een balk: *Profiel bewerken* en een kiezer. De
-kiezer bepaalt welk profiel je **bewerkt**; hij verandert niet welk profiel de app
-**gebruikt**. Verschillen ze, dan zegt een amberkleurige band dat — *Je bewerkt
-Werk. De app gebruikt Privé* — met **Dit profiel gebruiken** om te wisselen. Dat is
-het moment waarop een account het makkelijkst aan het verkeerde profiel wordt
-gekoppeld, dus de pagina Integraties noemt het profiel ook op elke kaart en op de
-knop zelf: **Koppelen aan het profiel Werk**, en de bevestiging herhaalt het.
-Nieuw en verwijderen staan in dezelfde balk; verwijderen vraagt eerst.
+**Profiel & identiteit** opent met de profielkaart: de afbeelding, de naam (ter plekke te bewerken), *in gebruik* als de app het gebruikt, de kiezer en **Nieuw profiel**. **Gekoppelde accounts** opent met dezelfde kiezer in een balk, *Profiel bewerken*. De kiezer bepaalt welk profiel je **bewerkt**; hij verandert niet welk profiel de app **gebruikt**. Verschillen ze, dan zegt een amberkleurige band dat, met **Dit profiel gebruiken** om te wisselen. Juist dan wordt een account het makkelijkst aan het verkeerde profiel gekoppeld, dus noemt Gekoppelde accounts het profiel ook op elke kaart en op de knop zelf, en de bevestiging herhaalt het. Een profiel verwijderen gebeurt op dezelfde plek, en vraagt eerst.
+
+Onder de kaart volgen de git-identiteit en het ondertekenen van commits. Is er een repository open dat als iemand anders commit — de git-config noemt een andere auteur —, dan zegt een regel dat, met **Identiteit toepassen op de huidige repo**; komen ze overeen, dan valt er niets toe te passen en verschijnt de regel niet. Daarna volgen de profielafbeelding, een overzicht van de **gekoppelde accounts** — één regel per host met *Gekoppeld*, *Token verlopen of fout*, *Niet bereikbaar* of *Niet gekoppeld*, en **Koppelen** of **Vernieuwen**, die Gekoppelde accounts op die host openen — en welke AI het profiel gebruikt.
+
+Het overzicht controleert stil, zonder aanmeldvenster, telkens als de pagina opent of een token verandert; het vraagt nooit periodiek. Wat het vindt, gebruikt ook het zijmenu: **Gekoppelde accounts** toont een klein waarschuwingsgetal als een token geweigerd werd of mislukte, en alleen voor controles die Instellingen al deed. Een onbereikbare host telt niet mee — het token kan prima zijn.
 
 ![Het profiel Werk bewerken terwijl de app een ander gebruikt: de amberkleurige band en de koppelknop die Werk noemt](../../screenshots/settings-profile-band.webp)
 
 ## De AI wordt gedeeld
 
-Een profiel heeft geen eigen AI nodig: één [algemene AI](ai.md#één-ai-voor-elk-profiel)
-bedient elk profiel, en een profiel kiest alleen voor een eigen AI als het moet.
-Wat een profiel altijd houdt, is hoe de AI voor hem schrijft — commitstijl, eigen
-instructies en de rest van *Schrijfvoorkeuren van de AI*.
+Een profiel heeft geen eigen AI nodig: één [algemene
+AI](ai.md#één-ai-voor-elk-profiel) bedient elk profiel, en een profiel kiest
+alleen voor een eigen AI als het moet. Die keuze geldt voor alles: een profiel
+op de algemene AI schrijft ook zoals de algemene AI is ingesteld — commitstijl,
+extra regels voor commits, repository-chat. Een profiel dat een andere stijl nodig
+heeft, krijgt een eigen AI, een kopie van de algemene die het daarna kan
+aanpassen. Alles wordt bewerkt op de pagina **AI**; de pagina Profiel zegt
+alleen welke AI het profiel gebruikt en linkt ernaartoe.
 
 ## Elk profiel zijn eigen accounts
 
 Naast een token kan een profiel een login **koppelen** die al op de machine
-staat — uit de credential helper van git of de GitHub CLI — in Instellingen →
-Integraties. Een koppeling hoort bij één profiel: een nieuw profiel begint
+staat — uit de credential helper van git of de GitHub CLI — in Instellingen → Gekoppelde accounts. Een koppeling hoort bij één profiel: een nieuw profiel begint
 ontkoppeld, en een account dat een ander profiel al heeft, wordt geweigerd. Zo
 kunnen twee profielen twee GitHub- (of Azure DevOps-)accounts naast elkaar
 hebben. Zie [Hosting](hosting.md).

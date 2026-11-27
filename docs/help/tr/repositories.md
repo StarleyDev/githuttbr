@@ -4,7 +4,7 @@ category: Eşitleme ve çoklu depo
 order: 52
 summary: GitHuttBr'nun bildiği her depo, açık olsun olmasın, tek aranabilir listede.
 keywords: depolar kayıt tüm depolar favoriler yıldız son tarama klasör göz at bul aç yönet depo yönetimi renk bölüm ton vurgu çalışma alanları klasörlerden ağaç üret toplu içe aktarma repositories registry favourites starred recent scan folder workspaces
-source: 6a9c51bf47eebb0f97be71324460cd15c50b0855
+source: 5ceb6debb4062f3c33c72daec960910c86ceff02
 ---
 
 # Depolar
@@ -82,7 +82,7 @@ başlangıçta geri yüklenen depolar, yeniden açmadan bir satır alır. Yalnı
 açık sekmeleri kapsar ve her oturumun ilk ziyaretinde olur, bir kez değil.
 **Unuttuğunuz** bir depo, yeniden açmadığınız sürece unutulmuş kalır.
 
-Tarama klasörleri Ayarlar → Veri'de ya da aşağıdaki **Taranan depolar**
+Tarama klasörleri Ayarlar → Veri ve yedek'de ya da aşağıdaki **Taranan depolar**
 penceresinde yapılandırılır:
 
 - **Derinlik**, taramanın kökün altına kaç dizin düzeyi indiğidir (varsayılan

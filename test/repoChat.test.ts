@@ -14,8 +14,7 @@ import {
   packRepoChatEvidence,
   repoChatActionRules,
   selectSearchEvidence,
-  validateChatAnswer,
-  validateChatSelection
+  validateChatAnswer
 } from '../src/main/repoChat'
 import { gitService } from '../src/main/git'
 import { createRepoChatStore } from '../src/renderer/src/lib/repoChatStore'
@@ -50,7 +49,8 @@ describe('repository chat grounding', () => {
     const actionRules = repoChatActionRules(true, false)
 
     expect(actionRules).toContain('{"type":"stage"')
-    expect(actionRules).toContain('File creation, editing, replacement, and deletion are disabled')
+    expect(actionRules).toContain('Creating, editing, replacing and deleting files is turned off')
+    expect(actionRules).toContain('"File read-only mode" setting')
     expect(actionRules).not.toContain('edit_file')
     expect(actionRules).not.toContain('write_file')
     expect(actionRules).not.toContain('delete_file')
@@ -188,13 +188,7 @@ describe('repository chat grounding', () => {
     expect(() => normalizeRepoChatMessages([{ role: 'assistant', content: 'answer' }])).toThrow()
   })
 
-  it('rejects model-invented paths and evidence ids', () => {
-    const allowedPaths = new Set(['README.md', 'src/app.ts'])
-    expect(validateChatSelection({ paths: ['src/app.ts'], searches: ['createApp'] }, allowedPaths)).toEqual([])
-    expect(validateChatSelection({ paths: ['../../secret'], searches: [] }, allowedPaths).join(' ')).toContain(
-      'not in the tracked-file list'
-    )
-
+  it('rejects model-invented evidence ids', () => {
     const allowedEvidence = new Set(['E1'])
     expect(validateChatAnswer({ content: 'Grounded answer', sourceIds: ['E1'] }, allowedEvidence)).toEqual([])
     expect(validateChatAnswer({ content: 'Invented', sourceIds: ['E2'] }, allowedEvidence).join(' ')).toContain(

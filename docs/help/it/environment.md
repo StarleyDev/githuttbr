@@ -50,6 +50,6 @@ nuovo**.
 - Controlla ciò che l’app vede dal proprio processo. Un profilo di shell che
   cambia il `PATH` solo nel tuo terminale può far divergere i due.
 - La riga della CLI di GitHub riflette l’accesso di `gh` stesso, non gli account
-  collegati in **Impostazioni → Integrazioni**. Sono credenziali separate. Uno
+  collegati in **Impostazioni → Account collegati**. Sono credenziali separate. Uno
   scope `workflow` mancante lì si manifesta invece come un push rifiutato.
 - Riporta ciò che è installato. Non installa né aggiorna nulla.

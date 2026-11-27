@@ -103,7 +103,7 @@ aba avulsa, aparece um campo **Nome do grupo** (preenchido com o nome da pasta d
 raiz) e os dois vão para um grupo novo; sem nenhum membro da família aberto, ela
 só avisa que o worktree abre numa aba própria. Dentro do grupo, os chips encolhem
 para só a ponta (`main`, `feature/x`), porque o grupo já diz de qual repositório
-eles são — uma opção em Configurações → Layout mantém o nome completo
+eles são — uma opção em Configurações → Layout e terminal mantém o nome completo
 `raiz · branch`, se você preferir. A oferta só junta worktrees com a mesma raiz —
 nunca mistura repositórios sem relação.
 

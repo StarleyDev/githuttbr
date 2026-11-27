@@ -52,7 +52,7 @@ La **vue Fichier** d'un fichier de l'arbre de travail — indexé ou non, suivi 
 
 ![Marge des modifications avec une popup ouverte, mini-carte à droite](../../screenshots/change-gutter.webp)
 
-La **mini-carte**, désactivée par défaut, ajoute un aperçu réduit de tout le fichier sur le bord droit — cliquez ou faites-la glisser pour naviguer, comme le ferait une barre de défilement si elle pouvait aussi montrer la forme du fichier. Les deux sont des paramètres par machine sous **Paramètres → Général → Visionneuse de fichiers**.
+La **mini-carte**, désactivée par défaut, ajoute un aperçu réduit de tout le fichier sur le bord droit — cliquez ou faites-la glisser pour naviguer, comme le ferait une barre de défilement si elle pouvait aussi montrer la forme du fichier. Les deux sont des paramètres par machine sous **Paramètres → Disposition et terminal → Visionneuse de fichiers**.
 
 Aucune des deux ne lit l'historique : passez à Diff, Blame ou à un commit plus ancien, et la marge disparaît — ces vues affichent déjà chaque modification directement.
 

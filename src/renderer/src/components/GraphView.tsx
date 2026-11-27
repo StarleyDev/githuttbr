@@ -579,7 +579,7 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
       {
         label: t('graph.themeSettings'),
         icon: <Settings2 size={14} />,
-        onClick: () => openModal({ kind: 'settings', page: 'themes', themeTab: 'graph' })
+        onClick: () => openModal({ kind: 'settings', page: 'graph' })
       },
       { separator: true },
       ...ids.map((id) => ({

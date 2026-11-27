@@ -1842,6 +1842,8 @@ export interface DetectedCli {
   binary: AICliBinary
   label: string
   path: string
+  /** Only when asked for (`detectCli({ versions: true })`) and the CLI printed one. */
+  version?: string
 }
 
 export interface AIConfig {
@@ -1963,6 +1965,20 @@ export interface RepoChatSkipped {
   reason: RepoChatSkipReason
 }
 
+/** A model call that is taking long, announced so the user can decide (main/aiRequests.ts). */
+export type AIRequestEvent =
+  | { type: 'slow'; id: number; label: string; accountId: string }
+  | { type: 'done'; id: number }
+
+/** The user's answer to "this is taking longer than expected". */
+export type AISlowChoice = { kind: 'wait' } | { kind: 'cancel' } | { kind: 'switch'; accountId: string }
+
+/** What the repository chat is doing right now, for the panel's waiting line. */
+export type RepoChatProgressStep = { phase: 'thinking' } | { phase: 'reading'; files: number }
+
+/** A progress step as it crosses IPC, tagged with the repository it belongs to. */
+export type RepoChatProgress = RepoChatProgressStep & { repoPath: string }
+
 /** Answer returned by the repository-chat IPC handler. */
 export interface RepoChatReply {
   content: string
@@ -1973,6 +1989,9 @@ export interface RepoChatReply {
    *  renderer renders them as a card and runs them only under the approval
    *  policy. Absent when the chat-actions setting is off. */
   actions?: RepoChatAction[]
+  /** Something the app itself must say, whatever the model wrote — set when a
+   *  file change was asked for while File read-only mode is on. */
+  notice?: 'file-read-only' | 'file-not-prepared'
 }
 
 /** Co-author trailer appended when AIConfig.coAuthor is enabled (default on). */
@@ -3637,10 +3656,10 @@ export interface Profile {
   /** "Not now" on the suggestion to use a repository's icon as the avatar. */
   avatarRepoHintDismissed?: boolean
   /**
-   * Whether this profile answers with its own AI engine instead of the general
-   * one (`AppSettings.ai`). Absent or false: the general engine. `ai` always
-   * carries the profile's personal fields (styles, instructions, chat policy),
-   * and its engine fields only count while this is true — see `shared/aiScope.ts`.
+   * Whether this profile has its own AI instead of the general one
+   * (`AppSettings.ai`). Absent or false: the general AI, engine and behaviour
+   * alike, and `ai` here is not read. True: `ai` is the whole config this
+   * profile runs with — see `shared/aiScope.ts`.
    */
   ownAI?: boolean
   ai: AIConfig
@@ -4088,11 +4107,17 @@ export interface AppSettings {
    */
   aiAccountsNoticeSeen?: boolean
   /**
-   * The general AI: the engine (accounts, keys, assignments) every profile uses
-   * unless it has its own (`Profile.ownAI`). Its personal fields are ignored —
-   * those always come from the profile. See `shared/aiScope.ts`.
+   * The general AI: the whole config — engine (accounts, keys, assignments) and
+   * behaviour (styles, instructions, chat policy) — every profile uses unless it
+   * has its own (`Profile.ownAI`). See `shared/aiScope.ts`.
    */
   ai: AIConfig
+  /**
+   * Set once the general AI carries the behaviour fields too. Builds before it
+   * kept them on each profile; `ensureGeneralAI` copies one profile's into `ai`
+   * exactly once, then sets this so a later read never copies them again.
+   */
+  aiBehaviourShared?: boolean
   /**
    * The profile whose keychain entry still holds the general AI's keys: set when
    * the general AI was first built from that profile, read by `applySecrets`

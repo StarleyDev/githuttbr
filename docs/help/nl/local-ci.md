@@ -20,7 +20,7 @@ machine verlaat.
 
 GitHuttBr levert bewust **geen** act of Docker mee — een app die een
 container-runtime meesleept is het tegenovergestelde van een git-client. Dit
-is een opt-in-integratie: schakel hem in via **Instellingen → Integraties** (of
+is een opt-in-integratie: schakel hem in via **Instellingen → Gekoppelde accounts** (of
 in het dialoogvenster zelf), en GitHuttBr detecteert wat er geïnstalleerd is en
 loodst je door de rest — `brew install act`, een draaiende Docker-daemon,
 klaar. Er draait niets totdat alle drie waar zijn: ingeschakeld, act

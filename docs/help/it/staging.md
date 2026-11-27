@@ -65,7 +65,7 @@ copiare il percorso della cartella.
 GitHuttBr controlla alcune cose e chiede una volta, mai in silenzio:
 
 - un file che sembra un **segreto** (`.env`, `*.pem`, `id_rsa`…),
-- un blob **molto grande** (soglia in Impostazioni → Sicurezza),
+- un blob **molto grande** (soglia in Impostazioni → Sicurezza e conferme),
 - il commit **diretto su un branch protetto** (`main`/`master` di default).
 
 Ognuno di questi offre un *Ignora e togli dal tracciamento* in un clic. Vedi

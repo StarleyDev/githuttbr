@@ -71,7 +71,7 @@ machine login**, when the same computer has saved other secrets in the keychain
 first unlock, not at launch. Noreply addresses need no token and show at once.
 
 When there is no encrypted store to wait for — nothing saved in the keychain at
-all, or the keychain declined (in the explainer or in **Settings → Security**) —
+all, or the keychain declined (in the explainer or in **Settings → Security & confirmations**) —
 the machine login and any token you typed this session are all there is, and
 they are used from the start. A keychain that is on but not available on this
 system (a Linux desktop without a Secret Service) is only discovered by the
@@ -150,7 +150,7 @@ at a glance.
 ### Motion
 
 The title-bar avatar breathes and blinks on its own. Turn it off at
-**Settings → Themes → Graph → Animate the profile avatar** — the expression
+**Settings → Layout & terminal → Animate the profile avatar** — the expression
 still follows the repository, it just stops moving. Motion is also skipped
 automatically when your system asks for reduced motion.
 
@@ -161,20 +161,20 @@ hundred a scrolling graph draws.
 ## Your profile's picture
 
 The avatar in the title bar and the profile list is yours, so you can choose it.
-**Settings → Profile → Avatar** offers five sources:
+**Settings → Profile & identity → Avatar** offers five sources:
 
 | Source | What it shows |
 |---|---|
 | **Automatic** | The default: your Gravatar for the profile's git email, else the picture of the GitHub account the profile is connected to (github.com first, then any Enterprise Server it holds a token for), else the generated face — the one that reacts to the repository. |
-| **From integration** | The picture of the GitHub or GitLab account this profile is connected to in Integrations. Disabled until one is. |
+| **From integration** | The picture of the GitHub or GitLab account this profile is connected to in Connected accounts. Disabled until one is. |
 | **Icon** | One of 24 glyphs on a colour you pick. |
 | **Image** | A file you choose — PNG or JPEG. It is scaled to 256 px and kept on this computer, in GitHuttBr's data folder, not in the settings file. |
 | **From a repository** | An icon or logo found in one of the profile's repositories — the app's or the company's — copied into the profile like an image. |
 
-An image travels with **Settings → Data → Export settings** and comes back on import;
+An image travels with **Settings → Data & backup → Export settings** and comes back on import;
 deleting the profile deletes it.
 
-![Settings → Profile → Avatar on Icon: a rocket on a blue background, with the
+![Settings → Profile & identity → Avatar on Icon: a rocket on a blue background, with the
 icon grid and the colours](../screenshots/profile-avatar.webp)
 
 ### An icon from a repository
@@ -217,7 +217,7 @@ has no expression: the face that reacts to the repository is the automatic one.
 
 ## Turning the lookups off
 
-Two switches, both in **Settings → Themes → Graph**:
+Two switches, both in **Settings → Graph → Row content**:
 
 - **Show avatars** is the master switch. Off means no request to `gravatar.com`
   or to GitHub for a picture, ever — not deferred, not cached-and-retried — and

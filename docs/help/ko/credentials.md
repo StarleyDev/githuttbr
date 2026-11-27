@@ -4,7 +4,7 @@ category: 보안
 order: 73
 summary: git 자신의 비밀번호 저장소 — 세 번째 저장소 — 그리고 https가 자꾸 다시 묻는 이유.
 keywords: 자격 증명 credential 헬퍼 helper 비밀번호 password https 다시 물음 asks again osxkeychain wincred manager libsecret store cache git-credentials 평문 plaintext 잊기 forget 폐기된 revoked 토큰 token 401 로그인 확인 어떤 계정 원격 URL의 토큰 포함된 비밀번호 URL에서 제거 token in remote url embedded password invalid username or token authentication failed set-url
-source: ec745a4eb35cb3d23b0af6a36d6a540b8254df62
+source: a0a28af33433dfe90ae3dfb2e99a003c13ae5f36
 ---
 
 # 자격 증명 헬퍼
@@ -143,7 +143,7 @@ GitHuttBr는 각 원격의 fetch와 push URL을 읽고 세 곳에서 알려 줍�
 |---------------|-------------------------|
 | 저장소의 프로필에 그 호스트용 토큰이나 연결된 계정이 있음 | 그 토큰 — 확인 창은 더 말하지 않습니다 |
 | 프로필 토큰은 없지만 git 자체의 헬퍼에 그 호스트의 로그인이 있음 | 헬퍼의 로그인 |
-| 둘 다 없음 | 없음: 토큰을 추가할 때까지 fetch와 push는 실패합니다. 확인 창이 먼저 그렇다고 알리고, 설정 → 연동을 여는 **먼저 토큰 추가**를 제안합니다 |
+| 둘 다 없음 | 없음: 토큰을 추가할 때까지 fetch와 push는 실패합니다. 확인 창이 먼저 그렇다고 알리고, 설정 → 연결된 계정을 여는 **먼저 토큰 추가**를 제안합니다 |
 
 실패한 작업에서 시작했다면 **다시 시도**를 제안합니다.
 

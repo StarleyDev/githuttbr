@@ -2,8 +2,9 @@
 title: Discussion du dépôt
 category: IA
 order: 82
-summary: Posez des questions sur ce dépôt, avec les fichiers et les commits que vous épinglez comme contexte — et laissez-la proposer des actions git que vous approuvez avant leur exécution.
-keywords: discussion chat question assistant contexte épingler joindre glisser déposer commit fichier preuve ancré ia panneau actions exécuter approuver approbation automatique autoriser corriger erreur notification
+summary: Posez n’importe quelle question — générale ou sur ce dépôt —, avec les fichiers et les commits que vous épinglez comme contexte, et laissez-la proposer des actions git que vous approuvez avant leur exécution.
+keywords: discussion chat question assistant contexte épingler joindre glisser déposer commit fichier preuve ancré ia panneau actions exécuter approuver approbation automatique autoriser corriger erreur notification question générale n’importe quelle question réflexion lecture des fichiers
+source: 14be127d45f76373e5ced5db32f7f21167e6f965
 ---
 
 # Discussion du dépôt
@@ -13,6 +14,11 @@ réellement le rafraîchissement du jeton ? Qu’a changé ce commit, en une phr
 Pourquoi ce fichier existe-t-il ?* La discussion du dépôt répond sur le dépôt
 ouvert et montre les lignes sur lesquelles elle s’est appuyée.
 
+C’est aussi une discussion d’IA ordinaire. Une salutation, une question générale
+de programmation ou n’importe quoi d’autre reçoit une réponse directe du modèle,
+sans lire le dépôt : elle ne regarde les fichiers que lorsque la question les
+concerne.
+
 Elle partage la colonne de droite avec **Détails** : les onglets du haut passent
 de l’un à l’autre, sans que le graphe perde sa sélection.
 
@@ -20,21 +26,34 @@ de l’un à l’autre, sans que le graphe perde sa sélection.
 
 ## Ce qu’elle lit
 
-Chaque réponse se construit en deux passes. La première choisit un petit
-ensemble de chemins et de recherches littérales dans la liste des fichiers
-suivis du dépôt. La seconde répond en n’utilisant que les extraits rapportés, et
-ne peut citer qu’eux : un fichier ou une ligne inventés sont une erreur de
-validation, pas une réponse plausible.
+Elle fonctionne comme n’importe quel chat : **c’est votre message qui est
+envoyé**, avec à côté rien d’autre que le nom et la branche du dépôt — ni état
+Git, ni liste de fichiers, ni contenu de fichier — et la réponse revient en
+texte brut. Une salutation ou une question qui ne porte pas sur le dépôt reçoit
+sa réponse tout de suite, en un seul appel, et rien du dépôt ne quitte votre
+machine.
 
-**Un second regard.** La première passe doit deviner quels fichiers comptent à
-partir de leur seul nom, ce qui est exactement la supposition qui échoue sur
-« d'où est-ce appelé ». Une réponse a donc le droit de redemander plutôt que de
-deviner : elle peut nommer d'autres chemins, d'autres recherches littérales ou
-des hachages de commits de l'historique récent, et la question est reposée avec
-ce que cela ramène. Cela arrive deux fois au plus — chaque tour est un appel de
-modèle supplémentaire que vous attendez — et au dernier elle doit répondre avec
-ce qu'elle a. Vous n'en voyez rien, sinon une attente un peu plus longue et une
-meilleure réponse.
+**Quand le dépôt entre en jeu.** Il est ouvert pour le modèle dans trois cas :
+
+| Vous… | Ce qui se passe |
+|------|--------------|
+| Nommez un fichier suivi (`config.json`, `src/app.ts`) | Ce fichier est lu avant que le modèle réponde |
+| Le dites en toutes lettres — « ce dépôt », « mes modifications », « non commité », « branche actuelle » | L’état Git et la liste des fichiers suivis sont envoyés |
+| Posez une question dont le modèle estime qu’elle en a besoin | Il répond par une seule ligne `@repo`, et l’application lui ouvre le dépôt |
+
+À partir de là, le modèle demande ce dont il a encore besoin au lieu de
+deviner : des chemins exacts de la liste, des recherches littérales ou des
+hachages de commits de l’historique récent. L’application les lit et repose la
+question avec ce qu’ils ont donné. Cela arrive quatre fois au plus — chaque tour
+est un appel de modèle supplémentaire que vous attendez — et au dernier elle
+doit répondre avec ce qu’elle a. Ces réponses citent les extraits qu’elles ont
+utilisés, et un fichier ou une ligne inventés sont une erreur de validation, pas
+une réponse plausible.
+
+Pendant l’attente, la ligne sous votre message dit ce qui se passe :
+**Réflexion…** pendant que le modèle travaille, **Lecture des fichiers (N)…** ou
+**Recherche dans le dépôt…** uniquement pendant que l’application lit vraiment
+ce qu’il a demandé.
 
 | Inclus | Exclu |
 |---|---|
@@ -74,17 +93,21 @@ touchant un chemin exclu sont retirés de ce diff, pas le commit entier.
 
 ## Paramètres
 
-**Paramètres → Profil → Préférences d’écriture de l’IA → Discussion du dépôt** (chaque profil a les siennes) :
+**Paramètres → IA → Discussion du dépôt** — sur l’IA générale, ou sur celle d’un
+profil quand il en a une (la barre **Modification de** choisit laquelle, voir
+[Une IA pour tous les profils](ai.md#une-ia-pour-tous-les-profils)) :
 
 | Réglage | Effet |
 |---|---|
 | **Poser des questions sur le dépôt** | Désactivé, l’onglet, le bouton et la cible du raccourci disparaissent. Le reste de l’IA continue |
-| **Modèle de la discussion** | Un modèle réservé à la discussion. Vide : celui du profil — poser une question coûte moins qu’une relecture, un modèle plus petit suffit souvent |
+| **Lire le dépôt** | Fichiers, historique et diffs, pour vous répondre. Les fichiers qui ressemblent à des secrets ne sont jamais lus |
 | **Contenu validé uniquement** | Répond depuis le dernier commit plutôt que la copie de travail : les modifications non validées ne quittent jamais la machine |
-| **Proposer des actions sur les fichiers et Git** | Désactivé, la discussion redevient purement en lecture seule : plus de cartes d’actions ni de menu d’approbation |
-| **Mode fichiers en lecture seule** | Activé, il bloque la création, la modification, le remplacement et la suppression de fichiers tout en gardant les actions Git disponibles. Activé par défaut |
-| **Comment s’exécutent les actions proposées** | Le mode d’approbation — voir [Modes d’approbation](#modes-dapprobation). Les actions destructrices confirment quoi qu’il arrive |
-| **Autoriser le chat à proposer des actions distantes** | Désactivé par défaut. Activé, il ajoute fetch, pull, push, l'ouverture d'une pull request et la soumission d'une pile |
+| **Actions Git locales** | Indexer, valider, créer une branche, remiser, fusionner et plus, proposés sur une carte que vous relisez. Désactivé : le chat ne fait que répondre |
+| **Créer, modifier et supprimer des fichiers** | Modifications exactes, nouveaux fichiers, remplacements et suppressions, chacun avec son diff sur la carte. Nécessite les actions Git locales. Désactivé par défaut. Remplace *Mode fichiers en lecture seule* avec le sens inversé : activé ici, c’est ce mode désactivé, et un réglage enregistré se lit comme avant |
+| **Quand l’IA propose une action** | Le mode d’approbation — voir [Modes d’approbation](#modes-dapprobation). Les actions destructrices confirment quoi qu’il arrive |
+| **Actions distantes** | Désactivé par défaut. Activé, il ajoute fetch, pull, push, l'ouverture d'une pull request et la soumission d'une pile |
+
+Au-dessus de la liste, une phrase résume ce que l’IA peut faire en ce moment avec ces réglages. Elle décrit les réglages, pas le modèle : une proposition reste vérifiée et refusée si elle enfreint une règle.
 
 Avec l’IA entièrement désactivée, la discussion disparaît avec elle : plus de
 panneau proposant une réponse que rien ne peut produire.
@@ -92,8 +115,25 @@ panneau proposant une réponse que rien ne peut produire.
 Le fournisseur et le modèle qui répondent à la discussion se choisissent sur la
 page **IA**, sous **Modèle par tâche** — voir [Fonctions IA](ai.md#modèle-par-tâche).
 
-Le modèle de la discussion se change aussi depuis l’en-tête du panneau, à côté
-du nom du fournisseur : même réglage, sans ouvrir les Paramètres.
+### Les pastilles de l’en-tête
+
+Sous le titre du panneau, trois pastilles disent ce que la discussion fera de
+votre prochain message, et chacune le change sans ouvrir les Paramètres :
+
+| Pastille | Affiche | Cliquez pour |
+|---|---|---|
+| **Compte · modèle** | Qui répond, avec un point pour l’état du compte — prêt, ne répond pas, pas de clé ou pas encore vérifié | Choisir un autre modèle dans un menu groupé par compte, ou revenir au modèle du profil. C’est le même réglage que **Modèle par tâche → Discussion** |
+| **Peut : …** | Ce que la discussion peut faire — *lire*, plus *Git*, *fichiers* et *distant* quand ils sont activés | Activer ou désactiver **Actions Git locales**, **Créer, modifier et supprimer des fichiers** et **Actions distantes**, ou ouvrir **Tous les réglages du chat** |
+| **Approbation** | *Demande avant d’exécuter*, *Exécute les actions sûres* ou *Exécute toutes les actions* | Choisir l’un des trois modes d’approbation (plus bas). Masquée tant que les actions Git locales sont désactivées, puisque rien n’est proposé |
+
+Ce sont les mêmes réglages que **Paramètres → IA → Discussion du dépôt**,
+enregistrés sur la même IA : les deux ne se contredisent jamais. Envoyer une
+seule question à un modèle plus puissant tient en un clic et ne dérange pas le
+reste de l’application. Le point d’état est lu dans la liste de modèles que le
+panneau a déjà récupérée — il n’envoie jamais de requête à lui seul, donc *Non
+vérifié* signifie seulement que rien n’a encore prouvé le compte.
+
+![La pastille des capacités ouverte](../../screenshots/repo-chat-capabilities.webp)
 
 Le bouton baguette à côté du titre du panneau ouvre l’**assistant de
 configuration IA** — un parcours guidé qui génère des fichiers de configuration
@@ -126,10 +166,7 @@ n'affiche simplement rien.
 
 Demandez un changement plutôt qu’un fait — *indexe les fichiers markdown,
 valide ceci comme un correctif, mets la sortie du build dans les exclusions* —
-et la réponse arrive avec une **carte d’actions**. Une conversation vide
-propose quelques demandes d’exemple sous forme de pastilles sous
-l’introduction ; en cliquer une remplit le champ de saisie, pour que vous
-puissiez la modifier avant l’envoi. La carte liste les étapes concrètes que
+et la réponse arrive avec une **carte d’actions**. Une conversation vide commence par **Posez n’importe quelle question** et trois suggestions — *Relis le dernier commit*, *Qu’est-ce qui a changé depuis main ?* (avec le nom de la branche par défaut du dépôt quand il en a une) et *Rédige la description de la PR pour cette branche*. En cliquer une remplit le champ de saisie sans rien envoyer, pour que vous puissiez la modifier d’abord. La carte liste les étapes concrètes que
 l’assistant veut effectuer, une ligne par action, avec les boutons **Exécuter**
 et **Ignorer**. Rien de ce que contient la carte n’a encore eu lieu ; le modèle
 ne peut que proposer, et chaque proposition est vérifiée contre la copie de
@@ -150,6 +187,15 @@ preuves lues ; les cibles risquées, secrètes, ignorées, générées, binaires
 périmées, trop grosses ou atteintes par lien symbolique sont refusées. Reset,
 réécriture d'historique, suppression de branche et toute opération forcée
 restent dans leur interface dédiée.
+
+**Un texte de la conversation peut devenir un fichier.** Demandez un texte, puis
+*crée le fichier* : la réponse précédente en est le contenu et, si vous ne
+nommez pas le fichier, l’assistant choisit un nom et l’affiche sur la carte.
+Avec les actions de fichier activées, le modèle est informé qu’il peut écrire ;
+une réponse précédente qui prétendait ne pas avoir accès n’est donc pas répétée.
+Si la réponse structurée échoue malgré tout, la réponse dit que la modification
+n’a pas pu être préparée cette fois et que renvoyer la demande la retente ; elle
+ne prétend jamais que le fichier a été écrit.
 
 Un merge ou un rebase peut s'arrêter sur un conflit. Le cas échéant, l'exécution
 s'arrête là, la carte marque la ligne en échec et conserve le compte de ce qui
@@ -212,10 +258,21 @@ ce que le plan a produit : elle demande donc confirmation et nomme le commit de
 retour. Les pull requests ouvertes le restent — un dépôt distant n'est pas
 quelque chose qu'un instantané local peut reprendre.
 
+Avec **Exécuter automatiquement toutes les actions**, une modification de
+fichier valide s’exécute aussitôt et la carte consigne l’action terminée :
+
+![Action de fichier de la discussion du dépôt terminée automatiquement](../../screenshots/repo-chat-file-action-auto-run.webp)
+
+Avec **Toujours demander**, le même type de modification reste en attente
+jusqu’à ce que vous choisissiez **Exécuter** ou **Ignorer** :
+
+![Action de fichier de la discussion du dépôt en attente d’approbation](../../screenshots/repo-chat-file-action-approval.webp)
+
 ### Modes d’approbation
 
-Le menu au bouclier sous le champ de saisie (aussi dans **Paramètres → Profil →
-Discussion du dépôt**) décide de la façon dont une carte s’exécute :
+La pastille d’approbation dans l’en-tête du panneau (aussi dans **Paramètres → IA →
+Discussion du dépôt**) décide de la façon dont une carte s’exécute — pour tous
+les profils sur la même IA :
 
 | Mode | Exécute |
 |---|---|
@@ -246,6 +303,13 @@ que vous pressiez Envoyer.
 - **Les binaires et les fichiers de plus de 512 Ko** venus de l’extérieur du
   dépôt sont ignorés de la même façon. À l’intérieur, les règles habituelles
   s’appliquent.
+- **Une question ne reçoit aucune proposition.** Les actions ne sont proposées
+  au modèle que lorsque votre message demande de faire quelque chose — « commite
+  les fichiers indexés », « faça um stash », « crée la branche ». Demander
+  quelle est la version, ou ce qu’est un commit, ne peut jamais revenir avec un
+  plan à exécuter. Une réponse courte qui insiste sur la demande juste avant — «
+  oui », « je t’ai donné l’accès » — compte comme cette demande ; une question
+  ou un remerciement, non.
 - **Elle n’écrit jamais d’elle-même.** Le modèle n’a aucun outil, seulement du
   texte : un changement arrive comme carte de proposition, ne s’exécute que
   selon [vos règles d’approbation](#modes-dapprobation), et une étape
@@ -253,6 +317,13 @@ que vous pressiez Envoyer.
   discussion** désactivé, elle ne propose même pas.
 - **Les conversations ne vivent qu’en mémoire.** Chaque dépôt garde son fil ;
   quitter GitHuttBr les efface.
+- **Les petits modèles locaux sont plus faibles sur les questions de dépôt.**
+  Mesuré avec un modèle 3B : les questions générales reçoivent d’aussi bonnes
+  réponses que dans son propre terminal, mais il peut ne pas demander le dépôt
+  quand il le faudrait, et une longue réponse bâtie à partir de fichiers peut
+  revenir tronquée. Nommer le fichier, ou dire « ce dépôt », fait que
+  l’application l’ouvre quoi qu’il arrive. Un modèle de 7B ou plus fait
+  nettement mieux.
 
 ## L’ouvrir
 

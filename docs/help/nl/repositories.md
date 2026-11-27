@@ -4,7 +4,7 @@ category: Synchroniseren & meerdere repo's
 order: 52
 summary: Elke repository die GitHuttBr kent, open of niet, in één doorzoekbare lijst.
 keywords: repositories register alle repos favorieten ster recent scannen map bladeren vinden openen beheren repositorybeheer kleur sectie tint markeren workspaces uit mappen boom genereren bulkimport registry favourites starred recent scan folder workspaces
-source: 6a9c51bf47eebb0f97be71324460cd15c50b0855
+source: 5ceb6debb4062f3c33c72daec960910c86ceff02
 ---
 
 # Repositories
@@ -92,7 +92,7 @@ en het gebeurt bij het eerste bezoek van elke sessie, niet één keer voor
 altijd. Een repository die je **vergeet**, blijft vergeten, tenzij je hem
 opnieuw opent.
 
-Scanmappen stel je in bij Instellingen → Gegevens, of in het venster
+Scanmappen stel je in bij Instellingen → Gegevens & back-up, of in het venster
 **Gescande repositories** hieronder:
 
 - **Diepte** is hoeveel mapniveaus de scan onder de wortel afdaalt

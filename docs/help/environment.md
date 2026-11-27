@@ -48,6 +48,6 @@ yours to read before you run them. After running one, press **Check again**.
 - It checks what the app can see from its own process. A shell profile that
   changes `PATH` only inside your terminal can make the two disagree.
 - The GitHub CLI row reflects `gh`'s own login, not the accounts connected in
-  **Settings → Integrations**. Those are separate credentials. A missing
+  **Settings → Connected accounts**. Those are separate credentials. A missing
   `workflow` scope there shows up as a refused push instead.
 - It reports what is installed. It does not install or upgrade anything.

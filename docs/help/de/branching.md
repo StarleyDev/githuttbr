@@ -3,17 +3,19 @@ title: Branches, Remotes & die Seitenleiste
 category: Branches & Eingriffe
 order: 40
 summary: Alles, was die linke Seitenleiste kann, und angeheftete Branches.
-keywords: branch branches erstellen auschecken checkout umbenennen löschen remote angeheftet pinned seitenleiste sidebar presence remote hinzufügen
+keywords: branch branches erstellen auschecken checkout umbenennen löschen remote angeheftet pinned seitenleiste sidebar presence remote hinzufügen filter filtern suche search umsortieren reorder verschieben abschnitt schnellaktionen
 ---
 
 # Branches, Remotes & die Seitenleiste
 
 Eine einzige umsortierbare, durchsuchbare Seitenleiste beherbergt **Branches,
 Remotes, Tags, Stashes, Worktrees und Submodule**. Jeder Abschnitt lässt sich
-ausblenden oder umsortieren (Einstellungen → Layout), und das Filterfeld gilt
+ausblenden oder umsortieren (Einstellungen → Layout & Terminal), und das Filterfeld gilt
 für alle.
 Welche Abschnitte und Ordner auf- oder zugeklappt sind, merkt sich die
 Seitenleiste pro Repository — auch über Neustarts hinweg.
+
+Zum Umsortieren einen Abschnitt am Kopf ziehen — oder ohne Maus den Kopf fokussieren und <kbd>Alt</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> drücken. Dieselben Einträge *Bereich nach oben* und *Bereich nach unten* stehen im Rechtsklickmenü des Kopfes (<kbd>Shift</kbd>+<kbd>F10</kbd> öffnet es per Tastatur). Auch die Reihenfolge merkt sich die Seitenleiste pro Repository.
 
 Die Seitenleiste ist ein Stapel von Panes, keine lange Liste. Ein offener
 Abschnitt nimmt die Höhe, die die zugeklappten übrig lassen — die sitzen darunter
@@ -32,6 +34,22 @@ jede andere gemerkt.
 
 ![Die Seitenleiste, mit angehefteten Branches ganz oben](../../screenshots/pinned-branches.webp)
 
+## Ein Filter für alle Abschnitte
+
+Das Feld oben in der Seitenleiste filtert **alle Abschnitte auf einmal**: lokale und entfernte Branches, Tags, Stashes, Worktrees, Submodule, Pull Requests, Issues, Meilensteine, Releases, Lesezeichen und Todos. Es vergleicht Namen, Titel und Pfade ohne Rücksicht auf Groß- und Kleinschreibung; ein Pull Request passt auch über seine `#Nummer`, seinen Quell-Branch und seinen Autor. Die Zeile unter dem Feld zählt die Treffer über alle Abschnitte.
+
+Solange ein Filter aktiv ist:
+
+- zeigt jeder Kopf **Treffer von gesamt** — `2 von 10`;
+- verlässt ein Abschnitt ohne Treffer die Liste und klappt in eine einzige Zeile am unteren Rand, damit die Ergebnisse nicht von leeren Köpfen unterbrochen werden;
+- öffnen sich Abschnitte und Ordner mit Treffern von selbst, außer sie enthalten mehr als 300 — die öffnen Sie von Hand. Was Sie öffnen oder schließen, gilt nur bis zum Leeren des Filters; Ihre gespeicherte Anordnung bleibt unberührt.
+
+<kbd>Esc</kbd> im Feld leert es.
+
+![Die Seitenleiste gefiltert nach „pay“: zwei Abschnitte mit Treffern, der Rest unten eingeklappt](../../screenshots/sidebar-filter.webp)
+
+**Grenzen:** Es ist eine einfache Teilstring-Suche — keine Platzhalter, keine unscharfe Suche, keine regulären Ausdrücke. Sie durchsucht, was die Seitenleiste bereits geladen hat: Pull Requests und Issues jenseits der Liste, die der Host geliefert hat, findet sie nicht (die Seite [Pull Requests](pull-requests.md) hat einen eigenen Filter). Entfernte Branches passen über den vollen Namen `remote/branch`, ein Remote-Name findet also jeden Branch darauf.
+
 ## Branches
 
 Erstellen, auschecken, umbenennen und löschen — lokal wie remote. Branch-Zeilen
@@ -43,12 +61,14 @@ zeigen:
 - eine **⟳-Markierung**, wenn der Remote
   [die Historie umgeschrieben hat](range-diff.md).
 
+Fahren Sie über eine lokale Branch-Zeile oder erreichen Sie sie mit Tab, um zwei Schnellaktionen zu sehen: **Auschecken** und **Pull Request erstellen**. Es sind dieselben Aktionen wie im Rechtsklickmenü, das alles Übrige behält; der aktuelle Branch zeigt nur die zweite.
+
 Branches mit `/` im Namen werden automatisch in aufklappbare Ordner gefaltet.
 Ein Präfix mit einem Kind bleibt ein Ordner — `release/1.2.3` ist `release`
 mit `1.2.3` darin — damit `release/1.2.4` den Baum später nicht umbaut.
 Eine Folge von Ordnern mit einem Kind fällt in eine Kopfzeile zusammen
 (`dependabot/npm_and_yarn`). Ordnerköpfe tragen ein Ordnersymbol; die Ref
-selbst ein Branch-, Remote- oder Tag-Zeichen.
+selbst ein Branch-, Remote- oder Tag-Zeichen. **Einstellungen → Layout & Terminal → Refs nach Präfix gruppieren** schaltet die Ordner ab, für eine flache Liste.
 
 Ein Rechtsklick auf einen Ordnerkopf wirkt auf die ganze Gruppe: *Alle Branches
 unter `feature` löschen (4 Branches)* entfernt alles darin nach einer einzigen

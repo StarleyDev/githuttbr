@@ -150,7 +150,7 @@ descarta la credencial que usa git.
 ## GitLab autogestionado
 
 Un GitLab de empresa vive en su propia dirección. Indícasela a un perfil en
-**Ajustes → Integraciones → GitLab → Dirección de GitLab**, por ejemplo
+**Ajustes → Cuentas conectadas → GitLab → Dirección de GitLab**, por ejemplo
 `git.example.org` o `https://example.net/gitlab` si está servido bajo una ruta.
 Desde entonces, los remotos en ese host son GitLab: los merge requests se listan,
 abren, revisan y fusionan, el explorador de clonado y *crear repositorio* hablan
@@ -187,7 +187,7 @@ Configura la dirección de la instancia antes de introducir su token. Cambiar la
 
 Forgejo — y Gitea, que comparte su API — siempre corre en una dirección elegida
 por su dueño: tu propio servidor, o uno público como codeberg.org. Indícale esa
-dirección a un perfil en **Ajustes → Integraciones → Forgejo**, junto con un token
+dirección a un perfil en **Ajustes → Cuentas conectadas → Forgejo**, junto con un token
 de acceso. **Crear token** abre la página de tokens de ese servidor. Dale al token permiso de lectura y escritura en *repository*, *issue* y
 *notification*, y de lectura en *user* y *organization*. Los permisos de un token
 no se pueden cambiar después: uno creado sin *issue* o *notification* no lista
@@ -258,7 +258,7 @@ recuerda diez minutos. Un token que no puede leer su propio usuario (sin
 
 ![Pull requests que esperan tu revisión, marcados con un ojo](../../screenshots/pr-awaiting-review.webp)
 
-Con **Ajustes → Notificaciones del sistema** activado, un pull request de GitLab o
+Con **Ajustes → General → Notificaciones del sistema** activado, un pull request de GitLab o
 Forgejo que *empieza* a esperarte lanza una; hacer clic abre la página del PR. La
 primera mirada a un repositorio solo toma nota de lo que ya espera, así que abrir
 la app no repite el atraso. Las solicitudes de revisión de GitHub quedan para su
@@ -285,7 +285,7 @@ de credenciales de git**, así que una organización para la que ya te has
 autenticado a menudo no necesita configuración ninguna. Mira [Seguridad y
 secretos](security.md).
 
-Cada perfil **vincula su propia cuenta**. En Ajustes → Integraciones, **Vincular al
+Cada perfil **vincula su propia cuenta**. En Ajustes → Cuentas conectadas, **Vincular al
 perfil** busca un inicio de sesión que ya esté en el equipo — el
 credential helper de git, luego la cuenta activa de **GitHub CLI**, luego la
 ventana de inicio de sesión del propio helper — y vincula esa cuenta al perfil.

@@ -90,6 +90,62 @@ async function openCompareShot(page, repoPath, mode) {
 }
 
 /**
+ * A loopback stand-in for an OpenAI-compatible provider: it answers the model
+ * listing and nothing else, so an AI shot can show a "Ready" provider without
+ * reaching one on the capturing machine. Unref'd: it never keeps a run alive.
+ */
+let fakeModelsPort
+async function serveFakeModels() {
+  if (fakeModelsPort) return fakeModelsPort
+  const { createServer } = await import('node:http')
+  const body = JSON.stringify({
+    object: 'list',
+    data: ['llama3.2', 'qwen2.5-coder', 'mistral'].map((id) => ({ id, object: 'model', created: 1700000000 }))
+  })
+  const server = createServer((req, res) => {
+    const ok = req.url?.endsWith('/models')
+    res.writeHead(ok ? 200 : 404, { 'content-type': 'application/json' })
+    res.end(ok ? body : '{}')
+  })
+  // A fixed port keeps the endpoint in the shot the same between runs; a busy
+  // one falls back to any free port rather than failing the capture.
+  await new Promise((resolve) => {
+    server.once('error', () => server.listen(0, '127.0.0.1', resolve))
+    server.listen(47811, '127.0.0.1', resolve)
+  })
+  server.unref()
+  fakeModelsPort = server.address().port
+  return fakeModelsPort
+}
+
+/**
+ * The chat's AI for the chat shots: a ready account on the loopback fake model
+ * server and a keyless hosted one, so the model pill shows a real status dot
+ * without a request to any provider. Files are on so the capabilities pill
+ * reads past the defaults.
+ */
+async function seedChatAI(page, extra = {}) {
+  const port = await serveFakeModels()
+  await page.evaluate(({ port, extra }) => {
+    window.__shot.settings.getState().update((s) => {
+      const local = {
+        id: 'ollama',
+        label: 'Local models',
+        provider: 'ollama',
+        endpoint: `http://127.0.0.1:${port}/v1`,
+        apiKey: '',
+        model: 'llama3.2'
+      }
+      const hosted = { ...local, id: 'openai', label: 'OpenAI', provider: 'openai', endpoint: '', model: 'gpt-4o-mini' }
+      return {
+        ...s,
+        ai: { ...s.ai, accounts: [local, hosted], defaultAccountId: 'ollama', repoChatReadOnly: false, ...extra }
+      }
+    })
+  }, { port, extra })
+}
+
+/**
  * Seed a repository's todo list through the settings store.
  *
  * Written straight into `repoTodos` rather than through `addTodo` so the ages
@@ -474,19 +530,41 @@ export const shots = [
     }
   },
   {
-    // Empty repository chat: the example-request chips and the config-wizard
-    // wand in the header, before anything has been asked.
+    // Empty repository chat: the header pills (model, capabilities, approval),
+    // the starter requests and the config-wizard wand, before anything is asked.
     out: 'repo-chat-empty',
     repos: ['deep-history-monorepo'],
     themes: ['dark'],
     drive: async (page, repoPaths) => {
       const repo = repoPaths['deep-history-monorepo']
+      await seedChatAI(page)
       await page.evaluate(async (path) => {
         const shot = window.__shot
         await shot.waitForRepo(path)
         shot.ui.getState().openChatPanel()
       }, repo)
       await page.waitForSelector('.ai-ask-chip')
+      await page.locator('.repo-chat-pill .repo-chat-dot.ready').waitFor()
+      await page.waitForTimeout(300)
+    }
+  },
+  {
+    // The capabilities pill open: the chat's permission switches, written to
+    // the same settings as Settings → AI → Repository chat.
+    out: 'repo-chat-capabilities',
+    repos: ['deep-history-monorepo'],
+    themes: ['light'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['deep-history-monorepo']
+      await seedChatAI(page)
+      await page.evaluate(async (path) => {
+        const shot = window.__shot
+        await shot.waitForRepo(path)
+        shot.ui.getState().openChatPanel()
+      }, repo)
+      await page.locator('.repo-chat-pill .repo-chat-dot.ready').waitFor()
+      await page.click('.repo-chat-pill.caps')
+      await page.waitForSelector('.repo-chat-pop.caps')
       await page.waitForTimeout(300)
     }
   },
@@ -499,6 +577,7 @@ export const shots = [
     themes: ['dark'],
     drive: async (page, repoPaths) => {
       const repo = repoPaths['deep-history-monorepo']
+      await seedChatAI(page)
       await page.evaluate(async (path) => {
         const shot = window.__shot
         await shot.waitForRepo(path)
@@ -548,6 +627,7 @@ export const shots = [
     themes: ['dark'],
     drive: async (page, repoPaths) => {
       const repo = repoPaths['deep-history-monorepo']
+      await seedChatAI(page)
       await page.evaluate(async (path) => {
         const shot = window.__shot
         await shot.waitForRepo(path)
@@ -600,6 +680,7 @@ export const shots = [
     themes: ['dark'],
     drive: async (page, repoPaths) => {
       const repo = repoPaths['pr-ready-branch']
+      await seedChatAI(page, { repoChatRemoteActions: true })
       await page.evaluate(async (path) => {
         const shot = window.__shot
         await shot.waitForRepo(path)
@@ -653,6 +734,7 @@ export const shots = [
     themes: ['dark'],
     drive: async (page, repoPaths) => {
       const repo = repoPaths['image-showcase']
+      await seedChatAI(page)
       await page.evaluate(async (path) => {
         const shot = window.__shot
         await shot.waitForRepo(path)
@@ -696,11 +778,115 @@ export const shots = [
     }
   },
   {
+    // The provider list as it reads with more than one: the one in use marked,
+    // the others with "Use" beside their status — ready, no key, not responding.
+    // The ready one is a fake OpenAI-shaped server started here on loopback,
+    // never a provider on the capturing machine; the failing one is a port
+    // nothing listens on.
     out: 'settings-ai',
     repos: ['octopus-merge'],
     themes: ['light'],
     drive: async (page) => {
+      const port = await serveFakeModels()
+      await page.evaluate((port) => {
+        window.__shot.settings.getState().update((s) => {
+          const local = {
+            id: 'ollama',
+            label: 'Local models',
+            provider: 'ollama',
+            endpoint: `http://127.0.0.1:${port}/v1`,
+            apiKey: '',
+            model: 'llama3.2'
+          }
+          // Keyless, so it reads "No key" without a request: the seeded demo
+          // key would send a real one to the provider's API.
+          const hosted = { ...local, id: 'openai', label: 'OpenAI', provider: 'openai', endpoint: '', model: 'gpt-4o-mini' }
+          const lab = { ...local, id: 'custom', label: 'Lab server', provider: 'custom', endpoint: 'http://127.0.0.1:9/v1' }
+          return { ...s, ai: { ...s.ai, accounts: [local, hosted, lab], defaultAccountId: 'ollama' } }
+        })
+        window.__shot.ui.getState().openModal({ kind: 'settings', page: 'ai' })
+      }, port)
+      await page.locator('.ai-accounts-item .ai-status.ready').waitFor()
+      await page.locator('.ai-accounts-item .ai-status.failing').waitFor()
+      await page.waitForTimeout(300)
+    }
+  },
+  {
+    // Settings → AI, scrolled to Commit messages: the style cards with their
+    // sample lines, the two switches, the extra rules and the static preview.
+    out: 'settings-ai-commits',
+    repos: ['octopus-merge'],
+    themes: ['light'],
+    drive: async (page) => {
       await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'ai' }))
+      await page.waitForTimeout(400)
+      await page.evaluate(() => {
+        const heading = [...document.querySelectorAll('.ai-card h4')].find((el) =>
+          /commit messages/i.test(el.textContent ?? '')
+        )
+        heading?.closest('.ai-card')?.scrollIntoView({ block: 'start' })
+      })
+      await page.waitForTimeout(400)
+    }
+  },
+  {
+    // The status bar's AI button, opened: a profile with its own AI — the case
+    // the popover exists for — and one provider in each state. Every endpoint
+    // is local: the fake model server answers, port 9 refuses, and the keyless
+    // OpenAI row reads "No key" without a request (its endpoint is port 9 too,
+    // so nothing leaves the machine even if it were asked).
+    out: 'statusbar-ai',
+    repos: ['octopus-merge'],
+    themes: ['light'],
+    drive: async (page) => {
+      const port = await serveFakeModels()
+      await page.evaluate((port) => {
+        const store = window.__shot.settings
+        store.getState().update((s) => {
+          const local = {
+            id: 'ollama',
+            label: 'Local models',
+            provider: 'ollama',
+            endpoint: `http://127.0.0.1:${port}/v1`,
+            apiKey: '',
+            model: 'llama3.2'
+          }
+          const gateway = { ...local, id: 'custom', label: 'Team gateway', provider: 'custom', endpoint: 'http://127.0.0.1:9/v1', model: 'gpt-4o' }
+          const hosted = { ...local, id: 'openai', label: 'OpenAI', provider: 'openai', endpoint: 'http://127.0.0.1:9/v1', model: 'gpt-4o-mini' }
+          const own = { ...s.ai, accounts: [local, gateway, hosted], defaultAccountId: 'ollama' }
+          const base = s.profiles.find((p) => p.id === s.activeProfileId) ?? s.profiles[0]
+          const work = { ...base, id: 'work', name: 'Work', ownAI: true, ai: own }
+          return { ...s, profiles: [...s.profiles.filter((p) => p.id !== 'work'), work], activeProfileId: 'work' }
+        })
+        // The fake settings hold no stored keys, so they count as loaded: that
+        // is what lets the keyless row say "No key" rather than "Not checked".
+        store.setState({ unlocked: true })
+      }, port)
+      await page.locator('.status-ai-btn').click()
+      await page.locator('.ai-chip-row .ai-chip-dot.ready').waitFor()
+      await page.locator('.ai-chip-row .ai-chip-dot.failing').waitFor()
+      await page.waitForTimeout(300)
+    }
+  },
+  {
+    // A new provider is a draft until "Test and save" passes. Pointed at a
+    // local port nothing listens on — not Ollama's, which may be running on the
+    // capturing machine and would put its real model list in the shot — the
+    // test fails without a request leaving the machine, and the card shows the
+    // reason, "Nothing was saved" and "Save anyway".
+    out: 'ai-provider-draft',
+    repos: ['octopus-merge'],
+    themes: ['light'],
+    drive: async (page) => {
+      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'ai' }))
+      await page.locator('.ai-accounts-bar .btn', { hasText: 'Add provider' }).click()
+      await page.locator('.ai-account.draft select').first().selectOption('custom')
+      await page.locator('.ai-account-name').fill('Local server')
+      await page.locator('.ai-account.draft input[placeholder="https://api.openai.com/v1"]').fill('http://127.0.0.1:9/v1')
+      await page.locator('.ai-account.draft .btn.primary').click()
+      await page.locator('.ai-account-error').waitFor()
+      await page.evaluate(() => document.querySelector('.ai-accounts-list')?.scrollIntoView({ block: 'start' }))
+      await page.waitForTimeout(400)
     }
   },
   {
@@ -715,21 +901,23 @@ export const shots = [
     }
   },
   {
-    // Settings → AI, scrolled to the Repository chat block: the enable switch,
-    // the chat-only model, and the committed-content-only guard.
+    // Settings → AI, scrolled to the Repository chat card: the switch in its
+    // header, the sentence summing up what the AI may do, the permission rows,
+    // the approval cards and the privacy box.
     out: 'settings-repo-chat',
     repos: ['octopus-merge'],
     themes: ['light'],
     drive: async (page) => {
-      // Repository chat is a writing preference, so it lives on the Profile page.
-      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'profile' }))
+      // Repository chat belongs to the AI a profile uses, so it lives on the AI page.
+      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'ai' }))
       await page.waitForTimeout(400)
       await page.evaluate(() => {
-        // The section has no id of its own — its heading is the only handle.
-        const heading = [...document.querySelectorAll('h4')].find((el) =>
+        // The section has no id of its own — its heading is the only handle;
+        // its card is scrolled to, so the switch in the header stays in view.
+        const heading = [...document.querySelectorAll('.ai-card h4')].find((el) =>
           /repository chat/i.test(el.textContent ?? '')
         )
-        heading?.scrollIntoView({ block: 'center' })
+        heading?.closest('.ai-card')?.scrollIntoView({ block: 'start' })
       })
       await page.waitForTimeout(400)
     }
@@ -756,15 +944,15 @@ export const shots = [
     }
   },
   {
-    // Settings → Themes → Graph tab: lane palette, line corners, density,
-    // thickness, with the live mini-graph preview.
+    // Settings → Graph, scrolled to its drawing controls: lane palette, line
+    // corners, density, thickness, with the live mini-graph preview.
     out: 'settings-graph',
     repos: ['octopus-merge'],
     themes: ['dark'],
     drive: async (page) => {
-      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'themes' }))
-      await page.waitForTimeout(300)
-      await page.click('.theme-tabs .theme-tab:nth-child(2)').catch(() => {})
+      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'graph' }))
+      await page.locator('.graph-style-layout').waitFor()
+      await page.evaluate(() => document.querySelector('.graph-style-layout')?.scrollIntoView({ block: 'start' }))
       await page.waitForTimeout(400)
     }
   },
@@ -1753,7 +1941,7 @@ export const shots = [
     }
   },
   {
-    // Settings → Layout → Terminal shell on macOS/Linux. The detected shell and
+    // Settings → Layout & terminal → Terminal shell on macOS/Linux. The detected shell and
     // the /etc/shells list are faked: the real ones describe this machine.
     out: 'settings-terminal-shell',
     repos: ['octopus-merge'],
@@ -1773,7 +1961,8 @@ export const shots = [
     }
   },
   {
-    // Settings → Security tab (mask secrets, large-file guard, vault entry).
+    // Settings → Security & confirmations: the status strip, the "ask before
+    // something dangerous" block and Privacy.
     out: 'settings-security',
     repos: ['octopus-merge'],
     themes: ['light'],
@@ -1933,7 +2122,7 @@ export const shots = [
     }
   },
   {
-    // Integrations with the keychain off — the default every shot launches with
+    // Connected accounts with the keychain off — the default every shot launches with
     // (`keychain` unset) — so the notice under the token field says the token
     // lasts until quit, with its Enable button.
     out: 'token-keychain-notice',
@@ -2109,6 +2298,27 @@ export const shots = [
       const repo = repoPaths['commit-template']
       await page.evaluate((p) => window.__shot.repo.getState().select(p, { type: 'wip' }), repo)
       await page.waitForTimeout(500)
+    }
+  },
+  {
+    // Generate with AI names who answers, and ▾ picks another account or model
+    // for this one generation. The shot profile's only account is the demo
+    // OpenAI one, so the flyout lists that provider's bundled models.
+    out: 'commit-ai-generate',
+    repos: ['commit-template'],
+    themes: ['light'],
+    // Something staged, or there is nothing to generate from and ▾ stays off.
+    prepare: async ({ repoPaths, run }) => {
+      await run('git', ['-C', repoPaths['commit-template'], 'add', 'app.js'])
+    },
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['commit-template']
+      await page.evaluate((p) => window.__shot.repo.getState().select(p, { type: 'wip' }), repo)
+      await page.waitForSelector('.commit-ai-target:not([disabled])', { timeout: 10000 })
+      await page.click('.commit-ai-target')
+      await page.locator('.context-menu .menu-item', { hasText: 'OpenAI' }).first().hover()
+      await page.waitForSelector('.context-menu.submenu', { timeout: 5000 })
+      await page.waitForTimeout(300)
     }
   },
   {
@@ -2601,21 +2811,26 @@ export const shots = [
     }
   },
   {
-    // Repository settings — tabbed (general / analytics / history / logs).
+    // Repository settings — the summary header, the grouped side nav and the
+    // General page's rows. A small `.githuttbr.json` is written so the banner
+    // that points at Project configuration shows; the repo-config shot later
+    // overwrites it with its fuller file.
     out: 'repo-settings',
     repos: ['deep-history-monorepo'],
     themes: ['light'],
+    prepare: async ({ repoPaths }) => {
+      const repo = repoPaths['deep-history-monorepo']
+      await writeFile(join(repo, '.githuttbr.json'), `${JSON.stringify({ version: 1, protect: ['main'] }, null, 2)}\n`)
+    },
     drive: async (page, repoPaths) => {
       const repo = repoPaths['deep-history-monorepo']
-      await page.evaluate((p) => window.__shot.ui.getState().openModal({ kind: 'repo-settings', repoPath: p }), repo)
-      await page.waitForTimeout(400)
-      // Click the Insights tab to show the relocated repo-insights dashboard.
-      await page.evaluate(() => {
-        const btn = [...document.querySelectorAll('.repo-settings-tabs button')].find((b) => /Insights|Métricas/.test(b.textContent || ''))
-        if (btn) btn.click()
-      })
-      await page.waitForTimeout(500)
-      await page.waitForTimeout(700)
+      await page.evaluate(async (p) => {
+        // The config is read on refresh; refresh first so the banner is there.
+        await window.__shot.repo.getState().refresh(p)
+        window.__shot.ui.getState().openModal({ kind: 'repo-settings', repoPath: p, tab: 'general' })
+      }, repo)
+      await page.waitForSelector('.repo-settings-row', { timeout: 10000 })
+      await page.waitForTimeout(900)
     }
   },
   {
@@ -3357,7 +3572,10 @@ export const shots = [
     }
   },
   {
-    // Profiles — separate identity and tokens for work vs everything else.
+    // Settings → Profile & identity: the header card, the git identity (the
+    // playground repository commits as its own made-up "Playground" author, so
+    // the apply hint shows fake data), and the connected accounts summary — the
+    // seeded profile holds no token, so every host reads Not connected.
     out: 'settings-profiles',
     repos: ['octopus-merge'],
     themes: ['light'],
@@ -3526,22 +3744,23 @@ export const shots = [
   },
   {
     // A profile's AI as one line — general or its own, what answers, and the
-    // way to the AI page — above its writing preferences.
+    // way to the AI page, where all of its options live.
     out: 'settings-profile-ai',
     repos: ['octopus-merge'],
     themes: ['light'],
     drive: async (page) => {
       await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'profile' }))
       await page.waitForTimeout(400)
+      // The block is now the last thing on the Profile page, so the page can only
+      // scroll far enough to show it at the bottom.
       await page.evaluate(() => {
-        document.querySelector('.settings-ai-mode')?.scrollIntoView({ block: 'start' })
-        document.querySelector('.settings-form')?.scrollBy(0, -60)
+        document.querySelector('.settings-ai-mode')?.scrollIntoView({ block: 'end' })
       })
       await page.waitForTimeout(400)
     }
   },
   {
-    // Editing a profile the app is not using: the amber band, and Integrations
+    // Editing a profile the app is not using: the amber band, and Connected accounts
     // naming that profile on the link button — the moment accounts went astray.
     out: 'settings-profile-band',
     repos: ['octopus-merge'],
@@ -3857,6 +4076,23 @@ export const shots = [
       const repo = repoPaths['branch-grouping']
       await page.evaluate((p) => window.__shot.repo.getState().select(p, { type: 'wip' }), repo)
       await page.waitForTimeout(900)
+    }
+  },
+  {
+    // The one sidebar filter at work: every section narrowed at once, headers
+    // counting "matched of total", the empty ones folded into the line at the
+    // bottom, and a branch row hovered to show its Checkout / Create PR actions.
+    out: 'sidebar-filter',
+    repos: ['branch-grouping'],
+    themes: ['light'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['branch-grouping']
+      await page.evaluate((p) => window.__shot.repo.getState().select(p, { type: 'wip' }), repo)
+      await page.waitForTimeout(700)
+      await page.fill('.sb-filter input', 'pay')
+      await page.waitForTimeout(700)
+      await page.hover('.sidebar [data-kbkind="local"][data-kbid="feature/payments/stripe"]').catch(() => {})
+      await page.waitForTimeout(400)
     }
   },
   {
@@ -4514,7 +4750,7 @@ export const shots = [
     }
   },
   {
-    // Settings → General with a value below the range still being typed: the
+    // Settings → Graph with a value below the range still being typed: the
     // field is flagged, not clamped, until it is left. Typed for real and never
     // blurred — leaving the field would snap it to 50 and lose the state.
     out: 'number-field-range',
@@ -4522,7 +4758,7 @@ export const shots = [
     themes: ['light'],
     clipTo: '.modal',
     drive: async (page) => {
-      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'general' }))
+      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'graph' }))
       await page.waitForTimeout(400)
       const input = page
         .locator('.settings-field', { has: page.locator('.settings-field-label', { hasText: 'Initial commits loaded' }) })
@@ -4550,6 +4786,52 @@ export const shots = [
     drive: async (page) => {
       await page.waitForSelector('.boot-error', { timeout: 15000 })
       await page.waitForTimeout(400)
+    }
+  },
+  {
+    // First run, on the AI step: a subscription CLI found on this machine and
+    // tested. Both answers are faked in main — which CLI, its version, and a
+    // test that takes under three seconds — so the shot shows the same thing on
+    // every machine, never whatever happens to be installed on the one running it.
+    out: 'onboarding-ai',
+    repos: ['octopus-merge'],
+    themes: ['dark'],
+    settings: {
+      onboardingCompleted: false,
+      profiles: [
+        {
+          id: 'default',
+          name: 'Default',
+          gitName: '',
+          gitEmail: '',
+          githubToken: '',
+          azureToken: '',
+          gitlabToken: '',
+          bitbucketToken: '',
+          ai: { enabled: true, provider: 'openai', endpoint: 'https://api.openai.com/v1', apiKey: '', model: 'gpt-4o-mini' }
+        }
+      ]
+    },
+    drive: async (page, _repos, app) => {
+      await app.evaluate(({ ipcMain }) => {
+        ipcMain.removeHandler('ai:detectCli')
+        ipcMain.removeHandler('ai:testSubscription')
+        ipcMain.handle('ai:detectCli', () => [
+          { binary: 'claude', label: 'Claude Code', path: '/usr/local/bin/claude', version: '2.1.0' }
+        ])
+        ipcMain.handle('ai:testSubscription', () => new Promise((resolve) => setTimeout(() => resolve('connected'), 2700)))
+      })
+      const primary = page.locator('.onboarding-footer .btn.primary')
+      await page.locator('.onboarding-start-btn').click()
+      // Identity filled, accounts left empty: the stepper shows both a check and a skip.
+      const fields = page.locator('.onboarding-body input.modal-input')
+      await fields.nth(1).fill('Sam Example')
+      await fields.nth(2).fill('sam@example.com')
+      await primary.click()
+      await page.locator('.onboarding-step.current').filter({ hasText: 'Accounts' }).waitFor()
+      await primary.click()
+      await page.locator('.onboarding-ai-choice').first().click()
+      await page.locator('.onboarding-ai-found .onboarding-ai-result.ok').waitFor({ timeout: 15000 })
     }
   }
 ]

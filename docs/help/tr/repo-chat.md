@@ -2,8 +2,9 @@
 title: Depo sohbeti
 category: Yapay zekâ
 order: 82
-summary: Bu depo hakkında soru sorun; bağlam olarak sabitlediğiniz dosya ve commit’lerle — ve çalışmadan önce onayladığınız git eylemleri önermesine izin verin.
-keywords: sohbet soru sor asistan bağlam sabitle ekle sürükle bırak commit dosya kanıt dayanaklı yapay zekâ panel eylem eylemler çalıştır onay onayla otomatik izin ver düzelt hata bildirim
+summary: Her şeyi sorun — genel sorular ya da bu depo hakkında sorular —; bağlam olarak sabitlediğiniz dosya ve commit’lerle, ve çalışmadan önce onayladığınız git eylemleri önermesine izin verin.
+keywords: sohbet soru sor asistan bağlam sabitle ekle sürükle bırak commit dosya kanıt dayanaklı yapay zekâ panel eylem eylemler çalıştır onay onayla otomatik izin ver düzelt hata bildirim genel soru herhangi bir soru düşünüyor dosyalar okunuyor
+source: 14be127d45f76373e5ced5db32f7f21167e6f965
 ---
 
 # Depo sohbeti
@@ -12,6 +13,10 @@ Bazı soruları sormak, aramaktan hızlıdır. *Token yenileme aslında nerede
 oluyor? Bu commit tek cümleyle neyi değiştirdi? Bu dosya neden var?* Depo
 sohbeti bunları açık depo üzerinden yanıtlar ve dayandığı satırları gösterir.
 
+Sıradan bir yapay zekâ sohbeti de olur. Bir selam, genel bir programlama
+sorusu ya da başka herhangi bir şey, depo okunmadan modelden doğrudan yanıt
+alır — dosyalara yalnızca soru onlarla ilgiliyse bakar.
+
 Sağ sütunu **Ayrıntılar** ile paylaşır: üstteki sekmeler ikisi arasında geçiş
 yapar, böylece bir şey sorduğunuzda grafik seçimini kaybetmez.
 
@@ -19,19 +24,30 @@ yapar, böylece bir şey sorduğunuzda grafik seçimini kaybetmez.
 
 ## Ne okur
 
-Her yanıt iki geçişte kurulur. İlki, deponun kendi izlenen dosya listesinden
-küçük bir yol ve düz metin araması kümesi seçer. İkincisi yalnızca gelen
-alıntılarla yanıtlar ve yalnızca onlara kaynak gösterebilir: uydurulmuş bir
-dosya ya da satır, makul görünen bir yanıt değil, bir doğrulama hatasıdır.
+Her sohbet gibi çalışır: **gönderilen sizin mesajınızdır**, yanında da yalnızca
+deponun adı ve dalı — Git durumu yok, dosya listesi yok, dosya içeriği yok — ve
+yanıt düz metin olarak gelir. Bir selam ya da depoyla ilgili olmayan bir soru
+orada, tek bir çağrıda yanıtlanır ve depodan hiçbir şey makinenizden çıkmaz.
 
-**İkinci bir bakış.** İlk geçiş hangi dosyaların önemli olduğunu yalnızca
-adlarından tahmin etmek zorundadır — “bu nereden çağrılıyor” sorusunda tam da
-bu tahmin tutmaz. Bu yüzden bir yanıtın tahmin etmek yerine geri sorma hakkı
-vardır: daha fazla yol, daha fazla birebir arama ya da yakın geçmişten commit
-özetleri isteyebilir ve soru, bunların getirdikleriyle yeniden sorulur. Bu en
-çok iki kez olur — her tur beklediğiniz bir model çağrısı daha demektir — ve
-sonuncusunda elindekiyle yanıt vermek zorundadır. Bundan tek gördüğünüz biraz
-daha uzun bir bekleme ve daha iyi bir yanıttır.
+**Depo ne zaman devreye girer.** Model için üç durumda açılır:
+
+| Siz… | Ne olur |
+|------|--------------|
+| İzlenen bir dosyanın adını verirseniz (`config.json`, `src/app.ts`) | Model yanıtlamadan önce o dosya okunur |
+| Bunu sözcüklerle söylerseniz — “bu depo”, “değişikliklerim”, “commit edilmemiş”, “geçerli dal” | Git durumu ve izlenen dosya listesi gönderilir |
+| Modelin depoya ihtiyaç duyduğuna karar verdiği bir şey sorarsanız | Model tek satırlık bir `@repo` ile yanıt verir ve uygulama depoyu onun için açar |
+
+Oradan sonra model tahmin etmek yerine başka neye ihtiyacı olduğunu ister:
+listeden tam yolları, birebir aramaları ya da yakın geçmişten commit
+özetlerini. Uygulama bunları okur ve soruyu bulunanlarla yeniden sorar. Bu en
+çok dört kez olur — her tur beklediğiniz bir model çağrısı daha demektir — ve
+sonuncusunda elindekiyle yanıt vermek zorundadır. Bu yanıtlar kullandıkları
+alıntılara kaynak gösterir; uydurulmuş bir dosya ya da satır, makul görünen bir
+yanıt değil, bir doğrulama hatasıdır.
+
+Siz beklerken mesajınızın altındaki satır ne olduğunu söyler: model çalışırken
+**Düşünüyor…**, yalnızca uygulama istenenleri gerçekten okurken **Dosyalar
+okunuyor (N)…** ya da **Depoda aranıyor…**.
 
 | Dahil | Hariç |
 |---|---|
@@ -69,16 +85,21 @@ tutulan bir yola dokunan parçalar o diff’ten düşer, commit’in tamamı de�
 
 ## Ayarlar
 
-**Ayarlar → Profil → Yapay zekânın yazım tercihleri → Depo sohbeti** (her profilin kendine ait):
+**Ayarlar → Yapay zekâ → Depo sohbeti** — genel yapay zekâda ya da varsa bir
+profilin kendi yapay zekâsında (hangisi olduğunu **Düzenlenen** çubuğu seçer,
+bkz. [Her profil için tek yapay zekâ](ai.md#her-profil-için-tek-yapay-zekâ)):
 
 | Ayar | Ne yapar |
 |---|---|
 | **Depo hakkında soru sorun** | Kapalıyken sekmeyi, araç çubuğu düğmesini ve kısayol hedefini kaldırır. Diğer yapay zekâ özellikleri çalışmaya devam eder |
+| **Depoyu okumak** | Size yanıt vermek için dosyalar, geçmiş ve diff’ler. Sır gibi görünen dosyalar asla okunmaz |
 | **Yalnızca işlenmiş içerik** | Çalışma ağacı yerine son commit üzerinden yanıtlar: işlenmemiş düzenlemeler makineden hiç çıkmaz |
-| **Sohbette dosya ve Git eylemleri önerilsin** | Kapalıyken sohbet yeniden salt okunur olur: eylem kartı da onay menüsü de yok |
-| **Dosyalar için salt okunur kip** | Açıkken dosya oluşturma, düzenleme, değiştirme ve silmeyi engeller; Git eylemleri kullanılabilir kalır. Varsayılan olarak açıktır |
-| **Önerilen eylemler nasıl çalıştırılır** | Onay modu — bkz. [Onay modları](#onay-modları). Yıkıcı eylemler her durumda onay ister |
-| **Sohbet uzak eylemler önerebilsin** | Varsayılan olarak kapalı. Açıkken getirme, çekme, gönderme, pull request açma ve yığın gönderme eklenir |
+| **Yerel Git eylemleri** | Stage, commit, dal, stash, birleştirme ve fazlası, gözden geçirdiğiniz bir kartta önerilir. Kapalı: sohbet yalnızca yanıt verir |
+| **Dosya oluşturmak, düzenlemek ve silmek** | Kesin düzenlemeler, yeni dosyalar, değiştirmeler ve silmeler, her biri kartta kendi diff’iyle. Yerel Git eylemleri gerekir. Varsayılan olarak kapalı. *Dosyalar için salt okunur kip* seçeneğinin yerini anlamı ters çevrilmiş olarak alır: burada açık, o kipin kapalı olması demektir ve kayıtlı bir ayar eskisi gibi okunur |
+| **Yapay zekâ bir eylem önerdiğinde** | Onay modu — bkz. [Onay modları](#onay-modları). Yıkıcı eylemler her durumda onay ister |
+| **Uzak eylemler** | Varsayılan olarak kapalı. Açıkken getirme, çekme, gönderme, pull request açma ve yığın gönderme eklenir |
+
+Listenin üstünde tek bir cümle, bu ayarlarla yapay zekânın şu an neler yapabileceğini özetler. Ayarları anlatır, modeli değil: bir öneri yine denetlenir ve bir kuralı çiğnerse reddedilir.
 
 Sohbete hangi sağlayıcının ve modelin cevap vereceği **Yapay zekâ** sayfasında,
 **Göreve göre model** altında ayarlanır — bkz. [Yapay zekâ özellikleri](ai.md#göreve-göre-model).
@@ -87,8 +108,25 @@ Soru sormak incelemeden ucuzdur, bu yüzden küçük bir model çoğu zaman yete
 Yapay zekâ tümüyle kapalıysa sohbet de onunla birlikte kaybolur — kimsenin
 yanıtlayamayacağı bir şeyi öneren panel kalmaz.
 
-Sohbet modeli, panelin kendi başlığından da değiştirilebilir; sağlayıcı adının
-yanındadır — aynı ayar, Ayarlar’ı açmadan.
+### Başlıktaki rozetler
+
+Panel başlığının altındaki üç rozet, sohbetin bir sonraki mesajınızla ne
+yapacağını söyler; her biri bunu Ayarlar’ı açmadan değiştirir:
+
+| Rozet | Gösterir | Tıklayınca |
+|---|---|---|
+| **Hesap · model** | Kimin yanıtladığını, hesabın durumunu gösteren bir noktayla — hazır, yanıt vermiyor, anahtar yok ya da henüz denetlenmedi | Hesaba göre gruplanmış bir menüden başka bir model seçersiniz ya da profilin modeline dönersiniz. **Görev başına model → Sohbet** ile aynı ayardır |
+| **Yapabilir: …** | Sohbetin neler yapabileceğini — *okuma*, açıksa ayrıca *Git*, *dosyalar* ve *uzak* | **Yerel Git eylemleri**, **Dosya oluşturmak, düzenlemek ve silmek** ve **Uzak eylemler** anahtarlarını değiştirir ya da **Tüm sohbet ayarları**nı açarsınız |
+| **Onay** | *Çalıştırmadan önce sorar*, *Güvenli eylemleri çalıştırır* ya da *Tüm eylemleri çalıştırır* | Üç onay modundan birini (aşağıda) seçersiniz. Yerel Git eylemleri kapalıyken gizlenir, çünkü hiçbir şey önerilmez |
+
+Bunlar **Ayarlar → Yapay zekâ → Depo sohbeti** ile aynı ayarlardır ve aynı
+yapay zekâya yazılır; ikisi hiçbir zaman çelişmez. Tek bir soruyu daha güçlü
+bir modele taşımak tek tıktır ve uygulamanın geri kalanını etkilemez. Durum
+noktası, panelin zaten çektiği model listesinden okunur — kendi başına asla
+istek göndermez; yani *Denetlenmedi* yalnızca hesabı henüz hiçbir şeyin
+doğrulamadığı anlamına gelir.
+
+![Açık yetenekler rozeti](../../screenshots/repo-chat-capabilities.webp)
 
 Panel başlığının yanındaki sihirli değnek düğmesi **yapay zekâ yapılandırma
 sihirbazını** açar — bu depo için asistan yapılandırma dosyaları (talimatlar,
@@ -119,9 +157,7 @@ görsele karşılık gelmeyen bir söz hiçbir şey göstermez.
 
 Bir olgu yerine bir değişiklik isteyin — *markdown dosyalarını hazırla, bunu
 düzeltme olarak commit’le, derleme çıktısını yoksayma listesine ekle* — ve
-yanıt bir **eylem kartıyla** gelir. Boş bir konuşma, giriş metninin altında
-birkaç örnek isteği çip olarak sunar; birine tıklamak yazma kutusunu doldurur,
-göndermeden önce düzenleyebilirsiniz. Kart, asistanın atmak istediği somut
+yanıt bir **eylem kartıyla** gelir. Boş bir konuşma **Ne istersen sor** ve üç öneriyle başlar — *Son commit’i incele*, *main dalından bu yana ne değişti?* (deponun varsayılan dalı varsa onun adıyla) ve *Bu dal için PR açıklamasını yaz*. Birine tıklamak yazma kutusunu doldurur ve hiçbir şey göndermez; önce düzenleyebilirsiniz. Kart, asistanın atmak istediği somut
 adımları listeler: her
 eyleme bir satır, **Çalıştır** ve **Reddet** düğmeleriyle. Karttaki hiçbir şey
 henüz olmuş değildir; model yalnızca önerebilir ve her öneri siz görmeden önce
@@ -141,6 +177,14 @@ dosyalar okunan kanıttan gelmelidir; güvensiz, gizli, yok sayılan, üretilmi�
 ikili, bayatlamış, fazla büyük ve sembolik bağla erişilen hedefler reddedilir.
 Reset, geçmişi yeniden yazma, dal silme ve her türlü zorlamalı işlem yalnızca
 kendi arayüzünde kalır.
+
+**Konuşmadaki bir metin dosyaya dönüşebilir.** Bir metin isteyin, ardından
+*dosyayı oluştur* deyin: önceki yanıt içeriktir ve dosyaya ad vermezseniz
+asistan bir ad seçip kartta gösterir. Dosya eylemleri açıkken modele
+yazabileceği söylenir; böylece erişimi olmadığını iddia eden önceki bir yanıt
+tekrarlanmaz. Yapılandırılmış yanıt yine de başarısız olursa, yanıt değişikliğin
+bu kez hazırlanamadığını ve isteği yeniden göndermenin tekrar deneyeceğini
+söyler; dosyanın yazıldığını asla iddia etmez.
 
 Bir merge veya rebase çakışmada durabilir. Durduğunda çalıştırma orada biter,
 kart o satırı başarısız işaretler ve o ana dek çalışanların sayısını korur;
@@ -170,7 +214,7 @@ merdiven olarak.
 ### Makineden çıkan eylemler
 
 Getirme, çekme, gönderme, pull request açma ve yığın gönderme **varsayılan
-olarak kapalıdır**; **Sohbet uzak eylemler önerebilsin** ayarının ardındadır.
+olarak kapalıdır**; **Uzak eylemler** ayarının ardındadır.
 İşi yayımlamak bilinçli bir karardır ve ayar kapalıyken modele bu eylemlerin
 varlığı bile söylenmez: birini önerip reddedilemez — insanlara ayarları
 okumadan açmayı öğreten kusur tam olarak budur.
@@ -201,10 +245,21 @@ demektir, bu yüzden önce onay ister ve dönülecek commit’i adıyla söyler.
 pull request’ler açık kalır: uzak bir depoyu yerel bir anlık görüntü geri
 alamaz.
 
+**Tüm eylemleri otomatik çalıştır** ile geçerli bir dosya değişikliği hemen
+çalışır ve kart tamamlanan eylemi kaydeder:
+
+![Depo sohbetinde otomatik tamamlanan dosya eylemi](../../screenshots/repo-chat-file-action-auto-run.webp)
+
+**Her zaman sor** ile aynı tür değişiklik, siz **Çalıştır** ya da **Reddet**
+seçene kadar bekler:
+
+![Depo sohbetinde onay bekleyen dosya eylemi](../../screenshots/repo-chat-file-action-approval.webp)
+
 ### Onay modları
 
-Yazma kutusunun altındaki kalkan menüsü (ayrıca **Ayarlar → Profil → Depo
-sohbeti** içinde) bir kartın nasıl çalışacağına karar verir:
+Panel başlığındaki onay rozeti (ayrıca **Ayarlar → Yapay zekâ → Depo
+sohbeti** içinde) bir kartın nasıl çalışacağına karar verir — aynı yapay
+zekâdaki her profil için:
 
 | Mod | Çalıştırdığı |
 |---|---|
@@ -232,6 +287,12 @@ Taslak düzenlenebilir — Gönder’e basana kadar hiçbir şey gönderilmez.
   [sır maskelemeyi](security.md) atlatmanın yolu değildir.
 - **İkili dosyalar ve 512 KB’ı aşanlar**, depo dışından geldiklerinde aynı
   şekilde atlanır. Depo içinde her zamanki kurallar geçerlidir.
+- **Bir soru öneri almaz.** Eylemler modele yalnızca mesajınız bir şeyin
+  yapılmasını istediğinde sunulur — "hazırlanan dosyaları commit et", "faça um
+  stash", "dalı oluştur". Sürümün ne olduğunu ya da commit’in ne olduğunu sormak
+  asla çalıştırılacak bir planla dönmez. Hemen önceki isteği yineleyen kısa bir
+  yanıt — "evet", "erişim verdim" — o istek sayılır; bir soru ya da teşekkür
+  sayılmaz.
 - **Kendi başına asla yazmaz.** Modelin aracı yok, yalnızca metni var: bir
   değişiklik öneri kartı olarak gelir, yalnızca
   [sizin onay kurallarınıza](#onay-modları) göre çalışır ve yıkıcı bir adım her
@@ -239,6 +300,12 @@ Taslak düzenlenebilir — Gönder’e basana kadar hiçbir şey gönderilmez.
   bile.
 - **Konuşmalar yalnızca bellekte yaşar.** Her depo kendi başlığını tutar;
   GitHuttBr’dan çıkınca silinirler.
+- **Küçük yerel modeller depo sorularında daha zayıftır.** 3B bir modelle
+  ölçüldü: genel soruları kendi terminalindeki kadar iyi yanıtlar, ama
+  gerektiğinde depoyu istemeyebilir ve dosyalardan kurulan uzun bir yanıt
+  yarıda kesilmiş gelebilir. Dosyanın adını vermek ya da “bu depo” demek,
+  uygulamanın depoyu her durumda açmasını sağlar. 7B ve üzeri bir model
+  belirgin biçimde daha iyi iş çıkarır.
 
 ## Nasıl açılır
 

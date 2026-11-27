@@ -19,8 +19,7 @@ Variante.
 - Anpassbare **Code-Schriftgröße**.
 - **Symbolfarben** für die Werkzeugleiste und die Abschnitte der Seitenleiste —
   siehe unten.
-- Ein eigener **Graph-Stil**: Spurenpalette, Eckenstil, Zeilendichte und
-  Linienstärke, mit einer Live-Vorschau als Mini-Graph.
+- Das **Aussehen des Graphen** — Spurpalette, Ecken, Zeilendichte und Linienstärke, mit Live-Vorschau — hat eine eigene Seite, **Einstellungen → Graph**: siehe [den Commit-Graphen](graph.md).
 
 ![Theme-Einstellungen](../../screenshots/settings-themes.webp)
 
@@ -49,9 +48,7 @@ sich eine Gruppe als eine Familie liest:
   Vergleiche) in der Akzentfarbe; und eine Farbe je Gruppe: Untersuchen Cyan,
   Branches & Historie die Akzentfarbe, Dateien & Patches Grün, Repository
   Orange, Geheimnisse & Teilen Rot.
-- **Einstellungsseiten** — Layout, Arbeitsbereiche und KI in der Akzentfarbe;
-  Profil und Umgebung Grün; Integrationen und Daten Cyan; Themes Orange;
-  Sicherheit Rot. Allgemein und Tastenkürzel bleiben grau.
+- **Einstellungsseiten** — Layout & Terminal, Arbeitsbereiche und KI in der Akzentfarbe; Profil & Identität, Code-Analysen und Umgebung grün; Verbundene Konten, Git & Synchronisierung und Daten & Sicherung cyan; Themes und Graph orange; Sicherheit & Bestätigungen rot. Allgemein, Tastenkürzel und Über bleiben grau.
 
 Eine Reihe von Symbolknöpfen ohne Beschriftung macht es umgekehrt — jeder Knopf
 bekommt seine eigene Farbe, damit man sie auseinanderhalten kann. Auf der
@@ -78,6 +75,29 @@ innerhalb eines Abschnitts und der Commit-Graph nicht. Eine Menüzeile unter dem
 Mauszeiger behält ihr gewohntes Aussehen, Symbol eingeschlossen. Farbe ist nie der
 einzige Hinweis — jedes Symbol behält seine Beschriftung.
 
+## Wie die Einstellungen aufgebaut sind
+
+Das Seitenmenü gruppiert die Seiten nach ihrem Thema:
+
+| Gruppe | Seiten |
+|---|---|
+| **Du** | Profil & Identität · Verbundene Konten · KI — die ersten beiden bearbeiten das Profil, das in der Überschrift steht ([Profile](profiles.md)) |
+| **Erscheinungsbild** | Themes · Graph · Layout & Terminal |
+| **Verhalten** | Allgemein · Git & Synchronisierung · Sicherheit & Bestätigungen · Code-Analysen |
+| **System** | Arbeitsbereiche · Tastenkürzel · Umgebung · Daten & Sicherung · Über |
+
+Allgemein behält nur, was die App als Ganzes betrifft — Sprache, Repository-Tabs zeigen, Desktop-Benachrichtigungen, Changelog nach Updates öffnen, Beim Schließen warnen. Alles andere ist auf die Seite gezogen, zu der es gehört, und der Hinweis auf der Seite führt dorthin:
+
+| Option | Jetzt in |
+|---|---|
+| Anfangs geladene Commits, Commits pro „mehr laden“, Beim Scrollen automatisch nachladen, Relative Datumsangaben, Avatare anzeigen, GitHub-Profilbilder verwenden | **Graph** — mit Spurenpalette, Linienecken, Zeilendichte, Knotenstil, Graph-Fokus, Stash-Anordnung, Linienstärke, dem früheren Graph-Tab von Themes |
+| Automatisch abrufen alle (Minuten), Immer einen Merge-Commit erzeugen, Konfliktlösungen merken, Externe Diff- & Merge-Werkzeuge, Externer Editor, Standard-App für „Öffnen mit“ | **Git & Synchronisierung** |
+| Vor Force-Push bestätigen | **Sicherheit & Bestätigungen** |
+| Code-Analyzer, launch.json | **Code-Analysen** |
+| Dateianzeige, Profil-Avatar animieren, Erledigte Aufgaben ausblenden, Refs nach Präfix gruppieren | **Layout & Terminal** |
+
+Integrationen heißt jetzt **Verbundene Konten**, Daten heißt **Daten & Sicherung**. An dem, was eine Option tut, hat sich nichts geändert, und gespeicherte Einstellungen bleiben, wie sie sind. Ein Link, der eine Seite unter ihrem alten Namen öffnet, landet weiterhin auf der richtigen.
+
 ## Eine Einstellung finden
 
 Die Einstellungen verteilen sich auf viele Seiten, und die gesuchte Option liegt selten dort,
@@ -92,15 +112,10 @@ Seiten gruppiert — jede mit ihrem Namen, ihrer einzeiligen Beschreibung und de
 Seite, auf der sie steht. Die Seitenleiste blendet Seiten ohne Treffer ab und
 zeigt bei den anderen die Anzahl.
 
-- Verglichen werden der Name der Einstellung, ihre Beschreibung und der Name der
-  Seite. Groß-/Kleinschreibung und Akzente zählen nicht, und jedes getippte Wort
-  muss vorkommen — „terminal schrift“ grenzt auf die Schrift-Einstellungen des
-  Terminals ein.
+- Sie vergleicht den Namen einer Einstellung, ihre Beschreibung und den Namen der Seite — auch der Seite, auf der sie vor der Neugruppierung lag: „general fetch“ findet weiterhin das automatische Fetch unter Git & Synchronisierung, und „integrations“ findet Verbundene Konten. Groß- und Kleinschreibung und Akzente zählen nicht, und jedes getippte Wort muss vorkommen: „terminal font“ grenzt auf die Schrift-Einstellungen des Terminals ein.
 - Gesucht wird in der Sprache der Oberfläche und gleichzeitig auf Englisch: Mit
   der App auf Deutsch findet „token“ oder „font“ die Einstellung trotzdem.
-- Ein Klick auf einen Treffer, oder **Enter** für den ersten, öffnet dessen
-  Seite (auf Themes auch den richtigen Tab — Theme oder Graph), scrollt zur
-  Einstellung und hebt sie kurz hervor.
+- Klicke auf ein Ergebnis oder drücke **Enter** für das erste, um seine Seite zu öffnen, zur Einstellung zu scrollen und sie kurz hervorzuheben.
 - **Esc** leert die Suche; ein zweites **Esc** schließt die Einstellungen.
 
 Durchsucht werden Namen und Beschreibungen, nicht die Werte, die du eingestellt
@@ -115,5 +130,7 @@ auflistet.
 Seitenleiste links oder rechts, überall größenveränderbare Panels, eine
 einklappbare Seitenleiste für die Momente, in denen der Graph das ganze Fenster
 verdient, und eine Terminal-Platzierung pro Repository.
+
+Dieselbe Seite, **Einstellungen → Layout & Terminal**, enthält auch die Extras der Titelleiste und der Seitenleiste — **Profil-Avatar animieren**, **Erledigte Aufgaben ausblenden**, **Refs nach Präfix gruppieren** — sowie die Änderungsleiste und die Minimap der Dateianzeige.
 
 **Siehe auch:** [Der Commit-Graph](graph.md) · [Profile](profiles.md)

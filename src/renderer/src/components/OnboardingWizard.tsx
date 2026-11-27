@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-  User, Bot, Palette, Plug, Check, ChevronRight, ChevronLeft, ShieldCheck,
+  Check, ChevronRight, ChevronLeft, ShieldCheck, Minus, PartyPopper,
   Upload, AlertTriangle, Sun, Moon, Monitor, Loader2, ExternalLink, Lock
 } from 'lucide-react'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
-import { useT } from '../i18n'
+import { interp, useT } from '../i18n'
 import {
   defaultProfile,
-  type AIConfig,
+  type AIAccount,
   type AppSettings,
   type GithubEnterpriseHost,
   type GitlabServer,
@@ -21,7 +21,6 @@ import { APP_THEMES, applyAppTheme, findAppTheme } from '../theme/themes'
 import { infoApi, profileAvatarApi, settingsApi, shellApi, vaultApi } from '../infrastructure/api'
 import { toastVaultRefused, vaultRefusalOf } from './VaultUnreadableNotice'
 import { hasSettingsSecrets, stripSettingsSecrets } from '../../../shared/secrets'
-import { withAIPatch } from '../../../shared/aiScope'
 import {
   parseSettingsImport,
   planProfileMerge,
@@ -31,7 +30,16 @@ import {
 import { settingsDecryptMessageKey } from '../lib/settingsPassword'
 import { isEncryptedSettingsExport } from '../../../shared/settingsEncryption'
 import { useProfileAvatarsStore } from '../stores/profileAvatars'
-import { AIPage, IntegrationsPage } from './SettingsPanel'
+import { IntegrationsPage } from './SettingsPanel'
+import { OnboardingAIStep, useOnboardingAI } from './OnboardingAIStep'
+import {
+  ONBOARDING_STEPS,
+  addAccountInUse,
+  stepEyebrow,
+  stepStates,
+  type OnboardingProgress,
+  type OnboardingStepId
+} from '../lib/onboarding'
 import githuttbrLaunch from '../assets/githuttbr-launch.png'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -48,7 +56,6 @@ interface WizardData {
   profileName: string
   gitName: string
   gitEmail: string
-  ai: AIConfig
   themeId: string
   themeMode: ThemeMode
   githubToken: string
@@ -73,7 +80,10 @@ interface WizardData {
   importPasswordError: string
 }
 
-const TOTAL_STEPS = 4
+/** -1 is the welcome screen; 0… index ONBOARDING_STEPS. */
+const WELCOME = -1
+const LAST = ONBOARDING_STEPS.length - 1
+const stepIndex = (id: OnboardingStepId): number => ONBOARDING_STEPS.findIndex((s) => s.id === id)
 
 const slideVariants = {
   enter: (d: number) => ({ x: d * 32, opacity: 0 }),
@@ -83,7 +93,7 @@ const slideVariants = {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function buildProfile(data: WizardData): Profile {
+function buildProfile(data: WizardData, base: Profile): Profile {
   return {
     ...defaultProfile(),
     name: data.profileName || 'Default',
@@ -100,11 +110,74 @@ function buildProfile(data: WizardData): Profile {
     forgejoTokenIssuer: data.forgejoTokenIssuer,
     githubEnterprise: data.githubEnterprise,
     bitbucketServers: data.bitbucketServers,
-    ai: data.ai
+    ai: base.ai
   }
 }
 
+/** Any hosting token or self-hosted server entered on the accounts step. */
+function hasHostAccount(data: WizardData): boolean {
+  const tokens = [data.githubToken, data.gitlabToken, data.azureToken, data.bitbucketToken, data.forgejoToken]
+  return (
+    tokens.some((v) => !!v?.trim()) ||
+    !!data.gitlabServers?.length ||
+    !!data.githubEnterprise?.length ||
+    !!data.bitbucketServers?.length
+  )
+}
+
 // ── Step sub-components ───────────────────────────────────────────────────────
+
+/** "Step N of M · Optional", the heading and one line under it. */
+function StepHeader({
+  index,
+  title,
+  subtitle
+}: {
+  index: number
+  title: string
+  subtitle: string
+}): React.JSX.Element {
+  const t = useT()
+  const eyebrow = stepEyebrow(index)
+  return (
+    <div className="onboarding-step-header">
+      <div className="onboarding-eyebrow">{interp(t(eyebrow.key), eyebrow.vars)}</div>
+      <div className="onboarding-title">{title}</div>
+      <div className="onboarding-subtitle">{subtitle}</div>
+    </div>
+  )
+}
+
+/** The left column: where the user is, what is done, and what was left empty. */
+function Stepper({ current, progress }: { current: number; progress: OnboardingProgress }): React.JSX.Element {
+  const t = useT()
+  const states = stepStates(current, progress)
+  return (
+    <aside className="onboarding-stepper">
+      <div className="onboarding-stepper-title">{t('onboarding.welcomeTitle')}</div>
+      <ol className="onboarding-steps">
+        {ONBOARDING_STEPS.map((step, i) => {
+          const state = states[i]
+          return (
+            <li
+              key={step.id}
+              className={`onboarding-step ${state}`}
+              aria-current={state === 'current' ? 'step' : undefined}
+            >
+              <span className="onboarding-step-mark" aria-hidden="true">
+                {state === 'done' ? <Check size={12} /> : state === 'skipped' ? <Minus size={12} /> : i + 1}
+              </span>
+              <span className="onboarding-step-label">{t(step.labelKey)}</span>
+              {state === 'skipped' && <span className="onboarding-sr-only">{t('onboarding.stepSkipped')}</span>}
+              {state === 'done' && <span className="onboarding-sr-only">{t('onboarding.stepCompleted')}</span>}
+            </li>
+          )
+        })}
+      </ol>
+      <p className="onboarding-stepper-hint">{t('onboarding.laterHint')}</p>
+    </aside>
+  )
+}
 
 function WelcomeStep({
   data,
@@ -127,7 +200,6 @@ function WelcomeStep({
       <div className="onboarding-logo">
         <img src={githuttbrLaunch} alt="" draggable={false} className="onboarding-art" />
       </div>
-      <div className="onboarding-title">{t('onboarding.welcomeTitle')}</div>
       <div className="onboarding-subtitle">{t('onboarding.welcomeSubtitle')}</div>
 
       <div className="onboarding-import-box">
@@ -230,11 +302,7 @@ function ProfileStep({
   const t = useT()
   return (
     <div>
-      <div className="onboarding-step-header">
-        <User size={20} color="var(--accent)" />
-        <div className="onboarding-title">{t('onboarding.profileTitle')}</div>
-        <div className="onboarding-subtitle">{t('onboarding.profileSubtitle')}</div>
-      </div>
+      <StepHeader index={stepIndex('identity')} title={t('onboarding.profileTitle')} subtitle={t('onboarding.profileSubtitle')} />
 
       <div className="onboarding-section">{t('onboarding.displayName')}</div>
       <input
@@ -263,28 +331,6 @@ function ProfileStep({
   )
 }
 
-function AIStep({
-  data,
-  patch
-}: {
-  data: WizardData
-  patch: (p: Partial<WizardData>) => void
-}): React.JSX.Element {
-  const t = useT()
-  return (
-    <>
-      <div className="onboarding-step-header">
-        <Bot size={20} color="var(--accent)" />
-        <div className="onboarding-title">{t('onboarding.aiTitle')}</div>
-        <div className="onboarding-subtitle">{t('onboarding.aiSubtitle')}</div>
-      </div>
-      <div className="settings-form">
-        <AIPage ai={buildProfile(data).ai} onChange={(next) => patch({ ai: { ...data.ai, ...next } })} />
-      </div>
-    </>
-  )
-}
-
 function ThemeStep({
   data,
   patch
@@ -298,11 +344,7 @@ function ThemeStep({
 
   return (
     <div>
-      <div className="onboarding-step-header">
-        <Palette size={20} color="var(--accent)" />
-        <div className="onboarding-title">{t('onboarding.themeTitle')}</div>
-        <div className="onboarding-subtitle">{t('onboarding.themeSubtitle')}</div>
-      </div>
+      <StepHeader index={stepIndex('appearance')} title={t('onboarding.themeTitle')} subtitle={t('onboarding.themeSubtitle')} />
 
       <div className="onboarding-theme-grid">
         {APP_THEMES.map((theme) => {
@@ -358,22 +400,24 @@ function ThemeStep({
 
 function IntegrationsStep({
   data,
-  patch
+  patch,
+  base
 }: {
   data: WizardData
   patch: (p: Partial<WizardData>) => void
+  base: Profile
 }): React.JSX.Element {
   const t = useT()
   return (
     <>
-      <div className="onboarding-step-header">
-        <Plug size={20} color="var(--accent)" />
-        <div className="onboarding-title">{t('onboarding.integrationsTitle')}</div>
-        <div className="onboarding-subtitle">{t('onboarding.integrationsSubtitle')}</div>
-      </div>
+      <StepHeader
+        index={stepIndex('accounts')}
+        title={t('onboarding.integrationsTitle')}
+        subtitle={t('onboarding.integrationsSubtitle')}
+      />
       <div className="settings-form">
         <IntegrationsPage
-          profile={buildProfile(data)}
+          profile={buildProfile(data, base)}
           edit={(partial) => {
             const p = partial as Partial<WizardData>
             patch({
@@ -423,18 +467,61 @@ function IntegrationsStep({
   )
 }
 
+function DoneStep({
+  data,
+  aiLabel
+}: {
+  data: WizardData
+  aiLabel: string | null
+}): React.JSX.Element {
+  const t = useT()
+  const theme = findAppTheme(data.themeId, [])
+  const hosts = hasHostAccount(data)
+  const identity = !!data.gitName.trim() && !!data.gitEmail.trim()
+  // Each line says what was set up, or plainly that it was not.
+  const rows: { ok: boolean; text: string }[] = [
+    {
+      ok: identity,
+      text: identity
+        ? interp(t('onboarding.doneIdentity'), { name: data.gitName.trim(), email: data.gitEmail.trim() })
+        : t('onboarding.doneNoIdentity')
+    },
+    { ok: hosts, text: t(hosts ? 'onboarding.doneAccounts' : 'onboarding.doneNoAccounts') },
+    { ok: !!aiLabel, text: aiLabel ? interp(t('onboarding.doneAI'), { name: aiLabel }) : t('onboarding.doneNoAI') },
+    { ok: true, text: interp(t('onboarding.doneTheme'), { theme: theme.name }) }
+  ]
+  return (
+    <div>
+      <StepHeader index={stepIndex('done')} title={t('onboarding.doneTitle')} subtitle={t('onboarding.doneSubtitle')} />
+      <ul className="onboarding-summary">
+        {rows.map((row, i) => (
+          <li key={i} className={row.ok ? 'ok' : 'empty'}>
+            <span className="onboarding-step-mark" aria-hidden="true">
+              {row.ok ? <Check size={12} /> : <Minus size={12} />}
+            </span>
+            <span>{row.text}</span>
+          </li>
+        ))}
+      </ul>
+      <div className="onboarding-done-art" aria-hidden="true">
+        <PartyPopper size={28} />
+      </div>
+    </div>
+  )
+}
+
 // ── Main wizard ───────────────────────────────────────────────────────────────
 
 export function OnboardingWizard(): React.JSX.Element {
   const t = useT()
   const profile = useSettingsStore((s) => s.activeProfile())
-  const activeAI = useSettingsStore((s) => s.activeAI())
   const settings = useSettingsStore((s) => s.settings)
   const update = useSettingsStore((s) => s.update)
   const importSettings = useSettingsStore((s) => s.importSettings)
+  const saveAIFor = useSettingsStore((s) => s.saveAIFor)
   const toast = useUIStore((s) => s.toast)
 
-  const [step, setStep] = useState(0)
+  const [step, setStep] = useState(WELCOME)
   const [dir, setDir] = useState(1)
   const [importing, setImporting] = useState(false)
 
@@ -442,9 +529,6 @@ export function OnboardingWizard(): React.JSX.Element {
     profileName: profile.name,
     gitName: profile.gitName,
     gitEmail: profile.gitEmail,
-    // The effective AI: on a fresh install the profile uses the general one,
-    // whose accounts the AI step edits.
-    ai: { ...activeAI },
     themeId: settings.appThemeId,
     themeMode: settings.themeMode,
     githubToken: profile.githubToken,
@@ -469,21 +553,60 @@ export function OnboardingWizard(): React.JSX.Element {
 
   const patch = (partial: Partial<WizardData>): void => setData((d) => ({ ...d, ...partial }))
 
+  // The AI step saves its account at once, through the action Settings → AI
+  // uses, and puts it in use: Settings then shows it as the account in use.
+  // The AI lands where the active profile reads it — the general AI on a fresh
+  // install — so the first profile added afterwards inherits it.
+  const ai = useOnboardingAI((account: AIAccount) => {
+    const state = useSettingsStore.getState()
+    const { ai: next, accountId } = addAccountInUse(state.activeAI(), account)
+    saveAIFor(state.settings.activeProfileId, next)
+    return accountId
+  })
+
+  const aiIndex = stepIndex('ai')
+  const appearanceIndex = stepIndex('appearance')
+
   useEffect(() => {
-    if (step === 3) applyAppTheme(findAppTheme(data.themeId, []), data.themeMode)
-  }, [data.themeId, data.themeMode, step])
+    if (step === appearanceIndex) applyAppTheme(findAppTheme(data.themeId, []), data.themeMode)
+  }, [data.themeId, data.themeMode, step, appearanceIndex])
 
-  const next = (): void => { setDir(1); setStep((s) => s + 1) }
-  const back = (): void => { setDir(-1); setStep((s) => s - 1) }
+  // Looked for when the AI step first opens, not when the wizard does: the
+  // lookup spawns a process per CLI, which a wizard skipped earlier never needs.
+  useEffect(() => {
+    if (step === aiIndex) ai.detectClis()
+  }, [step, aiIndex, ai])
 
-  // Enter advances on the form steps (not Welcome, where the import box owns focus).
+  const progress: OnboardingProgress = {
+    gitName: data.gitName,
+    gitEmail: data.gitEmail,
+    hasHostAccount: hasHostAccount(data),
+    aiAccountId: ai.saved?.id ?? null
+  }
+
+  const next = (): void => { setDir(1); setStep((s) => Math.min(LAST, s + 1)) }
+  // "Skip, no AI" means no AI: the default config is on, with an OpenAI account
+  // that has no key, which left a red "AI: OpenAI" chip and AI buttons behind
+  // while the Done step said "No AI".
+  const skipAIStep = (): void => {
+    const state = useSettingsStore.getState()
+    saveAIFor(state.settings.activeProfileId, { enabled: false })
+    next()
+  }
+  const back = (): void => { setDir(-1); setStep((s) => Math.max(WELCOME, s - 1)) }
+  const continueAI = async (): Promise<void> => {
+    if (await ai.continueStep()) next()
+  }
+
+  // Enter advances on the form steps (not Welcome, where the import box owns
+  // focus, nor the AI step, where Enter in a key field must not spend a test).
   const onKeyDown = (e: React.KeyboardEvent): void => {
-    if (e.key !== 'Enter' || step === 0) return
+    if (e.key !== 'Enter' || step === WELCOME || step === aiIndex) return
     const el = e.target as HTMLElement
     if (el.closest('.ai-account') || el.tagName === 'SELECT') return
     if (el.tagName === 'TEXTAREA' || el.tagName === 'BUTTON' || el.tagName === 'A') return
     e.preventDefault()
-    if (step < TOTAL_STEPS) next()
+    if (step < LAST) next()
     else finish()
   }
 
@@ -567,10 +690,8 @@ export function OnboardingWizard(): React.JSX.Element {
   }
 
   const finish = (): void => {
-    // The AI lands where the active profile reads it — the general AI on a
-    // fresh install — so the first profile added afterwards inherits it.
-    update((s) => {
-      const next = {
+    // No AI here: the AI step already saved what it set up.
+    update((s) => ({
         ...s,
         appThemeId: data.themeId,
         themeMode: data.themeMode,
@@ -597,10 +718,11 @@ export function OnboardingWizard(): React.JSX.Element {
               }
             : p
         )
-      }
-      return withAIPatch(next, s.activeProfileId, data.ai)
-    })
+      }))
   }
+
+  const currentStep = ONBOARDING_STEPS[step]?.id
+  const busy = step === aiIndex && ai.busy
 
   return (
     <div className="onboarding-overlay">
@@ -611,73 +733,82 @@ export function OnboardingWizard(): React.JSX.Element {
         transition={{ type: 'spring', stiffness: 280, damping: 26 }}
         onKeyDown={onKeyDown}
       >
-        {step > 0 && (
-          <div className="onboarding-progress">
-            {Array.from({ length: TOTAL_STEPS }, (_, i) => (
-              <span
-                key={i}
-                className={`onboarding-dot${i + 1 < step ? ' done' : i + 1 === step ? ' active' : ''}`}
-              />
-            ))}
-          </div>
-        )}
+        <Stepper current={step} progress={progress} />
 
-        <AnimatePresence mode="wait" custom={dir}>
-          <motion.div
-            key={step}
-            custom={dir}
-            variants={slideVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{ duration: 0.16, ease: 'easeInOut' }}
-            className="onboarding-body"
-          >
-            {step === 0 && (
-              <WelcomeStep
-                data={data}
-                patch={patch}
-                onImport={() => void doImport()}
-                onApplyImport={() => void applyImport()}
-                onUnlockImport={() => void unlockImport()}
-                importing={importing}
-              />
-            )}
-            {step === 1 && <ProfileStep data={data} patch={patch} />}
-            {step === 2 && <AIStep data={data} patch={patch} />}
-            {step === 3 && <ThemeStep data={data} patch={patch} />}
-            {step === 4 && <IntegrationsStep data={data} patch={patch} />}
-          </motion.div>
-        </AnimatePresence>
+        <div className="onboarding-main">
+          <AnimatePresence mode="wait" custom={dir}>
+            <motion.div
+              key={step}
+              custom={dir}
+              variants={slideVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ duration: 0.16, ease: 'easeInOut' }}
+              className="onboarding-body"
+            >
+              {step === WELCOME && (
+                <WelcomeStep
+                  data={data}
+                  patch={patch}
+                  onImport={() => void doImport()}
+                  onApplyImport={() => void applyImport()}
+                  onUnlockImport={() => void unlockImport()}
+                  importing={importing}
+                />
+              )}
+              {currentStep === 'identity' && <ProfileStep data={data} patch={patch} />}
+              {currentStep === 'accounts' && <IntegrationsStep data={data} patch={patch} base={profile} />}
+              {currentStep === 'ai' && (
+                <>
+                  <StepHeader index={aiIndex} title={t('onboarding.aiAskTitle')} subtitle={t('onboarding.aiAskSubtitle')} />
+                  <OnboardingAIStep ai={ai} />
+                </>
+              )}
+              {currentStep === 'appearance' && <ThemeStep data={data} patch={patch} />}
+              {currentStep === 'done' && <DoneStep data={data} aiLabel={ai.saved?.label ?? null} />}
+            </motion.div>
+          </AnimatePresence>
 
-        <div className="onboarding-footer">
-          {step === 0 ? (
-            <button className="btn primary onboarding-start-btn" onClick={next}>
-              {t('onboarding.getStarted')} <ChevronRight size={15} />
-            </button>
-          ) : (
-            <>
-              <button className="btn ghost" onClick={back}>
-                <ChevronLeft size={14} /> {t('onboarding.back')}
+          <div className="onboarding-footer">
+            {step === WELCOME ? (
+              <button className="btn primary onboarding-start-btn" onClick={next}>
+                {t('onboarding.getStarted')} <ChevronRight size={15} />
               </button>
-              <div className="onboarding-footer-right">
-                {step < TOTAL_STEPS && (
-                  <button className="onboarding-skip" onClick={finish}>
-                    {t('onboarding.skip')}
-                  </button>
-                )}
-                {step < TOTAL_STEPS ? (
-                  <button className="btn primary" onClick={next}>
-                    {t('onboarding.next')} <ChevronRight size={14} />
-                  </button>
-                ) : (
-                  <button className="btn primary" onClick={finish}>
-                    <Check size={14} /> {t('onboarding.finish')}
-                  </button>
-                )}
-              </div>
-            </>
-          )}
+            ) : (
+              <>
+                <button className="btn ghost" onClick={back} disabled={busy}>
+                  <ChevronLeft size={14} /> {t('onboarding.back')}
+                </button>
+                <div className="onboarding-footer-right">
+                  {step === aiIndex ? (
+                    <>
+                      <button className="onboarding-skip" onClick={skipAIStep} disabled={busy}>
+                        {t('onboarding.skipNoAI')}
+                      </button>
+                      <button className="btn primary" onClick={() => void continueAI()} disabled={busy}>
+                        {busy ? <Loader2 size={14} className="spin" /> : null} {t('onboarding.continue')}{' '}
+                        <ChevronRight size={14} />
+                      </button>
+                    </>
+                  ) : step < LAST ? (
+                    <>
+                      <button className="onboarding-skip" onClick={finish}>
+                        {t('onboarding.skip')}
+                      </button>
+                      <button className="btn primary" onClick={next}>
+                        {t('onboarding.next')} <ChevronRight size={14} />
+                      </button>
+                    </>
+                  ) : (
+                    <button className="btn primary" onClick={finish}>
+                      <Check size={14} /> {t('onboarding.finish')}
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </motion.div>
     </div>

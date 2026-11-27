@@ -4,7 +4,7 @@ category: Erste Schritte
 order: 3
 summary: Viele Repositorys, ohne unterzugehen: Tabs, Gruppen, Ordner und Workspaces.
 keywords: workspace arbeitsbereich tabs gruppen ordner mehrere repos organisieren wechseln layout zu repository wechseln umschalter tab-größe go to repository switcher tab sizing
-source: 6fc6b6e0f1f3c8f6a3a638dc0388df5328222a41
+source: 0a7a79bf2fb89d3802683802c172c87da41b1909
 ---
 
 # Workspaces, Tabs & Gruppen
@@ -34,7 +34,7 @@ schließen kann, die du noch festhieltest.
 
 ### Tab-Größe
 
-Standardmäßig (**Einstellungen → Layout → Tab-Größe → Anpassen**) verhalten sich
+Standardmäßig (**Einstellungen → Layout & Terminal → Tab-Größe → Anpassen**) verhalten sich
 Tabs wie die eines Browsers: Wird die Leiste zu eng, schrumpfen sie gleichmäßig bis
 zu einer Mindestbreite und scrollen erst, wenn auch diese Grenze erreicht ist.
 **Fest** stellt das klassische Verhalten wieder her — jeder Tab behält die Breite
