@@ -4835,7 +4835,8 @@ export function SettingsPanel({
   }, [])
 
   const profile = settings.profiles.find((p) => p.id === selectedId) ?? settings.profiles[0]
-  const accountProblems = useAccountChecksStore((s) => countAccountProblems(s.failures[profile.id]))
+  const accountFailures = useAccountChecksStore((s) => s.failures[profile.id])
+  const accountProblems = countAccountProblems(accountFailures)
   const edit = (partial: Partial<Profile>): void =>
     useSettingsStore.getState().saveProfile({ ...profile, ...partial })
 
