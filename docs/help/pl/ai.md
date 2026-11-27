@@ -97,6 +97,24 @@ Anthropic używa własnego API `/v1/messages`, a nie wywołania w kształcie Ope
 więc modele Claude naprawdę działają, zamiast tylko na to wyglądać. Gemini jest
 osiągane przez zgodny z OpenAI endpoint Google.
 
+### Lista dostawców
+
+Każdy zapisany dostawca to karta: litera dostawcy, nazwa, a pod nią to, czego
+faktycznie używa — dzięki temu dwa konta tego samego dostawcy da się odróżnić
+bez otwierania żadnego.
+
+| Rodzaj dostawcy | Drugi wiersz |
+| --- | --- |
+| Subskrypcja lub lokalne CLI | `CLI claude · sonnet` — polecenie, potem model |
+| Ollama lub własny serwer | `http://localhost:11434 · qwen3:8b` — adres, potem model |
+| API w chmurze | `gpt-4o-mini · Modele: 41` — model i liczba modeli podanych przez dostawcę |
+
+Liczba modeli pojawia się dopiero, gdy dostawca poda listę modeli; wbudowana
+lista zapasowa GitHuttBr to zgadywanie, nie liczba. Plakietka stanu jest po
+prawej. Edytowana karta ma akcentową krawędź; karta, która nie odpowiada, ma
+czerwoną krawędź i powód pod nazwą, zakończony **Testuj ponownie**. Kliknij
+kartę, aby otworzyć ją w edytorze pod listą.
+
 ### Dodawanie i edycja dostawcy
 
 Dostawca zapisany w połowie był cichą pułapką: pusty klucz mógł trafić
@@ -106,7 +124,7 @@ w trakcie pisania.
 **Dodaj dostawcę** otwiera kartę oznaczoną **Szkic · niezapisany**, z przerywaną
 ramką. Uzupełnij dostawcę, klucz, endpoint i model, a potem wybierz
 **Testuj i zapisz**. GitHuttBr najpierw pobiera listę modeli dostawcy
-z tym kluczem — to samo żądanie co **Pobierz modele** — i zapisuje dopiero, gdy
+z tym kluczem — to samo żądanie co przycisk odświeżania obok pola **Model** — i zapisuje dopiero, gdy
 dostawca odpowie. Zobaczysz **Połączono · modele: N**, a dostawca trafi na listę
 jako **Gotowy**.
 
@@ -131,6 +149,8 @@ Błąd dostawcy jest pokazywany z zamaskowanym kluczem i wszystkim, co wygląda 
 token.
 
 ![Dodawanie i edycja dostawcy](../../screenshots/ai-provider-draft.webp)
+
+![Edycja zapisanego dostawcy: adres zmieniony, jeszcze niezapisany](../../screenshots/ai-provider-editing.webp)
 
 | Rodzaj dostawcy | Co sprawdza **Testuj i zapisz** |
 | --- | --- |
@@ -160,8 +180,7 @@ dopóki coś go znowu nie zapyta — wybierz **Testuj połączenie** na jego kar
 ### Dostawca w użyciu
 
 Jeden dostawca odpowiada na każde zadanie, które w sekcji **Model dla zadania**
-nie ma własnego dostawcy. Jego wiersz ma oznaczenie **W użyciu** — wypełnioną
-pigułkę i akcentową krawędź — i zostaje na swoim miejscu na liście. Ogólne AI i
+nie ma własnego dostawcy. Jego wiersz ma oznaczenie **W użyciu** — tuż po nazwie — i zostaje na swoim miejscu na liście. Ogólne AI i
 profil z własnym AI mają każde własnego dostawcę w użyciu; lista zmienia tego,
 którego właśnie edytujesz.
 
@@ -282,7 +301,7 @@ Przy aktualizacji z wersji sprzed kont pojawia się to raz. Dotychczasowy dostaw
 ## Modele
 
 Listy modeli pochodzą od samego dostawcy i są zapisywane w pamięci podręcznej na
-dobę; **Pobierz modele** odświeża jedną natychmiast. Pod listą GitHuttBr mówi,
+dobę; przycisk odświeżania obok pola **Model** odświeża jedną natychmiast. Pod listą GitHuttBr mówi,
 skąd ona pochodzi — na żywo, z pamięci podręcznej (wraz z datą) albo z wbudowanej
 listy zapasowej, i dlaczego.
 

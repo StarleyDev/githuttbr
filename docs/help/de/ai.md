@@ -101,6 +101,25 @@ Anthropic nutzt seine eigene `/v1/messages`-API statt eines OpenAI-förmigen
 Aufrufs, deshalb funktionieren Claude-Modelle jetzt wirklich, statt es nur zu
 scheinen. Gemini wird über Googles OpenAI-kompatiblen Endpunkt angesprochen.
 
+### Die Anbieterliste
+
+Jeder gespeicherte Anbieter ist eine Karte: ein Buchstabe für den Anbieter, sein
+Name und darunter, was er tatsächlich nutzt — so lassen sich zwei Konten
+desselben Anbieters unterscheiden, ohne eines zu öffnen.
+
+| Anbietertyp | Zweite Zeile |
+| --- | --- |
+| Abo oder lokale CLI | `CLI claude · sonnet` — der Befehl, dann das Modell |
+| Ollama oder eigener Server | `http://localhost:11434 · qwen3:8b` — die Adresse, dann das Modell |
+| Gehostete API | `gpt-4o-mini · 41 Modelle` — das Modell und wie viele der Anbieter aufgelistet hat |
+
+Die Modellanzahl erscheint erst, wenn der Anbieter seine Modelle aufgelistet
+hat; die mitgelieferte Ersatzliste von GitHuttBr ist eine Schätzung, keine
+Zählung. Das Status-Abzeichen sitzt rechts. Die Karte, die du bearbeitest, hat
+einen Akzentrand; eine, die nicht antwortet, hat einen roten Rand und ihren
+Grund unter dem Namen, der mit **Erneut testen** endet. Klicke auf eine Karte,
+um sie im Editor unter der Liste zu öffnen.
+
 ### Einen Anbieter hinzufügen und bearbeiten
 
 Ein halb ausgefüllt gespeicherter Anbieter war eine stille Falle: Ein leerer
@@ -110,7 +129,7 @@ dieser Karte nichts beim Tippen gespeichert.
 **Anbieter hinzufügen** öffnet eine Karte mit der Markierung **Entwurf · nicht gespeichert**
 und gestricheltem Rand. Trage Anbieter, Schlüssel, Endpunkt und Modell ein und
 wähle **Testen und speichern**. GitHuttBr listet zuerst mit diesem Schlüssel
-die Modelle des Anbieters — dieselbe Anfrage wie **Modelle abrufen** — und
+die Modelle des Anbieters — dieselbe Anfrage wie die Aktualisieren-Schaltfläche neben **Modell** — und
 speichert nur, wenn er antwortet. Du siehst **Verbunden · N Modelle**, und der
 Anbieter erscheint in der Liste als **Bereit**.
 
@@ -135,6 +154,8 @@ Speichern. Die Fehlermeldung eines Anbieters erscheint mit maskiertem Schlüssel
 und maskierten tokenartigen Zeichenfolgen.
 
 ![Einen Anbieter hinzufügen und bearbeiten](../../screenshots/ai-provider-draft.webp)
+
+![Einen gespeicherten Anbieter bearbeiten: die Adresse geändert, noch nicht gespeichert](../../screenshots/ai-provider-editing.webp)
 
 | Anbietertyp | Was **Testen und speichern** prüft |
 | --- | --- |
@@ -165,8 +186,7 @@ Prompt kosten würde.
 ### Der verwendete Anbieter
 
 Ein Anbieter beantwortet jede Aufgabe, die unter **Modell je Aufgabe** keinen
-eigenen Anbieter hat. Seine Zeile trägt **In Verwendung** — eine gefüllte Pille
-und einen Akzentrand — und bleibt an ihrem Platz in der Liste. Die allgemeine KI
+eigenen Anbieter hat. Seine Karte trägt **In Verwendung** — direkt hinter dem Namen — und bleibt an ihrem Platz in der Liste. Die allgemeine KI
 und ein Profil mit eigener KI haben jeweils ihren eigenen verwendeten Anbieter;
 die Liste ändert den, den du gerade bearbeitest.
 
@@ -292,7 +312,7 @@ Beim Upgrade von einer Version vor den Konten erscheint das einmal. Anbieter und
 ## Modelle
 
 Modelllisten kommen vom Anbieter selbst und werden einen Tag zwischengespeichert;
-**Modelle abrufen** aktualisiert eine sofort. Unter der Liste sagt GitHuttBr, woher
+die Aktualisieren-Schaltfläche neben **Modell** aktualisiert eine sofort. Unter der Liste sagt GitHuttBr, woher
 sie stammt — live, aus dem Cache (mit Zeitpunkt) oder aus der eingebauten
 Ersatzliste, und warum.
 
