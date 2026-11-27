@@ -3,7 +3,7 @@ title: Branches, remotes & the sidebar
 category: Branching & surgery
 order: 40
 summary: Everything the left sidebar does, and pinned branches.
-keywords: branch branches create checkout rename delete remote pinned sidebar presence panes
+keywords: branch branches create checkout rename delete remote pinned sidebar presence panes filter search reorder move section quick actions
 ---
 
 # Branches, remotes & the sidebar
@@ -11,7 +11,13 @@ keywords: branch branches create checkout rename delete remote pinned sidebar pr
 One reorderable, searchable sidebar holds **branches, remotes, tags, stashes,
 worktrees and submodules**. Every section can be hidden or reordered, and the
 filter box applies to all of them. Which sections and folders you keep
-expanded or collapsed is remembered per repository, across restarts.
+expanded or collapsed, and the order you put them in, is remembered per
+repository, across restarts.
+
+To reorder, drag a section by its header — or, without a mouse, focus the
+header and press <kbd>Alt</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd>. The same *Move
+section up* and *Move section down* entries are in the header's right-click
+menu (<kbd>Shift</kbd>+<kbd>F10</kbd> opens it from the keyboard).
 
 Section visibility works on two levels. **Settings → Layout → Sidebar
 sections** is the global default every repository and new worktree starts
@@ -37,6 +43,34 @@ any; open it once and that choice is remembered like any other.
 
 ![The sidebar, with pinned branches held at the top](../screenshots/pinned-branches.webp)
 
+## One filter for every section
+
+The box at the top of the sidebar narrows **every section at once**: local and
+remote branches, tags, stashes, worktrees, submodules, pull requests, issues,
+milestones, releases, bookmarks and todos. It matches names, titles and paths,
+ignoring case; a pull request also matches its `#number`, source branch and
+author. The line under the box counts the results across all sections.
+
+While a filter is active:
+
+- each header counts **matched of total** — `2 of 10`;
+- a section with no matches leaves the list and folds into one line at the
+  bottom, so the results are not interleaved with empty headers;
+- sections and folders that hold matches open by themselves, unless they hold
+  more than 300 — those you open by hand. Whatever you open or close lasts only
+  until the filter is cleared; your saved arrangement is left alone.
+
+<kbd>Esc</kbd> in the box clears it.
+
+![The sidebar filtered for "pay": two sections with matches, the rest folded at the bottom](../screenshots/sidebar-filter.webp)
+
+**Limits:** it is a plain substring match — no wildcards, no fuzzy matching, no
+regular expressions. It searches what the sidebar has already loaded: pull
+requests and issues beyond the list the host returned are not found here (the
+[pull requests](pull-requests.md) page has its own filter). Remote branches
+match on the full `remote/branch` name, so typing a remote's name matches every
+branch on it.
+
 ## Branches
 
 Create, check out, rename and delete — local and remote. Branch rows show:
@@ -45,6 +79,10 @@ Create, check out, rename and delete — local and remote. Branch rows show:
 - **per-remote presence badges** (which remotes have this branch),
 - a **risk dot** after a [conflict radar](conflict-radar.md) scan,
 - a **⟳ marker** when the remote [rewrote history](range-diff.md).
+
+Hover a local branch row, or Tab onto it, for two quick actions: **Check out**
+and **Create pull request**. They are the same actions as the right-click menu,
+which keeps everything else; the current branch shows only the second.
 
 Branches with `/` in their names fold into collapsible folders automatically.
 A prefix with one child is still a folder — `release/1.2.3` is `release`

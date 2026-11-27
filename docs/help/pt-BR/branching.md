@@ -3,7 +3,7 @@ title: Branches, remotes e a barra lateral
 category: Branches e cirurgia
 order: 40
 summary: Tudo o que a barra lateral esquerda faz, e branches fixadas.
-keywords: branch branches criar create checkout renomear rename apagar delete remote fixada pinned barra lateral sidebar presença adicionar remoto
+keywords: branch branches criar create checkout renomear rename apagar delete remote fixada pinned barra lateral sidebar presença adicionar remoto filtro filter busca search reordenar reorder mover seção ações rápidas
 ---
 
 # Branches, remotes e a barra lateral
@@ -13,6 +13,8 @@ tags, stashes, worktrees e submódulos**. Toda seção pode ser escondida ou
 reordenada (Configurações → Layout), e a caixa de filtro vale para todas elas.
 Quais seções e pastas você deixa abertas ou fechadas fica lembrado por
 repositório, mesmo depois de reiniciar.
+
+Para reordenar, arraste uma seção pelo cabeçalho — ou, sem mouse, foque o cabeçalho e aperte <kbd>Alt</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd>. As mesmas opções *Mover seção para cima* e *Mover seção para baixo* estão no menu de clique direito do cabeçalho (<kbd>Shift</kbd>+<kbd>F10</kbd> abre pelo teclado). A ordem também é lembrada por repositório.
 
 A barra lateral é uma pilha de painéis, não uma lista longa. Uma seção aberta
 ocupa a altura que as recolhidas deixam — elas ficam abaixo como linhas de
@@ -30,6 +32,22 @@ essa escolha é lembrada como qualquer outra.
 
 ![A barra lateral, com as branches fixadas seguras no topo](../../screenshots/pinned-branches.webp)
 
+## Um filtro para todas as seções
+
+A caixa no topo da barra lateral filtra **todas as seções de uma vez**: branches locais e remotas, tags, stashes, worktrees, submódulos, pull requests, issues, milestones, releases, bookmarks e todos. Ela compara nomes, títulos e caminhos, sem diferenciar maiúsculas; um pull request também casa pelo `#número`, pela branch de origem e pelo autor. A linha abaixo da caixa conta os resultados de todas as seções.
+
+Enquanto um filtro está ativo:
+
+- cada cabeçalho mostra **encontrados de total** — `2 de 10`;
+- uma seção sem resultados sai da lista e vira uma única linha compacta no fim, para os resultados não ficarem misturados com cabeçalhos vazios;
+- seções e pastas com resultados abrem sozinhas, a menos que tenham mais de 300 — essas você abre à mão. O que você abrir ou fechar vale só até limpar o filtro; o arranjo salvo fica intacto.
+
+<kbd>Esc</kbd> na caixa limpa o filtro.
+
+![A barra lateral filtrada por "pay": duas seções com resultados, o resto recolhido no fim](../../screenshots/sidebar-filter.webp)
+
+**Limites:** é uma busca simples por trecho — sem curingas, sem busca aproximada, sem expressões regulares. Ela procura no que a barra lateral já carregou: pull requests e issues além da lista que o host devolveu não aparecem aqui (a página de [pull requests](pull-requests.md) tem o próprio filtro). Branches remotas casam pelo nome completo `remote/branch`, então digitar o nome de um remote encontra todas as branches dele.
+
 ## Branches
 
 Criar, fazer checkout, renomear e apagar — locais e remotas. As linhas de branch
@@ -39,6 +57,8 @@ mostram:
 - **selos de presença por remote** (quais remotes têm esta branch),
 - um **ponto de risco** depois de uma varredura do [radar de conflitos](conflict-radar.md),
 - um **marcador ⟳** quando o remote [reescreveu o histórico](range-diff.md).
+
+Passe o mouse numa linha de branch local, ou chegue nela com Tab, para duas ações rápidas: **Checkout** e **Criar pull request**. São as mesmas ações do menu de clique direito, que continua com todo o resto; a branch atual mostra só a segunda.
 
 Branches com `/` no nome se dobram automaticamente em pastas colapsáveis.
 Um prefixo com um filho só continua pasta — `release/1.2.3` é `release` com

@@ -3,7 +3,7 @@ title: Gałęzie, zdalne repozytoria i panel boczny
 category: Gałęzie i operacje na historii
 order: 40
 summary: Wszystko, co robi lewy panel, oraz przypięte gałęzie.
-keywords: gałąź gałęzie utwórz przełącz zmień nazwę usuń zdalne przypięte panel boczny branch branches create checkout rename delete remote pinned sidebar presence dodaj remote
+keywords: gałąź gałęzie utwórz przełącz zmień nazwę usuń zdalne przypięte panel boczny branch branches create checkout rename delete remote pinned sidebar presence dodaj remote filtr filter szukaj search kolejność reorder przesuń sekcja szybkie akcje
 ---
 
 # Gałęzie, zdalne repozytoria i panel boczny
@@ -13,6 +13,8 @@ repozytoria, tagi, stashe, worktree i podmoduły**. Każdą sekcję da się ukry
 albo przestawić (Ustawienia → Układ), a pole filtra działa na wszystkie naraz.
 To, które sekcje i katalogi zostawiasz rozwinięte albo zwinięte, jest
 zapamiętywane per repozytorium — także po restarcie.
+
+Aby zmienić kolejność, przeciągnij sekcję za nagłówek — albo, bez myszy, ustaw fokus na nagłówku i naciśnij <kbd>Alt</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd>. Te same pozycje *Przesuń sekcję w górę* i *Przesuń sekcję w dół* są w menu kontekstowym nagłówka (<kbd>Shift</kbd>+<kbd>F10</kbd> otwiera je z klawiatury). Kolejność także jest zapamiętywana dla każdego repozytorium.
 
 Panel boczny to stos paneli, nie długa lista. Otwarta sekcja zajmuje wysokość,
 którą zostawiają zwinięte — te siedzą poniżej jako wiersze nagłówka. Otwórz
@@ -30,6 +32,22 @@ to nie prosił; rozwiń ją raz, a ten wybór zostanie zapamiętany jak każdy i
 
 ![Panel boczny z przypiętymi gałęziami trzymanymi na górze](../../screenshots/pinned-branches.webp)
 
+## Jeden filtr dla wszystkich sekcji
+
+Pole na górze paska bocznego filtruje **wszystkie sekcje naraz**: lokalne i zdalne branche, tagi, stashe, worktree, submoduły, pull requesty, issues, kamienie milowe, wydania, zakładki i zadania. Porównuje nazwy, tytuły i ścieżki bez względu na wielkość liter; pull request pasuje też po `#numerze`, branchu źródłowym i autorze. Wiersz pod polem liczy wyniki ze wszystkich sekcji.
+
+Gdy filtr jest aktywny:
+
+- każdy nagłówek pokazuje **znalezione z całości** — `2 z 10`;
+- sekcja bez wyników znika z listy i zwija się do jednego wiersza na dole, żeby wyniki nie przeplatały się z pustymi nagłówkami;
+- sekcje i foldery z wynikami otwierają się same, chyba że mają ich ponad 300 — te otwierasz ręcznie. To, co otworzysz lub zamkniesz, obowiązuje tylko do wyczyszczenia filtra; zapisany układ zostaje nietknięty.
+
+<kbd>Esc</kbd> w polu je czyści.
+
+![Pasek boczny przefiltrowany po „pay”: dwie sekcje z wynikami, reszta zwinięta na dole](../../screenshots/sidebar-filter.webp)
+
+**Ograniczenia:** to zwykłe wyszukiwanie podciągu — bez symboli wieloznacznych, bez wyszukiwania przybliżonego, bez wyrażeń regularnych. Przeszukuje to, co pasek boczny już wczytał: pull requesty i issues spoza listy zwróconej przez hosta nie zostaną tu znalezione (strona [pull requestów](pull-requests.md) ma własny filtr). Zdalne branche pasują po pełnej nazwie `remote/branch`, więc wpisanie nazwy remote'a znajduje każdy jego branch.
+
 ## Gałęzie
 
 Twórz, przełączaj, zmieniaj nazwy i usuwaj — lokalne i zdalne. Wiersze gałęzi
@@ -41,6 +59,8 @@ pokazują:
 - **kropkę ryzyka** po skanie [radaru konfliktów](conflict-radar.md),
 - **znacznik ⟳**, gdy zdalne repozytorium
   [przepisało historię](range-diff.md).
+
+Najedź na wiersz lokalnego brancha albo dojdź do niego Tabem, aby zobaczyć dwie szybkie akcje: **Checkout** i **Utwórz pull request**. To te same akcje co w menu kontekstowym, które zachowuje całą resztę; bieżący branch pokazuje tylko drugą.
 
 Gałęzie z `/` w nazwie same zwijają się w składane katalogi.
 Prefiks z jednym dzieckiem nadal jest folderem — `release/1.2.3` to `release`
