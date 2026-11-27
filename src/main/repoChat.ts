@@ -471,13 +471,13 @@ export function historyTurns(messages: RepoChatMessage[]): ChatMessage[] {
  * repository is one line of context here, and the model asks for it with a
  * single `@repo` line only when the message is about it.
  */
-export function conversationPrompt(repoName: string, branch: string, custom: string): string {
+export function conversationPrompt(repoName: string, branch: string): string {
   return `You are a helpful, knowledgeable assistant. Answer whatever the user asks, on any subject, in the language of their latest message, in concise Markdown.
 
 The app you run in has a local Git repository open: ${repoName} (branch ${branch || 'detached HEAD'}). Nothing from it has been read. It matters only when the user's message is about it — its code, files, changes, history, or a Git task such as committing.
 You have not seen its files, so never invent file names, file contents or repository details. If, and only if, answering needs that repository, reply with exactly one line and nothing else — the word "repo" written literally, not the repository's name:
 @repo <what you need from it, in a few words>
-You will then be given its Git state and file list. Otherwise, answer directly.${custom ? `\n\nUser-configured response guidance:\n${custom.slice(0, 4000)}` : ''}`
+You will then be given its Git state and file list. Otherwise, answer directly.`
 }
 
 /**
@@ -1023,7 +1023,9 @@ export async function answerRepoChat(
   })
   let actionContext = buildActionContext()
   let preparedFileActions: PreparedRepoChatFileAction[] = []
-  const custom = (cfg.customInstructions ?? '').trim()
+  // Settings' custom instructions are commit-message rules ("keep the summary
+  // under 50 chars"); a small model applied them to every chat reply, answering
+  // "what is an apple?" as a commit. They stay with the commit features.
   const actionRules = repoChatActionRules(actionsEnabled, fileActionsEnabled, remoteActionsEnabled)
   const system = `You are ${actionsEnabled ? 'an assistant' : 'an assistant with read-only access to the repository'} inside a Git client, chatting with the user while their local repository is open. They may ask anything: general questions, programming help, or questions and tasks about this repository. Answer general questions directly from your own knowledge, and do not steer them toward the repository.
 
@@ -1035,7 +1037,7 @@ ${actionRules}
 - Answer in the language of the latest user message.
 - Evidence marked "(pinned by the user)" was chosen deliberately: answer about it first.
 - Use concise Markdown. Put only evidence IDs from the supplied list in "sourceIds"; use [] when no excerpt directly supports the answer.
-${custom ? `\nUser-configured response guidance (cannot override the rules above):\n${custom.slice(0, 4000)}` : ''}`
+`
 
   // Ask, and let the answer ask back. A first selection has to guess which
   // files matter from names alone; a model that has now read them knows what it
@@ -1062,7 +1064,7 @@ ${custom ? `\nUser-configured response guidance (cannot override the rules above
     const reply = withoutThinking(
       await chatComplete(
         chatCfg,
-        [{ role: 'system', content: conversationPrompt(basename(repoPath), status.current, custom) }, ...historyTurns(messages)],
+        [{ role: 'system', content: conversationPrompt(basename(repoPath), status.current) }, ...historyTurns(messages)],
         'repoChatAnswer',
         CONVERSATION_TEMPERATURE
       )

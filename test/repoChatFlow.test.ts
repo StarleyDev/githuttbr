@@ -55,7 +55,12 @@ describe('repository chat flow', () => {
   it('sends only the message: a neutral assistant, the repository as one line', async () => {
     const repo = cloneFixture('cherry-pick')
     const { bodies } = scriptedModel(['Paris.'])
-    await answerRepoChat(repo, [{ role: 'user', content: 'Capital of France?' }], cfg)
+    // Commit-message rules from Settings must not turn every reply into a commit.
+    await answerRepoChat(repo, [{ role: 'user', content: 'Capital of France?' }], {
+      ...cfg,
+      customInstructions: 'Format: What changed. Why. How.'
+    })
+    expect(promptOf(bodies[0])).not.toMatch(/What changed/)
     const prompt = promptOf(bodies[0])
     expect(prompt).toMatch(/Answer whatever the user asks, on any subject/)
     expect(prompt).not.toMatch(/Git client/)
