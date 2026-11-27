@@ -103,7 +103,7 @@ it. Security stays red in most palettes because it is a warning; with
 **Monochrome** the palette has nothing to color.
 
 Limits: only the toolbar's main buttons, the sidebar section headers, the Tools
-menu, the right-click menus of commits, branches and repositories, the Settings pages and the buttons of the pull request and issue pages are colored; other menus, the rows inside a section
+menu, the right-click menus of commits, branches and repositories, the Settings and repository settings pages and the buttons of the pull request and issue pages are colored; other menus, the rows inside a section
 and the commit graph are not. A hovered menu row keeps its usual look, icon
 included. Color
 is never the only clue — every icon keeps its label.

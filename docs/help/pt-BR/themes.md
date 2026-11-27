@@ -101,7 +101,7 @@ próxima dele. Segurança continua vermelha na maioria das paletas porque é um
 aviso; com **Monocromático** a paleta não tem o que colorir.
 
 Limites: só os botões principais da barra, os cabeçalhos das seções da lateral,
-o menu Ferramentas, os menus de clique direito de commits, branches e repositórios, as páginas das Configurações e os botões das páginas de pull
+o menu Ferramentas, os menus de clique direito de commits, branches e repositórios, as páginas das Configurações e das configurações do repositório e os botões das páginas de pull
 request e de issue ganham cor; os outros menus, as
 linhas dentro das seções e o grafo não. Uma linha de menu sob o mouse mantém o
 visual de sempre, ícone incluído. A cor nunca é a

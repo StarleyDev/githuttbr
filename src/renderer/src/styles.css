@@ -1807,7 +1807,8 @@ textarea:focus {
 /* Soft: the hue mixed into the grey the icon already had; whole on hover. */
 :root[data-icon-colors='soft'] .tool-btn[data-tone] > svg:first-child,
 :root[data-icon-colors='soft'] .sb-header[data-tone] > svg,
-:root[data-icon-colors='soft'] .profile-item[data-tone] > svg {
+:root[data-icon-colors='soft'] .profile-item[data-tone] > svg,
+:root[data-icon-colors='soft'] .repo-settings-nav-item[data-tone] > svg {
   color: color-mix(in srgb, var(--tone) 72%, currentColor);
 }
 /* A menu icon is dimmer than its label, so it mixes into its own grey. */
@@ -1817,7 +1818,9 @@ textarea:focus {
 :root[data-icon-colors='soft'] .tool-btn[data-tone]:hover:not(:disabled) > svg:first-child,
 :root[data-icon-colors='soft'] .sb-header[data-tone]:hover > svg,
 :root[data-icon-colors='soft'] .profile-item[data-tone]:hover > svg,
-:root[data-icon-colors='soft'] .profile-item[data-tone].selected > svg {
+:root[data-icon-colors='soft'] .profile-item[data-tone].selected > svg,
+:root[data-icon-colors='soft'] .repo-settings-nav-item[data-tone]:hover > svg,
+:root[data-icon-colors='soft'] .repo-settings-nav-item[data-tone].active > svg {
   color: var(--tone);
 }
 /* A hovered menu row turns solid accent with dark text, and a danger row is red
@@ -1834,6 +1837,7 @@ textarea:focus {
    plus a spread shadow, so it adds no size and nothing around it moves. */
 :root[data-icon-colors='full'] .tool-btn[data-tone] > svg:first-child,
 :root[data-icon-colors='full'] .sb-header[data-tone] > svg,
+:root[data-icon-colors='full'] .repo-settings-nav-item[data-tone] > svg,
 :root[data-icon-colors='full'] .profile-item[data-tone] > svg,
 :root[data-icon-colors='full'] .menu-item[data-tone] > .menu-item-icon > svg {
   color: var(--tone);
@@ -1842,6 +1846,7 @@ textarea:focus {
   border-radius: 4px;
 }
 :root[data-icon-colors='full'] .sb-header[data-tone] > svg,
+:root[data-icon-colors='full'] .repo-settings-nav-item[data-tone] > svg,
 :root[data-icon-colors='full'] .profile-item[data-tone] > svg,
 :root[data-icon-colors='full'] .menu-item[data-tone] > .menu-item-icon > svg {
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--tone) 14%, transparent);
@@ -19295,9 +19300,11 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .repo-settings-body { overflow-y: auto; min-height: 0; flex: 1; --modal-foot-inset: 0px; }
 /* Repository settings: a summary header over a side nav and one page at a time.
    The modal keeps one size while you move between pages, like global Settings. */
+/* The same size as Settings (.modal-settings), so the two read as one family
+   and the repository's pages get the room Settings' pages have. */
 .modal:has(> .modal-scroll > .repo-settings-shell) {
-  width: min(1000px, calc(100vw - 48px));
-  height: min(760px, calc(100vh - 80px));
+  width: min(1080px, calc(100vw - 60px));
+  height: min(912px, calc(100vh - 80px));
 }
 .repo-settings-shell { flex: 1; }
 .repo-settings-summary {
