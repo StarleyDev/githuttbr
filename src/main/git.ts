@@ -37,8 +37,11 @@ import type {
   BranchInfo,
   CommitBranchInfo,
   ConflictContext,
+  ConflictFileInfo,
   ConflictOpKind,
+  ConflictOverview,
   ConflictRefInfo,
+  ConflictSnapshot,
   ConflictVersions,
   FileChangeKind,
   FileEntry,
@@ -194,6 +197,14 @@ import { DiffChunkSplitter } from './diffStream'
 import { diffFileVersions } from '../shared/prFileDiff'
 import { parseMergeTreeSingle, parseMergeTreeStdin, type MergeTreeRecord } from '../shared/mergeTree'
 import { parseRangeDiff } from '../shared/rangeDiff'
+import {
+  conflictKindOf,
+  countConflictBlocks,
+  pairRenames,
+  parseMergeMsgConflicts,
+  parseUnmergedStages,
+  parseUnmergedStatus
+} from '../shared/conflictFiles'
 import { countUniqueCommits, parseBranchTrackingConfig, parseRevListParents } from '../shared/branchCleanup'
 import { branchMatches } from '../shared/repoConfig'
 import { parseForcedUpdates } from '../shared/fetchPorcelain'
@@ -304,6 +315,7 @@ const EVENT_FOR_METHOD: Record<string, ActivityEvent> = {
   stashPop: 'stashPop',
   resolveConflict: 'conflictResolved',
   conflictTakeSide: 'conflictResolved',
+  conflictResolvePaths: 'conflictResolved',
   createTag: 'tagCreate',
   cherryPick: 'cherryPick',
   revertCommit: 'revert',
@@ -3855,7 +3867,20 @@ export const gitService = {
       if (!source) source = theirs?.branch || theirs?.sha || ''
     }
 
-    return { kind, source, target, ours, theirs }
+    // The version both sides started from. A merge has a real merge base; a
+    // pick or a rebase step applies one commit's change, so its base is that
+    // commit's parent — and a revert's is the reverted commit itself.
+    const baseRev = kind === 'merge' ? null : kind === 'revert' ? 'REVERT_HEAD' : `${theirsRef}^`
+    let baseSha = ''
+    try {
+      baseSha = baseRev
+        ? (await git.raw(['rev-parse', '--short', baseRev])).trim()
+        : (await git.raw(['merge-base', 'HEAD', 'MERGE_HEAD'])).trim().slice(0, 7)
+    } catch {
+      baseSha = ''
+    }
+
+    return { kind, source, target, ours, theirs, baseSha }
   },
 
   async conflictVersions(repoPath: string, file: string): Promise<ConflictVersions> {
@@ -3892,7 +3917,13 @@ export const gitService = {
     await git.add([file])
   },
 
-  async conflictOpContinue(repoPath: string, kind: ConflictOpKind): Promise<void> {
+  async conflictOpContinue(repoPath: string, kind: ConflictOpKind, message?: string): Promise<void> {
+    // A merge, pick or revert commits whatever MERGE_MSG says, so an edited
+    // message is written there first. A rebase step keeps its commit's own.
+    if (message !== undefined && message.trim() && kind !== 'rebase') {
+      const msgPath = (await gitFor(repoPath).raw(['rev-parse', '--git-path', 'MERGE_MSG'])).trim()
+      await writeFile(isAbsolute(msgPath) ? msgPath : join(repoPath, msgPath), message.trim() + '\n', 'utf-8')
+    }
     // Suppress the commit-message editor on --continue. Pass core.editor via a
     // `-c` arg (with allowUnsafeEditor) rather than `.env()`: simple-git's
     // unsafe-operations guard scans the *entire* env object handed to `.env()`,
@@ -3912,6 +3943,98 @@ export const gitService = {
     else if (kind === 'cherry-pick') await git.raw(['cherry-pick', '--abort'])
     else if (kind === 'rebase') await git.raw(['rebase', '--abort'])
     else await git.raw(['revert', '--abort'])
+  },
+
+  /**
+   * Every unmerged path with the kind of conflict it is in and how many blocks
+   * it still holds — the conflict workspace's file strip. `listed` adds the
+   * files this step stopped on that are already resolved, so progress can say
+   * "2 of 5" rather than only what is left.
+   */
+  async conflictOverview(repoPath: string): Promise<ConflictOverview> {
+    const [statusZ, stagesZ] = await Promise.all([
+      runGit(repoPath, ['status', '--porcelain=v1', '-z', '--untracked-files=no']).catch(() => ''),
+      runGit(repoPath, ['ls-files', '-u', '-s', '-z']).catch(() => '')
+    ])
+    const files: ConflictFileInfo[] = []
+    for (const { code, path } of parseUnmergedStatus(statusZ)) {
+      const kind = conflictKindOf(code)
+      if (!kind) continue
+      let conflicts = 0
+      if (kind === 'both-modified' || kind === 'both-added') {
+        try {
+          conflicts = countConflictBlocks(await readFile(join(repoPath, path), 'utf-8'))
+        } catch {
+          conflicts = 0
+        }
+      }
+      files.push({ path, code, kind, conflicts })
+    }
+    let listed: string[] = []
+    try {
+      const msgPath = (await gitFor(repoPath).raw(['rev-parse', '--git-path', 'MERGE_MSG'])).trim()
+      const abs = isAbsolute(msgPath) ? msgPath : join(repoPath, msgPath)
+      if (existsSync(abs)) listed = parseMergeMsgConflicts(await readFile(abs, 'utf-8'))
+    } catch {
+      listed = []
+    }
+    return { files: pairRenames(files, parseUnmergedStages(stagesZ)), listed }
+  },
+
+  /** The index stages and working-tree bytes of some unmerged paths, so a
+   *  resolution of them can be put back exactly as git left it. */
+  async conflictSnapshot(repoPath: string, files: string[]): Promise<ConflictSnapshot> {
+    const stages = files.length ? await runGit(repoPath, ['ls-files', '-u', '-s', '-z', '--', ...files]) : ''
+    const out: ConflictSnapshot['files'] = []
+    for (const path of files) {
+      try {
+        out.push({ path, base64: (await readFile(join(repoPath, path))).toString('base64') })
+      } catch {
+        out.push({ path, base64: null })
+      }
+    }
+    return { stages, files: out }
+  },
+
+  /**
+   * Undo a resolution: write the working-tree files back, then replace each
+   * path's index entry with the unmerged stages captured before. Mode 0 drops
+   * the resolved (stage 0) entry, which `--index-info` needs said explicitly.
+   */
+  async conflictRestore(repoPath: string, snapshot: ConflictSnapshot): Promise<void> {
+    const stages = parseUnmergedStages(snapshot.stages)
+    const paths = [...new Set([...snapshot.files.map((f) => f.path), ...stages.map((s) => s.path)])]
+    for (const f of snapshot.files) {
+      const abs = join(repoPath, f.path)
+      if (f.base64 === null) await rm(abs, { force: true })
+      else {
+        await mkdir(dirname(abs), { recursive: true })
+        await writeFile(abs, Buffer.from(f.base64, 'base64'))
+      }
+    }
+    const zero = '0'.repeat(40)
+    const lines = [
+      ...paths.map((p) => `0 ${zero}\t${p}`),
+      ...stages.map((s) => `${s.mode} ${s.sha} ${s.stage}\t${s.path}`)
+    ]
+    await new Promise<void>((resolve, reject) => {
+      const child = spawn('git', ['-C', repoPath, 'update-index', '-z', '--index-info'], { env: noPromptEnv() })
+      let err = ''
+      child.stderr.on('data', (d: Buffer) => (err += d.toString()))
+      child.on('error', reject)
+      child.on('close', (code) => (code === 0 ? resolve() : reject(new Error(err.trim() || 'git update-index failed'))))
+      child.stdin.end(lines.map((l) => l + '\0').join(''))
+    })
+  },
+
+  /**
+   * Settle unmerged paths that have no text to merge — a file deleted on one
+   * side, a file renamed differently on both: stage `keep` as it stands in the
+   * working tree, and remove `drop` from the index and the disk.
+   */
+  async conflictResolvePaths(repoPath: string, keep: string[], drop: string[]): Promise<void> {
+    if (drop.length) await runGit(repoPath, ['rm', '-q', '-f', '--ignore-unmatch', '--', ...drop])
+    if (keep.length) await runGit(repoPath, ['add', '--', ...keep])
   },
 
   async stashes(repoPath: string): Promise<StashInfo[]> {
@@ -10598,6 +10721,8 @@ const READ_METHODS = new Set<string>([
   'mergeMessage',
   'conflictContext',
   'conflictVersions',
+  'conflictOverview',
+  'conflictSnapshot',
   'interactiveRebaseSteps',
   'compareBranches',
   'prComparison',

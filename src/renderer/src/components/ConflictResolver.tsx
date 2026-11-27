@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Boxes, Check, ChevronDown, ChevronUp, ExternalLink, GitMerge, History, Link2, Lock, Minus, Pencil, Plus, RotateCcw, Sparkles, Loader2, Unlink2, WrapText, X } from 'lucide-react'
+import { Boxes, Check, ChevronDown, ChevronUp, ExternalLink, GitMerge, History, LayoutList, Link2, Lock, Minus, Pencil, Plus, RotateCcw, Sparkles, Loader2, Unlink2, WrapText } from 'lucide-react'
 import { gitApi, aiApi, diffToolApi } from '../infrastructure/api'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore, type ConflictViewState } from '../stores/ui'
@@ -8,9 +8,14 @@ import { interp, useT } from '../i18n'
 import { ResizeHandle } from './ResizeHandle'
 import {
   assemble,
+  baseRegions,
+  countChoices,
+  hunkChoice,
   lineKey,
   mergePicks,
   parseHunks,
+  pickHunk,
+  pickSideEverywhere,
   sideFullyPicked,
   sidePartlyPicked,
   toggleSideEverywhere,
@@ -23,7 +28,10 @@ import {
   type OutputMark,
   type ConflictLineSide as Side,
 } from '../lib/conflict'
-import type { ConflictCommit, ConflictRefInfo, ConflictVersions } from '../../../shared/types'
+import type { ConflictCommit, ConflictFileInfo, ConflictRefInfo, ConflictVersions } from '../../../shared/types'
+import { conflictKindKey } from '../lib/conflictWorkspace'
+import { ConflictResultBlocks } from './ConflictResultBlocks'
+import { TimeAgoLabel } from './PrConversationTimeline'
 import { isPbxprojPath, mergePbxproj } from '../../../shared/pbxproj'
 import { lockfileFor } from '../lib/lockfiles'
 import { guessLanguage, highlightCode } from '../lib/highlight'
@@ -50,8 +58,19 @@ const clampRatio = (r: number): number => Math.min(0.85, Math.max(0.15, r))
 
 // ─── Main Component ────────────────────────────────────────────────────────
 
-export function ConflictResolver({ view }: { view: ConflictViewState }): React.JSX.Element {
+export function ConflictResolver({
+  view,
+  info,
+  onResolved
+}: {
+  view: ConflictViewState
+  /** What git says this file's conflict is, for the header; null while unknown. */
+  info: ConflictFileInfo | null
+  /** Called once the file is staged, so the workspace can move on. */
+  onResolved: (path: string) => void
+}): React.JSX.Element {
   const setConflictView = useUIStore((s) => s.setConflictView)
+  const recordConflictChoices = useUIStore((s) => s.recordConflictChoices)
   const toast = useUIStore((s) => s.toast)
   const layout = useUIStore((s) => s.layout)
   const setLayout = useUIStore((s) => s.setLayout)
@@ -78,7 +97,7 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
   const [saving, setSaving] = useState(false)
   const [aiResolving, setAiResolving] = useState(false)
   // What each side did to this file since they parted — `git log --merge`.
-  // Loaded on demand: it answers "why", which not every resolution needs.
+  // Loaded with the file: its newest commit per side heads each pane.
   const [history, setHistory] = useState<ConflictCommit[] | null>(null)
   // Which file's strip is open lives in the store, not here: a background
   // refresh remounts this component, and local state would close it again.
@@ -91,6 +110,17 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
   useEffect(() => localStorage.setItem('githuttbr-conflict-wrap', wrapOn ? 'on' : 'off'), [wrapOn])
   const [syncOn, setSyncOn] = useState(() => localStorage.getItem('githuttbr-conflict-sync') !== 'off')
   useEffect(() => localStorage.setItem('githuttbr-conflict-sync', syncOn ? 'on' : 'off'), [syncOn])
+  // The common ancestor between the two sides. On by default: what both sides
+  // started from is what makes "who changed what" readable.
+  const [baseOn, setBaseOn] = useState(() => localStorage.getItem('githuttbr-conflict-base') !== 'off')
+  useEffect(() => localStorage.setItem('githuttbr-conflict-base', baseOn ? 'on' : 'off'), [baseOn])
+  // The result reads as cards until the user asks for the raw text — or types
+  // into it, after which the cards no longer describe what is there.
+  const [textMode, setTextMode] = useState(false)
+  // Conflicts opened with Edit, so the summary can count them as hand-made.
+  const [editedHunks, setEditedHunks] = useState<Set<number>>(new Set())
+  const basePaneRef = useRef<HTMLDivElement>(null)
+  const cardsRef = useRef<HTMLDivElement>(null)
   const editRef = useRef<HTMLTextAreaElement>(null)
   const highlightRef = useRef<HTMLPreElement>(null)
   const gutterRef = useRef<HTMLDivElement>(null)
@@ -142,7 +172,7 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
   }, [repoPath])
 
   /** Hand the conflict to `git mergetool`. On a clean exit git stages the file
-   *  itself, so the resolver closes and the repo view refreshes. */
+   *  itself, so the workspace moves on and the repo view refreshes. */
   const runMergeTool = async (): Promise<void> => {
     setToolRunning(true)
     try {
@@ -151,7 +181,7 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
         toast('error', error)
       } else {
         toast('success', interp(t('difftool.merged'), { file }))
-        setConflictView(null)
+        onResolved(file)
         await refresh(repoPath)
       }
     } finally {
@@ -168,7 +198,13 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
     setHunks([])
     setSelected(new Set())
     setTouched(new Set())
+    setEditedHunks(new Set())
+    setTextMode(false)
     setActiveHunk(0)
+    void gitApi
+      .conflictCommits(repoPath, file)
+      .then((h) => !cancelled && setHistory(h))
+      .catch(() => !cancelled && setHistory([]))
     void gitApi
       .conflictVersions(repoPath, file)
       .then((v) => {
@@ -191,6 +227,14 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
 
   const resolvedCount = touched.size
   const allResolved = hunks.length > 0 && resolvedCount === hunks.length
+  const textEdited = editOutput !== assembled.text
+  const showCards = !textMode && !textEdited
+  const hasBase = versions?.base != null
+  const showBase = baseOn && hasBase
+  const regions = useMemo(
+    () => (versions?.base != null ? baseRegions(versions.base, oursContent, hunks) : []),
+    [versions, oursContent, hunks]
+  )
 
   // Keep the highlighted layer and the line-number gutter glued to the textarea.
   const syncOutputScroll = (top: number, left: number): void => {
@@ -211,7 +255,8 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
   const syncPanes = (src: HTMLElement): void => {
     if (syncGuard.current || !syncOn) return
     syncGuard.current = true
-    for (const el of [oursPaneRef.current, theirsPaneRef.current, editRef.current]) {
+    const output = showCards ? cardsRef.current : editRef.current
+    for (const el of [oursPaneRef.current, basePaneRef.current, theirsPaneRef.current, output]) {
       if (!el || el === src) continue
       const max = src.scrollHeight - src.clientHeight
       el.scrollTop = max > 0 ? (src.scrollTop / max) * (el.scrollHeight - el.clientHeight) : 0
@@ -231,13 +276,14 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
     const next = ((idx % hunks.length) + hunks.length) % hunks.length
     setActiveHunk(next)
     syncGuard.current = true
-    for (const pane of [oursPaneRef.current, theirsPaneRef.current]) {
+    const panes = [oursPaneRef.current, basePaneRef.current, theirsPaneRef.current, showCards ? cardsRef.current : null]
+    for (const pane of panes) {
       const el = pane?.querySelector<HTMLElement>(`[data-hunk="${next}"]`)
       if (!pane || !el) continue
       const top = el.getBoundingClientRect().top - pane.getBoundingClientRect().top + pane.scrollTop
       pane.scrollTop = Math.max(0, top - pane.clientHeight / 3)
     }
-    const ta = editRef.current
+    const ta = showCards ? null : editRef.current
     const start = assembled.starts[next]
     if (ta && start != null && outputLineCount > 0) {
       const lineHeight = ta.scrollHeight / outputLineCount
@@ -319,11 +365,52 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
     commit(toggleSideEverywhere(hunks, side, selected, on), new Set(hunks.map((h) => h.index)))
   }
 
+  /** A card's answer: keep yours, theirs or both for that one conflict. */
+  const pickBlock = (hunk: Hunk, pick: 'ours' | 'theirs' | 'both'): void => {
+    commit(pickHunk(hunk, pick, selected), new Set(touched).add(hunk.index))
+    setActiveHunk(hunk.index)
+  }
+
+  /** "Whole file: yours | theirs" — one side for every conflict, into the result for review. */
+  const pickWholeFile = (side: Side): void => {
+    commit(pickSideEverywhere(hunks, side, selected), new Set(hunks.map((h) => h.index)))
+  }
+  const wholeFileIs = (side: Side): boolean =>
+    hunks.length > 0 && hunks.every((h) => hunkChoice(h, selected, touched.has(h.index)) === side)
+
+  /**
+   * A card's Edit: open the raw result on that conflict. An unanswered one
+   * starts from both sides, since editing is usually "both, but adjusted".
+   */
+  const editBlock = (hunk: Hunk): void => {
+    const nextSelected = touched.has(hunk.index) ? selected : pickHunk(hunk, 'both', selected)
+    commit(nextSelected, new Set(touched).add(hunk.index))
+    setEditedHunks(new Set(editedHunks).add(hunk.index))
+    setActiveHunk(hunk.index)
+    setTextMode(true)
+    const next = assemble(hunks, oursContent, nextSelected)
+    requestAnimationFrame(() => {
+      const ta = editRef.current
+      if (!ta) return
+      const lines = next.text.split('\n')
+      const startLine = next.starts[hunk.index] ?? 0
+      const kept = next.origins.filter((o) => o?.hunk === hunk.index).length
+      const offset = (n: number): number => lines.slice(0, n).reduce((acc, l) => acc + l.length + 1, 0)
+      ta.focus()
+      ta.setSelectionRange(offset(startLine), Math.max(offset(startLine), offset(startLine + kept) - 1))
+      const lineHeight = ta.scrollHeight / Math.max(1, lines.length)
+      ta.scrollTop = Math.max(0, startLine * lineHeight - ta.clientHeight / 3)
+      syncOutputScroll(ta.scrollTop, ta.scrollLeft)
+    })
+  }
+
   /** Back to square one: no picks, no hand edits. */
   const reset = (): void => {
     const fresh = assemble(hunks, oursContent, new Set())
     setSelected(new Set())
     setTouched(new Set())
+    setEditedHunks(new Set())
+    setTextMode(false)
     setEditOutput(fresh.text)
     setAssembled(fresh)
     setActiveHunk(0)
@@ -378,12 +465,11 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
   const save = async (): Promise<void> => {
     setSaving(true)
     try {
-      await gitApi.resolveConflict(repoPath, file, editOutput)
-      toast('success', interp(t('conflict.resolvedFile'), { file }))
-      setConflictView(null)
-      await refresh(repoPath)
-    } catch (err) {
-      toast('error', err instanceof Error ? err.message : String(err))
+      const counts = countChoices(hunks, selected, touched, editedHunks, textEdited)
+      if (await repoActions.conflictSaveResolution(repoPath, file, editOutput)) {
+        recordConflictChoices(repoPath, file, counts)
+        onResolved(file)
+      }
     } finally {
       setSaving(false)
     }
@@ -392,9 +478,16 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
   const takeSide = async (side: 'ours' | 'theirs' | 'delete'): Promise<void> => {
     setSaving(true)
     try {
-      await repoActions.conflictTakeSide(repoPath, file, side)
-      setConflictView(null)
-      await refresh(repoPath)
+      if (await repoActions.conflictTakeSide(repoPath, file, side)) {
+        const n = Math.max(1, hunks.length)
+        recordConflictChoices(repoPath, file, {
+          ours: side === 'ours' ? n : 0,
+          theirs: side === 'theirs' ? n : 0,
+          both: 0,
+          edited: side === 'delete' ? n : 0
+        })
+        onResolved(file)
+      }
     } finally {
       setSaving(false)
     }
@@ -413,9 +506,6 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
       <div className="file-viewer conflict-resolver">
         <div className="fv-header">
           {header}
-          <button className="icon-btn" title={t('common.close')} onClick={() => setConflictView(null)}>
-            <X size={15} />
-          </button>
         </div>
         <div className="fv-body">
           {error && <div className="fv-error">{error}</div>}
@@ -430,9 +520,6 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
       <div className="file-viewer conflict-resolver">
         <div className="fv-header">
           {header}
-          <button className="icon-btn" title={t('common.close')} onClick={() => setConflictView(null)}>
-            <X size={15} />
-          </button>
         </div>
         <div className="fv-body">
           <div className="graph-empty">
@@ -473,32 +560,39 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
     )
   }
 
-  const commitLabel = (info: ConflictRefInfo | null): string | null => {
-    if (!info?.sha) return null
-    return info.branch
-      ? interp(t('conflict.commitOn'), { sha: info.sha, branch: info.branch })
-      : interp(t('conflict.commitOnly'), { sha: info.sha })
-  }
   // `ours` is always the side you are on (rebase included: HEAD sits on the
   // target there), `theirs` the incoming branch/commit.
   const oursName = ctx?.target || hunks[0].oursLabel
   const theirsName = ctx?.source || hunks[0].theirsLabel
+  // Each pane says where it comes from: the newest commit on that side that
+  // touched this file, or failing that the commit the side points at.
+  const originOf = (side: Side): SideOrigin | null =>
+    history?.find((c) => c.side === side) ?? (side === 'ours' ? ctx?.ours : ctx?.theirs) ?? null
+  const left = hunks.length - resolvedCount
+  const fileName = file.split('/').pop() ?? file
+
+  // With the base shown it takes a fixed third; the handle still trades space
+  // between yours and theirs.
+  const filesW = filesBox.w || 900
+  const sideShare = showBase ? 2 / 3 : 1
 
   return (
     <div className={`file-viewer conflict-resolver conflict-editor ${wrapOn ? 'is-wrap' : ''}`}>
-      <div className="fv-header">
-        {header}
-        <span className="fv-chip conflict">
-          {resolvedCount}/{hunks.length} {t('conflict.resolved')}
+      <div className="fv-header cw-filehead">
+        <span className="fv-path" title={file}>
+          {file.includes('/') ? <span className="fv-dir">{file.slice(0, file.lastIndexOf('/') + 1)}</span> : null}
+          <strong>{fileName}</strong>
+        </span>
+        <span className="cw-filehead-sub">
+          {interp(t('conflictWs.conflictOf'), { n: activeHunk + 1, total: hunks.length })}
+          {info && <span className="cw-sep">{t(conflictKindKey(info.kind))}</span>}
         </span>
         <div className="conflict-global-actions">
           <button
-            className="btn ghost tiny"
+            className={`btn ghost tiny ${showHistory ? 'active' : ''}`}
             title={t('conflict.whyHint')}
-            onClick={() => {
-              setWhyFile(showHistory ? null : file)
-              if (history === null) void gitApi.conflictCommits(repoPath, file).then(setHistory).catch(() => setHistory([]))
-            }}
+            aria-expanded={showHistory}
+            onClick={() => setWhyFile(showHistory ? null : file)}
           >
             <History size={12} /> {t('conflict.why')}
           </button>
@@ -515,21 +609,27 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
           )}
           {aiEnabled && (
             <button
-              className="btn ghost tiny"
+              className="btn tiny cw-ai"
               disabled={aiResolving || saving}
               title={t('conflict.aiResolveHint')}
               onClick={() => void aiResolve()}
             >
-              {aiResolving ? <Loader2 size={12} className="spin" /> : <Sparkles size={12} />} {t('conflict.aiResolve')}
+              {aiResolving ? <Loader2 size={12} className="spin" /> : <Sparkles size={12} />} {t('conflictWs.aiResolve')}
             </button>
           )}
-          <button className="btn primary small" disabled={!allResolved || saving} onClick={() => void save()}>
-            <Check size={13} /> {t('conflict.saveResolution')}
-          </button>
+          <span className="cw-seg" role="group" title={t('conflictWs.wholeFileHint')}>
+            <button aria-pressed={wholeFileIs('ours')} className={wholeFileIs('ours') ? 'on' : ''} onClick={() => pickWholeFile('ours')}>
+              {t('conflictWs.wholeFileYours')}
+            </button>
+            <button
+              aria-pressed={wholeFileIs('theirs')}
+              className={wholeFileIs('theirs') ? 'on' : ''}
+              onClick={() => pickWholeFile('theirs')}
+            >
+              {t('conflictWs.wholeFileTheirs')}
+            </button>
+          </span>
         </div>
-        <button className="icon-btn" title={t('common.close')} onClick={() => setConflictView(null)}>
-          <X size={15} />
-        </button>
       </div>
 
       {lockfile && (
@@ -630,9 +730,9 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
       <div className="conflict-split" ref={splitRef}>
         <div className="conflict-files" ref={filesRef} style={{ flex: `${filesRatio} 1 0` }}>
           <SideFile
-            letter="A"
+            label={t('conflictWs.yours')}
             name={oursName}
-            commitLabel={commitLabel(ctx?.ours ?? null)}
+            origin={originOf('ours')}
             side="ours"
             content={oursContent}
             hunks={hunks}
@@ -643,7 +743,7 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
             somePicked={sidePartlyPicked(hunks, 'ours', selected)}
             bodyRef={oursPaneRef}
             onBodyScroll={syncPanes}
-            style={{ flex: `${sideRatio} 1 0` }}
+            style={{ flex: `${sideRatio * sideShare} 1 0` }}
             onToggleLine={toggleLine}
             onToggleSide={toggleChunkSide}
             onToggleWholeSide={toggleWholeSide}
@@ -652,15 +752,27 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
           />
           <ResizeHandle
             axis="x"
-            value={Math.round((filesBox.w || 900) * sideRatio)}
+            value={Math.round(filesW * sideRatio * sideShare)}
             min={140}
-            max={Math.max(200, (filesBox.w || 900) - 140)}
-            onChange={(px) => setLayout({ conflictSideRatio: clampRatio(px / (filesBox.w || 900)) })}
+            max={Math.max(200, filesW * sideShare - 140)}
+            onChange={(px) => setLayout({ conflictSideRatio: clampRatio(px / (filesW * sideShare)) })}
           />
+          {showBase && (
+            <BaseFile
+              content={versions?.base ?? ''}
+              baseSha={ctx?.baseSha ?? ''}
+              regions={regions}
+              activeHunk={activeHunk}
+              lang={lang}
+              bodyRef={basePaneRef}
+              onBodyScroll={syncPanes}
+              style={{ flex: `${1 / 3} 1 0` }}
+            />
+          )}
           <SideFile
-            letter="B"
+            label={t('conflictWs.incoming')}
             name={theirsName}
-            commitLabel={commitLabel(ctx?.theirs ?? null)}
+            origin={originOf('theirs')}
             side="theirs"
             content={theirsContent}
             hunks={hunks}
@@ -671,7 +783,7 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
             somePicked={sidePartlyPicked(hunks, 'theirs', selected)}
             bodyRef={theirsPaneRef}
             onBodyScroll={syncPanes}
-            style={{ flex: `${1 - sideRatio} 1 0` }}
+            style={{ flex: `${(1 - sideRatio) * sideShare} 1 0` }}
             onToggleLine={toggleLine}
             onToggleSide={toggleChunkSide}
             onToggleWholeSide={toggleWholeSide}
@@ -690,7 +802,7 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
 
         <div className="conflict-output-pane" style={{ flex: `${1 - filesRatio} 1 0` }}>
           <div className="conflict-output-header">
-            <span>{t('conflict.output')}</span>
+            <span className="cw-result-label">{t('conflictWs.result')}</span>
             <div className="conflict-nav">
               <button
                 className="icon-btn tiny"
@@ -701,7 +813,7 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
                 <ChevronUp size={13} />
               </button>
               <span className="conflict-nav-label">
-                {t('conflict.conflict')} {activeHunk + 1}/{hunks.length}
+                {interp(t('conflictWs.conflictOf'), { n: activeHunk + 1, total: hunks.length })}
               </span>
               <button
                 className="icon-btn tiny"
@@ -727,69 +839,209 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
               >
                 {syncOn ? <Link2 size={12} /> : <Unlink2 size={12} />} {t('diff.linkScroll')}
               </button>
+              <button
+                className={`diff-word-toggle ${!showCards ? 'on' : ''}`}
+                title={textEdited ? t('conflictWs.handEdited') : t('conflictWs.editTextHint')}
+                disabled={textEdited}
+                onClick={() => setTextMode((v) => !v)}
+              >
+                {showCards ? <Pencil size={12} /> : <LayoutList size={12} />} {t('conflictWs.editText')}
+              </button>
             </div>
+            <label className="cw-base-toggle" title={hasBase ? undefined : t('conflictWs.baseNone')}>
+              <input type="checkbox" checked={showBase} disabled={!hasBase} onChange={(e) => setBaseOn(e.target.checked)} />
+              {t('conflictWs.showBase')}
+            </label>
             <span className="text-2 conflict-output-count">
               {outputLineCount} {t('conflict.lines')}
             </span>
             <button className="btn ghost tiny" title={t('conflict.resetHint')} onClick={reset}>
-              <RotateCcw size={12} /> {t('conflict.reset')}
+              <RotateCcw size={12} /> {t('conflictWs.resetChoices')}
             </button>
           </div>
-          <div className="conflict-output-code">
-            <div ref={rowsRef} className="conflict-output-rows" aria-hidden="true">
-              {Array.from({ length: outputLineCount }, (_, i) => {
-                const m = marks[i]
-                return <div key={i} className={m ? `cor ${m === 'edited' ? 'edited' : m.side}` : 'cor'} />
-              })}
-            </div>
-            <div ref={gutterRef} className="conflict-output-gutter">
-              {Array.from({ length: outputLineCount }, (_, i) => {
-                const m = marks[i]
-                const o = m === 'edited' ? null : m
-                return (
-                  <div key={i} className={m ? `cog ${m === 'edited' ? 'edited' : m.side}` : 'cog'}>
-                    {m === 'edited' ? (
-                      <span className="cog-side" title={t('conflict.editedLine')}>
-                        <Pencil size={9} />
-                      </span>
-                    ) : o ? (
-                      // The side letter doubles as "drop this line from the output".
-                      <button
-                        className="cog-side cog-drop"
-                        title={t('conflict.dropLine')}
-                        aria-label={t('conflict.dropLine')}
-                        onClick={() => dropOutputLine(o)}
-                      >
-                        <span className="cog-letter">{o.side === 'ours' ? 'A' : 'B'}</span>
-                        <Minus className="cog-x" size={11} />
-                      </button>
-                    ) : (
-                      <span className="cog-side" />
-                    )}
-                    <span className="cog-no" aria-hidden="true">
-                      {i + 1}
-                    </span>
-                  </div>
-                )
-              })}
-            </div>
-            <pre ref={highlightRef} className="conflict-output-highlight hljs" aria-hidden="true">
-              <code dangerouslySetInnerHTML={{ __html: outputHtml }} />
-            </pre>
-            <textarea
-              ref={editRef}
-              className="conflict-output-editor"
-              value={editOutput}
-              onChange={(e) => handleEditChange(e.target.value)}
-              onScroll={(e) => {
-                syncOutputScroll(e.currentTarget.scrollTop, e.currentTarget.scrollLeft)
-                syncPanes(e.currentTarget)
-              }}
-              spellCheck={false}
-              placeholder={t('conflict.outputPlaceholder')}
+          {showCards ? (
+            <ConflictResultBlocks
+              hunks={hunks}
+              oursContent={oursContent}
+              selected={selected}
+              touched={touched}
+              activeHunk={activeHunk}
+              lang={lang}
+              bodyRef={cardsRef}
+              onBodyScroll={syncPanes}
+              onPick={pickBlock}
+              onEdit={editBlock}
             />
+          ) : (
+            <div className="conflict-output-code">
+              <div ref={rowsRef} className="conflict-output-rows" aria-hidden="true">
+                {Array.from({ length: outputLineCount }, (_, i) => {
+                  const m = marks[i]
+                  return <div key={i} className={m ? `cor ${m === 'edited' ? 'edited' : m.side}` : 'cor'} />
+                })}
+              </div>
+              <div ref={gutterRef} className="conflict-output-gutter">
+                {Array.from({ length: outputLineCount }, (_, i) => {
+                  const m = marks[i]
+                  const o = m === 'edited' ? null : m
+                  return (
+                    <div key={i} className={m ? `cog ${m === 'edited' ? 'edited' : m.side}` : 'cog'}>
+                      {m === 'edited' ? (
+                        <span className="cog-side" title={t('conflict.editedLine')}>
+                          <Pencil size={9} />
+                        </span>
+                      ) : o ? (
+                        // The side mark doubles as "drop this line from the output".
+                        <button
+                          className="cog-side cog-drop"
+                          title={t('conflict.dropLine')}
+                          aria-label={t('conflict.dropLine')}
+                          onClick={() => dropOutputLine(o)}
+                        >
+                          <span className="cog-letter cog-dot" />
+                          <Minus className="cog-x" size={11} />
+                        </button>
+                      ) : (
+                        <span className="cog-side" />
+                      )}
+                      <span className="cog-no" aria-hidden="true">
+                        {i + 1}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+              <pre ref={highlightRef} className="conflict-output-highlight hljs" aria-hidden="true">
+                <code dangerouslySetInnerHTML={{ __html: outputHtml }} />
+              </pre>
+              <textarea
+                ref={editRef}
+                className="conflict-output-editor"
+                value={editOutput}
+                onChange={(e) => handleEditChange(e.target.value)}
+                onScroll={(e) => {
+                  syncOutputScroll(e.currentTarget.scrollTop, e.currentTarget.scrollLeft)
+                  syncPanes(e.currentTarget)
+                }}
+                spellCheck={false}
+                placeholder={t('conflict.outputPlaceholder')}
+              />
+            </div>
+          )}
+          <div className="cw-result-foot">
+            <span>
+              {left === 0
+                ? t('conflictWs.noneLeftInFile')
+                : left === 1
+                  ? t('conflictWs.leftInFileOne')
+                  : interp(t('conflictWs.leftInFile'), { n: left })}
+            </span>
+            {textEdited && <span className="settings-hint">{t('conflictWs.handEdited')}</span>}
+            <span className="cw-spacer" />
+            <button className="btn primary small" disabled={!allResolved || saving} onClick={() => void save()}>
+              <Check size={13} /> {interp(t('conflictWs.markResolved'), { file: fileName })}
+            </button>
           </div>
         </div>
+      </div>
+    </div>
+  )
+}
+
+/** Where a pane's side comes from: a commit that touched the file, or the side's tip. */
+type SideOrigin = Pick<ConflictRefInfo, 'sha' | 'subject' | 'author' | 'date'>
+
+/** "b21c865 · "subject" · author · 2d ago" under a pane's name. */
+function OriginLine({ origin }: { origin: SideOrigin | null }): React.JSX.Element | null {
+  if (!origin?.sha) return null
+  return (
+    <span className="cfh-meta" title={origin.subject}>
+      <code>{origin.sha.slice(0, 7)}</code>
+      {origin.subject && (
+        <span className="cw-sep">
+          <q>{emojifyGitmoji(origin.subject)}</q>
+        </span>
+      )}
+      {origin.author && <span className="cw-sep">{origin.author}</span>}
+      {origin.date && (
+        <span className="cw-sep">
+          <TimeAgoLabel iso={origin.date} />
+        </span>
+      )}
+    </span>
+  )
+}
+
+// ─── Base: the version both sides started from ───────────────────────────────
+
+function BaseFile({
+  content,
+  baseSha,
+  regions,
+  activeHunk,
+  lang,
+  bodyRef,
+  onBodyScroll,
+  style
+}: {
+  content: string
+  baseSha: string
+  regions: ({ start: number; end: number } | null)[]
+  activeHunk: number
+  lang: string
+  bodyRef: React.RefObject<HTMLDivElement | null>
+  onBodyScroll: (el: HTMLElement) => void
+  style?: React.CSSProperties
+}): React.JSX.Element {
+  const t = useT()
+  const lines = useMemo(() => content.split('\n'), [content])
+  // Which conflict each base line sits under, and where each conflict's anchor
+  // goes — an empty region (both sides inserted) still needs a spot to scroll to.
+  const { owner, anchors } = useMemo(() => {
+    const owner = new Map<number, number>()
+    const anchors = new Map<number, number[]>()
+    regions.forEach((r, h) => {
+      if (!r) return
+      for (let i = r.start; i < r.end; i++) owner.set(i, h)
+      const list = anchors.get(r.start) ?? []
+      list.push(h)
+      anchors.set(r.start, list)
+    })
+    return { owner, anchors }
+  }, [regions])
+
+  return (
+    <div className="conflict-file base" style={style}>
+      <div className="conflict-file-head">
+        <span className="cfh-text">
+          <span className="cfh-title">
+            <b className="cfh-side base">{t('conflictWs.base')}</b>
+            <span className="cw-sep">{t('conflictWs.baseBefore')}</span>
+          </span>
+          {baseSha && <span className="cfh-meta">{interp(t('conflictWs.baseAncestor'), { sha: baseSha })}</span>}
+        </span>
+      </div>
+      <div className="conflict-file-body" ref={bodyRef} onScroll={(e) => onBodyScroll(e.currentTarget)}>
+        <pre className="conflict-code hljs">
+          {lines.map((line, i) => {
+            const h = owner.get(i)
+            return (
+              <div key={i}>
+                {(anchors.get(i) ?? []).map((a) => (
+                  <div key={`a${a}`} data-hunk={a} className={`conflict-base-anchor ${a === activeHunk ? 'active' : ''}`} />
+                ))}
+                <div className={`conflict-code-line ${h !== undefined ? 'in-hunk' : ''} ${h === activeHunk ? 'active' : ''}`}>
+                  <span className="conflict-code-gutter" />
+                  <span className="conflict-code-no">{i + 1}</span>
+                  <span className="conflict-code-text" dangerouslySetInnerHTML={{ __html: highlightCode(line, lang) || '&nbsp;' }} />
+                </div>
+              </div>
+            )
+          })}
+          {(anchors.get(lines.length) ?? []).map((a) => (
+            <div key={`a${a}`} data-hunk={a} className="conflict-base-anchor" />
+          ))}
+        </pre>
       </div>
     </div>
   )
@@ -798,9 +1050,9 @@ export function ConflictResolver({ view }: { view: ConflictViewState }): React.J
 // ─── Side file viewer with per-line and per-chunk selection ──────────────────
 
 function SideFile({
-  letter,
+  label,
   name,
-  commitLabel,
+  origin,
   side,
   content,
   hunks,
@@ -818,9 +1070,9 @@ function SideFile({
   chunkLabel,
   sideLabel,
 }: {
-  letter: string
+  label: string
   name: string
-  commitLabel: string | null
+  origin: SideOrigin | null
   side: Side
   content: string
   hunks: Hunk[]
@@ -872,11 +1124,15 @@ function SideFile({
           }}
           onChange={() => onToggleWholeSide(side)}
         />
-        <span className={`conflict-side-letter ${side}`}>{letter}</span>
-        <span className="conflict-side-name" title={name}>
-          {name}
+        <span className="cfh-text">
+          <span className="cfh-title">
+            <b className={`cfh-side ${side}`}>{label}</b>
+            <span className="cw-sep conflict-side-name" title={name}>
+              {name}
+            </span>
+          </span>
+          <OriginLine origin={origin} />
         </span>
-        {commitLabel && <span className="conflict-side-commit">{commitLabel}</span>}
       </div>
       <div className="conflict-file-body" ref={bodyRef} onScroll={(e) => onBodyScroll(e.currentTarget)}>
         <pre className="conflict-code hljs">

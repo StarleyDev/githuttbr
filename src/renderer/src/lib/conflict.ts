@@ -306,3 +306,93 @@ export function toggleSideInHunk(hunk: Hunk, side: ConflictLineSide, selected: S
   }
   return next
 }
+
+/** Keep exactly one side of a hunk — or both — and nothing else. */
+export function pickHunk(hunk: Hunk, pick: 'ours' | 'theirs' | 'both', selected: Set<LineKey>): Set<LineKey> {
+  const next = new Set(selected)
+  for (const side of ['ours', 'theirs'] as const) {
+    const on = pick === 'both' || pick === side
+    for (const k of sideKeys(hunk, side)) {
+      if (on) next.add(k)
+      else next.delete(k)
+    }
+  }
+  return next
+}
+
+/** Keep one side for every hunk of the file, dropping the other everywhere. */
+export function pickSideEverywhere(hunks: Hunk[], side: ConflictLineSide, selected: Set<LineKey>): Set<LineKey> {
+  let next = new Set(selected)
+  for (const h of hunks) next = pickHunk(h, side, next)
+  return next
+}
+
+/** What a hunk currently keeps, read from the picks. */
+export type HunkChoice = 'open' | 'ours' | 'theirs' | 'both' | 'partial' | 'empty'
+
+export function hunkChoice(hunk: Hunk, selected: Set<LineKey>, touched: boolean): HunkChoice {
+  if (!touched) return 'open'
+  const state = (side: ConflictLineSide): 'all' | 'some' | 'none' => {
+    const keys = sideKeys(hunk, side)
+    const n = keys.filter((k) => selected.has(k)).length
+    return keys.length === 0 || n === 0 ? 'none' : n === keys.length ? 'all' : 'some'
+  }
+  const o = state('ours')
+  const t = state('theirs')
+  if (o === 'none' && t === 'none') return 'empty'
+  if (o === 'all' && t === 'all') return 'both'
+  if (o === 'all' && t === 'none') return 'ours'
+  if (t === 'all' && o === 'none') return 'theirs'
+  return 'partial'
+}
+
+/** How the conflicts of one file were answered, for the end-of-operation summary. */
+export interface ConflictChoiceCounts {
+  ours: number
+  theirs: number
+  both: number
+  edited: number
+}
+
+/**
+ * Tally a file's answers. A hunk the user opened for editing counts as edited
+ * when the text really differs from the picks; so does every hunk when the
+ * result was rewritten wholesale (an AI or structural proposal, free typing).
+ * Line-by-line mixes are hand-made answers too.
+ */
+export function countChoices(
+  hunks: Hunk[],
+  selected: Set<LineKey>,
+  touched: Set<number>,
+  editedHunks: Set<number>,
+  textEdited: boolean
+): ConflictChoiceCounts {
+  const counts: ConflictChoiceCounts = { ours: 0, theirs: 0, both: 0, edited: 0 }
+  for (const h of hunks) {
+    const choice = hunkChoice(h, selected, touched.has(h.index))
+    const edited = textEdited && (editedHunks.size === 0 || editedHunks.has(h.index))
+    if (edited || choice === 'partial' || choice === 'empty' || choice === 'open') counts.edited++
+    else counts[choice]++
+  }
+  return counts
+}
+
+/**
+ * Where each hunk sits in the base version: the base lines between the shared
+ * context just above and just below it. The base is aligned against our side by
+ * line, so a context line that survives on both maps back; a hunk whose
+ * neighbours cannot be mapped (an LCS too large to run) gets no region.
+ */
+export function baseRegions(base: string, oursContent: string, hunks: Hunk[]): ({ start: number; end: number } | null)[] {
+  const align = alignOutput(base, oursContent)
+  const baseLen = base.split('\n').length
+  const oursLen = oursContent.split('\n').length
+  return hunks.map((h) => {
+    const before = h.oursStart - 1
+    const after = h.oursStart + h.ours.length
+    const start = before < 0 ? 0 : align[before] >= 0 ? align[before] + 1 : -1
+    const end = after >= oursLen ? baseLen : align[after] >= 0 ? align[after] : -1
+    if (start < 0 || end < 0 || end < start) return null
+    return { start, end }
+  })
+}
