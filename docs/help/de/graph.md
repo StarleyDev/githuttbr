@@ -32,6 +32,8 @@ Commits wie eines mit hundert.
   Revert, Branch, Tag und Kopieren. Unsichere Aktionen bleiben sichtbar und
   werden deaktiviert.
 
+![Das Rechtsklick-Menü eines Commits, jede Aktion mit ihrem farbigen Symbol](../../screenshots/commit-context-menu.webp)
+
 ## Ihn zeigen lassen, was du willst
 
 - Der **Graph-Fokus** entscheidet, wie viel Historie gezeichnet wird —

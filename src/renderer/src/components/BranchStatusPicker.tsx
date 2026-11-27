@@ -1,20 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import {
-  Check,
-  ChevronDown,
-  Copy,
-  FolderGit2,
-  GitBranch,
-  GitBranchPlus,
-  GitMerge,
-  Pencil,
-  Search,
-  Trash2
-} from 'lucide-react'
+import { Check, ChevronDown, GitBranch, GitBranchPlus, Search } from 'lucide-react'
 import type { BranchInfo, RemoteBranchInfo } from '../../../shared/types'
 import { branchContextActionIds, branchMergeWouldChange, branchWorktreePlan } from '../lib/branchMenu'
 import { canonicalRepoName } from '../lib/repoAlias'
+import { menuActionIcon } from '../lib/menuActionIcons'
 import { interp, useT } from '../i18n'
 import { repoActions, type RepoData } from '../stores/repo'
 import { useSettingsStore } from '../stores/settings'
@@ -157,7 +147,7 @@ export function BranchStatusPicker({ repo }: { repo: RepoData }): React.JSX.Elem
         case 'rename':
           items.push({
             label: t('sidebar.renameBranch'),
-            icon: <Pencil size={14} />,
+            ...menuActionIcon('renameBranch'),
             onClick: () => {
               close()
               openModal({
@@ -177,7 +167,7 @@ export function BranchStatusPicker({ repo }: { repo: RepoData }): React.JSX.Elem
         case 'copy':
           items.push({
             label: t('sidebar.copyBranchName'),
-            icon: <Copy size={14} />,
+            ...menuActionIcon('copy'),
             onClick: () => {
               close()
               void navigator.clipboard.writeText(copyName)
@@ -187,7 +177,7 @@ export function BranchStatusPicker({ repo }: { repo: RepoData }): React.JSX.Elem
         case 'worktree':
           items.push({
             label: interp(t('sidebar.openInWorktree'), { branch: ref }),
-            icon: <FolderGit2 size={14} />,
+            ...menuActionIcon('worktree'),
             disabled: checkedOutInWorktree,
             onClick: () => {
               close()
@@ -213,7 +203,7 @@ export function BranchStatusPicker({ repo }: { repo: RepoData }): React.JSX.Elem
               branch: repo.branches.current,
               current: repo.branches.current
             }),
-            icon: <GitMerge size={14} />,
+            ...menuActionIcon('merge'),
             onClick: () => {
               close()
               void repoActions.merge(path, ref)
@@ -223,7 +213,7 @@ export function BranchStatusPicker({ repo }: { repo: RepoData }): React.JSX.Elem
         case 'delete':
           items.push({
             label: isLocal ? t('sidebar.deleteBranch') : t('sidebar.deleteRemoteBranch'),
-            icon: <Trash2 size={14} />,
+            ...menuActionIcon('delete'),
             danger: true,
             disabled: isLocal && branchName === repo.branches.current,
             onClick: () => {

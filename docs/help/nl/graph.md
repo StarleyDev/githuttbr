@@ -32,6 +32,8 @@ een met honderd.
   branch, tag en kopiëren. Onveilige acties blijven zichtbaar en worden
   uitgeschakeld.
 
+![Het rechtsklikmenu van een commit, elke actie met zijn gekleurde pictogram](../../screenshots/commit-context-menu.webp)
+
 ## Het laten tonen wat jij wilt
 
 - De **graaffocus** bepaalt hoeveel geschiedenis wordt getekend — Instellingen →

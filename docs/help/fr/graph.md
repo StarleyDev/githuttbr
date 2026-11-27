@@ -33,6 +33,8 @@ dépôt d'une centaine.
   revert, de la branche, de l'étiquette et de la copie. Les actions risquées
   restent visibles et se désactivent.
 
+![Le menu contextuel d'un commit, chaque action avec son icône colorée](../../screenshots/commit-context-menu.webp)
+
 ## Lui faire montrer ce que vous voulez
 
 - La **focalisation du graphe** décide de la quantité d'historique dessinée —

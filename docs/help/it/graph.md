@@ -32,6 +32,8 @@ che ne ha cento.
   **Apri su GitHub**, oltre a checkout, cherry-pick, revert, branch, tag e
   copia. Le azioni non sicure restano visibili e si disabilitano.
 
+![Il menu contestuale di un commit, ogni azione con la sua icona colorata](../../screenshots/commit-context-menu.webp)
+
 ## Fargli mostrare quello che vuoi
 
 - Il **focus del grafo** decide quanta storia viene disegnata — Impostazioni → **Grafo**, o il menu dell'ingranaggio nell'intestazione del grafo.

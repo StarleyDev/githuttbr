@@ -32,6 +32,8 @@ depo gibi kayar.
   etiket ve kopyalama sunar. Güvenli olmayan eylemler görünür kalır ve devre
   dışı olur.
 
+![Bir commit’in sağ tık menüsü, her eylem renkli simgesiyle](../../screenshots/commit-context-menu.webp)
+
 ## İstediğinizi göstermesi
 
 - **Grafik odağı**, geçmişin ne kadarının çizileceğini belirler — Ayarlar → **Grafik** ya da grafik başlığındaki dişli menüsü. *Her şey* hepsini

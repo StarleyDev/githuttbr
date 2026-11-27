@@ -67,7 +67,7 @@ ridipinge con esso le icone, compresi i temi personalizzati e quelli generati
 dall'AI.
 
 Limiti: sono colorati solo i pulsanti principali della barra degli strumenti, le
-intestazioni delle sezioni della barra laterale, il menu Strumenti, le pagine delle
+intestazioni delle sezioni della barra laterale, il menu Strumenti, i menu contestuali di commit, branch e repository, le pagine delle
 Impostazioni e i pulsanti delle pagine di pull request e issue; gli altri menu, le
 righe dentro una sezione e il grafo dei commit no. Una riga di menu sotto il mouse
 mantiene il suo aspetto abituale, icona compresa. Il colore non è mai l'unico

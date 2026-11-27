@@ -29,7 +29,10 @@ com cem.
 - Clique com o botão direito num commit para **Amend**, **Desfazer**,
   **Resetar para o commit…** e **Ver no GitHub**, além de checkout, cherry-pick,
   revert, branch, tag e cópia. Ações inseguras continuam visíveis e se
-  desabilitam.
+  desabilitam. Cada linha tem um ícone colorido pelo tipo de ação — veja
+  [cores dos ícones](themes.md).
+
+![O menu de clique direito de um commit, cada ação com o seu ícone colorido](../../screenshots/commit-context-menu.webp)
 
 ## Fazendo o grafo mostrar o que você quer
 
