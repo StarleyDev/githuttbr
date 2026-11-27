@@ -4,7 +4,7 @@ category: AI
 order: 82
 summary: Pytaj o cokolwiek — o sprawy ogólne albo o to repozytorium — korzystając z plików i commitów przypiętych jako kontekst, i pozwól mu proponować akcje Gita, które zatwierdzasz przed uruchomieniem.
 keywords: czat pytanie pytaj asystent kontekst przypnij załącz przeciągnij upuść commit plik dowód ugruntowany ai panel akcje uruchom zatwierdź automatyczne uruchamianie pozwól napraw błąd toast pytanie ogólne dowolne pytanie myślę odczytywanie plików
-source: 6416ab8260b0e6e859213d03b774dc5c118e8282
+source: 9a8e2844d500415fe360978afa13a72ced0ff985
 ---
 
 # Czat repozytorium
@@ -25,16 +25,17 @@ graf nie traci zaznaczenia, gdy o coś pytasz.
 
 ## Co czyta
 
-Każda wiadomość zaczyna się od **jednego** wywołania. Model widzi stan
-repozytorium (gałąź, zmienione pliki) i listę śledzonych plików, ale żadnej
-zawartości plików. Powitanie albo pytanie niedotyczące repozytorium dostaje
-odpowiedź od razu, w tym jednym wywołaniu.
+Działa jak każdy czat: **wysyłana jest twoja wiadomość**, a obok niej tylko
+nazwa i gałąź repozytorium — bez stanu Gita, bez listy plików, bez zawartości
+plików. Powitanie albo pytanie niedotyczące repozytorium dostaje odpowiedź od
+razu, w jednym wywołaniu, i nic z repozytorium nie opuszcza twojego komputera.
 
 **Czytanie na żądanie.** Gdy pytanie dotyczy kodu, model prosi o to, czego
-potrzebuje, zamiast zgadywać: dokładne ścieżki z listy, dosłowne wyszukiwania
+potrzebuje, zamiast zgadywać: najpierw o **przegląd** (stan Gita i listę
+śledzonych plików), potem o dokładne ścieżki z tej listy, dosłowne wyszukiwania
 albo skróty commitów z najnowszej historii. Aplikacja je odczytuje i zadaje
-pytanie ponownie z fragmentami. Może się to zdarzyć najwyżej trzy razy — każda
-runda to kolejne wywołanie modelu, na które czekasz — a w ostatniej musi
+pytanie ponownie z tym, co znalazła. Może się to zdarzyć najwyżej cztery razy —
+każda runda to kolejne wywołanie modelu, na które czekasz — a w ostatniej musi
 odpowiedzieć tym, co ma. Odpowiedź o repozytorium może cytować tylko fragmenty,
 które otrzymała: zmyślony plik lub wiersz to błąd walidacji, a nie wiarygodnie
 brzmiąca odpowiedź.

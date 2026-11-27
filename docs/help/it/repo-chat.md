@@ -4,7 +4,7 @@ category: AI
 order: 82
 summary: Chiedi qualsiasi cosa — domande generali o su questo repository —, con i file e i commit che fissi come contesto, e lascia che proponga azioni git che approvi prima dell'esecuzione.
 keywords: chat domanda chiedere assistente contesto allegare fissare trascinare commit file prova ancorato ai pannello azioni eseguire approvare approvazione automatica consentire correggere errore notifica domanda generale qualsiasi domanda sto pensando lettura dei file
-source: 6416ab8260b0e6e859213d03b774dc5c118e8282
+source: 9a8e2844d500415fe360978afa13a72ced0ff985
 ---
 
 # Chat del repository
@@ -25,19 +25,21 @@ all’altra, così il grafo non perde la sua selezione.
 
 ## Che cosa legge
 
-Ogni messaggio parte con **una** chiamata. Il modello vede lo stato del
-repository (branch, file modificati) e l’elenco dei file tracciati, ma nessun
-contenuto dei file. Un saluto o una domanda che non riguarda il repository
-riceve risposta subito, in quell’unica chiamata.
+Funziona come qualsiasi chat: **viene inviato il tuo messaggio**, con accanto
+soltanto il nome e il branch del repository — niente stato Git, niente elenco
+dei file, niente contenuto dei file. Un saluto o una domanda che non riguarda il
+repository riceve risposta subito, in una chiamata, e nulla del repository
+lascia il tuo computer.
 
-**Lettura su richiesta.** Quando la domanda riguarda il codice, il modello chiede
-ciò che gli serve invece di indovinare: percorsi esatti dall’elenco, ricerche
-letterali o hash di commit dalla cronologia recente. L’app li legge e ripropone
-la domanda con gli estratti. Succede al massimo tre volte — ogni giro è un’altra
-chiamata al modello che aspetti — e all’ultima deve rispondere con quello che
-ha. Una risposta sul repository può citare soltanto gli estratti ricevuti: un
-file o una riga inventati sono un errore di validazione, non una risposta
-plausibile.
+**Lettura su richiesta.** Quando la domanda riguarda il codice, il modello
+chiede ciò che gli serve invece di indovinare: prima la **panoramica** (lo stato
+Git e l’elenco dei file tracciati), poi percorsi esatti da quell’elenco,
+ricerche letterali o hash di commit dalla cronologia recente. L’app li legge e
+ripropone la domanda con ciò che ne è emerso. Succede al massimo quattro volte —
+ogni giro è un’altra chiamata al modello che aspetti — e all’ultima deve
+rispondere con quello che ha. Una risposta sul repository può citare soltanto
+gli estratti ricevuti: un file o una riga inventati sono un errore di
+validazione, non una risposta plausibile.
 
 Mentre aspetti, la riga sotto il tuo messaggio dice che cosa sta succedendo:
 **Sto pensando…** mentre il modello lavora, **Lettura dei file (N)…** o
