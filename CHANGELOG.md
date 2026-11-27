@@ -1,5 +1,15 @@
 
 
+## [4.60.1](https://github.com/StarleyDev/githuttbr/compare/v4.60.0...v4.60.1) (2026-11-27)
+
+### Bug Fixes
+
+* **composer:** keep the commit description across tabs, and a compact AI row ([16bc04a](https://github.com/StarleyDev/githuttbr/commit/16bc04a412baf894fd5308b5fd81e9e6cb595b4e))
+  - The commit description you typed, or the one the AI wrote, stays when you switch to another tab and come back, like the summary.
+  - The AI row fits on one line: the sparkle button (named on hover), a narrower account · model picker, and the running time with Cancel beside them.
+  - Undo and Generate again are coloured icons on the same row; hover Undo to see who generated the text and how long it took.
+  - The description box is taller.
+
 ## [4.60.0](https://github.com/StarleyDev/githuttbr/compare/v4.59.1...v4.60.0) (2026-11-27)
 
 ### Features
