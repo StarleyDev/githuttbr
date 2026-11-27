@@ -13,7 +13,10 @@ groupe, une pastille dans un dossier imbriqué, une ligne de la liste
 d'accueil/du lanceur, ou une ligne de la liste déroulante des dépôts de la
 barre d'outils — et vous obtenez le même menu propre au dépôt. La pastille du
 groupe elle-même continue d'ouvrir le menu du groupe ; le clic doit atterrir
-sur le dépôt.
+sur le dépôt. Chaque ligne porte une icône colorée selon son type d’action — dans la palette
+par défaut, ouvrir quelque chose en bleu-vert, l’hébergeur en vert, nommer et
+ranger dans la couleur d’accent, copier et mettre en favori en orange, retirer et
+fermer en rouge ([couleurs des icônes](themes.md)).
 
 ![Le menu contextuel du dépôt sur une pastille dans un groupe](../../screenshots/repo-context-menu.webp)
 

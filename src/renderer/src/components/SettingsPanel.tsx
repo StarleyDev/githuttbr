@@ -11,9 +11,6 @@ import {
   UserCircle2,
   Unplug,
   Bot,
-  Cloud,
-  GitFork,
-  Server,
   BadgeCheck,
   FlaskConical,
   Plug,
@@ -70,7 +67,9 @@ import {
   History,
   PanelTop
 } from 'lucide-react'
-import { Github, Gitlab } from './BrandIcons'
+import { WINDOWS_TERMINAL_SHELLS } from '../lib/terminalShells'
+import { MISSION_REFRESH_MIN_S } from '../lib/missionControl'
+import { AzureLogo, BitbucketLogo, ForgejoLogo, GithubLogo, GitlabLogo } from './HostLogos'
 import { highlightCode } from '../lib/highlight'
 import { reportLoadFailure, useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
@@ -106,7 +105,8 @@ import type {
   CodeThemeColors,
   TerminalThemeColors,
   ThemeMode,
-  IconColorMode
+  IconColorMode,
+  IconPalette
 } from '../../../shared/types'
 import {
   APP_THEMES,
@@ -133,6 +133,7 @@ import { AIAccountsEditor } from './AIAccounts'
 import { AIBehaviourSettings } from './AIBehaviourSettings'
 import { LanguagePicker } from './LanguagePicker'
 import { NumberField } from './NumberField'
+import { ReleaseTierSettings } from './ReleaseTierSettings'
 import { ScanRootsEditor } from './ScanRootsEditor'
 import { ShortcutEditor } from './CheatsheetModal'
 import { AUTHOR_NAME, AUTHOR_URL, PRODUCT_NAME } from '../../../shared/brand'
@@ -425,7 +426,7 @@ const INTEGRATIONS = [
   {
     id: 'github',
     label: 'GitHub',
-    icon: Github,
+    icon: GithubLogo,
     field: 'githubToken',
     kind: 'pat',
     placeholder: 'ghp_…',
@@ -434,7 +435,7 @@ const INTEGRATIONS = [
   {
     id: 'azure',
     label: 'Azure DevOps',
-    icon: Server,
+    icon: AzureLogo,
     field: 'azureToken',
     kind: 'pat',
     placeholderKey: 'integrations.azurePatPlaceholder',
@@ -444,7 +445,7 @@ const INTEGRATIONS = [
   {
     id: 'gitlab',
     label: 'GitLab',
-    icon: Gitlab,
+    icon: GitlabLogo,
     field: 'gitlabToken',
     kind: 'pat',
     placeholder: 'glpat-…',
@@ -454,7 +455,7 @@ const INTEGRATIONS = [
   {
     id: 'bitbucket',
     label: 'Bitbucket',
-    icon: Cloud,
+    icon: BitbucketLogo,
     field: 'bitbucketToken',
     kind: 'app',
     placeholder: 'username:app_password',
@@ -463,7 +464,7 @@ const INTEGRATIONS = [
   {
     id: 'forgejo',
     label: 'Forgejo',
-    icon: GitFork,
+    icon: ForgejoLogo,
     field: 'forgejoToken',
     kind: 'pat',
     placeholder: '',
@@ -1939,6 +1940,15 @@ function ThemesPage(): React.JSX.Element {
     { id: 'soft', key: 'settings.iconColorsSoft' },
     { id: 'full', key: 'settings.iconColorsFull' }
   ]
+  const ICON_PALETTE_OPTIONS: { id: IconPalette; key: TranslationKey }[] = [
+    { id: 'theme', key: 'settings.iconPaletteTheme' },
+    { id: 'cool', key: 'settings.iconPaletteCool' },
+    { id: 'warm', key: 'settings.iconPaletteWarm' },
+    { id: 'forest', key: 'settings.iconPaletteForest' },
+    { id: 'sunset', key: 'settings.iconPaletteSunset' },
+    { id: 'accent', key: 'settings.iconPaletteAccent' }
+  ]
+  const ICON_PALETTE_ROLES = ['incoming', 'outgoing', 'ref', 'shelf', 'guard'] as const
 
   const saveAppTheme = (): void => {
     const theme: AppTheme = {
@@ -2029,6 +2039,34 @@ function ThemesPage(): React.JSX.Element {
           </button>
         ))}
       </div>
+
+      <h4 style={{ marginTop: 16 }}>{t('settings.iconPalette')}</h4>
+      <p className="settings-hint">{t('settings.iconPaletteHint')}</p>
+      <div className="icon-palette-grid" data-setting="settings.iconPalette">
+        {ICON_PALETTE_OPTIONS.map((o) => {
+          const active = (settings.iconPalette ?? 'theme') === o.id
+          return (
+            <button
+              key={o.id}
+              type="button"
+              className={`icon-palette-btn ${active ? 'active' : ''}`}
+              aria-pressed={active}
+              // The swatch carries its own palette, so its dots show that palette's colours.
+              data-icon-palette={o.id}
+              onClick={() => update((s) => ({ ...s, iconPalette: o.id }))}
+            >
+              <span className="icon-palette-dots" aria-hidden="true">
+                {ICON_PALETTE_ROLES.map((role) => (
+                  <span key={role} className="icon-palette-dot" style={{ background: `var(--tone-${role})` }} />
+                ))}
+              </span>
+              <span>{t(o.key)}</span>
+            </button>
+          )
+        })}
+      </div>
+
+      <ReleaseTierSettings />
 
       <div className="theme-section-header" style={{ marginTop: 22 }}>
         <h4><Palette size={14} /> {t('settings.appTheme')}</h4>
@@ -2721,11 +2759,7 @@ function LayoutPreview({
 // they are executable names, not copy to translate. 'system' keeps the legacy
 // COMSPEC (cmd.exe) behavior.
 const TERMINAL_SHELL_OPTIONS: { id: string; label: string }[] = [
-  { id: 'powershell', label: 'PowerShell' }, // i18n-ignore proper noun
-  { id: 'pwsh', label: 'PowerShell Core (pwsh)' }, // i18n-ignore proper noun
-  { id: 'cmd', label: 'Command Prompt (cmd)' }, // i18n-ignore proper noun
-  { id: 'gitbash', label: 'Git Bash' }, // i18n-ignore proper noun
-  { id: 'wsl', label: 'WSL' }, // i18n-ignore proper noun
+  ...WINDOWS_TERMINAL_SHELLS,
   { id: 'system', label: 'System default' } // i18n-ignore platform term
 ]
 
@@ -2884,7 +2918,8 @@ function LayoutPage(): React.JSX.Element {
       <label className="settings-field">
         <span className="settings-field-label">{t('settings.sidebarSections')}</span>
         <span className="settings-hint">{t('settings.sidebarSectionsHint')}</span>
-        <div className="settings-toggle-list">
+        {/* Thirteen one-word switches: two columns halve the scroll. */}
+        <div className="settings-toggle-list two">
           {SIDEBAR_SECTIONS.map((sec) => (
             <label key={sec.id} className="settings-toggle-card">
               <input
@@ -3309,7 +3344,8 @@ function GitSyncPage(): React.JSX.Element {
         <RefreshCw size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />
         {t('settings.gitSync')}
       </h4>
-      <div className="settings-grid">
+      {/* Two short numbers side by side: a full-width box for "30" wasted the page. */}
+      <div className="settings-grid two settings-grid-numbers">
         <label className="settings-field">
           <span className="settings-field-label">{t('settings.autoFetch')}</span>
           <NumberField
@@ -3319,6 +3355,16 @@ function GitSyncPage(): React.JSX.Element {
             onChange={(n) => update((s) => ({ ...s, autoFetchMinutes: n }))}
           />
           <span className="settings-hint">{t('settings.autoFetchHint')}</span>
+        </label>
+        <label className="settings-field">
+          <span className="settings-field-label">{t('settings.missionRefresh')}</span>
+          <NumberField
+            min={MISSION_REFRESH_MIN_S}
+            max={3600}
+            value={settings.missionRefreshSeconds ?? MISSION_REFRESH_MIN_S}
+            onChange={(n) => update((s) => ({ ...s, missionRefreshSeconds: Math.max(MISSION_REFRESH_MIN_S, n) }))}
+          />
+          <span className="settings-hint">{t('settings.missionRefreshHint')}</span>
         </label>
       </div>
 

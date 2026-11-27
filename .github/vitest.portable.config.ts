@@ -25,8 +25,13 @@ export default {
       'test/sidebarFilter.test.ts',
       // Provider drafts, status badges and the masking of provider errors.
       'test/aiAccountDraft.test.ts',
+      // What each provider row says under its name.
+      'test/aiAccountSummary.test.ts',
       // First-run steps and how each AI card becomes an account.
       'test/onboarding.test.ts',
+      'test/commitBody.test.ts',
+      // Mission Control's refresh, hosting cadence and release column.
+      'test/missionHosting.test.ts',
       'test/fileTree.test.ts',
       'test/prViewed.test.ts',
       'test/i18n.test.ts',

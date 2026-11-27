@@ -16,6 +16,7 @@ import {
   type RepoMenuPlatform
 } from './repositoryMenu'
 import { t, interp } from '../i18n'
+import { menuActionIcon, type MenuActionId } from './menuActionIcons'
 import { closeOthersPrompt, closeTabPrompt, repoCloseStatus, tabCloseStatus } from './tabClose'
 import { requestClosePrPage } from '../stores/prView'
 
@@ -144,6 +145,23 @@ function runAction(id: RepoMenuActionId, caps: RepoMenuCapabilities, onRemove: (
   }
 }
 
+/** Each repository action's icon, from the table every commit, ref and
+ *  repository menu shares. */
+const REPO_ACTION_ICON: Record<RepoMenuActionId, MenuActionId> = {
+  createAlias: 'alias',
+  changeAlias: 'alias',
+  removeAlias: 'removeAlias',
+  showWorktrees: 'showWorktrees',
+  newWorktree: 'worktree',
+  copyName: 'copy',
+  copyPath: 'copy',
+  viewOnGitHub: 'openOnHost',
+  openTerminal: 'openTerminal',
+  reveal: 'reveal',
+  openEditor: 'openEditor',
+  remove: 'removeFromList'
+}
+
 /** Shared repository-scoped context menu. `extras` are appended after Remove;
  *  a null `onRemove` leaves Remove out. */
 export function repositoryMenuItems(path: string, onRemove: (() => void) | null, extras?: MenuItem[]): MenuItem[] {
@@ -151,6 +169,7 @@ export function repositoryMenuItems(path: string, onRemove: (() => void) | null,
   const items: MenuItem[] = repoMenuEntries(caps, onRemove !== null).map((entry) => {
     if (entry.kind === 'separator') return { separator: true }
     return {
+      ...menuActionIcon(REPO_ACTION_ICON[entry.id]),
       label: entry.vars ? interp(t(entry.labelKey), entry.vars) : t(entry.labelKey),
       disabled: entry.disabled,
       danger: entry.danger,

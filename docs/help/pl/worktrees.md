@@ -36,6 +36,9 @@ O worktree z zeszłego miesiąca łatwo zapomnieć, a pytania pojawiają się pr
 | 🔒 | Zablokowane — najedź, aby zobaczyć powód podany przy blokowaniu |
 | **brak**, nazwa przekreślona | Folderu już nie ma; git ma tylko jego wpis |
 
+![Sekcja worktree: jeden worktree z niezacommitowaną pracą i commitami do przodu,
+jeden brakujący, jeden zablokowany i gumka w nagłówku](../../screenshots/worktree-care.webp)
+
 Liczby są odczytywane przy otwarciu sekcji, gdy zmienia się commit tego worktree i gdy okno odzyskuje fokus — nie przy każdym odświeżeniu, bo każda to `git status` w innym folderze.
 
 Kliknij wiersz prawym przyciskiem, aby:
@@ -56,6 +59,48 @@ Czego te akcje **nie** robią:
 - Blokada to umowa między klientami git, a nie ochrona plików: nie powstrzyma niczego spoza git przed usunięciem folderu.
 - Głównego worktree — samego repozytorium — nie można zablokować, przenieść ani usunąć.
 - Usunięcie worktree nigdy nie usuwa jego gałęzi. Usuń ją z listy gałęzi, jeśli skończyłeś.
+
+### Grupowanie worktree w nagłówku
+
+Karty worktree otwierają się z etykietami `root · branch`, co szybko robi się
+szerokie.
+
+**Projekt trzymany w grupie przyjmuje swoje worktree.** Gdy repozytorium — albo
+jeden z jego worktree — już jest w grupie, nowy worktree otwiera się w tej grupie,
+obok niego, bez zaznaczania czegokolwiek: okno dodawania worktree tylko mówi,
+która to grupa, a **Otwórz w worktree** z menu gałęzi robi to samo bez pytania.
+Worktree otwarty później z **Ostatnich** albo z folderu też do niej dołącza.
+Przeciągnij chip poza grupę, jeśli chcesz go osobno.
+
+Dla repozytorium we własnej karcie zaznacz w oknie dodawania worktree **Proponuj
+grupowanie worktree’ów współdzielących to samo repozytorium główne** (domyślnie
+wyłączone, zapamiętywane jak opcja codegraph): jeśli root jest otwarty jako
+samodzielna karta, pojawia się pole **Nazwa grupy** (wstępnie wypełnione nazwą
+folderu roota) i oba trafiają do nowej grupy; gdy żaden członek rodziny nie jest
+otwarty, okno mówi tylko, że worktree otworzy się we własnej karcie. W grupie
+chipy skracają się do samej końcówki (`main`, `feature/x`), bo grupa już mówi, do
+którego repozytorium należą — przełącznik **Krótkie nazwy worktree w grupach** w
+Ustawienia → Układ i terminal zachowuje pełną nazwę `root · branch`, jeśli wolisz.
+Propozycja łączy tylko worktree o tym samym roocie — nigdy nie scala
+niepowiązanych repozytoriów.
+
+**Jak odróżnić kartę worktree.** Podpięty worktree to drugi checkout
+repozytorium, a jego karta wyglądałaby inaczej dokładnie jak karta samego
+repozytorium. Dlatego karta worktree pokazuje zielony **fork** zamiast ikony
+folderu — na karcie z obrazkiem mały fork w rogu obrazka — a jej podpowiedź mówi
+*Worktree repozytorium …* razem z folderem, w którym leży. Kliknij ją prawym
+przyciskiem, by wybrać **Otwórz …, główne repozytorium**, co ustawia fokus na
+karcie, która już ma główny checkout, albo go otwiera — w grupie worktree, jeśli
+worktree w jakiejś jest. Działa to niezależnie od tego, jak worktree otwarto: z
+jego rodziny, przez **Otwórz repozytorium** albo z listy przeskanowanych, a
+worktree podmodułu wskazują na podmoduł. Ograniczenia: oznaczenie dotyczy tego,
+gdzie leży checkout, a nie jego gałęzi; worktree repozytorium bare nie są
+oznaczane, bo nie ma głównego checkoutu do otwarcia; a główne repozytorium otwarte
+przez folder będący dowiązaniem symbolicznym nie jest rozpoznawane jako już
+otwarte, więc menu otwiera je drugi raz pod prawdziwą ścieżką.
+
+![Karta worktree z zielonym forkiem obok karty głównego repozytorium, z otwartym
+menu na Otwórz submodules-worktrees, główne repozytorium](../../screenshots/worktree-tab.webp)
 
 ![Sekcje worktree i podmodułów w panelu bocznym, obie wypełnione](../../screenshots/worktrees.webp)
 

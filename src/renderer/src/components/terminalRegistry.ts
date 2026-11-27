@@ -11,7 +11,7 @@ import { t, interp } from '../i18n'
 import { altArrowSequence, claimKeyEvent } from '../lib/terminalShortcuts'
 import { fitNeedsResync, planViewportResync } from '../lib/terminalScroll'
 
-export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number): TermHandle {
+export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number, shell?: string): TermHandle {
   const existing = registry.get(panelId)
   if (existing) return existing
 
@@ -801,8 +801,9 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
   // Defer fit until the container is attached & sized. The shell is read at
   // creation time — an existing session keeps the shell it was spawned with
   // even if the setting changes later.
+  // A panel opened from "New terminal with…" brings its own shell.
   const { terminalShell, terminalPoshTheme } = useSettingsStore.getState().settings
-  void window.api.term.create(cwd, term.cols || 80, term.rows || 24, terminalShell, terminalPoshTheme).then((id) => {
+  void window.api.term.create(cwd, term.cols || 80, term.rows || 24, shell ?? terminalShell, terminalPoshTheme).then((id) => {
     handle.ptyId = id
     // A custom shell that is gone: say which one and what runs instead.
     void window.api.term.shellNotice(id).then((n) => {

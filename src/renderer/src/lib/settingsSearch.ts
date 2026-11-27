@@ -132,6 +132,8 @@ export const SETTINGS_INDEX: readonly SettingsEntry[] = [
   // Themes
   e('themes', 'settings.appearance'),
   e('themes', 'settings.iconColors', 'settings.iconColorsHint'),
+  e('themes', 'settings.iconPalette', 'settings.iconPaletteHint'),
+  e('themes', 'settings.missionReleaseTiers', 'settings.missionReleaseTiersHint'),
   e('themes', 'settings.appTheme'),
   e('themes', 'settings.codeTheme'),
   e('themes', 'settings.codeFontSize'),
@@ -191,6 +193,7 @@ export const SETTINGS_INDEX: readonly SettingsEntry[] = [
   e('git', 'settings.pageGit', 'settings.gitIntro'),
   e('git', 'settings.gitSync', undefined, 'general'),
   e('git', 'settings.autoFetch', 'settings.autoFetchHint', 'general'),
+  e('git', 'settings.missionRefresh', 'settings.missionRefreshHint', 'general'),
   e('git', 'settings.gitMerging', undefined, 'general'),
   e('git', 'settings.mergeCommit', 'settings.mergeCommitHint', 'general'),
   e('git', 'rerere.title', 'rerere.intro', 'general'),

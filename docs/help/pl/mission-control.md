@@ -3,7 +3,7 @@ title: Centrum dowodzenia
 category: Synchronizacja i wiele repozytoriów
 order: 51
 summary: Każde repozytorium przestrzeni roboczej na jednym ekranie, od najgorszego.
-keywords: centrum dowodzenia panel wszystkie repozytoria przegląd status brudne niewypchnięte w tyle mission control dashboard overview dirty unpushed behind workspace
+keywords: centrum dowodzenia panel wszystkie repozytoria przegląd status brudne niewypchnięte w tyle mission control dashboard overview dirty unpushed behind workspace ostatni commit ostatni fetch nieaktualne stale pull requesty pull requests ci wydanie release tag interwał odświeżania refresh interval
 ---
 
 # Centrum dowodzenia
@@ -32,9 +32,11 @@ więc liczniki porównuje się jak w tabeli:
 |---|---|
 | **Repozytorium** | Nazwa, grupa, gałąź i jej upstream — albo **brak upstreamu** na bursztynowo: taka gałąź nigdy nie zostanie wypchnięta przez pomyłkę, ale też nigdy się nie synchronizuje |
 | **Ostatni commit** | Temat i autor: czym repozytorium ostatnio się zajmowało, bez otwierania go |
-| **Liczniki** | Konflikty · ↓ do pobrania · ↑ do wypchnięcia · w stage · zmienione · nieśledzone · stashe · otwarte PR-y (gdy repo jest już wczytane). Najedź, by zobaczyć, co liczy każdy |
+| **Lokalnie** | Konflikty · ↓ do pobrania · ↑ do wypchnięcia · w stage · zmienione · nieśledzone · stashe. Najedź, by zobaczyć, co liczy każdy |
+| **Hosting** | Otwarte pull requesty — te czekające na **Twoją** recenzję na bursztynowo — i CI dla HEAD. Kliknij licznik, by otworzyć stronę **Pull requesty** tego repozytorium, albo **CI**, by otworzyć jego uruchomienia |
+| **Wydanie** | Najnowszy tag osiągalny z HEAD i ile commitów przyszło po nim — **aktualne**, gdy żaden. Licznik ma kolor zależny od tego, jak daleko w tyle jest wydanie: szary do 5 commitów, żółty do 20, czerwony powyżej, w czterech zakresach, które możesz zmienić — łącznie z własnymi kolorami — w [**Ustawienia → Motywy → Kolory notatki o wydaniu**](themes.md#kolory-notatki-o-wydaniu) |
 | **Aktywność** | Sparkline commitów z 14 dni i ich liczba |
-| **Wiek** | Ile czasu minęło od ostatniego commita i od ostatniego **fetcha** |
+| **Czas** | Ile czasu minęło od ostatniego commita i od ostatniego **fetcha** |
 
 Najedź na ikonę stanu, by zobaczyć, dlaczego wiersz jest w tym miejscu —
 „2 do wypchnięcia · 1 bez commita”.
@@ -45,7 +47,13 @@ fetcha od dnia lub dłużej, albo nigdy, wiek robi się bursztynowy — zrób fe
 zanim uwierzysz w 0. Czas odczytuje sam git, więc `git fetch` w terminalu też się
 liczy.
 
-W wąskim oknie jako pierwsza znika kolumna ostatniego commita; liczniki zostają.
+![Ustawienia → Git i synchronizacja: odświeżanie Mission Control obok automatycznego fetcha](../../screenshots/settings-git-sync.webp)
+
+W wąskim oknie zostają wszystkie kolumny, a tabela przewija się w bok wewnątrz
+swojej ramki.
+
+**Otwórz** na końcu wiersza pokazuje samo repozytorium — jego graf — nawet jeśli
+jego karta ostatnio pokazywała listę pull requestów otwartą licznikiem PR.
 
 Rozwiń wiersz (strzałką albo <kbd>spacją</kbd>), żeby zobaczyć dokładnie, które
 commity czekają na pusha i które pliki są brudne.
@@ -53,13 +61,16 @@ commity czekają na pusha i które pliki są brudne.
 ## Praca z listą
 
 - Pigułki statusu na górze są **filtrami** — kliknij „3 zablokowane", żeby
-  zobaczyć tylko je.
+  zobaczyć tylko je. **N otwartych PR** i **N CI z błędem** filtrują tak samo,
+  podobnie jak **PR czekające na Twoją recenzję: N** w wierszu poniżej.
 - Sortuj po **pilności**, **nazwie** albo **aktywności**.
 - **Zaznacz kilka repozytoriów**, żeby zrobić na nich fetch, albo pull tylko na
   tych, które są w tyle (przycisk sam je zliczy).
 - **Fetch N nieaktualnych** pojawia się, gdy gałęzie z upstreamem nie robiły fetcha od
   dnia lub dłużej, i robi fetch tylko w nich — tych, w których „do pobrania” może być błędne.
-- Odświeża się samo co 30 sekund, dopóki jest otwarte.
+- Odświeża się samo co 30 sekund, dopóki jest otwarte — zmienisz to w
+  **Ustawienia → Git i synchronizacja → Odświeżanie Mission Control**, co najmniej
+  30 sekund. Gdy strona jest zamknięta, nic nie działa.
 
 | Klawisz | Akcja |
 |---|---|
@@ -76,8 +87,26 @@ odsyła cię z powrotem do pracy. Nigdy nie dokłada własnej karty i należy do
 przestrzeni, w której jesteś — przełącz przestrzeń, a dostaniesz panel tamtej
 przestrzeni.
 
-Czytanie go jest **czysto lokalne**: jeden `git status` na repozytorium, bez
-sieci, bez tokenów. Otwarcie panelu nigdy nigdzie się nie uwierzytelnia. Fetch
-zawsze jest czymś, o co poprosiłeś.
+Strona gita jest **lokalna**: kilka poleceń gita na repozytorium, bez fetcha.
+Kolumna **Hosting** to jedyna część, która rozmawia z hostem. Pyta host każdego
+repozytorium o jego otwarte pull requesty i CI dla HEAD, jako profil tego
+repozytorium, i po cichu: host bez tokena lub połączenia dla tego profilu po
+prostu nic nie pokazuje, a okno logowania nigdy się nie otwiera. Repozytorium
+otwarte już w karcie nie kosztuje żadnego wywołania, bo panel boczny ma już jego
+pull requesty.
+
+Ograniczenia, żeby dobrze czytać liczby:
+
+- Hosty są pytane **najwyżej co 5 minut** dla każdego repozytorium (wcześniej, gdy
+  HEAD się przesunie albo uruchomienie CI wciąż trwa), niezależnie od interwału
+  odświeżania — limit API hosta jest dzielony z resztą aplikacji. **Odśwież**
+  pyta ponownie od razu.
+- Licznik pokazuje **30+**, gdy pierwsza strona od hosta wróciła pełna; strona
+  listy ma je wszystkie.
+- Kolumna wydania to najnowszy tag **osiągalny z HEAD**, nie najnowszy tag w
+  repozytorium. Tag utworzony na commicie, który HEAD już ma, pojawia się w ciągu
+  dwóch minut.
+
+Fetch zawsze jest czymś, o co poprosiłeś.
 
 **Zobacz też:** [Przestrzenie i karty](workspaces.md) · [Przestrzenie, karty i grupy](workspaces.md)

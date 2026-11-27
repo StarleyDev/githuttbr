@@ -101,6 +101,25 @@ OpenAI : les modèles Claude fonctionnent vraiment au lieu d'en donner
 l'apparence. Gemini est joint via le point de terminaison compatible OpenAI de
 Google.
 
+### La liste des fournisseurs
+
+Chaque fournisseur enregistré est une carte : une lettre pour son fournisseur,
+son nom et, dessous, ce qu’il utilise réellement — deux comptes du même
+fournisseur se distinguent ainsi sans en ouvrir aucun.
+
+| Type de fournisseur | Deuxième ligne |
+| --- | --- |
+| Abonnement ou CLI locale | `CLI claude · sonnet` — la commande, puis le modèle |
+| Ollama ou serveur personnalisé | `http://localhost:11434 · qwen3:8b` — l’adresse, puis le modèle |
+| API hébergée | `gpt-4o-mini · 41 modèles` — le modèle, et combien le fournisseur en a listé |
+
+Le nombre de modèles n’apparaît qu’une fois que le fournisseur a listé ses
+modèles ; la liste intégrée sur laquelle GitHuttBr se replie est une estimation,
+pas un décompte. Le badge d’état est à droite. La carte que vous modifiez a un
+bord d’accent ; une carte qui ne répond pas a un bord rouge et sa raison sous le
+nom, terminée par **Tester à nouveau**. Cliquez sur une carte pour l’ouvrir dans
+l’éditeur sous la liste.
+
 ### Ajouter et modifier un fournisseur
 
 Un fournisseur enregistré à moitié rempli était un piège discret : une clé vide
@@ -110,7 +129,7 @@ n'est donc enregistré pendant la saisie.
 **Ajouter un fournisseur** ouvre une carte marquée **Brouillon · non enregistré**, au bord en
 pointillés. Renseignez le fournisseur, la clé, le point d'accès et le modèle,
 puis choisissez **Tester et enregistrer**. GitHuttBr liste d'abord les modèles
-du fournisseur avec cette clé — la même requête que **Récupérer les modèles** — et
+du fournisseur avec cette clé — la même requête que le bouton d’actualisation à côté de **Modèle** — et
 n'enregistre que s'il répond. Vous voyez **Connecté · N modèles**, et le
 fournisseur rejoint la liste comme **Prêt**.
 
@@ -134,6 +153,8 @@ seulement à l'enregistrement. L'erreur d'un fournisseur s'affiche avec la clé 
 tout ce qui ressemble à un jeton masqués.
 
 ![Ajouter et modifier un fournisseur](../../screenshots/ai-provider-draft.webp)
+
+![Modifier un fournisseur enregistré : l’adresse a changé et n’est pas encore enregistrée](../../screenshots/ai-provider-editing.webp)
 
 | Type de fournisseur | Ce que vérifie **Tester et enregistrer** |
 | --- | --- |
@@ -164,8 +185,10 @@ coûterait un prompt.
 ### Le fournisseur utilisé
 
 Un fournisseur répond à toute tâche qui n’a pas son propre fournisseur dans
-**Modèle par tâche**. Sa ligne porte la mention **Utilisé** — une pastille pleine
-et un bord d’accent — et reste à sa place dans la liste. L’IA générale et un
+**Modèle par tâche**. Sa carte se termine par un **Utilisé** vert, là où les autres cartes ont
+**Utiliser**, et reste à sa place dans la liste. Le vert ne signifie qu’utilisé :
+un fournisseur qui répond mais n’est pas utilisé affiche **Prêt** dans un
+gris-bleu discret. L’IA générale et un
 profil doté de sa propre IA ont chacun leur fournisseur utilisé ; la liste change
 celui que vous modifiez.
 
@@ -188,7 +211,8 @@ en utiliser un autre sur l'IA générale ne change rien pour ce profil, et hors
 des paramètres rien ne le disait. La barre d'état, en bas d'un dépôt, le dit
 désormais. Son bouton **IA :** _fournisseur_ nomme le fournisseur qui répond
 pour le profil actif, avec un point pour son état — vert **Prêt**, rouge **Ne
-répond pas**, ambre **Pas de clé**, gris **Non vérifié**.
+répond pas**, ambre **Pas de clé**, gris **Non vérifié**. Quand le fournisseur est **Prêt**,
+tout le bouton passe au vert, pour qu’une IA qui fonctionne ne semble pas éteinte.
 
 Un clic ouvre un petit panneau :
 
@@ -293,7 +317,7 @@ En venant d'une version antérieure aux comptes, ceci s'affiche une fois. Le fou
 ## Modèles
 
 Les listes de modèles viennent du fournisseur lui-même et sont mises en cache un
-jour ; **Récupérer les modèles** en actualise une immédiatement. Sous la liste,
+jour ; le bouton d’actualisation à côté de **Modèle** en actualise une immédiatement. Sous la liste,
 GitHuttBr indique d'où elle vient : en direct, depuis le cache (avec la date), ou
 la liste intégrée de repli et pourquoi.
 

@@ -4,7 +4,7 @@ category: 分支与手术
 order: 46
 summary: 就地改写历史提交的文件或提交信息 — 先预览级联效果。
 keywords: edit commit 编辑提交 rewrite history 改写历史 amend 修补 past 过去 reword 改写信息 fix typo 修正错别字 cascade 级联 replay 重放 rebase 变基 in place 就地 surgery 手术
-source: 7668e3a9726149d4cde998c6aac5b7e90068e2ca
+source: 2860ac7978e6b9b1b8a469abadf313971d0140c6
 ---
 
 # 编辑任意提交
@@ -19,6 +19,8 @@ source: 7668e3a9726149d4cde998c6aac5b7e90068e2ca
 
 选中任意一个属于 `HEAD` 祖先的提交 — 历史是否线性都无所谓。编辑器会显示它的文件
 和提交信息，两者都可以编辑。
+
+消息拥有和[提交编辑器](committing.md)相同的工具：带长度计数的摘要和下方的描述、箭头后面的样式行（Conventional 类型与范围、工单编号、提交样式）、gitmoji 选择器、共同作者以及 lint 提示。提交消息在加载时被拆开——第一行成为摘要，其余成为描述——重写时再用一个空行拼回去。把旧的 `add retry` 改成 `fix: add retry`，只需在类型列表里选一项。
 
 编辑文件就意味着要阅读它，所以编辑器不会挤在对话框里：它在中间窗格打开，取代提交
 图的位置 — 也就是冲突解决器和文件查看器打开的地方 — 并占满整个窗口的宽度和高度。

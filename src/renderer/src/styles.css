@@ -1,6 +1,11 @@
 /* ─── githuttbr design system ──────────────────────────────────────────── */
 
 :root {
+  /* Where you type or edit: text fields, the code editor of Edit commit, the
+     conflict editor. Mixed from the theme's panel and card backgrounds, so it
+     follows every theme — a little lighter than the panel in a dark theme,
+     never the theme's darkest shade (--bg-0), which read as a black hole. */
+  --field-bg: color-mix(in srgb, var(--bg-1) 55%, var(--bg-2));
   /* GitHuttBr Default brand palette */
   --githuttbr-primary: #2b2d42;
   --githuttbr-purple: #6c5ce7;
@@ -97,7 +102,7 @@ select {
 input,
 textarea {
   font-family: inherit;
-  background: var(--bg-0);
+  background: var(--field-bg);
   border: 1px solid var(--border);
   border-radius: 6px;
   color: var(--text-0);
@@ -1750,15 +1755,65 @@ textarea:focus {
    leading icon, a sidebar section's, a Settings page's, a menu row's — never
    the split arrow, grip or chevron. `mono` sets
    nothing and leaves every icon grey, as the app always was. */
-[data-tone='incoming'] { --tone: var(--purple); }
-[data-tone='outgoing'] { --tone: var(--green); }
-[data-tone='ref'] { --tone: var(--accent); }
-[data-tone='shelf'] { --tone: var(--yellow); }
-[data-tone='guard'] { --tone: var(--red); }
+/* Each role reads its hue from a --tone-* slot, and a palette (Settings →
+   Themes → Icon colours → Palette) fills the slots. Palettes are made of the
+   theme's five colours and mixes of them, so they repaint with the theme.
+   The slots are set on any element carrying data-icon-palette — the root for
+   the app, a swatch button for its own preview. */
+:root,
+[data-icon-palette='theme'] {
+  --tone-incoming: var(--purple);
+  --tone-outgoing: var(--green);
+  --tone-ref: var(--accent);
+  --tone-shelf: var(--yellow);
+  --tone-guard: var(--red);
+}
+[data-icon-palette='cool'] {
+  --tone-incoming: var(--accent);
+  --tone-outgoing: color-mix(in srgb, var(--green) 55%, var(--accent));
+  --tone-ref: var(--purple);
+  --tone-shelf: color-mix(in srgb, var(--accent) 50%, var(--purple));
+  --tone-guard: color-mix(in srgb, var(--red) 65%, var(--purple));
+}
+[data-icon-palette='warm'] {
+  --tone-incoming: color-mix(in srgb, var(--yellow) 50%, var(--red));
+  --tone-outgoing: var(--yellow);
+  --tone-ref: color-mix(in srgb, var(--red) 60%, var(--purple));
+  --tone-shelf: color-mix(in srgb, var(--yellow) 60%, var(--green));
+  --tone-guard: var(--red);
+}
+[data-icon-palette='forest'] {
+  --tone-incoming: color-mix(in srgb, var(--green) 60%, var(--accent));
+  --tone-outgoing: var(--green);
+  --tone-ref: color-mix(in srgb, var(--green) 50%, var(--yellow));
+  --tone-shelf: var(--yellow);
+  --tone-guard: var(--red);
+}
+[data-icon-palette='sunset'] {
+  --tone-incoming: var(--purple);
+  --tone-outgoing: color-mix(in srgb, var(--red) 50%, var(--yellow));
+  --tone-ref: color-mix(in srgb, var(--red) 60%, var(--purple));
+  --tone-shelf: var(--yellow);
+  --tone-guard: var(--red);
+}
+/* One colour: every role in the theme's accent — security stays red, a warning. */
+[data-icon-palette='accent'] {
+  --tone-incoming: var(--accent);
+  --tone-outgoing: var(--accent);
+  --tone-ref: var(--accent);
+  --tone-shelf: var(--accent);
+  --tone-guard: var(--red);
+}
+[data-tone='incoming'] { --tone: var(--tone-incoming); }
+[data-tone='outgoing'] { --tone: var(--tone-outgoing); }
+[data-tone='ref'] { --tone: var(--tone-ref); }
+[data-tone='shelf'] { --tone: var(--tone-shelf); }
+[data-tone='guard'] { --tone: var(--tone-guard); }
 /* Soft: the hue mixed into the grey the icon already had; whole on hover. */
 :root[data-icon-colors='soft'] .tool-btn[data-tone] > svg:first-child,
 :root[data-icon-colors='soft'] .sb-header[data-tone] > svg,
-:root[data-icon-colors='soft'] .profile-item[data-tone] > svg {
+:root[data-icon-colors='soft'] .profile-item[data-tone] > svg,
+:root[data-icon-colors='soft'] .repo-settings-nav-item[data-tone] > svg {
   color: color-mix(in srgb, var(--tone) 72%, currentColor);
 }
 /* A menu icon is dimmer than its label, so it mixes into its own grey. */
@@ -1768,7 +1823,9 @@ textarea:focus {
 :root[data-icon-colors='soft'] .tool-btn[data-tone]:hover:not(:disabled) > svg:first-child,
 :root[data-icon-colors='soft'] .sb-header[data-tone]:hover > svg,
 :root[data-icon-colors='soft'] .profile-item[data-tone]:hover > svg,
-:root[data-icon-colors='soft'] .profile-item[data-tone].selected > svg {
+:root[data-icon-colors='soft'] .profile-item[data-tone].selected > svg,
+:root[data-icon-colors='soft'] .repo-settings-nav-item[data-tone]:hover > svg,
+:root[data-icon-colors='soft'] .repo-settings-nav-item[data-tone].active > svg {
   color: var(--tone);
 }
 /* A hovered menu row turns solid accent with dark text, and a danger row is red
@@ -1785,6 +1842,7 @@ textarea:focus {
    plus a spread shadow, so it adds no size and nothing around it moves. */
 :root[data-icon-colors='full'] .tool-btn[data-tone] > svg:first-child,
 :root[data-icon-colors='full'] .sb-header[data-tone] > svg,
+:root[data-icon-colors='full'] .repo-settings-nav-item[data-tone] > svg,
 :root[data-icon-colors='full'] .profile-item[data-tone] > svg,
 :root[data-icon-colors='full'] .menu-item[data-tone] > .menu-item-icon > svg {
   color: var(--tone);
@@ -1793,11 +1851,24 @@ textarea:focus {
   border-radius: 4px;
 }
 :root[data-icon-colors='full'] .sb-header[data-tone] > svg,
+:root[data-icon-colors='full'] .repo-settings-nav-item[data-tone] > svg,
 :root[data-icon-colors='full'] .profile-item[data-tone] > svg,
 :root[data-icon-colors='full'] .menu-item[data-tone] > .menu-item-icon > svg {
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--tone) 14%, transparent);
   border-radius: 3px;
 }
+
+/* Hosting services in their own colours (components/HostLogos.tsx). GitHub's
+   mark is black or white by design, so it takes the text colour; Bitbucket and
+   Azure use the lighter of their brand blues, which stays legible on a dark
+   background. Monochrome greys them like every other icon. */
+.host-logo { flex: none; }
+.host-logo-github { color: var(--text-0); }
+.host-logo-gitlab { color: #fc6d26; }
+.host-logo-bitbucket { color: #2684ff; }
+.host-logo-forgejo { color: #fb923c; }
+.host-logo-azure { color: #0078d4; }
+:root[data-icon-colors='mono'] .host-logo { color: var(--text-2); }
 
 /* Per-action tones for a row of icon buttons (the pull request page's header
    and a comment's Edit / Delete). The theme has five hues; the two in-between
@@ -1809,6 +1880,52 @@ textarea:focus {
 [data-tone='target'] { --tone: var(--yellow); }
 [data-tone='edit'] { --tone: var(--accent); }
 [data-tone='delete'] { --tone: var(--red); }
+/* Another palette carries the row of action icons with it: each action takes
+   the role it is closest to, so the pull request header matches the sidebar. */
+:root:not([data-icon-palette='theme']) [data-tone='refresh'] { --tone: var(--tone-incoming); }
+:root:not([data-icon-palette='theme']) [data-tone='ai'] { --tone: var(--tone-ref); }
+:root:not([data-icon-palette='theme']) [data-tone='preview'] { --tone: var(--tone-shelf); }
+:root:not([data-icon-palette='theme']) [data-tone='source'] { --tone: var(--tone-outgoing); }
+:root:not([data-icon-palette='theme']) [data-tone='target'] { --tone: var(--tone-shelf); }
+:root:not([data-icon-palette='theme']) [data-tone='edit'] { --tone: var(--tone-ref); }
+:root:not([data-icon-palette='theme']) [data-tone='delete'] { --tone: var(--tone-guard); }
+/* The palette picker: each swatch shows its five role colours. */
+.icon-palette-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+}
+.icon-palette-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-2);
+  color: var(--text-1);
+  font-size: 12.5px;
+  text-align: start;
+  cursor: pointer;
+}
+.icon-palette-btn:hover {
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
+}
+.icon-palette-btn.active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg-2));
+  color: var(--text-0);
+}
+.icon-palette-dots {
+  display: flex;
+  gap: 5px;
+}
+.icon-palette-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+}
 /* The glyph's ink leans a fifth toward the text colour: darker on a light
    theme, lighter on a dark one. Some themes' green or orange is too pale for a
    thin 12px stroke on white; this keeps every built-in theme above 3:1. */
@@ -3959,6 +4076,27 @@ body.col-resizing .node-ava {
   flex-direction: column;
   overflow-y: auto;
 }
+/* Commit details: the head (author, message, description, note), the file
+   toolbar and the search stay in place; the file list is the only part that
+   scrolls. The head never shrinks — a flex-shrink let a long file list squeeze
+   it down to a scrollbar over the subject. The description's own box (six
+   lines, resizable) is what keeps the head short. */
+.details-info-split {
+  overflow: hidden;
+}
+.details-info-split > .details-head {
+  flex: none;
+}
+.details-info-split > .panel-toolbar,
+.details-info-split > .file-search,
+.details-info-split > .sm-summary {
+  flex: none;
+}
+.details-info-split > .details-files {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+}
 
 .commit-header {
   display: flex;
@@ -4236,6 +4374,81 @@ body.col-resizing .node-ava {
   line-height: 1.45;
   user-select: text;
   border-bottom: 1px solid var(--border-soft);
+}
+/* With a description below, the rule moves under it: subject and body read as one message. */
+.commit-subject:has(+ .commit-body-block) {
+  padding-bottom: 8px;
+  border-bottom: none;
+}
+.commit-body-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 0 16px 12px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.commit-body {
+  position: relative;
+  align-self: stretch;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  background: var(--bg-2);
+  overflow: hidden;
+}
+.commit-body-text {
+  /* Six lines, then it scrolls inside; the handle below sets another height. */
+  max-height: calc(6lh + 16px);
+  overflow-y: auto;
+  padding: 8px 10px;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--text-1);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+/* The handle sits on the box's bottom edge, the full width of it. */
+.commit-body-resize {
+  position: relative;
+  height: 6px;
+  margin-top: -3px;
+  cursor: row-resize;
+}
+/* A visible grip: here the handle is the only way to a taller description. */
+.commit-body-resize::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 2px;
+  width: 32px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--border);
+  transform: translateX(-50%);
+}
+.commit-body-resize:hover::after,
+.commit-body-resize:active::after {
+  background: var(--accent);
+}
+.commit-trailers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.commit-trailer {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--bg-3);
+  color: var(--text-1);
+  font-size: 11.5px;
 }
 
 .commit-subject-input {
@@ -5744,7 +5957,7 @@ body.col-resizing .node-ava {
 .terminal-list-row .row-label-input {
   flex: 1;
   min-width: 0;
-  background: var(--bg-1, var(--bg-0));
+  background: var(--bg-1, var(--field-bg));
   border: 1px solid var(--accent);
   border-radius: 4px;
   color: var(--text-0);
@@ -5911,6 +6124,31 @@ body.col-resizing .node-ava {
   opacity: 1;
 }
 
+/* Status bar icons take their tone (Settings → Themes → Icon colours) — no
+   chip, the bar is too thin for one. The label keeps the bar's muted grey and
+   the version stays plain, so nothing down here competes for attention. */
+.status-issue-btn[data-tone] {
+  opacity: 1;
+}
+.status-issue-btn[data-tone] > span {
+  opacity: 0.6;
+  transition: opacity 0.08s;
+}
+.status-issue-btn[data-tone]:hover > span {
+  opacity: 1;
+}
+:root[data-icon-colors='mono'] .status-issue-btn[data-tone] > svg {
+  opacity: 0.6;
+}
+:root[data-icon-colors='soft'] .statusbar [data-tone] > svg {
+  color: color-mix(in srgb, var(--tone) 80%, var(--text-2));
+  opacity: 1;
+}
+:root[data-icon-colors='full'] .statusbar [data-tone] > svg {
+  color: var(--tone);
+  opacity: 1;
+}
+
 /* ─── AI in the status bar ─────────────────────────────────────────────── */
 
 .status-ai-btn {
@@ -5919,6 +6157,13 @@ body.col-resizing .node-ava {
 .status-ai-btn > span:last-child {
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* The account answers: the whole chip in green, so it does not read as off. */
+.status-ai-btn.ready,
+.status-ai-btn.ready:hover {
+  opacity: 1;
+  color: color-mix(in srgb, var(--green) 85%, var(--text-0));
 }
 
 .ai-chip-dot {
@@ -9205,6 +9450,65 @@ body.col-resizing .node-ava {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+/* Release note colours: a label, a count and a row of theme swatches per tier. */
+.release-tiers { display: flex; flex-direction: column; gap: 8px; }
+.release-tier {
+  display: grid;
+  grid-template-columns: minmax(140px, 200px) 90px auto;
+  align-items: center;
+  gap: 12px;
+}
+.release-tier-label { font-size: 12.5px; color: var(--text-1); }
+.release-tier input[type='number'] { width: 90px; }
+.release-tones { display: flex; gap: 6px; }
+.release-tone {
+  --release-tone: var(--text-2);
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  background: var(--release-tone);
+  box-shadow: inset 0 0 0 2px var(--bg-1);
+  cursor: pointer;
+}
+.release-tone:hover { border-color: color-mix(in srgb, var(--release-tone) 50%, var(--text-0)); }
+.release-tone.on { border-color: var(--text-0); }
+.release-tone:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* The custom swatch: a colour wheel until a colour is picked, then that colour.
+   The native picker sits invisibly on top, so a click anywhere opens it. */
+.release-tones .release-tone-custom {
+  position: relative;
+  display: inline-block;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  box-sizing: border-box;
+  background: conic-gradient(#ff5f5f, #ffd35f, #5fff8a, #5fd3ff, #8a5fff, #ff5fd3, #ff5f5f);
+}
+.release-tone-custom input[type='color'] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  border: 0;
+  padding: 0;
+}
+.release-tone-custom:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* A number needs a few digits of room, not the whole column. */
+.settings-grid-numbers input[type='number'] {
+  width: 120px;
+  max-width: 100%;
+}
+/* Side by side only while each column still fits its label and hint. */
+@media (max-width: 720px) {
+  .settings-grid-numbers.two { grid-template-columns: minmax(0, 1fr); }
+}
+
 .settings-field {
   display: flex;
   flex-direction: column;
@@ -9223,6 +9527,14 @@ body.col-resizing .node-ava {
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.settings-toggle-list.two {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (max-width: 720px) {
+  .settings-toggle-list.two { grid-template-columns: minmax(0, 1fr); }
 }
 
 .settings-app-picker {
@@ -10440,7 +10752,7 @@ body.col-resizing .node-ava {
 .settings-form select,
 .settings-form textarea {
   width: 100%;
-  background: var(--bg-0);
+  background: var(--field-bg);
   border: 1px solid var(--border);
   border-radius: 7px;
   color: var(--text-0);
@@ -10515,15 +10827,65 @@ input.is-invalid {
   gap: 5px;
 }
 
-/* AI accounts — one account edited at a time, chosen from the bar above. */
+/* AI providers — a list of cards, one per provider, and below it the one
+   being edited. Colours come from the theme tokens; each status tint is its
+   hue mixed toward the text colour, so it stays readable on light and dark. */
 .ai-accounts-bar {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin: 8px 0;
+  gap: 10px;
+  margin: 4px 0 8px;
 }
-.ai-accounts-bar .btn {
+.ai-accounts-bar .btn,
+.ai-account-actions .btn {
   flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 8px;
+}
+/* Add, Use: the accent outline. */
+.btn.ai-btn-accent {
+  color: color-mix(in srgb, var(--accent) 70%, var(--text-0));
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  border: 1px solid var(--accent);
+}
+.btn.ai-btn-accent:not(:disabled):hover {
+  background: color-mix(in srgb, var(--accent) 24%, transparent);
+}
+/* Cancel, Discard, Use my subscription, Test connection: a plain outline. */
+.btn.ai-btn-quiet {
+  color: var(--text-1);
+  background: transparent;
+  border: 1px solid var(--border);
+}
+.btn.ai-btn-quiet:not(:disabled):hover {
+  color: var(--text-0);
+  background: var(--bg-3);
+}
+/* Save anyway: amber, because it saves something that did not answer. */
+.btn.ai-btn-warn {
+  color: color-mix(in srgb, var(--warn) 70%, var(--text-0));
+  background: color-mix(in srgb, var(--warn) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--warn) 45%, var(--border));
+}
+.btn.ai-btn-warn:not(:disabled):hover {
+  background: color-mix(in srgb, var(--warn) 22%, transparent);
+}
+/* Delete: a red outline, apart from the others at the left. */
+.btn.ai-btn-danger {
+  color: color-mix(in srgb, var(--danger) 80%, var(--text-0));
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--danger) 45%, var(--border));
+}
+.btn.ai-btn-danger:not(:disabled):hover {
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+}
+.btn.icon-only {
+  padding-inline: 8px;
 }
 
 /* Free-text model entry, with the way back to the list beside it. */
@@ -10540,12 +10902,6 @@ input.is-invalid {
 .model-custom .btn {
   flex-shrink: 0;
 }
-.ai-account {
-  border: 1px solid var(--border-soft);
-  border-radius: 8px;
-  padding: 10px 12px 12px;
-  background: var(--bg-2);
-}
 .subscription-setup {
   display: grid;
   gap: 8px;
@@ -10553,58 +10909,71 @@ input.is-invalid {
 .subscription-setup > button {
   justify-self: start;
 }
-.ai-account-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-.ai-account-name {
-  flex: 1;
-  min-width: 0;
-  font-weight: 600;
-}
-.ai-account-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  flex-shrink: 0;
-  font-size: 11px;
-  color: var(--accent);
-  border: 1px solid var(--accent);
-  border-radius: 999px;
-  padding: 2px 8px;
-}
-.ai-account-badge.in-use {
-  font-weight: 700;
-  color: #fff;
-  background: var(--accent);
-}
-.ai-account .btn.danger:not(:disabled):hover {
-  color: var(--danger);
-}
 
-/* The provider list: one row per account, its status pill at the right. A
-   failing row carries the reason on a second line, with a way to retry. */
+/* The provider list: one card per account — avatar, name, what it uses on a
+   second line, status at the right. A failing card says why under its name. */
 .ai-accounts-list {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 8px;
   margin: 8px 0;
 }
 .ai-accounts-item {
-  border: 1px solid var(--border-soft);
-  border-radius: 8px;
-  padding: 6px 10px;
-  background: var(--bg-1);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: var(--bg-2);
   cursor: pointer;
   outline: none;
 }
 .ai-accounts-item:hover {
-  background: var(--bg-2);
+  background: color-mix(in srgb, var(--text-0) 3%, var(--bg-2));
 }
+.ai-accounts-item.failing {
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--border));
+}
+/* Selected wins over failing: it is the card the editor below belongs to. */
+.ai-accounts-item.active,
 .ai-accounts-item:focus-within:has(.ai-accounts-item-select:focus-visible) {
   border-color: var(--accent);
+}
+.ai-accounts-item.draft {
+  border-style: dashed;
+}
+.ai-accounts-item-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.ai-accounts-avatar {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-0);
+  background: color-mix(in srgb, var(--text-0) 10%, var(--bg-2));
+}
+.ai-accounts-item-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ai-accounts-item-title {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
 }
 /* The name is the row's select button: it reads as the name, not as a button. */
 .ai-accounts-item-select {
@@ -10618,116 +10987,163 @@ input.is-invalid {
 .ai-accounts-item-select:focus-visible {
   outline: none;
 }
-.ai-accounts-item.active {
-  border-color: var(--accent);
-  background: var(--accent-soft);
+.ai-accounts-item-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-0);
 }
-.ai-accounts-item.draft {
-  border-style: dashed;
+/* The provider in use keeps its place in the list — moving it on "Use" would
+   pull the card out from under the pointer — and says so right after its name. */
+/* Green means in use — the one colour on this list that does. Sized like the
+   Use button it replaces, so the right edge of every row lines up. */
+.ai-accounts-item-in-use {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  padding: 4px 12px;
+  border-radius: 6px;
+  border: 1px solid color-mix(in srgb, var(--green) 45%, transparent);
+  background: color-mix(in srgb, var(--green) 16%, transparent);
+  color: color-mix(in srgb, var(--green) 75%, var(--text-0));
+  font-size: 12px;
+  font-weight: 600;
 }
-.ai-accounts-item-main {
+.ai-accounts-item-unsaved {
+  display: inline-flex;
+  align-self: center;
+  color: var(--warn);
+}
+.ai-accounts-item-summary {
+  font-size: 12px;
+  color: var(--text-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ai-accounts-item-use {
+  padding: 4px 12px;
+}
+/* Indented past the avatar (30px + the 12px gap), so it reads under the name. */
+.ai-accounts-item-reason {
+  margin: 0;
+  padding-inline-start: 42px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: color-mix(in srgb, var(--danger) 70%, var(--text-0));
+  overflow-wrap: anywhere;
+}
+.ai-accounts-item-reason .link-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Status pills: a quiet blue-grey ready (green is kept for "in use"), red not
+   responding, amber no key, grey unchecked. */
+.ai-status {
+  --tone: var(--text-2);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 4px 10px;
+  color: color-mix(in srgb, var(--tone) 70%, var(--text-0));
+  background: color-mix(in srgb, var(--tone) 18%, transparent);
+}
+.ai-status.ready {
+  --tone: color-mix(in srgb, var(--accent) 45%, var(--text-2));
+}
+.ai-status.failing {
+  --tone: var(--danger);
+}
+.ai-status.no-key {
+  --tone: var(--warn);
+}
+.ai-status.unchecked {
+  color: var(--text-1);
+  background: color-mix(in srgb, var(--text-0) 8%, transparent);
+}
+.ai-status.compact {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+}
+.ai-status.draft {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--text-1);
+  background: color-mix(in srgb, var(--text-0) 8%, transparent);
+}
+
+/* The editor: a heading like a section's — the name, its state, a rule —
+   over one card. */
+.ai-account-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+}
+.ai-account-header {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   min-width: 0;
 }
-.ai-accounts-item-name {
-  flex: 1;
+.ai-account-title {
+  margin: 0;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 12.5px;
-  font-weight: 600;
-  color: var(--text-0);
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: var(--accent);
 }
-/* The provider in use keeps its place in the list — moving it on "Use" would
-   pull the row out from under the pointer — and stands out by its accent edge
-   and a filled pill right after its name. */
-.ai-accounts-item.in-use {
-  border-inline-start: 3px solid var(--accent);
-  padding-inline-start: 8px;
+.ai-account-rule {
+  flex: 1;
+  min-width: 24px;
+  height: 1px;
+  background: var(--border);
 }
-.ai-accounts-item-in-use {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
+.ai-account-chip.draft {
   flex-shrink: 0;
-  margin-inline-end: auto;
+  padding: 3px 9px;
+  border-radius: 999px;
   font-size: 11px;
   font-weight: 700;
-  border-radius: 999px;
-  padding: 2px 8px;
-  color: #fff;
-  background: var(--accent);
-}
-/* The name takes the slack — and ellipsizes first at a narrow width — so the
-   pill sits right after it and the status and "Use" stay at the right edge. */
-.ai-accounts-item-name:has(+ .ai-accounts-item-in-use) {
-  flex: 0 1 auto;
-}
-.ai-accounts-item-use {
-  flex-shrink: 0;
-  padding: 2px 12px;
-}
-.ai-accounts-item-unsaved {
-  display: inline-flex;
-  color: var(--warn);
-}
-.ai-accounts-item-reason {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 3px;
-  font-size: 11.5px;
-  color: var(--danger);
-  min-width: 0;
-}
-.ai-accounts-item-reason > span {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* Status pills: green ready, red not responding, amber no key, grey unchecked. */
-.ai-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  flex-shrink: 0;
-  font-size: 11px;
-  font-weight: 600;
-  border-radius: 999px;
-  padding: 2px 8px;
-  border: 1px solid currentColor;
-  color: var(--text-2);
-  background: color-mix(in srgb, currentColor 10%, transparent);
-}
-.ai-status.ready {
-  color: var(--ok, #2ea043);
-}
-.ai-status.failing {
-  color: var(--danger);
-}
-.ai-status.no-key {
-  color: var(--warn);
-}
-.ai-status.draft {
-  border-style: dashed;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
   color: var(--text-1);
+  background: color-mix(in srgb, var(--text-0) 10%, var(--bg-2));
 }
-
+.ai-account {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px;
+  background: var(--bg-2);
+}
 /* A draft is not a provider yet: the dashed edge says so before any text does. */
 .ai-account.draft {
   border-style: dashed;
-  border-color: var(--border);
+  border-color: color-mix(in srgb, var(--text-0) 28%, var(--border));
 }
-.ai-account-badge.draft {
-  color: var(--text-1);
-  border-color: var(--border);
-  border-style: dashed;
+.ai-account.dirty {
+  border-color: color-mix(in srgb, var(--warn) 50%, var(--border));
 }
 .ai-account-fields {
   border: 0;
@@ -10736,17 +11152,31 @@ input.is-invalid {
   min-width: 0;
   display: contents;
 }
+.ai-account-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.settings-form .ai-account label {
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+/* A hint belongs to the field above it, not a row of its own. */
+.ai-account > .settings-hint,
+.ai-account-fields > .settings-hint {
+  margin-top: -8px;
+}
 .ai-account-banner {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 8px;
-  padding: 6px 10px;
-  border-radius: 6px;
-  font-size: 12px;
-  color: var(--warn);
-  background: color-mix(in srgb, var(--warn) 12%, transparent);
-  border: 1px solid color-mix(in srgb, var(--warn) 40%, transparent);
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: color-mix(in srgb, var(--warn) 70%, var(--text-0));
+  background: color-mix(in srgb, var(--warn) 14%, transparent);
 }
 .ai-field-label {
   display: inline-flex;
@@ -10754,54 +11184,59 @@ input.is-invalid {
   gap: 6px;
 }
 .ai-field-changed {
-  font-size: 10.5px;
-  font-weight: 600;
-  color: var(--warn);
+  font-weight: 500;
+  color: color-mix(in srgb, var(--warn) 70%, var(--text-0));
   flex-shrink: 0;
 }
 .ai-account label.changed input,
-.ai-account label.changed select,
-.ai-account-name.changed {
-  border-color: var(--warn);
+.ai-account label.changed select {
+  border-color: color-mix(in srgb, var(--warn) 65%, var(--border));
+}
+.ai-account label.failed input,
+.ai-account label.failed select {
+  border-color: color-mix(in srgb, var(--danger) 65%, var(--border));
 }
 .ai-account-actions {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 10px;
+  gap: 10px;
 }
-.ai-account-actions-spacer {
+/* The footer's sentence takes the free space, so the buttons stay at the
+   right edge; empty, it is only the spacer. */
+.ai-account-actions-hint {
   flex: 1;
-}
-.ai-account-actions .btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
+  min-width: 120px;
+  font-size: 12px;
+  color: var(--text-1);
 }
 .ai-account-error {
-  display: grid;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  color: color-mix(in srgb, var(--danger) 80%, var(--text-0));
+  border: 1px solid color-mix(in srgb, var(--danger) 40%, var(--border));
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+}
+.ai-account-error > svg {
+  flex: none;
+  margin-top: 1px;
+}
+.ai-account-error-text {
+  display: flex;
+  flex-direction: column;
   gap: 4px;
-  margin-top: 10px;
-  padding: 8px 10px;
-  border-radius: 6px;
-  border: 1px solid color-mix(in srgb, var(--danger) 45%, transparent);
-  background: color-mix(in srgb, var(--danger) 10%, transparent);
+  min-width: 0;
 }
 .ai-account-error strong {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 12.5px;
-  color: var(--danger);
+  font-size: 13px;
 }
 .ai-account-error-reason {
-  font-size: 12px;
-  color: var(--text-0);
+  font-size: 12.5px;
+  color: color-mix(in srgb, var(--danger) 45%, var(--text-0));
   overflow-wrap: anywhere;
-}
-.ai-account-error .ai-account-actions {
-  margin-top: 4px;
 }
 .settings-hint.ok {
   color: var(--ok, #2ea043);
@@ -11482,7 +11917,7 @@ input.is-invalid {
   line-height: 1.55 !important;
   padding: 10px !important;
   border: none !important;
-  background: var(--bg-0) !important;
+  background: var(--field-bg) !important;
   color: var(--text-0) !important;
   border-radius: 0 !important;
   resize: none;
@@ -13873,50 +14308,69 @@ input[type='range']:focus-visible {
   background: var(--bg-2);
 }
 
-/* ── Mission control (every repo on one screen) ── */
-.mc-root { display: flex; flex-direction: column; height: 100%; min-height: 0; padding: 18px 22px; gap: 12px; }
+/* ── Mission control (every repo on one screen) ──
+   Laid out as the approved mockup: a header line of pills, a totals line, and
+   one bordered table — column names on top, a hairline between rows. */
+.mc-root { display: flex; flex-direction: column; height: 100%; min-height: 0; padding: 20px 24px; gap: 14px; }
 .mc-header { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.mc-header h2 { margin: 0; font-size: 16px; }
+.mc-header h2 { margin: 0; font-size: 18px; font-weight: 700; color: var(--text-0); }
 .mc-title-icon { color: var(--accent); }
 .mc-workspace {
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 12px;
   padding: 2px 8px;
-  border-radius: 9px;
+  border-radius: 6px;
   background: var(--bg-4);
   color: var(--text-1);
 }
-.mc-repos { font-size: 11px; color: var(--text-2); }
-.mc-summary { display: flex; align-items: center; gap: 5px; }
+.mc-repos { font-size: 12px; color: var(--text-2); }
+.mc-summary { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.mc-summary-sep { align-self: stretch; width: 1px; min-height: 18px; background: var(--border); }
 .mc-pill {
-  font-size: 10.5px;
-  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
   padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: 6px;
   border: 1px solid transparent;
   cursor: pointer;
 }
 .mc-pill.on { border-color: currentColor; }
-.mc-pill.blocked { background: color-mix(in srgb, var(--danger, #f85149) 18%, transparent); color: var(--danger, #f85149); }
-.mc-pill.action { background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--accent); }
-.mc-pill.pending { background: color-mix(in srgb, var(--warn, #d29922) 18%, transparent); color: var(--warn, #d29922); }
-.mc-pill.clean { background: var(--bg-3); color: var(--text-2); }
-.mc-filter { margin-inline-start: auto; max-width: 200px; font-size: 12px; padding: 4px 9px; }
+.mc-pill.blocked { background: color-mix(in srgb, var(--danger, #f85149) 16%, transparent); color: var(--danger, #f85149); }
+.mc-pill.action { background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); }
+.mc-pill.pending { background: color-mix(in srgb, var(--warn, #d29922) 16%, transparent); color: var(--warn, #d29922); }
+.mc-pill.clean { background: var(--bg-4); color: var(--text-1); }
+.mc-pill.prs { background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); }
+.mc-filter { margin-inline-start: auto; width: 200px; font-size: 12px; padding: 6px 10px; }
 .mc-sorts { display: flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
 .mc-sort {
   background: transparent;
   border: 0;
   color: var(--text-1);
-  font-size: 11px;
-  padding: 4px 9px;
+  font-size: 12px;
+  padding: 5px 10px;
   cursor: pointer;
 }
-.mc-sort.active { background: var(--bg-4); color: var(--text-1); }
+.mc-sort.active { background: color-mix(in srgb, var(--accent) 18%, var(--bg-2)); color: var(--accent); }
 
 /* Workspace-wide totals, under the header. */
-.mc-stats { display: flex; align-items: center; gap: 14px; font-size: 11px; color: var(--text-2); }
+.mc-stats { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; font-size: 12px; color: var(--text-2); }
 .mc-stat { display: inline-flex; align-items: center; gap: 4px; }
 .mc-stat-right { margin-inline-start: auto; }
+.mc-stat-review {
+  border: 0;
+  border-radius: 3px;
+  padding: 0 4px;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.mc-stat-review:hover,
+.mc-stat-review.on { text-decoration: underline; text-underline-offset: 3px; }
 
 /* Bulk bar, only present while rows are ticked. */
 .mc-bulk {
@@ -13926,41 +14380,64 @@ input[type='range']:focus-visible {
   padding: 6px 10px;
   border-radius: 8px;
   background: color-mix(in srgb, var(--accent) 12%, transparent);
-  font-size: 11.5px;
+  font-size: 12px;
 }
 .mc-bulk-count { font-weight: 600; color: var(--text-1); }
 .mc-loading { display: flex; justify-content: center; padding: 60px; }
-.mc-empty { padding: 40px; text-align: center; color: var(--text-2); font-size: 12.5px; }
+.mc-empty { padding: 40px; text-align: center; color: var(--text-2); font-size: 13px; }
+
+/* The table: one bordered card that ends with its last row and scrolls once
+   it outgrows the page, column names pinned on top. */
 .mc-list {
-  flex: 1; overflow-y: auto; min-height: 0; display: flex; flex-direction: column; gap: 1px;
+  flex: 0 1 auto;
+  overflow: auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
   container-type: inline-size;
 }
-/* A grid rather than a flex row, so every column lines up down the list and the
-   counts read like a table: identity, last commit, counts, activity, ages. */
+/* A grid rather than a flex row, so every column lines up down the list.
+   Each row is its own grid, so the edge columns are fixed widths — `auto`
+   would size per row and the column names would drift. */
 .mc-row {
   display: grid;
   grid-template-columns:
-    auto auto auto minmax(170px, 1fr) minmax(0, 1.5fr) 230px 92px 104px auto;
+    22px 16px 22px minmax(190px, 1.2fr) minmax(190px, 1.4fr) 170px 200px 130px 92px 96px 118px;
   align-items: center;
-  gap: 10px;
-  padding: 7px 10px;
-  border-radius: 7px;
+  gap: 12px;
+  padding: 10px 14px;
   min-width: 0;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border-soft);
 }
-/* Narrow window: the last commit goes first, the counts stay. */
-@container (max-width: 900px) {
-  .mc-row { grid-template-columns: auto auto auto minmax(150px, 1fr) 200px 80px 96px auto; }
-  .mc-commit { display: none; }
-  .mc-error { grid-column: span 1; }
+.mc-row-wrap:last-child .mc-row { border-bottom: 0; }
+/* A narrow window keeps every column, as drawn: the table scrolls sideways
+   inside its card instead of dropping the last commit and the release. */
+.mc-row, .mc-detail { min-width: 1400px; }
+.mc-row:not(.mc-head):hover { background: color-mix(in srgb, var(--text-0) 4%, transparent); }
+.mc-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding-block: 8px;
+  background: var(--bg-1);
+  font-size: 10.5px;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3, var(--text-2));
 }
-.mc-row:hover { background: var(--bg-4); }
+.mc-head > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mc-head .mc-head-when { text-align: end; }
 /* Keyboard cursor: a soft ring around the whole row rather than a bar stuck to
    its left edge, which read as a stray tab. */
 .mc-row-wrap.cursor .mc-row {
-  background: var(--bg-4);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
 }
-.mc-check { flex: 0 0 auto; accent-color: var(--accent); cursor: pointer; }
+.mc-check { flex: 0 0 auto; width: 14px; height: 14px; margin: 0; accent-color: var(--accent); cursor: pointer; }
 .mc-expand {
   display: flex;
   flex: 0 0 auto;
@@ -13971,75 +14448,157 @@ input[type='range']:focus-visible {
   cursor: pointer;
 }
 .mc-expand:hover { color: var(--text-1); }
-.mc-activity { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; color: var(--text-2); }
-.mc-activity.blocked { color: var(--danger, #f85149); }
-.mc-activity.action { color: var(--accent); }
-.mc-activity.pending { color: var(--warn, #d29922); }
-.mc-activity-n { font-size: 10px; color: var(--text-2); white-space: nowrap; }
-.mc-spark { display: block; opacity: 0.8; }
-
-/* Expanded row: what is waiting to be pushed and what is dirty. */
-.mc-detail {
-  display: flex;
-  gap: 26px;
-  padding: 4px 10px 10px 54px;
-  font-size: 11px;
-}
-.mc-detail-col { display: flex; flex-direction: column; gap: 2px; min-width: 0; max-width: 46%; }
-.mc-detail-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-2); }
-.mc-detail-item { display: flex; align-items: center; gap: 7px; min-width: 0; color: var(--text-1); }
-.mc-detail-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mc-detail-item code { font-family: var(--mono, monospace); font-size: 10.5px; color: var(--text-2); flex: 0 0 auto; }
-.mc-detail-empty { color: var(--text-2); }
-.mc-status.M { color: var(--warn, #d29922); }
-.mc-status.A { color: var(--green); }
-.mc-status.D { color: var(--danger, #f85149); }
-.mc-status.U { color: var(--danger, #f85149); }
 .mc-level { display: flex; flex: 0 0 auto; }
 .mc-level.blocked { color: var(--danger, #f85149); }
 .mc-level.action { color: var(--accent); }
 .mc-level.pending { color: var(--warn, #d29922); }
 .mc-level.clean { color: var(--text-2); }
+
 .mc-ident { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .mc-line { display: flex; align-items: center; gap: 6px; min-width: 0; }
-.mc-name { font-size: 12.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mc-where { display: flex; align-items: center; gap: 6px; font-size: 10.5px; color: var(--text-2); min-width: 0; }
+.mc-name { font-size: 13px; font-weight: 600; color: var(--text-0); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mc-group {
-  flex: 0 0 auto; padding: 0 6px; border-radius: 7px; background: var(--bg-4);
-  font-size: 10px; color: var(--text-2); white-space: nowrap;
+  flex: 0 0 auto; padding: 0 6px; border-radius: 4px; background: var(--bg-4);
+  font-size: 10.5px; color: var(--text-2); white-space: nowrap;
 }
-.mc-noupstream { display: inline-flex; align-items: center; gap: 3px; flex: 0 0 auto; color: var(--warn, #d29922); }
-.mc-commit { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.mc-subject { font-size: 11.5px; color: var(--text-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mc-author { font-size: 10.5px; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mc-branch { color: var(--text-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mc-where { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--text-2); min-width: 0; }
+.mc-branch { color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mc-upstream { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mc-badges { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; min-width: 0; }
+.mc-noupstream { flex: 0 0 auto; white-space: nowrap; }
+.mc-commit { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.mc-subject { font-size: 13px; color: var(--text-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mc-author { font-size: 11.5px; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mc-error { grid-column: span 4; min-width: 0; font-size: 12px; color: var(--danger, #f85149); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Local: the working tree's counts. */
+.mc-badges { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; min-width: 0; }
 .mc-badge {
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  font-size: 10.5px;
+  font-size: 11.5px;
   font-weight: 600;
-  padding: 1px 7px;
-  border-radius: 9px;
+  padding: 2px 7px;
+  border-radius: 6px;
   background: var(--bg-4);
   color: var(--text-1);
 }
-.mc-badge.blocked { background: color-mix(in srgb, var(--danger, #f85149) 18%, transparent); color: var(--danger, #f85149); }
+.mc-badge.blocked { background: color-mix(in srgb, var(--danger, #f85149) 16%, transparent); color: var(--danger, #f85149); }
 .mc-badge.behind { background: color-mix(in srgb, var(--warn, #d29922) 16%, transparent); color: var(--warn, #d29922); }
 .mc-badge.ahead { background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); }
 .mc-badge.dirty { color: var(--text-1); }
-.mc-badge.staged { background: color-mix(in srgb, var(--green) 12%, transparent); color: var(--green); }
-.mc-badge.pr { background: color-mix(in srgb, var(--green) 15%, transparent); color: var(--green); }
-.mc-error { grid-column: span 2; min-width: 0; font-size: 11px; color: var(--danger, #f85149); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mc-badge.staged { background: color-mix(in srgb, var(--green) 14%, transparent); color: var(--green); }
+
+/* Hosting: the PR count opens the repository's pull requests, CI its runs. */
+.mc-hosting { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; min-width: 0; }
+.mc-pr-chip,
+.mc-ci {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.mc-pr-chip {
+  padding: 3px 8px;
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+  color: color-mix(in srgb, var(--accent) 80%, var(--text-0));
+}
+.mc-pr-chip:hover { background: color-mix(in srgb, var(--accent) 32%, transparent); border-color: var(--accent); color: var(--text-0); }
+.mc-pr-chip .mc-go { opacity: 0.55; }
+.mc-pr-chip:hover .mc-go { opacity: 1; }
+.mc-pr-awaiting {
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--yellow);
+  color: var(--bg-0);
+  font-size: 10.5px;
+}
+.mc-ci { padding: 3px 9px; }
+.mc-ci.success { background: color-mix(in srgb, var(--green) 14%, transparent); color: var(--green); }
+.mc-ci.failure { background: color-mix(in srgb, var(--danger, #f85149) 16%, transparent); color: var(--danger, #f85149); }
+.mc-ci.pending { background: color-mix(in srgb, var(--warn, #d29922) 14%, transparent); color: var(--warn, #d29922); }
+.mc-ci.neutral { background: var(--bg-4); color: var(--text-2); }
+.mc-ci:hover { border-color: currentColor; }
+.mc-muted { font-size: 12px; color: var(--text-3, var(--text-2)); }
+
+/* Release: the newest tag HEAD reaches, and how far HEAD is past it. */
+.mc-release { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.mc-tag { display: inline-flex; align-items: center; gap: 5px; min-width: 0; font-size: 12.5px; color: var(--text-1); }
+.mc-tag svg { flex: none; color: var(--yellow); }
+.mc-tag span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mc-release-note { font-size: 11px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Settings → Git & sync → Release note colours picks these by commit count. */
+.mc-release-note[data-tone='accent'],
+.release-tone[data-tone='accent'] { --release-tone: var(--accent); }
+.mc-release-note[data-tone='green'],
+.release-tone[data-tone='green'] { --release-tone: var(--green); }
+.mc-release-note[data-tone='yellow'],
+.release-tone[data-tone='yellow'] { --release-tone: var(--yellow); }
+.mc-release-note[data-tone='red'],
+.release-tone[data-tone='red'] { --release-tone: var(--danger, var(--red)); }
+.mc-release-note[data-tone='purple'],
+.release-tone[data-tone='purple'] { --release-tone: var(--purple); }
+.mc-release-note[data-tone]:not([data-tone='muted']) { color: var(--release-tone); font-weight: 600; }
+
+.mc-activity { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; color: var(--accent); }
+.mc-activity-n { font-size: 11px; color: var(--text-2); white-space: nowrap; }
+.mc-spark { display: block; }
+
 .mc-times { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; min-width: 0; }
-.mc-age { font-size: 10.5px; color: var(--text-1); white-space: nowrap; }
-.mc-fetched { font-size: 10px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.mc-age { font-size: 11.5px; color: var(--text-1); white-space: nowrap; }
+.mc-fetched { font-size: 11px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 /* The behind count is only as fresh as the last fetch — say so when it is old. */
 .mc-fetched.stale { color: var(--warn, #d29922); }
-.mc-actions { display: flex; gap: 4px; flex: 0 0 auto; opacity: 0; }
-.mc-row:hover .mc-actions { opacity: 1; }
+/* Always in view, as drawn: the row's actions are not a hover secret. Fetch
+   and pull are bare icons in the muted tone; Open is the one filled button. */
+.mc-actions { display: flex; align-items: center; justify-content: flex-end; gap: 4px; flex: 0 0 auto; }
+.mc-icon-btn {
+  display: flex;
+  padding: 5px;
+  border: 0;
+  border-radius: 5px;
+  background: none;
+  color: var(--text-2);
+  cursor: pointer;
+}
+.mc-icon-btn:hover:not(:disabled) { background: var(--bg-4); color: var(--text-0); }
+.mc-icon-btn:disabled { opacity: 0.35; cursor: default; }
+.mc-open {
+  padding: 4px 9px;
+  border: 0;
+  border-radius: 5px;
+  background: var(--bg-4);
+  color: var(--text-1);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.mc-open:hover { color: var(--text-0); background: color-mix(in srgb, var(--accent) 18%, var(--bg-4)); }
+
+/* Expanded row: what is waiting to be pushed and what is dirty. */
+.mc-detail {
+  display: flex;
+  gap: 26px;
+  padding: 4px 14px 12px 74px;
+  font-size: 12px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.mc-detail-col { display: flex; flex-direction: column; gap: 3px; min-width: 0; max-width: 46%; }
+.mc-detail-title { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-2); }
+.mc-detail-item { display: flex; align-items: center; gap: 7px; min-width: 0; color: var(--text-1); }
+.mc-detail-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mc-detail-item code { font-family: var(--mono, monospace); font-size: 11.5px; color: var(--text-2); flex: 0 0 auto; }
+.mc-detail-empty { color: var(--text-2); }
+.mc-status.M { color: var(--warn, #d29922); }
+.mc-status.A { color: var(--green); }
+.mc-status.D { color: var(--danger, #f85149); }
+.mc-status.U { color: var(--danger, #f85149); }
 
 /* ── Timelapse (animated history) ── */
 .tl-root { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
@@ -14962,7 +15521,7 @@ input[type='range']:focus-visible {
   flex: 1 1 auto;
   min-width: 0;
   gap: 6px;
-  background: var(--bg-0);
+  background: var(--field-bg);
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 0 6px 0 8px;
@@ -15064,7 +15623,7 @@ input[type='range']:focus-visible {
   color: var(--text-2);
 }
 .fs-glob-input {
-  background: var(--bg-0);
+  background: var(--field-bg);
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 5px 8px;
@@ -15121,7 +15680,7 @@ mark.find-hit.active {
 }
 .fv-find-input {
   width: 180px;
-  background: var(--bg-0);
+  background: var(--field-bg);
   border: 1px solid var(--border);
   border-radius: 5px;
   padding: 4px 7px;
@@ -16420,7 +16979,7 @@ mark.find-hit.active {
   position: absolute;
   inset: 0;
   overflow: hidden;
-  background: var(--bg-0);
+  background: var(--field-bg);
 }
 .code-editor-pre,
 .code-editor-area {
@@ -18378,20 +18937,8 @@ button.insights-row:hover { background: var(--bg-2); }
 .commitedit-banner.warn { background: color-mix(in srgb, var(--yellow, #f5a524) 14%, transparent); color: var(--yellow, #b8860b); }
 .commitedit-label { font-size: 11px; font-weight: 600; color: var(--text-2); }
 .commitedit-label-row { display: flex; align-items: center; gap: 6px; }
-.commitedit-message {
-  width: 100%;
-  resize: vertical;
-  font-family: var(--mono, monospace);
-  /* Same setting as the editor below it, so raising the code font size does
-     not leave the message the one small thing on the screen. */
-  font-size: var(--code-font-size, 12px);
-  line-height: 1.55;
-  background: var(--bg-0);
-  color: var(--text-0);
-  border: 1px solid var(--border-soft);
-  border-radius: 8px;
-  padding: 8px 10px;
-}
+/* The composer's message tools (CommitMessageEditor), laid out as in the commit box. */
+.commitedit-message { display: flex; flex-direction: column; gap: 8px; }
 /* min-height keeps the editor usable in a short window; flex: 1 does the rest. */
 .commitedit-split { display: flex; gap: 10px; flex: 1; min-height: 200px; }
 .commitedit-files {
@@ -18572,7 +19119,7 @@ button.insights-row:hover { background: var(--bg-2); }
   line-height: 1.45;
   resize: vertical;
   padding: 5px 8px;
-  background: var(--bg-0);
+  background: var(--field-bg);
   border: 1px solid var(--border-soft);
   border-radius: 6px;
   color: var(--text-0);
@@ -19000,9 +19547,11 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .repo-settings-body { overflow-y: auto; min-height: 0; flex: 1; --modal-foot-inset: 0px; }
 /* Repository settings: a summary header over a side nav and one page at a time.
    The modal keeps one size while you move between pages, like global Settings. */
+/* The same size as Settings (.modal-settings), so the two read as one family
+   and the repository's pages get the room Settings' pages have. */
 .modal:has(> .modal-scroll > .repo-settings-shell) {
-  width: min(1000px, calc(100vw - 48px));
-  height: min(760px, calc(100vh - 80px));
+  width: min(1080px, calc(100vw - 60px));
+  height: min(912px, calc(100vh - 80px));
 }
 .repo-settings-shell { flex: 1; }
 .repo-settings-summary {

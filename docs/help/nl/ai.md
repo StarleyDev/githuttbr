@@ -97,6 +97,25 @@ Anthropic gebruikt zijn eigen `/v1/messages`-API in plaats van een
 OpenAI-vormige aanroep, dus Claude-modellen werken echt in plaats van er alleen
 op te lijken. Gemini wordt bereikt via Googles OpenAI-compatibele endpoint.
 
+### De lijst met providers
+
+Elke opgeslagen provider is een kaart: een letter voor de provider, de naam en
+daaronder wat hij echt gebruikt — zo zijn twee accounts van dezelfde provider
+uit elkaar te houden zonder er een te openen.
+
+| Soort provider | Tweede regel |
+| --- | --- |
+| Abonnement of lokale CLI | `CLI claude · sonnet` — de opdracht, dan het model |
+| Ollama of eigen server | `http://localhost:11434 · qwen3:8b` — het adres, dan het model |
+| Gehoste API | `gpt-4o-mini · 41 modellen` — het model, en hoeveel de provider er opsomde |
+
+Het aantal modellen verschijnt pas als de provider zijn modellen heeft opgesomd;
+de ingebouwde reservelijst van GitHuttBr is een gok, geen telling. Het
+statuslabel staat rechts. De kaart die je bewerkt heeft een accentrand; een die
+niet antwoordt heeft een rode rand en de reden onder de naam, eindigend op
+**Opnieuw testen**. Klik op een kaart om hem te openen in de editor onder de
+lijst.
+
 ### Een provider toevoegen en bewerken
 
 Een half ingevulde, opgeslagen provider was een stille val: een lege sleutel kon
@@ -106,7 +125,7 @@ opgeslagen terwijl je typt.
 **Provider toevoegen** opent een kaart met **Concept · niet opgeslagen** en een gestippelde
 rand. Vul provider, sleutel, endpoint en model in en kies
 **Testen en opslaan**. GitHuttBr vraagt eerst met die sleutel de modellen
-van de provider op — hetzelfde verzoek als **Modellen ophalen** — en slaat pas op
+van de provider op — hetzelfde verzoek als de vernieuwknop naast **Model** — en slaat pas op
 als hij antwoordt. Je ziet **Verbonden · N modellen**, en de provider staat in de
 lijst als **Klaar**.
 
@@ -131,6 +150,8 @@ bij opslaan. De fout van een provider wordt getoond met de sleutel en alles wat
 op een token lijkt gemaskeerd.
 
 ![Een provider toevoegen en bewerken](../../screenshots/ai-provider-draft.webp)
+
+![Een opgeslagen provider bewerken: het adres is gewijzigd en nog niet opgeslagen](../../screenshots/ai-provider-editing.webp)
 
 | Soort provider | Wat **Testen en opslaan** controleert |
 | --- | --- |
@@ -161,8 +182,7 @@ kosten.
 ### De provider in gebruik
 
 Eén provider beantwoordt elke taak die onder **Model per taak** geen eigen
-provider heeft. Zijn rij is gemarkeerd **In gebruik** — een gevulde pil en een
-accentrand — en blijft op haar plek in de lijst. De algemene AI en een profiel
+provider heeft. Zijn kaart eindigt met een groen **In gebruik**, waar de andere kaarten **Gebruiken** hebben, en blijft op haar plek in de lijst. Groen betekent alleen in gebruik: een provider die antwoordt maar niet in gebruik is, zegt **Klaar** in een rustig grijsblauw. De algemene AI en een profiel
 met een eigen AI hebben elk hun eigen provider in gebruik; de lijst wijzigt die
 je aan het bewerken bent.
 
@@ -185,7 +205,8 @@ een andere aanbieder in gebruik nemen op de algemene AI verandert niets voor dat
 profiel, en buiten Instellingen zei niets dat. De statusbalk onderaan een
 repository zegt het nu. De knop **AI:** _aanbieder_ noemt de aanbieder die voor
 het actieve profiel antwoordt, met een stip voor de status — groen **Klaar**,
-rood **Reageert niet**, oranje **Geen sleutel**, grijs **Niet gecontroleerd**.
+rood **Reageert niet**, oranje **Geen sleutel**, grijs **Niet gecontroleerd**. Is de aanbieder **Klaar**, dan wordt de hele
+knop groen, zodat een werkende AI niet leest alsof hij uit staat.
 
 Een klik opent een klein paneel:
 
@@ -285,8 +306,7 @@ Wie bijwerkt vanaf een versie van vóór de accounts, ziet dit één keer. De aa
 
 ## Modellen
 
-Modellijsten komen van de aanbieder zelf en worden een dag gecachet; **Modellen
-ophalen** ververst er één meteen. Onder de lijst zegt GitHuttBr waar die vandaan
+Modellijsten komen van de aanbieder zelf en worden een dag gecachet; de vernieuwknop naast **Model** ververst er één meteen. Onder de lijst zegt GitHuttBr waar die vandaan
 komt — live, uit de cache (met tijdstip), of de ingebouwde reservelijst en
 waarom.
 

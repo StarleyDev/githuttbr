@@ -3,6 +3,7 @@ import type { EditorSetting } from '../../../shared/editors'
 import type { MenuItem } from '../stores/ui'
 import { shellApi } from '../infrastructure/api'
 import { editorMenuItems } from './editorOpen'
+import { menuActionIcon } from './menuActionIcons'
 
 export type DefaultOpenApp = AppSettings['defaultOpenApp']
 
@@ -42,10 +43,17 @@ export function folderOpenMenuItems(
   },
   editor?: EditorSetting
 ): MenuItem[] {
+  // Every row carries an icon here: both callers (the status bar path and the
+  // sidebar's repository header) are menus of their own, not mixed lists.
+  // openWithMenuItems lists the editor entries first, then the apps.
+  const editorCount = editorMenuItems(editor, { path, isDir: true }).length
+  const openWith = openWithMenuItems(path, defaultApp, labels, editor, { isDir: true }).map(
+    (item, i): MenuItem => ({ ...menuActionIcon(i < editorCount ? 'openEditor' : 'openWith'), ...item })
+  )
   return [
-    { label: labels.openFolder, onClick: () => void shellApi.openPath(path) },
-    ...openWithMenuItems(path, defaultApp, labels, editor, { isDir: true }),
+    { ...menuActionIcon('reveal'), label: labels.openFolder, onClick: () => void shellApi.openPath(path) },
+    ...openWith,
     { separator: true },
-    { label: labels.copyPath, onClick: () => void navigator.clipboard.writeText(path) }
+    { ...menuActionIcon('copy'), label: labels.copyPath, onClick: () => void navigator.clipboard.writeText(path) }
   ]
 }

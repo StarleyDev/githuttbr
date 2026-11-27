@@ -4,7 +4,7 @@ category: 브랜치와 수술
 order: 46
 summary: 과거 커밋의 파일이나 메시지를 제자리에서 다시 쓰기 — 캐스케이드를 먼저 미리 봐요.
 keywords: edit commit 커밋 편집 rewrite history 히스토리 다시 쓰기 amend 과거 past reword 오타 수정 fix typo cascade 캐스케이드 replay 리플레이 rebase 리베이스 in place 제자리 surgery 수술
-source: 7668e3a9726149d4cde998c6aac5b7e90068e2ca
+source: 2860ac7978e6b9b1b8a469abadf313971d0140c6
 ---
 
 # 아무 커밋이나 편집
@@ -20,6 +20,11 @@ source: 7668e3a9726149d4cde998c6aac5b7e90068e2ca
 
 `HEAD`의 조상인 아무 커밋이나 골라요 — 히스토리가 직선이 아니어도 돼요. 편집기가
 그 커밋의 파일과 메시지를 보여 주고, 둘 다 편집할 수 있어요.
+
+메시지에는 [커밋 작성기](committing.md)와 같은 도구가 있습니다. 길이 카운터가 붙은 요약과 그 아래 설명, 화살표 뒤의 스타일
+행(Conventional 타입과 스코프, 티켓 키, 커밋 스타일), gitmoji 선택기, 공동 작성자, 린터 힌트입니다. 커밋 메시지는
+불러올 때 나뉘고(첫 줄은 요약, 나머지는 설명) 다시 쓸 때 빈 줄 하나로 다시 합쳐집니다. 오래된 `add retry`를 `fix: add
+retry`로 바꾸는 일은 타입 목록에서 하나를 고르는 것으로 끝납니다.
 
 파일을 편집한다는 건 그 파일을 읽는다는 뜻이라, 편집기는 대화 상자에
 욱여넣어지지 않아요. 커밋 그래프 자리인 가운데 창에 열려요 — 충돌 해결 화면과

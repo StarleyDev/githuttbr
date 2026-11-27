@@ -3,6 +3,7 @@ import { commitDropActions } from './commitDrop'
 import { useRepoStore, repoActions } from '../stores/repo'
 import { useUIStore, type MenuItem } from '../stores/ui'
 import { t, interp } from '../i18n'
+import { menuActionIcon } from './menuActionIcons'
 
 /**
  * The menu a commit-onto-branch drop opens. Which entries appear is decided in
@@ -27,12 +28,13 @@ export function openCommitDropMenu(
     const label = interp(t(a.labelKey), vars)
     switch (a.id) {
       case 'cherryPick':
-        return { label, onClick: () => void repoActions.cherryPick(repoPath, commit) }
+        return { ...menuActionIcon('cherryPick'), label, onClick: () => void repoActions.cherryPick(repoPath, commit) }
       case 'checkoutCherryPick':
-        return { label, onClick: () => void repoActions.checkoutAndCherryPick(repoPath, target.name, commit) }
+        return { ...menuActionIcon('cherryPick'), label, onClick: () => void repoActions.checkoutAndCherryPick(repoPath, target.name, commit) }
       case 'resetCurrent': {
         const dirty = (repo?.status?.staged.length ?? 0) + (repo?.status?.unstaged.length ?? 0) > 0
         return {
+          ...menuActionIcon('reset'),
           label,
           // The reset dialog says what each mode keeps and confirms the hard one.
           onClick: () =>
@@ -49,6 +51,7 @@ export function openCommitDropMenu(
       }
       case 'moveBranch':
         return {
+          ...menuActionIcon('moveBranch'),
           label,
           // Commits only this branch reached would no longer be on a branch.
           onClick: () =>

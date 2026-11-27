@@ -135,7 +135,8 @@ export function AIStatusChip({ repoPath }: { repoPath: string }): React.JSX.Elem
       <button
         ref={triggerRef}
         type="button"
-        className="status-issue-btn status-ai-btn"
+        // Green when the account answers: a grey label read as "AI is off".
+        className={`status-issue-btn status-ai-btn ${view.inUse.status.status === 'ready' ? 'ready' : ''}`}
         title={interp(t('aiStatus.buttonTitle'), { account: view.inUse.label, status: inUseStatus })}
         aria-haspopup="dialog"
         aria-expanded={position !== null}

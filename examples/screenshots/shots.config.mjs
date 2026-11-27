@@ -792,10 +792,12 @@ export const shots = [
   },
   {
     // The provider list as it reads with more than one: the one in use marked,
-    // the others with "Use" beside their status — ready, no key, not responding.
-    // The ready one is a fake OpenAI-shaped server started here on loopback,
+    // the others with "Use" beside their status — ready, not checked, no key,
+    // not responding — and each card's second line saying what it uses. The
+    // ready ones are a fake OpenAI-shaped server started here on loopback,
     // never a provider on the capturing machine; the failing one is a port
-    // nothing listens on.
+    // nothing listens on. The subscription card has a typed CLI path, so it
+    // reads "Not checked" without running or even looking for a CLI.
     out: 'settings-ai',
     repos: ['octopus-merge'],
     themes: ['light'],
@@ -811,16 +813,67 @@ export const shots = [
             apiKey: '',
             model: 'llama3.2'
           }
+          const plan = {
+            ...local,
+            id: 'cli',
+            label: 'Claude (subscription)',
+            provider: 'cli',
+            endpoint: '',
+            cli: 'claude',
+            cliPath: '/opt/demo/bin/claude',
+            subscription: true,
+            model: 'sonnet'
+          }
+          // A hosted provider pointed at the same loopback server, so its card
+          // shows the listed-model count; the key is a placeholder.
+          const gateway = { ...local, id: 'openrouter', label: 'OpenRouter', provider: 'openrouter', apiKey: 'demo-key' }
           // Keyless, so it reads "No key" without a request: the seeded demo
           // key would send a real one to the provider's API.
           const hosted = { ...local, id: 'openai', label: 'OpenAI', provider: 'openai', endpoint: '', model: 'gpt-4o-mini' }
           const lab = { ...local, id: 'custom', label: 'Lab server', provider: 'custom', endpoint: 'http://127.0.0.1:9/v1' }
-          return { ...s, ai: { ...s.ai, accounts: [local, hosted, lab], defaultAccountId: 'ollama' } }
+          return { ...s, ai: { ...s.ai, accounts: [local, plan, gateway, hosted, lab], defaultAccountId: 'ollama' } }
         })
         window.__shot.ui.getState().openModal({ kind: 'settings', page: 'ai' })
       }, port)
-      await page.locator('.ai-accounts-item .ai-status.ready').waitFor()
+      await page.locator('.ai-accounts-item .ai-status.ready').first().waitFor()
       await page.locator('.ai-accounts-item .ai-status.failing').waitFor()
+      await page.waitForTimeout(300)
+      // From the section title, so the hint above the list is in the shot too.
+      await page.evaluate(() => {
+        const list = document.querySelector('.ai-accounts-list')
+        list?.previousElementSibling?.previousElementSibling?.scrollIntoView({ block: 'start' })
+      })
+      await page.waitForTimeout(300)
+    }
+  },
+  {
+    // Settings → Git & sync: the auto-fetch and Mission Control refresh side by side.
+    out: 'settings-git-sync',
+    repos: ['octopus-merge'],
+    themes: ['dark'],
+    drive: async (page) => {
+      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'git' }))
+      await page.waitForTimeout(600)
+    }
+  },
+  {
+    // Settings → Themes, scrolled to Release note colors: four ranges, the
+    // fourth given a custom colour so the picked swatch shows.
+    out: 'settings-release-colors',
+    repos: ['octopus-merge'],
+    themes: ['dark'],
+    drive: async (page) => {
+      await page.evaluate(() =>
+        window.__shot.settings.getState().update((s) => ({
+          ...s,
+          missionReleaseTiers: { limits: [5, 20, 50], tones: ['muted', 'yellow', 'red', '#c084fc'] }
+        }))
+      )
+      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'themes' }))
+      await page.waitForTimeout(600)
+      await page.evaluate(() =>
+        document.querySelector('[data-setting="settings.missionReleaseTiers"]')?.scrollIntoView({ block: 'center' })
+      )
       await page.waitForTimeout(300)
     }
   },
@@ -898,7 +951,40 @@ export const shots = [
       await page.locator('.ai-account.draft input[placeholder="https://api.openai.com/v1"]').fill('http://127.0.0.1:9/v1')
       await page.locator('.ai-account.draft .btn.primary').click()
       await page.locator('.ai-account-error').waitFor()
-      await page.evaluate(() => document.querySelector('.ai-accounts-list')?.scrollIntoView({ block: 'start' }))
+      await page.evaluate(() => document.querySelector('.ai-account-editor')?.scrollIntoView({ block: 'start' }))
+      await page.waitForTimeout(400)
+    }
+  },
+  {
+    // Editing a saved provider: the address changed and not yet saved, so the
+    // card has its amber edge, the "Unsaved changes" banner and "· changed" on
+    // the field. The saved address is a port nothing listens on — the header
+    // reads "Not responding" without a request leaving the machine.
+    out: 'ai-provider-editing',
+    repos: ['octopus-merge'],
+    themes: ['light'],
+    drive: async (page) => {
+      await page.evaluate(() => {
+        window.__shot.settings.getState().update((s) => {
+          const local = {
+            id: 'ollama',
+            label: 'Local models',
+            provider: 'ollama',
+            endpoint: 'http://127.0.0.1:9/v1',
+            apiKey: '',
+            model: 'llama3.2'
+          }
+          const hosted = { ...local, id: 'openai', label: 'OpenAI', provider: 'openai', endpoint: '', model: 'gpt-4o-mini' }
+          return { ...s, ai: { ...s.ai, accounts: [local, hosted], defaultAccountId: 'ollama' } }
+        })
+        window.__shot.ui.getState().openModal({ kind: 'settings', page: 'ai' })
+      })
+      await page.locator('.ai-account-header .ai-status.failing').waitFor()
+      await page.locator('.ai-account-editor input[placeholder="http://localhost:11434/v1"]').fill('http://127.0.0.1:11435/v1')
+      // Out of the field, or its focus ring hides the amber "changed" edge.
+      await page.evaluate(() => document.activeElement?.blur())
+      await page.locator('.ai-account-banner').waitFor()
+      await page.evaluate(() => document.querySelector('.ai-account-editor')?.scrollIntoView({ block: 'start' }))
       await page.waitForTimeout(400)
     }
   },
@@ -2696,6 +2782,26 @@ export const shots = [
     }
   },
   {
+    // A commit's right-click menu in the graph: every row with its icon, coloured
+    // by the family of its action. Opened near the top so the long menu fits.
+    out: 'commit-context-menu',
+    repos: ['force-push'],
+    themes: ['dark'],
+    drive: async (page) => {
+      await page.waitForSelector('.graph-row[draggable="true"]')
+      const at = await page.evaluate(() => {
+        const row = document.querySelectorAll('.graph-row[draggable="true"]')[1]
+        if (!row) return null
+        const r = row.getBoundingClientRect()
+        return { x: r.left + r.width * 0.35, y: r.top + r.height / 2 }
+      })
+      if (!at) return
+      await page.mouse.click(at.x, at.y, { button: 'right' })
+      await page.waitForSelector('.context-menu')
+      await page.waitForTimeout(400)
+    }
+  },
+  {
     // WIP snapshots — uncommitted-work safety net. Select a snapshot and a
     // file so the shot shows the whole story: list, kinds, file list, diff.
     out: 'snapshots',
@@ -2775,8 +2881,9 @@ export const shots = [
   },
   {
     // Commit editing across merges: the oldest commit of a history that
-    // carries real merge commits, previewed so the shot shows the merges
-    // banner and the merge steps replaying with their recorded resolutions.
+    // carries real merge commits, reworded with the Conventional type picker and
+    // previewed, so the shot shows the merges banner, the message tools and the
+    // merge steps replaying with their recorded resolutions.
     out: 'commit-edit-merges',
     repos: ['collaborators'],
     themes: ['light'],
@@ -2789,10 +2896,20 @@ export const shots = [
         window.__shot.ui.getState().setCommitEditView({ repoPath: p, sha: c.hash, subject: c.subject })
       }, repo)
       await page.waitForTimeout(900)
-      // Preview arms only once something changed — a reword is enough.
-      await page.locator('.commitedit-message').fill(
-        (await page.locator('.commitedit-message').inputValue()) + ' (reworded)'
-      )
+      // Preview arms only once something changed — a reword is enough. It is
+      // done with the composer's own tools: the style row open, the Conventional
+      // type picked from the list, so the shot shows the editor has them too.
+      await page.evaluate(() => {
+        window.__shot.settings.getState().update((s) => ({
+          ...s,
+          profiles: s.profiles.map((p) =>
+            p.id === s.activeProfileId ? { ...p, ai: { ...p.ai, commitStyle: 'conventional' } } : p
+          )
+        }))
+      })
+      await page.locator('.commitedit-message .commit-advanced-toggle').click()
+      await page.waitForTimeout(300)
+      await page.locator('.commitedit-message .commit-style-row select.commit-type').first().selectOption('build')
       await page.locator('.commitedit-cascade-head button').first().click()
       await page.waitForTimeout(1500)
     }
@@ -3306,6 +3423,47 @@ export const shots = [
     }
   },
   {
+    // A commit with a description: it shows under the subject, a long one
+    // collapsed to its first lines, and the trailers git keeps at the end as
+    // chips. The commit is made here, on the playground's own identity.
+    out: 'commit-body',
+    repos: ['commit-template'],
+    themes: ['dark'],
+    prepare: async ({ repoPaths, run }) => {
+      const repo = repoPaths['commit-template']
+      await run('git', ['-C', repo, 'add', 'app.js'])
+      await run('git', [
+        '-C',
+        repo,
+        '-c',
+        'user.name=Playground',
+        '-c',
+        'user.email=playground@example.com',
+        'commit',
+        '-m',
+        'fix(app): greet the visitor again after a dropped connection',
+        '-m',
+        'What: the greeting kept the last name only in memory, so a dropped\nconnection in the middle of a session greeted the visitor as a stranger.',
+        '-m',
+        'Why: visitors on an unstable network saw "Hello, there" after every\nreconnect.',
+        '-m',
+        'How:\n- the name is saved on every confirmed greeting;\n- a reconnect reads it back before greeting;\n- a name older than a day is dropped.',
+        '-m',
+        'Co-authored-by: Sam Example <sam@example.com>\nRefs: APP-42'
+      ])
+    },
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['commit-template']
+      await page.evaluate((p) => {
+        const s = window.__shot
+        const commit = s.repo.getState().repos[p].commits.find((c) => c.subject.startsWith('fix(app)'))
+        if (commit) s.repo.getState().select(p, { type: 'commit', hash: commit.hash })
+      }, repo)
+      await page.waitForSelector('.commit-body', { timeout: 10000 })
+      await page.waitForTimeout(400)
+    }
+  },
+  {
     out: 'semantic-diff',
     repos: ['semantic-diff'],
     themes: ['dark'],
@@ -3413,9 +3571,7 @@ export const shots = [
     drive: async (page) => {
       await page.evaluate(() => window.__shot.ui.getState().setMissionOpen(true))
       await page.waitForSelector('.mc-row', { timeout: 15000 }).catch(() => {})
-      // Expand the busiest row: the pending commits and dirty files are the
-      // part a screenshot can actually teach.
-      await page.click('.mc-row-wrap:first-child .mc-expand').catch(() => {})
+      // As the approved mockup draws it: every row collapsed.
       await page.waitForTimeout(900)
     }
   },

@@ -11,9 +11,25 @@ interface ResizeHandleProps {
   invert?: boolean
   onChange: (value: number) => void
   onDragging?: (dragging: boolean) => void
+  /** Double-click: back to the default size. Without it, a double-click only clamps. */
+  onReset?: () => void
+  /** What the handle resizes, for screen readers. */
+  label?: string
+  className?: string
 }
 
-export function ResizeHandle({ axis, value, min, max, invert, onChange, onDragging }: ResizeHandleProps): React.JSX.Element {
+export function ResizeHandle({
+  axis,
+  value,
+  min,
+  max,
+  invert,
+  onChange,
+  onDragging,
+  onReset,
+  label,
+  className
+}: ResizeHandleProps): React.JSX.Element {
   const start = useRef({ pos: 0, value: 0 })
 
   const onPointerDown = useCallback(
@@ -42,11 +58,12 @@ export function ResizeHandle({ axis, value, min, max, invert, onChange, onDraggi
 
   return (
     <div
-      className={`resize-handle ${axis === 'x' ? 'rh-x' : 'rh-y'}`}
+      className={`resize-handle ${axis === 'x' ? 'rh-x' : 'rh-y'}${className ? ` ${className}` : ''}`}
       onPointerDown={onPointerDown}
-      onDoubleClick={() => onChange(Math.min(max, Math.max(min, value)))}
+      onDoubleClick={() => (onReset ? onReset() : onChange(Math.min(max, Math.max(min, value))))}
       role="separator"
       aria-orientation={axis === 'x' ? 'vertical' : 'horizontal'}
+      aria-label={label}
     />
   )
 }

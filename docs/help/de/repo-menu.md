@@ -13,6 +13,10 @@ Gruppe, ein Chip in einem verschachtelten Ordner, eine Zeile in der
 Willkommens-/Launcher-Liste oder eine Zeile im Repository-Dropdown der Toolbar
 — und du bekommst dasselbe repositorybezogene Menü. Der Gruppen-Chip selbst
 öffnet weiterhin das Gruppenmenü; der Klick muss auf dem Repository landen.
+Jede Zeile trägt ein Symbol, gefärbt nach der Art ihrer Aktion — in der
+Standardpalette etwas öffnen in Blaugrün, der Host in Grün, Benennen und
+Einordnen in der Akzentfarbe, Kopieren und Favorisieren in Orange, Entfernen und
+Schließen in Rot ([Symbolfarben](themes.md)).
 
 ![Das Repository-Kontextmenü auf einem Chip in einer Gruppe](../../screenshots/repo-context-menu.webp)
 

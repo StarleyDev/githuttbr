@@ -36,6 +36,9 @@ Geçen ay oluşturulan bir worktree kolayca unutulur ve sorular temizlik sıras�
 | 🔒 | Kilitli — kilitlerken verilen nedeni görmek için üzerine gelin |
 | **eksik**, adı üstü çizili | Klasör yok; git’te yalnızca kaydı kaldı |
 
+![Çalışma ağaçları bölümü: commit’lenmemiş işi ve öndeki commit’leri olan bir
+worktree, eksik bir tane, kilitli bir tane ve başlıktaki silgi](../../screenshots/worktree-care.webp)
+
 Sayılar bölüm açıldığında, o worktree’nin commit’i değiştiğinde ve pencere odağı geri aldığında okunur — her yenilemede değil, çünkü her biri başka bir klasörde çalışan bir `git status`’tur.
 
 Bir satıra sağ tıklayarak:
@@ -56,6 +59,46 @@ Bu eylemlerin **yapmadıkları**:
 - Kilit, git istemcileri arasında bir anlaşmadır, dosya koruması değildir: git dışındaki hiçbir şeyin klasörü silmesini engellemez.
 - Ana worktree — deponun kendisi — kilitlenemez, taşınamaz ve kaldırılamaz.
 - Bir worktree’yi kaldırmak dalını asla silmez. İşiniz bittiyse dalı dal listesinden silin.
+
+### Başlıkta worktree’leri gruplamak
+
+Worktree sekmeleri `root · branch` etiketleriyle açılır ve bu hızla genişler.
+
+**Bir grupta tutulan proje kendi worktree’lerini içine alır.** Depo — ya da
+worktree’lerinden biri — zaten bir gruptaysa, yeni bir worktree hiçbir şey
+işaretlemeden o grubun içinde, yanında açılır: worktree ekleme penceresi yalnızca
+hangi grup olduğunu söyler ve bir dalın menüsündeki **worktree içinde aç** da
+sormadan aynısını yapar. Daha sonra **Son kullanılanlar**’dan ya da bir klasörden
+açılan bir worktree de gruba katılır. Ayrı durmasını istiyorsanız çipi gruptan
+dışarı sürükleyin.
+
+Kendi sekmesindeki bir depo için worktree ekleme penceresinde **Aynı kök depoyu
+paylaşan worktree’leri gruplamayı öner**’i işaretleyin (varsayılan olarak kapalı,
+codegraph seçeneği gibi hatırlanır): kök bağımsız bir sekme olarak açıksa bir
+**Grup adı** alanı görünür (kökün klasör adıyla önceden doldurulmuş) ve ikisi de
+yeni bir gruba girer; ailenin hiçbir üyesi açık değilse yalnızca worktree’nin
+kendi sekmesinde açılacağını söyler. Grubun içinde çipler yalnızca son parçaya
+(`main`, `feature/x`) kısalır, çünkü hangi depoya ait oldukları zaten grupta
+yazar — tam `root · branch` adını tercih ederseniz Ayarlar → Yerleşim ve terminal
+altındaki **Gruplarda kısa worktree adları** anahtarı onu korur. Öneri yalnızca
+aynı kökü paylaşan worktree’leri birleştirir — ilgisiz depoları asla birleştirmez.
+
+**Worktree sekmesini ayırt etmek.** Bağlı bir worktree bir deponun ikinci
+checkout’udur ve sekmesi aksi hâlde deponun kendi sekmesiyle tıpatıp aynı
+görünürdü. Bu yüzden bir worktree sekmesi klasör simgesi yerine yeşil bir **çatal**
+gösterir — resimli bir sekmede resmin köşesinde küçük bir çatal — ve ipucu,
+bulunduğu klasörle birlikte *… deposunun worktree’i* der. Sağ tıklayıp **Ana
+depoyu (…) aç**’ı seçin: ana checkout’un zaten açık olduğu sekmeye odaklanır ya da
+onu açar — worktree bir gruptaysa o grubun içinde. Worktree nasıl açılmış olursa
+olsun çalışır: ailesinden, **Depo aç** ile ya da taranan listeden; bir alt modülün
+worktree’leri alt modülü gösterir. Sınırlar: işaret checkout’un nerede durduğuyla
+ilgilidir, dalıyla değil; çıplak (bare) bir deponun worktree’leri işaretlenmez,
+çünkü açılacak bir ana checkout yoktur; sembolik bağlantılı bir klasör üzerinden
+açılmış bir ana depo zaten açık olarak tanınmaz, bu yüzden menü onu gerçek yolu
+altında ikinci kez açar.
+
+![Ana deponun sekmesinin yanında yeşil çatal simgeli bir worktree sekmesi, menüsü
+Ana depoyu (submodules-worktrees) aç üzerinde açık](../../screenshots/worktree-tab.webp)
 
 ![Kenar çubuğunun çalışma ağacı ve alt modül bölümleri, ikisi de dolu](../../screenshots/worktrees.webp)
 

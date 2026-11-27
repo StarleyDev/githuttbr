@@ -807,7 +807,8 @@ export default function App(): React.JSX.Element {
   // icon's role (`data-tone`), so nothing re-renders when the mode changes.
   useEffect(() => {
     document.documentElement.dataset.iconColors = settings.iconColors ?? 'soft'
-  }, [settings.iconColors])
+    document.documentElement.dataset.iconPalette = settings.iconPalette ?? 'theme'
+  }, [settings.iconColors, settings.iconPalette])
 
   // Apply selected app + code themes whenever they change. When the appearance
   // mode is "auto" we also react to live OS light/dark changes.
@@ -1390,6 +1391,7 @@ export default function App(): React.JSX.Element {
           <footer className="statusbar">
             <button
               className="status-path status-path-btn"
+              data-tone="shelf"
               title={t('sidebar.openFolder')}
               onClick={(e) => {
                 const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
@@ -1440,6 +1442,7 @@ export default function App(): React.JSX.Element {
                   <span className="status-sep" />
                   <button
                     className="status-issue-btn"
+                    data-tone="ref"
                     title={t('help.title')}
                     onClick={() => useSettingsStore.getState().openPageTab({ type: 'help' })}
                   >
@@ -1449,6 +1452,7 @@ export default function App(): React.JSX.Element {
                   <span className="status-sep" />
                   <button
                     className="status-issue-btn"
+                    data-tone="guard"
                     title={t('app.reportIssueTitle')}
                     onClick={() => void window.api.openExternal(APP_ISSUES_NEW_URL)}
                   >

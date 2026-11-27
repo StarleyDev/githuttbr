@@ -28,7 +28,10 @@ with a hundred.
   until a pull brings them in.
 - Right-click a commit for **Amend**, **Undo**, **Reset to Commit…** and
   **View on GitHub**, plus checkout, cherry-pick, revert, branch, tag and
-  copy. Unsafe actions stay visible and disable.
+  copy. Unsafe actions stay visible and disable. Each row carries an icon
+  colored by its kind of action — see [icon colors](themes.md).
+
+![A commit's right-click menu, each action with its colored icon](../screenshots/commit-context-menu.webp)
 
 ## Making it show what you want
 
@@ -113,6 +116,12 @@ The file list multi-selects with the usual gestures
 {n} files to working tree* takes those files exactly as this commit had them:
 after one confirmation it overwrites the working copies, and touches neither
 HEAD nor the index.
+
+The commit's **description** — everything below its subject — shows under it, its hand-wrapped lines joined to fit the panel (list items and indented lines stay as written). It shows up to six lines and scrolls inside; drag the handle under it to make it taller, up to half the panel — the height is remembered, and a double-click brings back six lines. The trailers git keeps at the end, such as `Refs:`, become chips as written; co-authors already show as avatars in their own row above. A commit with no description shows only its subject.
+
+The author, the message and the file search stay in place while you scroll the files.
+
+![A commit's description under its subject, with its trailers as chips](../screenshots/commit-body.webp)
 
 ![Walking through commit details](../screenshots/clip-commit-details.webp)
 

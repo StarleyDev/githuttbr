@@ -104,6 +104,15 @@ eigene ausführbare Datei. Das Aussehen des Terminals (Theme, Schriftgröße,
 Schriftfamilie) liegt unter Einstellungen → Themes → Terminal-Theme und gilt
 sofort für jede Sitzung.
 
+**Ein Terminal mit einer anderen Shell.** Das **▾** neben dem **+** der
+Terminalliste öffnet *Neues Terminal mit…*: dieselben Shells — der
+Systemstandard, jede nutzbare Shell aus `/etc/shells` oder die
+Windows-Vorgaben —, mit dem heutigen Standard abgehakt. Eine Auswahl öffnet ein
+einzelnes Terminal mit dieser Shell, und ein Split dieses Terminals öffnet sich
+ebenfalls mit ihr; der Standard in den Einstellungen ändert sich nicht.
+*Standard-Shell in den Einstellungen ändern…* ganz unten führt direkt zur
+Auswahl.
+
 Ist [Oh My Posh](https://ohmyposh.dev) installiert, listet der Bereich auch jede
 `*.omp.json` unter `%POSH_THEMES_PATH%` mit Live-Vorschau — die Auswahl wird
 neuen Terminals als `POSH_THEME` mitgegeben, sodass ein schlichtes

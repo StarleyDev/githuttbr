@@ -33,6 +33,8 @@ commitów przewija się tak jak to ze stoma.
   cherry-pick, revert, gałąź, tag i kopiowanie. Akcje niebezpieczne pozostają
   widoczne i się dezaktywują.
 
+![Menu kontekstowe commita, każda akcja z kolorową ikoną](../../screenshots/commit-context-menu.webp)
+
 ## Ustawianie tego, co ma pokazywać
 
 - **Fokus grafu** decyduje, ile historii jest rysowane — Ustawienia → **Graf**, albo menu koła zębatego w nagłówku grafu. *Wszystko* rysuje całość;
@@ -100,6 +102,12 @@ Listę plików zaznacza się grupowo zwykłymi gestami (klik z
 {n} plików do drzewa roboczego* bierze te pliki dokładnie takie, jakie miał ten
 commit: po jednym potwierdzeniu nadpisuje kopie robocze, nie ruszając ani HEAD,
 ani indeksu.
+
+**Opis** commita — wszystko pod tematem — pokazuje się tuż pod nim, a ręcznie łamane wiersze są łączone, by zmieściły się w panelu (elementy listy i wcięte wiersze zostają jak zapisano). Pokazuje do sześciu wierszy i przewija się w środku; przeciągnij uchwyt pod nim, by go powiększyć, do połowy panelu — wysokość jest zapamiętywana, a dwuklik przywraca sześć wierszy. Stopki, które git trzyma na końcu, jak `Refs:`, stają się etykietami tak, jak zapisano; współautorzy są już pokazani jako awatary we własnym wierszu wyżej. Commit bez opisu pokazuje tylko temat.
+
+Autor, wiadomość i wyszukiwanie plików zostają na miejscu, gdy przewijasz pliki.
+
+![Opis commita pod tematem, ze stopkami jako etykietami](../../screenshots/commit-body.webp)
 
 ![Przechodzenie przez szczegóły commita](../../screenshots/clip-commit-details.webp)
 

@@ -135,6 +135,13 @@ run, not in every terminal.
 WSL, or a custom executable, in the same place. *System default* there is
 `%COMSPEC%`.
 
+**One terminal with another shell.** The **▾** beside the terminal list's **+**
+opens *New terminal with…*: the same shells — the system default, every usable
+shell in `/etc/shells`, or the Windows presets — with today's default ticked.
+Picking one opens a single terminal with it, and a split of that terminal opens
+with it too; the default in Settings does not change. *Change the default shell
+in Settings…* at the bottom goes straight to the picker above.
+
 ## Your PATH
 
 The shell starts as a **login shell**, the same as Terminal.app or iTerm, so

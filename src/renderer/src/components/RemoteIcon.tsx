@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { Cloud, Server } from 'lucide-react'
-import { Github, Gitlab } from './BrandIcons'
+import { Cloud } from 'lucide-react'
+import { AzureLogo, BitbucketLogo, ForgejoLogo, GithubLogo, GitlabLogo } from './HostLogos'
 
 function parseRemoteOwner(url: string): { host: string; owner: string } | null {
   const u = url.trim()
@@ -47,9 +47,10 @@ export function RemoteIcon({ url, size = 13 }: { url?: string; size?: number }):
     )
   }
 
-  if (u.includes('github.com')) return <Github size={size} />
-  if (u.includes('gitlab.com') || u.includes('gitlab')) return <Gitlab size={size} />
-  if (u.includes('bitbucket.org') || u.includes('bitbucket')) return <Cloud size={size} />
-  if (u.includes('dev.azure.com') || u.includes('visualstudio.com') || u.includes('azure')) return <Server size={size} />
+  if (u.includes('github.com')) return <GithubLogo size={size} />
+  if (u.includes('gitlab.com') || u.includes('gitlab')) return <GitlabLogo size={size} />
+  if (u.includes('bitbucket.org') || u.includes('bitbucket')) return <BitbucketLogo size={size} />
+  if (u.includes('dev.azure.com') || u.includes('visualstudio.com') || u.includes('azure')) return <AzureLogo size={size} />
+  if (u.includes('forgejo') || u.includes('codeberg.org')) return <ForgejoLogo size={size} />
   return <Cloud size={size} />
 }

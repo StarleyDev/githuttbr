@@ -70,11 +70,38 @@ Les couleurs viennent du thème : un thème qui repeint son vert ou son accent
 repeint les icônes avec, thèmes personnalisés et générés par l’IA compris.
 
 Limites : seuls les boutons principaux de la barre d’outils, les en-têtes des
-sections de la barre latérale, le menu Outils, les pages des Paramètres et les
-boutons des pages de pull request et d’issue sont colorés ; les autres menus, les
+sections de la barre latérale, le menu Outils, les menus contextuels des commits, des branches et des dépôts, les pages des Paramètres et les
+boutons des pages de pull request et d’issue et les icônes de la barre d’état (le
+dossier, Aide, Signaler un problème) sont colorés — le numéro de version reste
+gris ; les autres menus, les
 lignes à l’intérieur d’une section et le graphe des commits ne le sont pas. Une
 ligne de menu survolée garde son aspect habituel, icône comprise. La couleur n’est
 jamais le seul indice : chaque icône garde son libellé.
+
+## Couleurs de la note de version
+
+Le [Centre de contrôle](mission-control.md) indique combien de commits chaque dépôt
+a faits depuis son tag le plus récent. **Couleurs de la note de version** décide
+de l’allure de ce nombre, pour qu’une version en retard se remarque et qu’une
+version récente reste discrète.
+
+Il y a quatre plages. Les trois premières s’arrêtent à un nombre de commits que
+vous choisissez ; la dernière prend tout ce qui les dépasse. Chaque plage prend
+l’une des couleurs du thème, ou une **Couleur personnalisée…** depuis la pastille
+au bout de sa ligne.
+
+| Plage | Par défaut |
+|---|---|
+| Jusqu’à 5 commits | Gris, comme le reste de la ligne |
+| Puis jusqu’à 20 | Jaune |
+| Puis jusqu’à 50 | Rouge |
+| Au-delà | Rouge |
+
+Une couleur du thème suit le thème, en clair comme en sombre. Une couleur
+personnalisée reste exactement telle que choisie dans tous les thèmes : choisissez-en
+une qui se lit sur les deux fonds.
+
+![Paramètres → Thèmes : les quatre plages de la note de version, chacune avec ses couleurs et une pastille personnalisée](../../screenshots/settings-release-colors.webp)
 
 ## Comment les Paramètres sont organisés
 

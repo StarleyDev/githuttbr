@@ -104,6 +104,14 @@ propio. El aspecto de la terminal (tema, tamaño y familia de fuente) está en
 Ajustes → Temas → Tema de la terminal y se aplica al momento a todas las
 sesiones.
 
+**Una terminal con otro shell.** El **▾** junto al **+** de la lista de
+terminales abre *Nuevo terminal con…*: los mismos shells — el predeterminado del
+sistema, todo shell utilizable de `/etc/shells` o las opciones de Windows — con
+el predeterminado actual marcado. Elegir uno abre una sola terminal con él, y
+dividir esa terminal abre el nuevo panel con el mismo shell; el predeterminado
+de Ajustes no cambia. *Cambiar el shell predeterminado en Ajustes…*, al final
+del menú, lleva directo al selector.
+
 Si [Oh My Posh](https://ohmyposh.dev) está instalado, la sección también lista
 cada `*.omp.json` de `%POSH_THEMES_PATH%` con vista previa en vivo — elegir uno lo
 inyecta como `POSH_THEME` en las terminales nuevas, así que un simple

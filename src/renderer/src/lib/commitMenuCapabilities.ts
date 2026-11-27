@@ -86,17 +86,6 @@ export function commitMenuDisabledKey(
   return 'commitMenu.disabled.notAncestor'
 }
 
-/** Split a full commit message into composer summary + body. */
-export function splitCommitMessage(message: string): { summary: string; description: string } {
-  const text = message.replace(/\r\n/g, '\n').replace(/^\n+|\n+$/g, '')
-  const nl = text.indexOf('\n')
-  if (nl < 0) return { summary: text, description: '' }
-  return {
-    summary: text.slice(0, nl).trimEnd(),
-    description: text.slice(nl + 1).replace(/^\n+/, '').replace(/\n+$/, '')
-  }
-}
-
 /** GitHub commit URL for a sha, or null when no GitHub remote (github.com or a configured GHES) exists. */
 export function commitGitHubUrl(remotes: RemoteInfo[], sha: string, enterprise: readonly string[] = []): string | null {
   return githubCommitUrl(remotes, sha, enterprise)

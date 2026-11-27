@@ -33,6 +33,8 @@ dépôt d'une centaine.
   revert, de la branche, de l'étiquette et de la copie. Les actions risquées
   restent visibles et se désactivent.
 
+![Le menu contextuel d'un commit, chaque action avec son icône colorée](../../screenshots/commit-context-menu.webp)
+
 ## Lui faire montrer ce que vous voulez
 
 - La **focalisation du graphe** décide de la quantité d'historique dessinée —
@@ -105,6 +107,12 @@ La liste de fichiers se sélectionne en groupe avec les gestes habituels (clic
 *Restaurer {n} fichiers dans l'arbre de travail* reprend ces fichiers
 exactement tels que ce commit les avait : après une seule confirmation, les
 copies de travail sont écrasées, sans toucher ni HEAD ni l'index.
+
+La **description** du commit — tout ce qui suit son sujet — s’affiche juste dessous, ses lignes coupées à la main rejointes pour tenir dans le panneau (éléments de liste et lignes indentées restent tels qu’écrits). Elle montre jusqu’à six lignes et défile à l’intérieur ; faites glisser la poignée dessous pour l’agrandir, jusqu’à la moitié du panneau — la hauteur est retenue, et un double-clic revient à six lignes. Les trailers que git garde à la fin, comme `Refs:`, deviennent des étiquettes telles qu’écrites ; les coauteurs apparaissent déjà en avatars sur leur propre ligne plus haut. Un commit sans description ne montre que son sujet.
+
+L’auteur, le message et la recherche de fichiers restent en place pendant que vous faites défiler les fichiers.
+
+![La description d’un commit sous son sujet, avec ses trailers en étiquettes](../../screenshots/commit-body.webp)
 
 ![Parcours des détails d'un commit](../../screenshots/clip-commit-details.webp)
 

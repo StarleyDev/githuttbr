@@ -95,10 +95,17 @@ O que essas ações **não** fazem:
 ### Agrupando worktrees no cabeçalho
 
 Abas de worktree abrem com rótulos `raiz · branch`, que ficam largos rápido.
-Marque **Oferecer agrupar worktrees que compartilham um repositório raiz** na
-janela de adicionar worktree (desligado por padrão, lembrado como a opção do
-codegraph) e a janela se adapta à família: se a raiz ou um worktree irmão já está
-num grupo, ela diz isso e o worktree novo entra nele; se a raiz está aberta numa
+
+**Um projeto que está num grupo leva os worktrees para ele.** Quando o
+repositório — ou um dos worktrees dele — já está num grupo, um worktree novo abre
+dentro desse grupo, ao lado dele, sem nada para marcar: a janela de adicionar
+worktree só diz qual grupo, e **Abrir em worktree** no menu de uma branch faz o
+mesmo sem perguntar. Um worktree aberto depois pelos Recentes ou por uma pasta
+entra também. Arraste o chip para fora do grupo se quiser ele separado.
+
+Para um repositório numa aba própria, marque **Oferecer agrupar worktrees que
+compartilham um repositório raiz** na janela de adicionar worktree (desligado
+por padrão, lembrado como a opção do codegraph): se a raiz está aberta numa
 aba avulsa, aparece um campo **Nome do grupo** (preenchido com o nome da pasta da
 raiz) e os dois vão para um grupo novo; sem nenhum membro da família aberto, ela
 só avisa que o worktree abre numa aba própria. Dentro do grupo, os chips encolhem

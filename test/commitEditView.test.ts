@@ -18,7 +18,7 @@ import { openCommitEdit } from '../src/renderer/src/components/CommitEditView'
 
 const A = { repoPath: '/repo', sha: 'a'.repeat(40), subject: 'feat: a' }
 const B = { repoPath: '/repo', sha: 'b'.repeat(40), subject: 'feat: b' }
-const draft = (dirty: boolean): CommitEditDraft => ({ message: 'm', files: {}, selFile: '', dirty })
+const draft = (dirty: boolean): CommitEditDraft => ({ parts: { summary: 'm', description: '' }, files: {}, selFile: '', dirty })
 
 beforeEach(() => {
   useUIStore.setState({ commitEditView: null, modal: null })
@@ -39,6 +39,15 @@ describe('commit editor in the centre pane', () => {
     useUIStore.getState().setCommitEditView(null)
     useUIStore.getState().saveCommitEditDraft(B.repoPath, B.sha, draft(true))
     expect(useUIStore.getState().commitEditView).toBeNull()
+  })
+
+  it('keeps an emptied summary empty, with the description where it was', () => {
+    useUIStore.getState().setCommitEditView(A)
+    const parts = { summary: '', description: 'Why: retries duplicated orders.' }
+    useUIStore.getState().saveCommitEditDraft(A.repoPath, A.sha, { parts, files: {}, selFile: '', dirty: true })
+    // Kept apart, not joined into one message: joined, the description would
+    // come back as the summary when the editor is shown again.
+    expect(useUIStore.getState().commitEditView?.draft?.parts).toEqual(parts)
   })
 
   it('reopening the commit already open keeps its draft', () => {

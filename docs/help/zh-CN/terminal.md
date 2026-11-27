@@ -85,6 +85,11 @@ GitHuttBr 还会在启动时向你的登录 shell 询问真正的 `PATH`，并�
 （`pwsh`）、`cmd`、Git Bash、WSL 或自定义可执行文件。终端外观（主题、字号、字体族）位于
 设置 → 主题 → 终端主题，并会立即应用到所有会话。
 
+**用另一个 shell 开一个终端。** 终端列表 **+** 旁边的 **▾** 会打开*用以下 Shell 新建终端…*：
+同样的那些 shell——系统默认、`/etc/shells` 中每个可用的 shell，或 Windows 预设——当前的默认项
+已勾选。选一个就用它打开一个终端，拆分这个终端时也会用它；设置中的默认值不会改变。底部的
+*在设置中更改默认 Shell…* 会直接跳到设置里的 shell 选择器。
+
 如果安装了 [Oh My Posh](https://ohmyposh.dev)，这一部分还会列出 `%POSH_THEMES_PATH%`
 下的每个 `*.omp.json`，并提供实时预览——选中后会以 `POSH_THEME` 注入新终端，因此你的配置
 文件里一句简单的 `oh-my-posh init pwsh` 就会使用它。自定义的 `.omp.json` 路径也可以；字段

@@ -32,6 +32,8 @@ Commits wie eines mit hundert.
   Revert, Branch, Tag und Kopieren. Unsichere Aktionen bleiben sichtbar und
   werden deaktiviert.
 
+![Das Rechtsklick-Menü eines Commits, jede Aktion mit ihrem farbigen Symbol](../../screenshots/commit-context-menu.webp)
+
 ## Ihn zeigen lassen, was du willst
 
 - Der **Graph-Fokus** entscheidet, wie viel Historie gezeichnet wird —
@@ -103,6 +105,12 @@ Die Dateiliste lässt sich mit den üblichen Gesten mehrfach auswählen
 Dateien in den Arbeitsbaum zurückholen* übernimmt diese Dateien genau so, wie
 dieser Commit sie hatte: nach einer einzigen Bestätigung werden die
 Arbeitskopien überschrieben — HEAD und Index bleiben unangetastet.
+
+Die **Beschreibung** des Commits — alles unter dem Betreff — steht direkt darunter; von Hand umbrochene Zeilen werden zusammengeführt, damit sie ins Panel passen (Listenpunkte und eingerückte Zeilen bleiben wie geschrieben). Sie zeigt bis zu sechs Zeilen und scrollt in sich; ziehen Sie den Griff darunter, um sie bis zur halben Panelhöhe zu vergrößern — die Höhe bleibt gespeichert, ein Doppelklick stellt sechs Zeilen wieder her. Die Trailer, die git am Ende führt, etwa `Refs:`, werden wie geschrieben zu Chips; Mitautoren stehen schon als Avatare in ihrer eigenen Zeile darüber. Ein Commit ohne Beschreibung zeigt nur seinen Betreff.
+
+Autor, Nachricht und Dateisuche bleiben stehen, während Sie durch die Dateien scrollen.
+
+![Die Beschreibung eines Commits unter dem Betreff, Trailer als Chips](../../screenshots/commit-body.webp)
 
 ![Durch die Commit-Details laufen](../../screenshots/clip-commit-details.webp)
 

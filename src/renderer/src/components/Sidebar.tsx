@@ -55,6 +55,7 @@ import { FileSearchBar, EMPTY_FILTER, type FileFilter } from './FileSearchBar'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
 import { draggingRef, useUIStore, type MenuItem } from '../stores/ui'
 import { refIntegrationItems } from '../lib/refMenuItems'
+import { menuActionIcon } from '../lib/menuActionIcons'
 import { repoWantsDevices, repoDevicePlatforms } from '../lib/launchDevices'
 import { locateBookmark, bookmarkLabel, sortBookmarks, baseName } from '../lib/bookmarks'
 import { useSettingsStore } from '../stores/settings'
@@ -674,6 +675,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     const deletable = names.filter((n) => n !== repo.branches.current.trim())
     return [
       {
+        ...menuActionIcon('push'),
         label: interp(t('sidebar.pushNBranches'), { n: names.length }),
         disabled: repo.remotes.length === 0,
         onClick: () => {
@@ -683,6 +685,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       },
       { separator: true },
       {
+        ...menuActionIcon('delete'),
         label: interp(t('sidebar.deleteNBranches'), { n: deletable.length }),
         danger: true,
         disabled: deletable.length === 0,
@@ -709,6 +712,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       .map((r) => ({ remote: r.remote, name: r.name }))
     return [
       {
+        ...menuActionIcon('delete'),
         label: interp(t('sidebar.deleteNRemoteBranches'), { n: items.length }),
         danger: true,
         disabled: items.length === 0,
@@ -737,12 +741,14 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     const all = collectLeaves(node).map((b) => b.name)
     return [
       {
+        ...menuActionIcon('push'),
         label: interp(t('sidebar.pushFolderBranches'), { folder, n: all.length }),
         disabled: repo.remotes.length === 0,
         onClick: () => openModal({ kind: 'push-branches', repoPath: path, preselect: all })
       },
       { separator: true },
       {
+        ...menuActionIcon('delete'),
         label: interp(t('sidebar.deleteFolderBranches'), { folder, n: deletable.length }),
         danger: true,
         disabled: deletable.length === 0,
@@ -764,6 +770,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     const items = branches.map((b) => ({ remote: b.remote, name: b.name }))
     return [
       {
+        ...menuActionIcon('delete'),
         label: interp(t('sidebar.deleteFolderRemoteBranches'), { folder, n: items.length }),
         danger: true,
         disabled: items.length === 0,
@@ -784,6 +791,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     const indices = ids.map(Number)
     return [
       {
+        ...menuActionIcon('delete'),
         label: interp(t('sidebar.dropNStashes'), { n: indices.length }),
         danger: true,
         onClick: () =>
@@ -804,6 +812,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
 
   const tagBulkMenu = (names: string[]): MenuItem[] => [
     {
+      ...menuActionIcon('delete'),
       label: interp(t('sidebar.deleteNTags'), { n: names.length }),
       danger: true,
       onClick: () =>
@@ -968,30 +977,35 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       ...(release
         ? [
             {
+              ...menuActionIcon('goToRelease'),
               label: interp(t('sidebar.goToRelease'), { name: release.name || release.tag || tag.name }),
               onClick: () => openPageTab({ type: 'release', release, repoPath: path })
             } satisfies MenuItem,
             { separator: true } satisfies MenuItem
           ]
         : []),
-      { label: interp(t('sidebar.checkoutTag'), { tag: tag.name }), onClick: () => void repoActions.checkout(path, tag.name) },
+      { ...menuActionIcon('checkout'), label: interp(t('sidebar.checkoutTag'), { tag: tag.name }), onClick: () => void repoActions.checkout(path, tag.name) },
       { separator: true },
       {
+        ...menuActionIcon('rebase'),
         label: interp(t('sidebar.rebaseOnTag'), { branch: currentBranch, tag: tag.name }),
         disabled: !currentBranch,
         onClick: () => void repoActions.rebase(path, tag.name)
       },
       {
+        ...menuActionIcon('reset'),
         label: interp(t('sidebar.resetToTagSoft'), { branch: currentBranch }),
         disabled: !currentBranch,
         onClick: () => void repoActions.reset(path, tag.name, 'soft')
       },
       {
+        ...menuActionIcon('reset'),
         label: interp(t('sidebar.resetToTagMixed'), { branch: currentBranch }),
         disabled: !currentBranch,
         onClick: () => void repoActions.reset(path, tag.name, 'mixed')
       },
       {
+        ...menuActionIcon('reset'),
         label: interp(t('sidebar.resetToTagHard'), { branch: currentBranch }),
         danger: true,
         disabled: !currentBranch,
@@ -1006,20 +1020,21 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
           })
       },
       { separator: true },
-      { label: t('sidebar.copyTagName'), onClick: () => void navigator.clipboard.writeText(tag.name) },
+      { ...menuActionIcon('copy'), label: t('sidebar.copyTagName'), onClick: () => void navigator.clipboard.writeText(tag.name) },
       ...(webUrl
         ? [
-            { label: interp(t('sidebar.openTagOnWeb'), { tag: tag.name, remote: remoteName }), onClick: () => void shellApi.openExternal(webUrl) } satisfies MenuItem,
-            { label: interp(t('sidebar.copyTagLink'), { tag: tag.name, remote: remoteName }), onClick: () => void navigator.clipboard.writeText(webUrl) } satisfies MenuItem
+            { ...menuActionIcon('openOnHost'), label: interp(t('sidebar.openTagOnWeb'), { tag: tag.name, remote: remoteName }), onClick: () => void shellApi.openExternal(webUrl) } satisfies MenuItem,
+            { ...menuActionIcon('copyLink'), label: interp(t('sidebar.copyTagLink'), { tag: tag.name, remote: remoteName }), onClick: () => void navigator.clipboard.writeText(webUrl) } satisfies MenuItem
           ]
         : []),
-      { label: t('sidebar.createTagHere'), onClick: createTagAtHead },
+      { ...menuActionIcon('createTag'), label: t('sidebar.createTagHere'), onClick: createTagAtHead },
       { separator: true },
       ...(repo.remotes.length && !isPushed
-        ? [{ label: interp(t('sidebar.pushTag'), { tag: tag.name, remote: remoteName }), onClick: () => void repoActions.pushTag(path, tag.name, remoteName) } satisfies MenuItem]
+        ? [{ ...menuActionIcon('push'), label: interp(t('sidebar.pushTag'), { tag: tag.name, remote: remoteName }), onClick: () => void repoActions.pushTag(path, tag.name, remoteName) } satisfies MenuItem]
         : []),
       ...(repo.remotes.length && isPushed
         ? [{
+            ...menuActionIcon('delete'),
             label: t('sidebar.deleteRemoteTag'),
             danger: true,
             onClick: () =>
@@ -1034,6 +1049,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
           } satisfies MenuItem]
         : []),
       {
+        ...menuActionIcon('delete'),
         label: t('sidebar.deleteTagLocal'),
         danger: true,
         onClick: () =>
@@ -1123,10 +1139,10 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
 
   const localMenu = (b: BranchInfo): MenuItem[] => [
     ...(worktreeForBranch(repo.worktrees, b.name)
-      ? [{ label: checkoutLabel(b), onClick: () => checkoutBranch(b) }]
+      ? [{ ...menuActionIcon('checkout'), label: checkoutLabel(b), onClick: () => checkoutBranch(b) }]
       : [
-          { label: checkoutLabel(b), disabled: b.isCurrent, onClick: () => checkoutBranch(b) },
-          { label: interp(t('sidebar.openInWorktree'), { branch: b.name }), onClick: () => void openInWorktree(b.name) }
+          { ...menuActionIcon('checkout'), label: checkoutLabel(b), disabled: b.isCurrent, onClick: () => checkoutBranch(b) },
+          { ...menuActionIcon('worktree'), label: interp(t('sidebar.openInWorktree'), { branch: b.name }), onClick: () => void openInWorktree(b.name) }
         ]),
     // Merge / merge with options / rebase / compare — the same block the graph's
     // ref badges render, from one place so the two cannot drift apart.
@@ -1134,16 +1150,19 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     {
       // Scan every branch against *this* one, i.e. "what would break if I land
       // things on top of it".
+      ...menuActionIcon('conflictRadar'),
       label: t('radar.open'),
       onClick: () => openModal({ kind: 'conflict-radar', repoPath: path, base: b.name })
     },
     {
       // Rebased or amended? The reflog still knows where this branch was.
+      ...menuActionIcon('rangeDiff'),
       label: t('rangeDiff.open'),
       onClick: () => openModal({ kind: 'range-diff', repoPath: path, branch: b.name })
     },
     { separator: true },
     {
+      ...menuActionIcon('renameBranch'),
       label: t('sidebar.renameBranch'),
       onClick: () =>
         openModal({
@@ -1158,6 +1177,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     ...(b.upstream
       ? [
           {
+            ...menuActionIcon('renameWithRemote'),
             label: t('sidebar.renameWithRemote'),
             onClick: (): void =>
               openModal({
@@ -1176,24 +1196,28 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
       : []),
     // Named, and wired to *this* branch — pushing the checked-out one from a
     // menu you opened on another branch is a trap, not a shortcut.
-    { label: interp(t('branch.pushNamed'), { branch: b.name }), onClick: () => void repoActions.push(path, false, false, b.name) },
+    { ...menuActionIcon('push'), label: interp(t('branch.pushNamed'), { branch: b.name }), onClick: () => void repoActions.push(path, false, false, b.name) },
     {
+      ...menuActionIcon('pull'),
       label: interp(t('branch.pullNamed'), { branch: b.name }),
       disabled: !b.upstream,
       onClick: () =>
         void (b.isCurrent ? repoActions.pull(path, 'default') : repoActions.pullBranch(path, b.name))
     },
     {
+      ...menuActionIcon('createPr'),
       label: t('sidebar.createPRFromBranch'),
       onClick: () => createPrFromBranch(b)
     },
     { separator: true },
     {
+      ...menuActionIcon(isPinned(b.name) ? 'unpin' : 'pin'),
       label: isPinned(b.name) ? t('sidebar.unpinBranch') : t('sidebar.pinBranch'),
       onClick: () => togglePinBranch(b.name)
     },
-    { label: t('sidebar.copyBranchName'), onClick: () => void navigator.clipboard.writeText(b.name) },
+    { ...menuActionIcon('copy'), label: t('sidebar.copyBranchName'), onClick: () => void navigator.clipboard.writeText(b.name) },
     {
+      ...menuActionIcon('delete'),
       label: t('sidebar.deleteBranch'),
       danger: true,
       disabled: b.isCurrent,
@@ -1211,6 +1235,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
 
   const remoteMenu = (b: RemoteBranchInfo): MenuItem[] => [
     {
+      ...menuActionIcon('checkout'),
       label: t('sidebar.checkoutAsLocal'),
       onClick: () => void repoActions.checkoutRemote(path, b.fullName, b.name, b.remote)
     },
@@ -1218,12 +1243,14 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     {
       // The tracking ref's reflog records every forced fetch, so this answers
       // "what did they change when they force-pushed?".
+      ...menuActionIcon('rangeDiff'),
       label: t('rangeDiff.open'),
       onClick: () => openModal({ kind: 'range-diff', repoPath: path, branch: b.fullName })
     },
     { separator: true },
-    { label: t('sidebar.copyBranchName'), onClick: () => void navigator.clipboard.writeText(b.fullName) },
+    { ...menuActionIcon('copy'), label: t('sidebar.copyBranchName'), onClick: () => void navigator.clipboard.writeText(b.fullName) },
     {
+      ...menuActionIcon('delete'),
       label: t('sidebar.deleteRemoteBranch'),
       danger: true,
       onClick: () =>
@@ -1252,13 +1279,14 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     })
 
   const stashMenu = (s: StashInfo): MenuItem[] => [
-    { label: t('sidebar.popStash'), onClick: () => void repoActions.stashPop(path, s.index) },
-    { label: t('sidebar.applyStash'), onClick: () => void repoActions.stashApply(path, s.index) },
+    { ...menuActionIcon('stashPop'), label: t('sidebar.popStash'), onClick: () => void repoActions.stashPop(path, s.index) },
+    { ...menuActionIcon('stashApply'), label: t('sidebar.applyStash'), onClick: () => void repoActions.stashApply(path, s.index) },
     { separator: true },
-    { label: t('sidebar.renameStash'), onClick: () => renameStash(s) },
-    { label: t('sidebar.copyStashMsg'), onClick: () => void navigator.clipboard.writeText(s.message) },
+    { ...menuActionIcon('renameStash'), label: t('sidebar.renameStash'), onClick: () => renameStash(s) },
+    { ...menuActionIcon('copy'), label: t('sidebar.copyStashMsg'), onClick: () => void navigator.clipboard.writeText(s.message) },
     { separator: true },
     {
+      ...menuActionIcon('delete'),
       label: t('sidebar.dropStash'),
       danger: true,
       onClick: () =>

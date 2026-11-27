@@ -14,6 +14,7 @@ import {
   defaultProfile,
   defaultSettings,
   ICON_COLOR_MODES,
+  ICON_PALETTES,
   defaultGraphStyle,
   type AIConfig,
   type AIFeature,
@@ -49,7 +50,7 @@ import type { WorkspaceCandidate } from '../lib/workspacePlan'
 import { useUIStore } from './ui'
 import { useProfileAvatarsStore } from './profileAvatars'
 import { focusOpenRepo } from '../lib/tabLookup'
-import { planWorktreeGroup } from '../lib/worktrees'
+import { planWorktreeGroup, shouldResolveWorktreeFamily, worktreeOpening } from '../lib/worktrees'
 import { applyRepoAlias, canonicalRepoPath, migrateRepoAliases, repoDisplayName } from '../lib/repoAlias'
 import { sortBookmarks } from '../lib/bookmarks'
 import { prRemoteIdentity } from '../lib/hosting'
@@ -567,6 +568,7 @@ function normalizeSettings(settings: AppSettings): { settings: AppSettings; noti
   settings.codeFontSize = settings.codeFontSize ?? sd.codeFontSize
   // An unknown value (a hand-edited file, a newer build's mode) falls back to the default.
   settings.iconColors = ICON_COLOR_MODES.includes(settings.iconColors) ? settings.iconColors : sd.iconColors
+  settings.iconPalette = ICON_PALETTES.includes(settings.iconPalette) ? settings.iconPalette : sd.iconPalette
   settings.terminalThemeId = settings.terminalThemeId ?? sd.terminalThemeId
   if (settings.terminalThemeId === 'gitcito') settings.terminalThemeId = 'githuttbr' // upstream-name: own old id
   settings.terminalFontSize = settings.terminalFontSize ?? sd.terminalFontSize
@@ -982,13 +984,14 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   },
 
   openRepoTab: (repo) => {
-    // Auto-group on: with no caller-supplied worktree hint, resolve the repo's
-    // main worktree first so a linked worktree can offer to join its family
-    // rather than landing as a standalone tab it doesn't belong on.
+    // With no caller-supplied worktree hint, resolve the repo's main worktree
+    // first, so a linked worktree opened from Recents or a folder joins the
+    // group its project lives in — as one just created does — or is offered a
+    // group when that setting is on, rather than landing as a stray tab.
     // `resolvedNonWorktrees` remembers the negative — a repo's common dir does
     // not change, so each path costs one rev-parse at most.
     if (
-      get().settings.worktreeAutoGroup &&
+      shouldResolveWorktreeFamily(get().settings.tabs, get().settings.worktreeAutoGroup) &&
       repo.worktreeRoot === undefined &&
       !resolvedNonWorktrees.has(canonicalRepoPath(repo.path))
     ) {
@@ -1027,8 +1030,13 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   openWorktreeRepo: (repo, rootPath, groupName) => {
     const repoRef: RepoRef = { ...repo, worktreeRoot: rootPath }
     const s = get().settings
-    const plan = s.worktreeAutoGroup ? planWorktreeGroup(s.tabs, rootPath) : null
-    if (!plan) {
+    const plan = planWorktreeGroup(s.tabs, rootPath)
+    const opening = worktreeOpening(plan, s.worktreeAutoGroup)
+    if (opening === 'join' && plan) {
+      get().addRepoToGroup(plan.tabId, repoRef)
+      return
+    }
+    if (opening === 'tab' || !plan) {
       get().openRepoTab(repoRef)
       return
     }

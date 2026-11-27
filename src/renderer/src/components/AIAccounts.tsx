@@ -2,15 +2,14 @@ import React, { useEffect, useRef, useState } from 'react'
 import {
   Bot,
   Check,
+  Circle,
   CircleAlert,
-  CircleDashed,
   CircleDot,
   List,
   Loader2,
   Plus,
   RefreshCw,
   Terminal,
-  Trash2,
   TriangleAlert,
   X
 } from 'lucide-react'
@@ -65,6 +64,7 @@ import {
   type AccountDraft,
   type AccountStatusView
 } from '../lib/aiAccountDraft'
+import { accountInitial, accountSummaryParts } from '../lib/aiAccountSummary'
 
 /**
  * The AI accounts editor.
@@ -229,19 +229,21 @@ function CatalogNote({ catalog }: { catalog: ModelCatalog | undefined }): React.
   )
 }
 
-const STATUS_ICON: Record<AccountStatusView['status'], React.JSX.Element> = {
-  ready: <Check size={11} />,
-  failing: <X size={11} />,
-  'no-key': <CircleAlert size={11} />,
-  unchecked: <CircleDashed size={11} />
+/** Not checked carries no icon: grey and a word say "nothing known yet" better
+ *  than a symbol that would read as one more state. */
+const STATUS_ICON: Record<AccountStatusView['status'], React.JSX.Element | null> = {
+  ready: <Check size={12} strokeWidth={3} />,
+  failing: <X size={12} strokeWidth={3} />,
+  'no-key': <CircleAlert size={12} strokeWidth={2.5} />,
+  unchecked: null
 }
 
-function StatusBadge({ view }: { view: AccountStatusView }): React.JSX.Element {
+function StatusBadge({ view, compact = false }: { view: AccountStatusView; compact?: boolean }): React.JSX.Element {
   const t = useT()
   const reason = statusReason(view, t)
   return (
-    <span className={`ai-status ${view.status}`} title={reason || undefined}>
-      {STATUS_ICON[view.status]}
+    <span className={`ai-status ${view.status}${compact ? ' compact' : ''}`} title={reason || undefined}>
+      {!compact && STATUS_ICON[view.status]}
       {t(ACCOUNT_STATUS_LABEL[view.status])}
     </span>
   )
@@ -264,8 +266,19 @@ function FieldLabel({ text, changed }: { text: string; changed: boolean }): Reac
   )
 }
 
+/** The second line of a provider row: what it uses, joined with middle dots. */
+function AccountSummary({ account, catalog }: { account: AIAccount; catalog: ModelCatalog | undefined }): React.JSX.Element {
+  const t = useT()
+  const text = accountSummaryParts(account, catalog)
+    .map((part) => ('key' in part ? interp(t(part.key), part.vars) : part.text))
+    .join(' · ')
+  return <span className="ai-accounts-item-summary">{text}</span>
+}
+
+/** Providers reached at an address the user runs: the address is a field. */
+const SERVER_PROVIDERS: AIProvider[] = ['ollama', 'custom']
+
 function AccountCard({
-  ai,
   account,
   isNew,
   dirty,
@@ -278,18 +291,17 @@ function AccountCard({
   loading,
   settled,
   clis,
+  canDelete,
   onEdit,
   onDelete,
-  onUse,
   onRefresh,
   onSave,
   onSaveAnyway,
   onDiscard,
   onTest
 }: {
-  ai: AIConfig
   account: AIAccount
-  /** A draft not yet added: Cancel instead of Delete, and never in use. */
+  /** A draft not yet added: Cancel instead of Delete. */
   isNew: boolean
   /** Changes waiting for Save. False in the commit-on-edit mode. */
   dirty: boolean
@@ -306,10 +318,10 @@ function AccountCard({
   /** The provider's list request for this account has finished. */
   settled: boolean
   clis: DetectedCli[]
+  /** The last provider cannot be deleted: something has to answer. */
+  canDelete: boolean
   onEdit: (next: AIAccount) => void
   onDelete: () => void
-  /** Puts this account in use at once — a choice, not part of the draft. */
-  onUse: () => void
   onRefresh: () => void
   onSave: () => void
   onSaveAnyway: () => void
@@ -319,10 +331,16 @@ function AccountCard({
   const t = useT()
   const openModal = useUIStore((s) => s.openModal)
   const preset = aiProviderPreset(account.provider)
-  const role = accountRowRole(ai, account.id, isNew)
   const models = catalog?.models ?? preset.models
   const detected = clis.find((c) => c.binary === (account.cli ?? 'claude'))
   const failure = failedSave && check && !check.ok ? check : undefined
+  const isCli = account.provider === 'cli'
+  const isServer = SERVER_PROVIDERS.includes(account.provider)
+  // Ollama answers without a key; its key field only stays for an account that
+  // already holds one, so nothing saved becomes uneditable.
+  const showKey = !isCli && (account.provider !== 'ollama' || !!(account.apiKey ?? '').trim())
+  const fieldClass = (field: keyof AIAccount, failed = false): string | undefined =>
+    [changed.has(field) ? 'changed' : '', failed && failure ? 'failed' : ''].filter(Boolean).join(' ') || undefined
 
   const setProvider = (id: AIProvider): void => {
     const next = aiProviderPreset(id)
@@ -339,82 +357,114 @@ function AccountCard({
     })
   }
 
-  const saveButton = (
-    <button type="button" className="btn primary small" disabled={testing} onClick={onSave}>
-      {testing && <Loader2 size={13} className="spin" />} {t('settings.accountTestAndSave')}
-    </button>
-  )
+  // The footer's sentence says what pressing a button there will do.
+  const footerHint = testing
+    ? t('settings.accountTesting')
+    : failure
+      ? t('settings.accountSaveAnywayHint')
+      : isNew
+        ? t('settings.accountDraftHint')
+        : ''
 
   return (
-    <div className={`ai-account${isNew ? ' draft' : ''}${dirty ? ' dirty' : ''}`}>
-      <div className="ai-account-head">
-        <input
-          className={`ai-account-name${changed.has('label') ? ' changed' : ''}`}
-          value={account.label}
-          placeholder={preset.label}
-          disabled={testing}
-          onChange={(e) => onEdit({ ...account, label: e.target.value })}
-        />
-        {changed.has('label') && <span className="ai-field-changed">{t('settings.accountFieldChanged')}</span>}
+    <section className="ai-account-editor" aria-label={isNew ? t('settings.accountNewTitle') : accountLabel(account)}>
+      <div className="ai-account-header">
+        <h5 className="ai-account-title">{isNew ? t('settings.accountNewTitle') : accountLabel(account)}</h5>
         {isNew ? (
-          <span className="ai-account-badge draft">{t('settings.accountNotSaved')}</span>
+          <span className="ai-account-chip draft">{t('settings.accountNotSaved')}</span>
         ) : (
-          <>
-            <StatusBadge view={status} />
-            {role === 'in-use' ? (
-              <span className="ai-account-badge in-use" title={t('settings.accountInUseTitle')}>
-                <Check size={12} /> {t('settings.accountInUse')}
-              </span>
-            ) : (
-              <button
-                type="button"
-                className="btn primary small"
-                title={interp(t('settings.accountUseTitle'), { name: accountLabel(account) })}
-                onClick={onUse}
-              >
-                {t('settings.accountUse')}
-              </button>
-            )}
-          </>
+          <StatusBadge view={status} compact />
         )}
+        <span className="ai-account-rule" aria-hidden="true" />
       </div>
 
-      {!isNew && dirty && (
-        <div className="ai-account-banner" role="status">
-          <CircleDot size={12} /> {t('settings.accountUnsavedBanner')}
-        </div>
-      )}
-      {isNew && <span className="settings-hint">{t('settings.accountDraftHint')}</span>}
+      <div className={`ai-account${isNew ? ' draft' : ''}${!isNew && dirty ? ' dirty' : ''}`}>
+        {!isNew && dirty && (
+          <div className="ai-account-banner" role="status">
+            <Circle size={10} strokeWidth={3} aria-hidden="true" /> {t('settings.accountUnsavedBanner')}
+          </div>
+        )}
 
-      <fieldset className="ai-account-fields" disabled={testing}>
-        <div className="form-row two">
-          <label className={changed.has('provider') ? 'changed' : undefined}>
-            <FieldLabel text={t('settings.provider')} changed={changed.has('provider')} />
-            <select value={account.provider} onChange={(e) => setProvider(e.target.value as AIProvider)}>
-              {AI_PROVIDERS.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.label}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          {account.provider === 'cli' ? (
-            <label className={changed.has('cli') ? 'changed' : undefined}>
-              <FieldLabel text={t('settings.cliBinary')} changed={changed.has('cli')} />
-              <select
-                value={account.cli ?? 'claude'}
-                onChange={(e) => onEdit({ ...account, cli: e.target.value as AICliBinary, cliPath: undefined, subscription: undefined, model: '' })}
-              >
-                {CLI_BINARIES.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {t(c.labelKey)}
+        <fieldset className="ai-account-fields" disabled={testing}>
+          <div className="ai-account-grid">
+            <label className={fieldClass('provider')}>
+              <FieldLabel text={t('settings.provider')} changed={changed.has('provider')} />
+              <select value={account.provider} onChange={(e) => setProvider(e.target.value as AIProvider)}>
+                {AI_PROVIDERS.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.label}
                   </option>
                 ))}
               </select>
             </label>
-          ) : (
-            <label className={changed.has('apiKey') ? 'changed' : undefined}>
+            <label className={fieldClass('label')}>
+              <FieldLabel text={t('settings.name')} changed={changed.has('label')} />
+              <input
+                className="ai-account-name"
+                value={account.label}
+                placeholder={preset.label}
+                onChange={(e) => onEdit({ ...account, label: e.target.value })}
+              />
+            </label>
+          </div>
+
+          {isCli && (
+            <>
+              <div className="ai-account-grid">
+                <label className={fieldClass('cli', true)}>
+                  <FieldLabel text={t('settings.cliBinary')} changed={changed.has('cli')} />
+                  <select
+                    value={account.cli ?? 'claude'}
+                    onChange={(e) =>
+                      onEdit({ ...account, cli: e.target.value as AICliBinary, cliPath: undefined, subscription: undefined, model: '' })
+                    }
+                  >
+                    {CLI_BINARIES.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {t(c.labelKey)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className={fieldClass('cliPath', true)}>
+                  <FieldLabel text={t('settings.cliPath')} changed={changed.has('cliPath')} />
+                  <input
+                    value={account.cliPath ?? ''}
+                    placeholder={detected?.path ?? account.cli ?? 'claude'}
+                    spellCheck={false}
+                    onChange={(e) => onEdit({ ...account, cliPath: e.target.value })}
+                  />
+                </label>
+              </div>
+              <span className={detected ? 'settings-hint' : 'settings-hint warn'}>
+                {detected ? (
+                  <>
+                    <Terminal size={12} /> {interp(t('settings.cliFound'), { path: detected.path })}
+                  </>
+                ) : (
+                  <>
+                    <TriangleAlert size={12} /> {t('settings.cliNotFound')}
+                  </>
+                )}
+              </span>
+              <span className="settings-hint">{t('settings.cliPrivacyHint')}</span>
+            </>
+          )}
+
+          {isServer && (
+            <label className={fieldClass('endpoint', true)}>
+              <FieldLabel text={t('settings.endpoint')} changed={changed.has('endpoint')} />
+              <input
+                value={account.endpoint}
+                placeholder={preset.endpoint || 'https://api.openai.com/v1'}
+                spellCheck={false}
+                onChange={(e) => onEdit({ ...account, endpoint: e.target.value })}
+              />
+            </label>
+          )}
+
+          {showKey && (
+            <label className={fieldClass('apiKey', !isServer)}>
               <FieldLabel
                 text={preset.needsKey ? t('settings.apiKey') : t('settings.apiKeyOptional')}
                 changed={changed.has('apiKey')}
@@ -427,142 +477,99 @@ function AccountCard({
               />
             </label>
           )}
-        </div>
+          {!isCli && preset.keyUrl && <span className="settings-hint">{interp(t('settings.getKey'), { url: preset.keyUrl })}</span>}
 
-        {account.provider === 'cli' ? (
-          <>
-            <label className={changed.has('cliPath') ? 'changed' : undefined}>
-              <FieldLabel text={t('settings.cliPath')} changed={changed.has('cliPath')} />
-              <input
-                value={account.cliPath ?? ''}
-                placeholder={detected?.path ?? account.cli ?? 'claude'}
-                spellCheck={false}
-                onChange={(e) => onEdit({ ...account, cliPath: e.target.value })}
+          <label className={fieldClass('model')}>
+            <FieldLabel text={t('settings.model')} changed={changed.has('model')} />
+            <div className="model-row">
+              <ModelSelect
+                value={account.model}
+                placeholder={preset.defaultModel || 'model-name'}
+                models={models}
+                allModels={catalog?.allModels}
+                settled={settled}
+                emptyLabel={isCli ? t('settings.cliDefaultModel') : undefined}
+                onChange={(model) => onEdit({ ...account, model })}
               />
-            </label>
-            <span className={detected ? 'settings-hint' : 'settings-hint warn'}>
-              {detected ? (
-                <>
-                  <Terminal size={12} /> {interp(t('settings.cliFound'), { path: detected.path })}
-                </>
-              ) : (
-                <>
-                  <TriangleAlert size={12} /> {t('settings.cliNotFound')}
-                </>
-              )}
-            </span>
-            <span className="settings-hint">{t('settings.cliPrivacyHint')}</span>
-          </>
-        ) : (
-          preset.keyUrl && <span className="settings-hint">{interp(t('settings.getKey'), { url: preset.keyUrl })}</span>
-        )}
-
-        <label className={changed.has('model') ? 'changed' : undefined}>
-          <FieldLabel text={t('settings.model')} changed={changed.has('model')} />
-          <div className="model-row">
-            <ModelSelect
-              value={account.model}
-              placeholder={preset.defaultModel || 'model-name'}
-              models={models}
-              allModels={catalog?.allModels}
-              settled={settled}
-              emptyLabel={account.provider === 'cli' ? t('settings.cliDefaultModel') : undefined}
-              onChange={(model) => onEdit({ ...account, model })}
-            />
-            <button
-              type="button"
-              className="btn ghost small"
-              disabled={loading || testing}
-              title={t('settings.fetchModelsTitle')}
-              onClick={onRefresh}
-            >
-              {loading ? <Loader2 size={13} className="spin" /> : <RefreshCw size={13} />} {t('settings.fetchModels')}
-            </button>
-          </div>
-        </label>
-        {!dirty && <CatalogNote catalog={catalog} />}
-
-        {accountNeedsKey(account) && (
-          <span className="settings-hint warn">
-            <TriangleAlert size={12} /> {t('settings.accountNeedsKey')}
-          </span>
-        )}
-
-        {account.provider === 'custom' && (
-          <label className={changed.has('endpoint') ? 'changed' : undefined}>
-            <FieldLabel text={t('settings.endpoint')} changed={changed.has('endpoint')} />
-            <input
-              value={account.endpoint}
-              placeholder="https://api.openai.com/v1"
-              spellCheck={false}
-              onChange={(e) => onEdit({ ...account, endpoint: e.target.value })}
-            />
-          </label>
-        )}
-      </fieldset>
-
-      {failure ? (
-        <div className="ai-account-error" role="alert">
-          <strong>
-            <X size={13} /> {t('settings.accountCheckFailedTitle')}
-          </strong>
-          {/* i18n-ignore the provider's own words, already masked for secrets */}
-          <span className="ai-account-error-reason">{statusReason(failure, t)}</span>
-          <span className="settings-hint">{t('settings.accountNothingSaved')}</span>
-          <div className="ai-account-actions">
-            <span className="ai-account-actions-spacer" />
-            <button type="button" className="btn ghost small" disabled={testing} onClick={onDiscard}>
-              {isNew ? t('common.cancel') : t('settings.accountDiscard')}
-            </button>
-            <button type="button" className="btn ghost small" disabled={testing} onClick={onSaveAnyway}>
-              {t('settings.accountSaveAnyway')}
-            </button>
-            {saveButton}
-          </div>
-        </div>
-      ) : (
-        <>
-          {check && !testing && <CheckLine check={check} />}
-          <div className="ai-account-actions">
-            {!isNew && (
               <button
                 type="button"
-                className="btn ghost small danger"
-                disabled={(ai.accounts ?? []).length < 2 || testing}
-                onClick={() =>
-                  // Deleting an account drops its API key from the keychain with it,
-                  // and nothing here can put it back.
-                  openModal({
-                    kind: 'confirm',
-                    title: t('settings.deleteAccount'),
-                    message: interp(t('settings.deleteAccountConfirm'), { name: accountLabel(account) }),
-                    danger: true,
-                    confirmLabel: t('settings.deleteAccountAction'),
-                    onConfirm: onDelete
-                  })
-                }
+                className="btn ghost small icon-only"
+                disabled={loading || testing}
+                title={t('settings.fetchModelsTitle')}
+                aria-label={t('settings.fetchModelsTitle')}
+                onClick={onRefresh}
               >
-                <Trash2 size={13} /> {t('settings.deleteAccountAction')}
+                {loading ? <Loader2 size={13} className="spin" /> : <RefreshCw size={13} />}
               </button>
-            )}
-            <span className="ai-account-actions-spacer" />
-            {testing && <span className="settings-hint">{t('settings.accountTesting')}</span>}
-            {dirty ? (
-              <>
-                <button type="button" className="btn ghost small" disabled={testing} onClick={onDiscard}>
-                  {isNew ? t('common.cancel') : t('settings.accountDiscard')}
-                </button>
-                {saveButton}
-              </>
-            ) : (
-              <button type="button" className="btn ghost small" disabled={testing} onClick={onTest}>
-                {testing && <Loader2 size={13} className="spin" />} {t('settings.accountTest')}
-              </button>
-            )}
+            </div>
+          </label>
+          {!dirty && <CatalogNote catalog={catalog} />}
+
+          {accountNeedsKey(account) && !failure && (
+            <span className="settings-hint warn">
+              <TriangleAlert size={12} /> {t('settings.accountNeedsKey')}
+            </span>
+          )}
+        </fieldset>
+
+        {failure ? (
+          <div className="ai-account-error" role="alert">
+            <X size={16} strokeWidth={2.5} aria-hidden="true" />
+            <div className="ai-account-error-text">
+              <strong>{t('settings.accountCheckFailedTitle')}</strong>
+              {/* i18n-ignore the provider's own words, already masked for secrets */}
+              <span className="ai-account-error-reason">{statusReason(failure, t)}</span>
+            </div>
           </div>
-        </>
-      )}
-    </div>
+        ) : (
+          check && !testing && <CheckLine check={check} />
+        )}
+
+        <div className="ai-account-actions">
+          {!isNew && (
+            <button
+              type="button"
+              className="btn small ai-btn-danger"
+              disabled={!canDelete || testing}
+              onClick={() =>
+                // Deleting an account drops its API key from the keychain with it,
+                // and nothing here can put it back.
+                openModal({
+                  kind: 'confirm',
+                  title: t('settings.deleteAccount'),
+                  message: interp(t('settings.deleteAccountConfirm'), { name: accountLabel(account) }),
+                  danger: true,
+                  confirmLabel: t('settings.deleteAccountAction'),
+                  onConfirm: onDelete
+                })
+              }
+            >
+              {t('settings.deleteAccountAction')}
+            </button>
+          )}
+          <span className="ai-account-actions-hint">{footerHint}</span>
+          {dirty ? (
+            <>
+              <button type="button" className="btn small ai-btn-quiet" disabled={testing} onClick={onDiscard}>
+                {isNew ? t('common.cancel') : t('settings.accountDiscard')}
+              </button>
+              {failure && (
+                <button type="button" className="btn small ai-btn-warn" disabled={testing} onClick={onSaveAnyway}>
+                  {t('settings.accountSaveAnyway')}
+                </button>
+              )}
+              <button type="button" className="btn primary small" disabled={testing} onClick={onSave}>
+                {testing && <Loader2 size={13} className="spin" />} {t('settings.accountTestAndSave')}
+              </button>
+            </>
+          ) : (
+            <button type="button" className="btn small ai-btn-quiet" disabled={testing} onClick={onTest}>
+              {testing && <Loader2 size={13} className="spin" />} {t('settings.accountTest')}
+            </button>
+          )}
+        </div>
+      </div>
+    </section>
   )
 }
 
@@ -894,36 +901,52 @@ export function AIAccountsEditor({
             <div
               role="listitem"
               key={a.id}
-              className={`ai-accounts-item${active ? ' active' : ''}${role === 'in-use' ? ' in-use' : ''}`}
+              className={`ai-accounts-item${active ? ' active' : ''}${view.status === 'failing' ? ' failing' : ''}`}
               onClick={select}
             >
               <div className="ai-accounts-item-main">
-                <button
-                  type="button"
-                  className="ai-accounts-item-name ai-accounts-item-select"
-                  aria-current={active ? 'true' : undefined}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    select()
-                  }}
-                >
-                  {accountLabel(a)}
-                </button>
+                <span className="ai-accounts-avatar" aria-hidden="true">
+                  {accountInitial(a)}
+                </span>
+                <div className="ai-accounts-item-text">
+                  <span className="ai-accounts-item-title">
+                    <button
+                      type="button"
+                      className="ai-accounts-item-name ai-accounts-item-select"
+                      aria-current={active ? 'true' : undefined}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        select()
+                      }}
+                    >
+                      {accountLabel(a)}
+                    </button>
+                    {editDraft && editDraft.original?.id === a.id && dirty && (
+                      <span
+                        className="ai-accounts-item-unsaved"
+                        role="img"
+                        title={t('settings.accountUnsaved')}
+                        aria-label={t('settings.accountUnsaved')}
+                      >
+                        <CircleDot size={11} />
+                      </span>
+                    )}
+                  </span>
+                  <AccountSummary account={a} catalog={catalogs[a.id]} />
+                </div>
+                <StatusBadge view={view} />
+                {/* At the end, where the other rows have Use: the same place
+                    answers "is this the one?" on every row. */}
                 {role === 'in-use' && (
                   <span className="ai-accounts-item-in-use" title={t('settings.accountInUseTitle')}>
-                    <Check size={11} /> {t('settings.accountInUse')}
+                    <Check size={12} strokeWidth={3} />
+                    {t('settings.accountInUse')}
                   </span>
                 )}
-                {editDraft && editDraft.original?.id === a.id && dirty && (
-                  <span className="ai-accounts-item-unsaved" title={t('settings.accountUnsaved')} aria-label={t('settings.accountUnsaved')}>
-                    <CircleDot size={11} />
-                  </span>
-                )}
-                <StatusBadge view={view} />
                 {role === 'use' && (
                   <button
                     type="button"
-                    className="btn primary small ai-accounts-item-use"
+                    className="btn small ai-btn-accent ai-accounts-item-use"
                     title={interp(t('settings.accountUseTitle'), { name: accountLabel(a) })}
                     aria-label={interp(t('settings.accountUseTitle'), { name: accountLabel(a) })}
                     onClick={(e) => {
@@ -937,20 +960,22 @@ export function AIAccountsEditor({
                 )}
               </div>
               {view.status === 'failing' && (
-                <div className="ai-accounts-item-reason">
-                  <span>{statusReason(view, t)}</span>
+                // Under the name, past the avatar; the retry ends the sentence.
+                <p className="ai-accounts-item-reason">
+                  {statusReason(view, t)}{' '}
                   <button
                     type="button"
-                    className="link-btn"
+                    className="link-inline"
                     disabled={testing !== null}
                     onClick={(e) => {
                       e.stopPropagation()
                       void testAccountConnection(a, a.id)
                     }}
                   >
-                    {testing === a.id ? <Loader2 size={11} className="spin" /> : null} {t('settings.accountTestAgain')}
+                    {testing === a.id && <Loader2 size={11} className="spin" />}
+                    {t('settings.accountTestAgain')}
                   </button>
-                </div>
+                </p>
               )}
             </div>
           )
@@ -958,17 +983,25 @@ export function AIAccountsEditor({
         {newDraft && (
           <div role="listitem" className={`ai-accounts-item draft${setup ? '' : ' active'}`} onClick={() => setSetup(false)}>
             <div className="ai-accounts-item-main">
-              <button
-                type="button"
-                className="ai-accounts-item-name ai-accounts-item-select"
-                aria-current={!setup ? 'true' : undefined}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setSetup(false)
-                }}
-              >
-                {accountLabel(newDraft.account)}
-              </button>
+              <span className="ai-accounts-avatar" aria-hidden="true">
+                {accountInitial(newDraft.account)}
+              </span>
+              <div className="ai-accounts-item-text">
+                <span className="ai-accounts-item-title">
+                  <button
+                    type="button"
+                    className="ai-accounts-item-name ai-accounts-item-select"
+                    aria-current={!setup ? 'true' : undefined}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setSetup(false)
+                    }}
+                  >
+                    {accountLabel(newDraft.account)}
+                  </button>
+                </span>
+                <AccountSummary account={newDraft.account} catalog={undefined} />
+              </div>
               <span className="ai-status draft">{t('settings.accountNotSaved')}</span>
             </div>
           </div>
@@ -976,17 +1009,17 @@ export function AIAccountsEditor({
       </div>
 
       <div className="ai-accounts-bar">
+        <button type="button" className="btn small ai-btn-accent" disabled={!!newDraft} onClick={addAccount}>
+          <Plus size={13} /> {t('settings.addAccount')}
+        </button>
         <button
           type="button"
-          className="btn ghost small"
+          className="btn small ai-btn-quiet"
           disabled={ai.enabled === false}
           aria-expanded={setup}
           onClick={() => (setup ? setSetup(false) : leaveDraft(() => setSetup(true)))}
         >
           {t('settings.usePlan')}
-        </button>
-        <button type="button" className="btn ghost small" disabled={!!newDraft} onClick={addAccount}>
-          <Plus size={13} /> {t('settings.addAccount')}
         </button>
       </div>
 
@@ -1000,7 +1033,6 @@ export function AIAccountsEditor({
       {!setup && shown && (
         <AccountCard
           key={newDraft ? NEW_DRAFT : shown.id}
-          ai={ai}
           account={shown}
           isNew={!!newDraft}
           dirty={dirty}
@@ -1013,6 +1045,7 @@ export function AIAccountsEditor({
           loading={!newDraft && sameConnection && loading.includes(shown.id)}
           settled={shownCatalog ? true : sameConnection ? settled.includes(shown.id) : true}
           clis={clis}
+          canDelete={accounts.length > 1}
           onEdit={editAccount}
           onDelete={() => {
             const id = shown.id
@@ -1022,7 +1055,6 @@ export function AIAccountsEditor({
             setCheck(id, undefined)
             deleteAccount(id)
           }}
-          onUse={() => putAccountInUse(shown.id)}
           onRefresh={() => (dirty ? void testAccountConnection(shown, shownKey) : void reload(shown))}
           onSave={() => void saveAccountDraft()}
           onSaveAnyway={() => {

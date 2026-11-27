@@ -62,6 +62,7 @@ git actually is.
 |---|---|
 | **[Command palette](docs/help/search.md)** (`⌘K`) | Fuzzy-jump to any branch, commit, file or action. |
 | **[Commit graph](docs/help/graph.md)** | Octopus merges drawn properly, windowed for huge histories, focus modes (linear, hide merged branches, solo), "new since last fetch" marks. |
+| **[Commit details](docs/help/graph.md#commit-details)** | A commit's description under its subject, in a box you can drag taller, with the author and file search fixed while the files scroll. |
 | **[Code search](docs/help/search.md)** (`⌘⇧F`) | `git grep` across the tree, or a history pickaxe. |
 | **[Blame & history](docs/help/blame.md)** | Per-file, with follow-the-line and "reblame before this commit". |
 | **[Diffs & previews](docs/help/diffs.md)** | Split or unified, word-level highlights, code that only moved marked as moved, image diffs. |
@@ -88,7 +89,7 @@ git actually is.
 | **[Xcode project merge](docs/help/conflicts.md)** | A `project.pbxproj` conflict merged by object identity instead of by line — and refused, by name, where a build setting genuinely diverged. |
 | **[Lockfile conflicts](docs/help/conflicts.md)** | `Podfile.lock`, `Package.resolved`, `yarn.lock` and friends: take a side, and the command that regenerates it, instead of merging a graph nobody solved. |
 | **[External diff & merge tools](docs/help/diff-tools.md)** | Hand a file to Kaleidoscope, Beyond Compare, Meld — read straight from git's own tool list. |
-| **[Edit any commit](docs/help/commit-edit.md)** | Rewrite a past commit's files or message in place — cascade previewed before anything moves, merges replayed with their recorded resolutions. |
+| **[Edit any commit](docs/help/commit-edit.md)** | Rewrite a past commit's files or message in place — with the composer's message tools, cascade previewed before anything moves, merges replayed with their recorded resolutions. |
 | **[Interactive rebase](docs/help/rebase.md)** | Drag to reorder, squash, fixup, reword, edit or drop. |
 | **[Drop a branch on another](docs/help/merging.md#drag-one-ref-onto-another)** | Fast-forward, merge, rebase, interactive rebase, push to its remote branch, reset, open a pull request (pushing first if needed) or compare — in the sidebar, on the graph's badges, or from one to the other. Only what git would accept is offered. |
 | **[Drop a commit on a branch](docs/help/merging.md#drag-a-commit-onto-a-branch)** | Drag a commit from the graph onto a branch: cherry-pick it there, or move the branch to it — confirmed first, and undoable. |
@@ -116,7 +117,7 @@ git actually is.
 | | |
 |---|---|
 | **[Repositories](docs/help/repositories.md)** | Every repository GitHuttBr has ever opened, plus folders you scan, in one searchable list — open, favourite, recent, and per workspace. [Scanned repositories](docs/help/repositories.md#scanned-repositories) in the Open window opens several from those folders at once. |
-| **[Mission control](docs/help/mission-control.md)** | Every repository of the workspace on one screen, worst first — blocked, then to sync, then dirty — with a fetch for just the stale ones. |
+| **[Mission control](docs/help/mission-control.md)** | Every repository of the workspace on one screen, worst first — blocked, then to sync, then dirty — with each one's open pull requests and CI a click from their pages, its latest tag, and a fetch for just the stale ones. |
 | **[Clone many at once](docs/help/cloning.md#several-repositories-at-once)** | Tick several repositories in a host tab, or select all shown, and clone them into one folder — a few at a time, in a corner tray that keeps going after the dialog closes, each with its own cancel. |
 | **[Go to repository](docs/help/workspaces.md#going-to-a-repository)** (`⌘J`) | Jump to any open repository by name, folder or branch — group members included, most recently used first. Switching is instant even next to a huge `node_modules`: the file watcher follows only what git tracks, and a bar under the toolbar shows while the repository you switched to catches up. |
 | **[Groups & workspaces](docs/help/workspaces.md)** | Tabs with folders nested to any depth, colour-coded, fetch-all per subtree. Browser-like tab sizing, opt-in auto-grouping of [worktrees](docs/help/worktrees.md#grouping-worktrees-in-the-header). [Right-click a repository](docs/help/repo-menu.md) for alias, worktrees, GitHub, terminal and remove. |
@@ -187,7 +188,8 @@ The status bar names [the AI in use](docs/help/ai.md#the-ai-in-use-from-the-stat
 <img src="docs/screenshots/clip-themes.webp" alt="Switching themes" width="620" />
 </div>
 
-[Themes](docs/help/themes.md) in light and dark, plus **AI-generated** ones ·
+[Themes](docs/help/themes.md) in light and dark, plus **AI-generated** ones, and
+[icon colour palettes](docs/help/themes.md#icon-colors) for the toolbar, sidebar and menus ·
 [the interface in your language](docs/help/languages.md), picked by flag and its
 own name, with a mirrored layout for Arabic and Hebrew ·
 [screen-reader and keyboard accessibility](docs/help/accessibility.md) ·
@@ -202,7 +204,7 @@ picture, then a generated blob drawn offline, and a title-bar face that reacts t
 conflicts, half-finished rebases, a detached HEAD and piles left to grow — or
 [your own picture](docs/help/avatars.md#your-profiles-picture): your account's, an
 icon, or an image ·
-[integrated terminal](docs/help/terminal.md) in [your shell or one you pick](docs/help/terminal.md#which-shell-starts) with splits, and
+[integrated terminal](docs/help/terminal.md) in [your shell or one you pick](docs/help/terminal.md#which-shell-starts) — per terminal too — with splits, and
 [suggestions](docs/help/terminal.md#script-suggestions) for `npm run` scripts, `make` targets
 and branch names ·
 [**A real CLI**](docs/help/cli.md) — `githuttbr .` opens a repo, `githuttbr blame

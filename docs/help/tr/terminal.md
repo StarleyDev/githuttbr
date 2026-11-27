@@ -103,6 +103,14 @@ PowerShell, PowerShell Core (`pwsh`), `cmd`, Git Bash, WSL ya da özel bir
 çalıştırılabilir dosya. Terminalin görünümü (tema, yazı tipi boyutu ve ailesi)
 Ayarlar → Temalar → Terminal teması altındadır ve tüm oturumlara anında uygulanır.
 
+**Başka bir kabukla tek terminal.** Terminal listesinin **+** düğmesinin yanındaki
+**▾**, *Şununla yeni terminal…* menüsünü açar: aynı kabuklar — sistem varsayılanı,
+`/etc/shells` içindeki kullanılabilir her kabuk ya da Windows ön ayarları — ve
+bugünkü varsayılan işaretli. Birini seçmek onunla tek bir terminal açar, o
+terminali bölmek de onunla açılır; Ayarlar’daki varsayılan değişmez. En alttaki
+*Varsayılan kabuğu Ayarlar’da değiştir…* doğrudan Ayarlar’daki kabuk seçiciye
+gider.
+
 [Oh My Posh](https://ohmyposh.dev) kuruluysa bu bölüm, `%POSH_THEMES_PATH%`
 altındaki her `*.omp.json` dosyasını canlı önizlemeyle listeler — birini seçmek
 onu yeni terminallere `POSH_THEME` olarak verir, böylece profilinizdeki yalın bir

@@ -1,16 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Sparkles, Loader2, Trash2, AlignLeft, FolderTree, GitMerge, ChevronDown, CheckCheck, Users, Plus, Minus } from 'lucide-react'
-import { APP_COAUTHOR, type CodeSearchHit, type FileEntry, type CommitStyle } from '../../../shared/types'
+import { Sparkles, Loader2, Trash2, AlignLeft, FolderTree, GitMerge, ChevronDown, CheckCheck, Plus, Minus } from 'lucide-react'
+import { APP_COAUTHOR, type CodeSearchHit, type FileEntry } from '../../../shared/types'
 import { gitApi, aiApi, shellApi, diffToolApi } from '../infrastructure/api'
 import { repoActions, useRepoStore, type RepoData } from '../stores/repo'
 import { useUIStore, type MenuItem } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { FileListView } from './FileListView'
 import { MatchSummary, matchesByFile } from './SearchMatches'
-import { Avatar } from './Avatar'
-import { lintCommit, subjectLength, subjectCounterLevel, SUBJECT_IDEAL_LEN, CC_TYPES, parseCcPrefix, applyCcType, applyCcTypeWithGitmoji, applyCcScope, currentCcScope, parseGitmojiPrefix, applyGitmoji, parseTicketPrefix, ticketFromBranch } from '../lib/commitLint'
-import { GitmojiPicker } from './GitmojiPicker'
+import { parseTicketPrefix, ticketFromBranch } from '../lib/commitLint'
+import { CommitMessageEditor } from './CommitMessageEditor'
 import { appendTrailers, configTrailers } from '../lib/repoConfig'
 import { isSecretFile } from '../lib/secrets'
 import { isBuildNoise, ignoreLineFor } from '../lib/buildNoise'
@@ -22,7 +21,7 @@ import {
   buildQueryRegExp,
   type FileFilter
 } from './FileSearchBar'
-import { useT, interp, type TranslationKey } from '../i18n'
+import { useT, interp } from '../i18n'
 import { openWithMenuItems } from '../lib/openWith'
 import { buildFilePathClipboardPayload } from '../lib/filePathClipboard'
 import { stepRange, claimRangeKeys, ownsRangeKeys, rangeKeysBlocked, domOrder } from '../lib/rangeSelect'
@@ -31,23 +30,6 @@ import { CommitAIGenerate } from './CommitAIGenerate'
 import { useCommitGeneration } from './useCommitGeneration'
 
 type ListName = 'staged' | 'unstaged'
-
-/**
- * Commit-style options exposed in the composer dropdown. Styles flagged `ai`
- * only make sense when AI is enabled, so they're hidden otherwise — leaving the
- * manual styles (plain / conventional / gitmoji / gitmoji + conventional / ticket)
- * when AI is off.
- */
-const COMMIT_STYLE_OPTIONS: { id: CommitStyle; key: TranslationKey; ai?: boolean }[] = [
-  { id: 'plain', key: 'commitStyle.plain' },
-  { id: 'conventional', key: 'commitStyle.conventional' },
-  { id: 'gitmoji', key: 'commitStyle.gitmoji' },
-  { id: 'gitmoji-conventional', key: 'commitStyle.gitmojiConventional' },
-  { id: 'ticket', key: 'commitStyle.ticket' },
-  { id: 'auto', key: 'commitStyle.auto', ai: true },
-  { id: 'caveman', key: 'commitStyle.caveman', ai: true },
-  { id: 'haiku', key: 'commitStyle.haiku', ai: true }
-]
 
 /** Human-readable byte size, e.g. 7.3 MB. */
 function fmtBytes(n: number): string {
@@ -108,85 +90,20 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
     }
     return out
   }, [repo.commits])
-  const lintHints = useMemo(() => lintCommit(summary, description), [summary, description])
-  const subjLen = subjectLength(summary)
-  const subjLevel = subjectCounterLevel(subjLen)
-  const currentCcType = parseCcPrefix(summary).type
-  const applyCcTypeToDraft = (ty: string): void => {
+  // Every edit the message tools make cancels history navigation, as typing does.
+  const setSummaryFromEditor = (next: string): void => {
     histIdx.current = -1
-    // In the combined style the type and its gitmoji move together (feat → ✨).
-    setSummary(commitStyle === 'gitmoji-conventional' ? applyCcTypeWithGitmoji(summary, ty) : applyCcType(summary, ty))
+    setSummary(next)
   }
-  // Scopes the repository itself declares in `.githuttbr.json`. When it lists
-  // them, the composer stops being a free-text field and offers the real set —
-  // which is the difference between `feat(renderer)` and `feat(rendererr)`.
+  // Scopes the repository itself declares in `.githuttbr.json`, and whether it
+  // wants the ticket key taken from the branch name.
   const repoConfig = repo.config?.config ?? null
   const declaredScopes = repoConfig?.commit?.scopes ?? []
-  const applyCcScopeToDraft = (scope: string): void => {
-    histIdx.current = -1
-    setSummary(applyCcScope(summary, scope))
-  }
-  const currentGitmoji = parseGitmojiPrefix(summary).emoji
-  const applyGitmojiToDraft = (emoji: string): void => {
-    histIdx.current = -1
-    setSummary(applyGitmoji(summary, emoji))
-  }
-  // Co-author picker: append `Co-authored-by:` trailers from the repo's
-  // contributors to the commit body.
-  const coAuthorsRef = useRef<{ name: string; email: string }[]>([])
-  const addCoAuthor = (c: { name: string; email: string }): void => {
-    const trailer = `Co-authored-by: ${c.name} <${c.email}>`
-    if (description.includes(trailer)) return
-    setDescription((d) => (d.trim() ? `${d.replace(/\s+$/, '')}\n${trailer}` : trailer))
-  }
-  const openCoAuthorMenu = async (e: React.MouseEvent): Promise<void> => {
-    const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
-    if (!coAuthorsRef.current.length) {
-      coAuthorsRef.current = await gitApi.contributors(path).catch(() => [])
-    }
-    const list = coAuthorsRef.current
-    openContextMenu(
-      r.left,
-      r.bottom + 4,
-      list.length
-        ? list.map((c) => ({
-            label: `${c.name} · ${c.email}`,
-            icon: <Avatar email={c.email} name={c.name} size={16} />,
-            onClick: () => addCoAuthor(c)
-          }))
-        : [{ label: t('composer.noCoAuthors'), disabled: true, onClick: () => {} }]
-    )
-  }
-
-  // Ticket field is free-text while typing; it only writes a `KEY-123:` prefix
-  // once the key is complete, and strips it when cleared.
-  const [ticketField, setTicketField] = useState(() => parseTicketPrefix(summary).ticket)
-  const onTicketChange = (v: string): void => {
-    setTicketField(v)
-    histIdx.current = -1
-    const rest = parseTicketPrefix(summary).rest
-    const key = v.trim().toUpperCase()
-    setSummary(/^[A-Z][A-Z0-9]+-\d+$/.test(key) ? `${key}: ${rest}` : rest)
-  }
-  // A repo that asks for `commit.ticketFromBranch` gets the key filled in from
-  // the branch name — but only into an empty composer, so it can never rewrite
-  // a subject someone is in the middle of typing.
   const wantsBranchTicket = repoConfig?.commit?.ticketFromBranch === true
   const branchTicket = ticketFromBranch(repo.branches.current)
-  useEffect(() => {
-    if (!wantsBranchTicket || !branchTicket) return
-    if (summary.trim() || ticketField) return
-    setTicketField(branchTicket)
-    setSummary(`${branchTicket}: `)
-    // Keyed on the branch: switching branches offers that branch's key once.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [wantsBranchTicket, branchTicket])
 
   const [amend, setAmend] = useState(false)
   const summaryRef = useRef<HTMLInputElement>(null)
-  // Collapsed by default — the commit-style row is "advanced" and toggled by the
-  // chevron on the summary row.
-  const [showAdvanced, setShowAdvanced] = useState(false)
   const [aiStageBusy, setAiStageBusy] = useState(false)
   const [selection, setSelection] = useState<{ list: ListName; paths: Set<string> }>({
     list: 'unstaged',
@@ -197,7 +114,6 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
   // A mutating git op is queued/running — gate commit/discard so a second
   // action can't be fired before the first settles.
   const inflight = useUIStore((s) => s.inflight > 0)
-  const openContextMenu = useUIStore((s) => s.openContextMenu)
   const fileView = useUIStore((s) => s.fileView)
   const setFileView = useUIStore((s) => s.setFileView)
   const aiFor = useSettingsStore((s) => s.aiFor)
@@ -205,23 +121,6 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
   const defaultOpenApp = useSettingsStore((s) => s.settings.defaultOpenApp)
   const editor = useSettingsStore((s) => s.settings.editor)
   const aiEnabled = useSettingsStore((s) => s.activeAI().enabled !== false)
-  // The Conventional-Commit type dropdown shows only when the commit style of
-  // the AI this profile uses is Conventional (Settings → AI → Commit messages).
-  const commitStyle = useSettingsStore((s) => s.activeAI().commitStyle)
-  const usesConventional = commitStyle === 'conventional' || commitStyle === 'gitmoji-conventional'
-  const usesGitmoji = commitStyle === 'gitmoji' || commitStyle === 'gitmoji-conventional'
-  // Switch the active commit style straight from the composer — on the AI the
-  // profile reads it from, so on the general AI it changes for every profile
-  // that uses it. AI-only styles (auto / caveman / haiku) are filtered out when
-  // AI is disabled.
-  const styleOptions = useMemo(
-    () => (aiEnabled ? COMMIT_STYLE_OPTIONS : COMMIT_STYLE_OPTIONS.filter((o) => !o.ai)),
-    [aiEnabled]
-  )
-  const setCommitStyle = (v: CommitStyle): void => {
-    const store = useSettingsStore.getState()
-    store.saveAIFor(store.activeProfile().id, { commitStyle: v })
-  }
 
   const layout = useUIStore((s) => s.layout)
   const setLayout = useUIStore((s) => s.setLayout)
@@ -1092,137 +991,32 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
       </div>
 
       <div className="commit-box">
-        <div className="commit-summary-row">
-          <button
-            type="button"
-            className={`commit-advanced-toggle ${showAdvanced ? 'open' : ''}`}
-            title={showAdvanced ? t('composer.hideStyleOptions') : t('composer.showStyleOptions')}
-            onClick={() => setShowAdvanced((v) => !v)}
-          >
-            <ChevronDown size={14} />
-          </button>
-          {/* Beside the subject, not in the collapsed style row: with a gitmoji
-              style the emoji is part of every message, so it must be one click away. */}
-          {usesGitmoji && <GitmojiPicker value={currentGitmoji} onPick={applyGitmojiToDraft} />}
-          <input
-            ref={summaryRef}
-            className="commit-summary"
-            placeholder={t('composer.summaryPlaceholder')}
-            title={t('composer.summaryTitle')}
-            value={summary}
-            // While the AI writes, typing here would be overwritten by its answer.
-            readOnly={generation.state.phase === 'generating'}
-            maxLength={100}
-            onChange={(e) => {
-              histIdx.current = -1 // typing cancels history navigation
-              setSummary(e.target.value)
-            }}
-            onKeyDown={(e) => {
-              const recents = recentMessages
-              if (e.key === 'ArrowUp' && recents.length) {
-                e.preventDefault()
-                if (histIdx.current === -1) histSaved.current = summary
-                histIdx.current = Math.min(histIdx.current + 1, recents.length - 1)
-                setSummary(recents[histIdx.current])
-              } else if (e.key === 'ArrowDown' && histIdx.current >= 0) {
-                e.preventDefault()
-                histIdx.current -= 1
-                setSummary(histIdx.current === -1 ? histSaved.current : recents[histIdx.current])
-              }
-            }}
-          />
-          {summary.trim().length > 0 && (
-            <span className={`commit-counter ${subjLevel}`} title={interp(t('composer.subjectLength'), { ideal: SUBJECT_IDEAL_LEN })}>
-              {subjLen}
-            </span>
-          )}
-          <button className="commit-type commit-coauthor" title={t('composer.addCoAuthor')} onClick={(e) => void openCoAuthorMenu(e)}>
-            <Users size={14} />
-          </button>
-        </div>
-        <AnimatePresence initial={false}>
-          {showAdvanced && (
-            <motion.div
-              className="commit-style-row"
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.16 }}
-            >
-              {usesConventional && (
-                <select
-                  className="commit-type"
-                  title={t('composer.ccType')}
-                  value={currentCcType}
-                  onChange={(e) => applyCcTypeToDraft(e.target.value)}
-                >
-                  <option value="">{t('composer.ccTypePlaceholder')}</option>
-                  {CC_TYPES.map((ty) => (
-                    <option key={ty} value={ty}>
-                      {ty}
-                    </option>
-                  ))}
-                </select>
-              )}
-              {usesConventional && declaredScopes.length > 0 && (
-                <select
-                  className="commit-type"
-                  title={t('composer.ccScope')}
-                  value={currentCcScope(summary)}
-                  disabled={!currentCcType}
-                  onChange={(e) => applyCcScopeToDraft(e.target.value)}
-                >
-                  <option value="">{t('composer.ccScopePlaceholder')}</option>
-                  {declaredScopes.map((sc) => (
-                    <option key={sc} value={sc}>
-                      {sc}
-                    </option>
-                  ))}
-                </select>
-              )}
-              {commitStyle === 'ticket' && (
-                <input
-                  className="commit-type commit-ticket"
-                  title={t('composer.ticketKey')}
-                  placeholder={ticketFromBranch(repo.branches.current) || 'ABC-123'}
-                  value={ticketField}
-                  spellCheck={false}
-                  onChange={(e) => onTicketChange(e.target.value)}
-                />
-              )}
-              <select
-                className="commit-style-select"
-                title={t('composer.commitStyle')}
-                value={commitStyle}
-                onChange={(e) => setCommitStyle(e.target.value as CommitStyle)}
-              >
-                {styleOptions.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {t(s.key)}
-                  </option>
-                ))}
-              </select>
-            </motion.div>
-          )}
-        </AnimatePresence>
-        <textarea
-          className="commit-description"
-          placeholder={t('composer.descriptionPlaceholder')}
-          value={description}
+        <CommitMessageEditor
+          repoPath={path}
+          branch={repo.branches.current}
+          scopes={declaredScopes}
+          summary={summary}
+          description={description}
+          setSummary={setSummaryFromEditor}
+          setDescription={setDescription}
+          fillTicketFromBranch={wantsBranchTicket}
           readOnly={generation.state.phase === 'generating'}
-          rows={3}
-          onChange={(e) => setDescription(e.target.value)}
+          summaryRef={summaryRef}
+          onSummaryKeyDown={(e) => {
+            const recents = recentMessages
+            if (e.key === 'ArrowUp' && recents.length) {
+              e.preventDefault()
+              if (histIdx.current === -1) histSaved.current = summary
+              histIdx.current = Math.min(histIdx.current + 1, recents.length - 1)
+              setSummary(recents[histIdx.current])
+            } else if (e.key === 'ArrowDown' && histIdx.current >= 0) {
+              e.preventDefault()
+              histIdx.current -= 1
+              setSummary(histIdx.current === -1 ? histSaved.current : recents[histIdx.current])
+            }
+          }}
+          afterDescription={aiEnabled && <CommitAIGenerate gen={generation} disabled={staged.length === 0} />}
         />
-        {aiEnabled && <CommitAIGenerate gen={generation} disabled={staged.length === 0} />}
-        {lintHints.length > 0 && (
-          <ul className="commit-lint">
-            {lintHints.map((h, i) => (
-              <li key={i} className={`commit-lint-item ${h.level}`}>
-                {h.vars ? interp(t(h.key), h.vars) : t(h.key)}
-              </li>
-            ))}
-          </ul>
-        )}
         <div className="commit-actions">
           <label className="amend-check">
             <input

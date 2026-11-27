@@ -13,6 +13,10 @@ um grupo, um chip dentro de uma pasta aninhada, uma linha na lista de
 boas-vindas/launcher, ou uma linha no dropdown de repositórios da barra de
 ferramentas — e você recebe o mesmo menu com escopo de repositório. O chip do
 grupo em si ainda abre o menu do grupo; o clique precisa cair no repositório.
+Cada linha tem um ícone colorido pelo tipo de ação — na paleta padrão, abrir
+algo em verde-azulado, o host em verde, nomear e organizar no destaque, copiar
+e favoritar em laranja, remover e fechar em vermelho ([cores dos
+ícones](themes.md)).
 
 ![O menu de contexto do repositório num chip agrupado](../../screenshots/repo-context-menu.webp)
 

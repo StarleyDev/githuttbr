@@ -37,6 +37,7 @@ import { AnalyticsSection, RepoHistorySection } from './SettingsPanel'
 import { InsightsPage } from './InsightsPage'
 import { RepoInfoTab } from './RepoInfoTab'
 import { RepoVaultTab } from './RepoVaultTab'
+import type { IconTone } from '../lib/iconTone'
 import { useT, t as tr, interp } from '../i18n'
 import { BranchMultiSelect } from './BranchMultiSelect'
 import { RepoConfigTab } from './RepoConfigTab'
@@ -109,6 +110,21 @@ const HOST_NAME: Record<Exclude<HostingProvider, null>, string> = {
   bitbucket: 'Bitbucket',
   azure: 'Azure DevOps',
   forgejo: 'Forgejo'
+}
+
+/**
+ * Each page's icon colour (Settings → Themes → Icon colors), one tone per nav
+ * group like Settings' own menu: Repository in the accent, Security red,
+ * Activity green. General stays grey, as Settings' General does.
+ */
+const PAGE_TONE: Partial<Record<RepoSettingsPage, IconTone>> = {
+  config: 'ref',
+  info: 'ref',
+  vault: 'guard',
+  analytics: 'outgoing',
+  insights: 'outgoing',
+  history: 'outgoing',
+  logs: 'outgoing'
 }
 
 const PAGE_ICON: Record<RepoSettingsPage, React.ReactNode> = {
@@ -406,6 +422,7 @@ export function RepoSettingsModal({ repoPath, initialTab }: { repoPath: string; 
                 <button
                   key={item.id}
                   className={`repo-settings-nav-item ${page === item.id ? 'active' : ''}`}
+                  data-tone={PAGE_TONE[item.id]}
                   aria-current={page === item.id ? 'page' : undefined}
                   onClick={() => setPage(item.id)}
                 >

@@ -100,26 +100,50 @@ Anthropic uses its own `/v1/messages` API rather than an OpenAI-shaped call, so
 Claude models work directly instead of only appearing to. Gemini is reached
 through Google's OpenAI-compatible endpoint.
 
+### The provider list
+
+Each saved provider is a card: a letter for its provider, its name, and under
+the name what it actually uses — so two accounts of the same provider can be
+told apart without opening either.
+
+| Provider type | Second line |
+| --- | --- |
+| Subscription or local CLI | `CLI claude · sonnet` — the command, then the model |
+| Ollama or a custom server | `http://localhost:11434 · qwen3:8b` — the address, then the model |
+| Hosted API | `gpt-4o-mini · 41 models` — the model, and how many the provider listed |
+
+The model count appears only once the provider has listed its models; the
+bundled list GitHuttBr falls back on is a guess, not a count. Its status badge
+sits at the right. The card you are editing has an accent edge; one that is not
+responding has a red edge and its reason under the name, ending in **Test
+again**. Click a card to open it in the editor below the list.
+
 ### Adding and editing a provider
 
 A provider that was saved half-filled used to be a quiet trap: an empty key
 could end up in use, and nothing answered. So nothing on this card is
 saved as you type.
 
-**Add provider** opens a card marked **Draft · not saved**, with a dashed edge.
-Fill in the provider, key, endpoint and model, then choose **Test and save**.
-GitHuttBr first lists the provider's models with that key — the same request
-**Fetch models** makes — and only saves when it answers. You see
+**Add provider** opens the **New provider** editor, marked **Draft · not
+saved**, with a dashed edge. Pick the provider and a name, then the API key —
+or, for Ollama and a custom server, the address — and the model, then choose
+**Test and save**. GitHuttBr first lists the provider's models with that key —
+the same request the refresh button beside **Model** makes — and only saves
+when it answers. You see
 **Connected · N models**, and the provider joins the list as **Ready**.
 
 When the test fails, the card says **Could not connect** with the provider's
-reason (a refused key, `401`; a server that is not running) and **Nothing was
-saved.** Fix the field and test again, choose **Save anyway** to keep it as it
-is — it then shows as **Not responding** — or **Cancel**, which leaves no trace.
+reason (a refused key, `401`; a server that is not running), the key or address
+field gets a red edge, and the footer says **Nothing was saved. Fix it and try
+again, or save anyway.** Fix the field and test again, choose **Save anyway**
+to keep it as it is — it then shows as **Not responding** — or **Cancel**,
+which leaves no trace.
 
-Editing a saved provider works the same way. A banner says **Unsaved changes —
-nothing changes until you save**, and each field you touched is marked
-**· changed**. **Discard** puts the saved values back; **Test and save** tests
+Editing a saved provider works the same way. The editor's title is the
+provider's name with its status beside it. Once you change something the card
+gets an amber edge, a banner says **Unsaved changes — nothing changes until you
+save**, and each field you touched is marked **· changed**. **Delete provider**
+sits apart at the left; **Discard changes** puts the saved values back; **Test and save** tests
 and saves. Picking another provider, adding one or opening **Use my
 subscription** with changes pending asks **Save changes to …?** — **Save**,
 **Discard** or **Keep editing**. Closing Settings keeps the draft in memory, so
@@ -129,7 +153,13 @@ Keys are saved exactly as before, to your keychain, and only at save time. A
 provider's error is shown with the key and anything shaped like a token
 masked.
 
-![Adding and editing a provider](../screenshots/ai-provider-draft.webp)
+![A new provider whose test failed: the reason, Save anyway and Test and save](../screenshots/ai-provider-draft.webp)
+
+![Editing a saved provider: the address changed and not saved yet](../screenshots/ai-provider-editing.webp)
+
+Ollama needs no key, so its card shows the address instead of a key field; an
+Ollama account that already holds a key keeps the field, so the key stays
+editable.
 
 | Provider type | What **Test and save** checks |
 | --- | --- |
@@ -159,8 +189,9 @@ prompt.
 ### The provider in use
 
 One provider answers every task that has no provider of its own under
-**Model per task**. Its row is marked **In use** — a filled pill and an accent
-edge — and stays where it is in the list. The general AI and a profile with its
+**Model per task**. Its card ends with a green **In use**, where the other cards have **Use**, and
+stays where it is in the list. Green means in use only: a provider that answers
+but is not in use says **Ready** in a quiet grey-blue. The general AI and a profile with its
 own AI each have their own provider in use; the list changes the one you are
 editing.
 
@@ -181,7 +212,8 @@ another provider in use on the general AI changes nothing for that profile, and
 outside Settings nothing said so. The status bar at the bottom of a repository
 now does. Its **AI:** _provider_ button names the provider that answers for
 the profile in use, with a dot for its status — green **Ready**, red **Not
-responding**, amber **No key**, grey **Not checked**.
+responding**, amber **No key**, grey **Not checked**. When the provider is **Ready** the whole
+button turns green, so a working AI does not read as switched off.
 
 Clicking it opens a small panel:
 
@@ -270,8 +302,8 @@ Upgrading from a version before accounts shows this once. The provider and key y
 
 ## Models
 
-Model lists come from the provider itself and are cached for a day; **Fetch
-models** refreshes one immediately. Under the list GitHuttBr says where it came
+Model lists come from the provider itself and are cached for a day; the refresh button next to
+**Model** refreshes one immediately. Under the list GitHuttBr says where it came
 from — live, cached (with when), or the built-in fallback and why.
 
 The list is filtered to models that can answer a chat request, so embeddings,

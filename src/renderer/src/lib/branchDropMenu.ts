@@ -7,10 +7,12 @@ import {
   branchDropActions,
   fastForwardCandidate,
   type BranchDropAction,
+  type BranchDropActionId,
   type DropContext,
   type DropRef
 } from './branchDrop'
 import { t, interp } from '../i18n'
+import { menuActionIcon, type MenuActionId } from './menuActionIcons'
 
 /**
  * What the repository can say about a drop that the refs alone cannot: which
@@ -67,9 +69,22 @@ export async function openBranchDropMenu(
   const items: MenuItem[] = []
   actions.forEach((action, i) => {
     if (i > 0 && actions[i - 1].group !== action.group) items.push({ separator: true })
-    items.push(dropItem(repoPath, source, target, action))
+    items.push({ ...menuActionIcon(DROP_ACTION_ICON[action.id]), ...dropItem(repoPath, source, target, action) })
   })
   if (items.length) useUIStore.getState().openContextMenu(x, y, items)
+}
+
+/** Each drop action's icon, from the table every commit and ref menu shares. */
+const DROP_ACTION_ICON: Record<BranchDropActionId, MenuActionId> = {
+  fastForward: 'fastForward',
+  merge: 'merge',
+  rebase: 'rebase',
+  interactiveRebase: 'interactiveRebase',
+  pushTo: 'push',
+  reset: 'reset',
+  createPr: 'createPr',
+  pushAndCreatePr: 'pushAndCreatePr',
+  compare: 'compare'
 }
 
 function dropItem(repoPath: string, source: DropRef, target: DropRef, action: BranchDropAction): MenuItem {

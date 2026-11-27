@@ -36,6 +36,9 @@ Un arbre de travail créé le mois dernier s’oublie vite, et les questions arr
 | 🔒 | Verrouillé — survolez-le pour voir la raison donnée lors du verrouillage |
 | **absent**, nom barré | Le dossier n’existe plus ; git n’en garde que l’enregistrement |
 
+![La section Arbres de travail : un arbre avec du travail non commité et des
+commits d’avance, un manquant, un verrouillé, et la gomme dans l’en-tête](../../screenshots/worktree-care.webp)
+
 Les compteurs sont lus à l’ouverture de la section, quand le commit de cet arbre de travail change et quand la fenêtre reprend le focus — pas à chaque rafraîchissement, car chacun est un `git status` dans un autre dossier.
 
 Clic droit sur une ligne pour :
@@ -56,6 +59,51 @@ Ce que ces actions **ne** font **pas** :
 - Un verrou est une convention entre clients git, pas une protection de fichiers : rien n’empêche un outil extérieur à git d’effacer le dossier.
 - L’arbre de travail principal — le dépôt lui-même — ne peut être ni verrouillé, ni déplacé, ni supprimé.
 - Supprimer un arbre de travail ne supprime jamais sa branche. Supprimez-la depuis la liste des branches si vous en avez fini.
+
+### Regrouper les arbres de travail dans l’en-tête
+
+Les onglets d’arbre de travail s’ouvrent avec des libellés `racine · branche`, qui
+s’élargissent vite.
+
+**Un projet rangé dans un groupe y accueille ses arbres de travail.** Quand le
+dépôt — ou l’un de ses arbres de travail — est déjà dans un groupe, un nouvel
+arbre de travail s’ouvre dans ce groupe, à côté de lui, sans rien à cocher : la
+boîte de dialogue d’ajout indique seulement quel groupe, et **Ouvrir dans un
+arbre de travail** depuis le menu d’une branche fait de même sans demander. Un
+arbre de travail ouvert plus tard depuis **Récents** ou depuis un dossier le
+rejoint aussi. Faites glisser la pastille hors du groupe si vous la voulez à part.
+
+Pour un dépôt dans son propre onglet, cochez **Proposer de regrouper les worktrees
+partageant le même dépôt racine** dans la boîte de dialogue d’ajout (désactivé par
+défaut, mémorisé comme l’option codegraph) : si la racine est ouverte dans un
+onglet isolé, un champ **Nom du groupe** apparaît (prérempli avec le nom du
+dossier de la racine) et les deux rejoignent un nouveau groupe ; sans aucun
+membre de la famille ouvert, elle indique simplement que l’arbre de travail
+s’ouvre dans son propre onglet. Dans le groupe, les pastilles se réduisent à la
+feuille (`main`, `feature/x`) puisque le groupe dit déjà à quel dépôt elles
+appartiennent — une option dans Paramètres → Disposition et terminal garde le nom
+complet `racine · branche` si vous préférez. La proposition ne réunit que des
+arbres de travail de la même racine — elle ne fusionne jamais des dépôts sans
+rapport.
+
+**Reconnaître un onglet d’arbre de travail.** Un arbre de travail lié est un
+second checkout d’un dépôt, et son onglet ressemblerait sinon trait pour trait à
+celui du dépôt. Un onglet d’arbre de travail affiche donc une **fourche** verte au
+lieu de l’icône de dossier — sur un onglet à image, une petite fourche dans le
+coin de l’image — et son infobulle indique *Arbre de travail de …* avec le dossier
+où il se trouve. Un clic droit propose **Ouvrir …, le dépôt principal**, qui met
+au premier plan l’onglet qui a déjà le checkout principal, ou l’ouvre — dans le
+groupe de l’arbre de travail quand celui-ci est dans un groupe. Cela fonctionne
+quelle que soit la façon dont l’arbre de travail a été ouvert : depuis sa
+famille, depuis **Ouvrir un dépôt** ou depuis la liste analysée, et les arbres de
+travail d’un sous-module pointent vers le sous-module. Limites : la marque dit où
+vit le checkout, pas quelle est sa branche ; les arbres de travail d’un dépôt bare
+ne sont pas marqués, faute de checkout principal à ouvrir ; et un dépôt principal
+ouvert par un dossier en lien symbolique n’est pas reconnu comme déjà ouvert, si
+bien que le menu l’ouvre une seconde fois sous son vrai chemin.
+
+![Un onglet d’arbre de travail avec l’icône de fourche verte à côté de l’onglet du
+dépôt principal, son menu ouvert sur Ouvrir submodules-worktrees, le dépôt principal](../../screenshots/worktree-tab.webp)
 
 ![Les sections arbres de travail et sous-modules de la barre latérale, toutes deux remplies](../../screenshots/worktrees.webp)
 

@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { requestClosePrPage } from '../stores/prView'
-import { Plus, FolderGit2, X, Minus, Square, Settings, Sparkles, LifeBuoy, FileText, Bell, BarChart3, BookOpen, ScrollText, CircleDot, Flag, GitPullRequest, Tag, Download, ArrowDownToLine, KeyRound, LayoutGrid, Folder, FolderOpen, FolderPlus, FolderTree, Trash2, Scale, Wrench, Ungroup, Workflow } from 'lucide-react'
+import { Plus, FolderGit2, X, Minus, Square, Settings, Sparkles, LifeBuoy, FileText, Bell, BarChart3, BookOpen, ScrollText, CircleDot, Flag, GitPullRequest, Tag, Download, ArrowDownToLine, KeyRound, Folder, FolderOpen, FolderPlus, FolderTree, Trash2, Scale, Wrench, Ungroup, Workflow } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { colorMenuItems } from './colorMenu'
+import { menuActionIcon } from '../lib/menuActionIcons'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore, type MenuItem } from '../stores/ui'
 import { useRepoStore, repoActions } from '../stores/repo'
@@ -626,8 +627,8 @@ export function TitleBar(): React.JSX.Element {
     const others = settings.workspaces.filter((w) => w.id !== settings.activeWorkspaceId)
     if (others.length === 0) return null
     return {
+      ...menuActionIcon('moveToWorkspace'),
       label: t('titlebar.moveToWorkspace'),
-      icon: <LayoutGrid size={15} />,
       submenu: others.map((w) => ({
         label: w.name,
         onClick: () => moveTabToWorkspace(tab.id, w.id)
@@ -643,14 +644,14 @@ export function TitleBar(): React.JSX.Element {
   const addToGroupItem = (tabId: string): MenuItem => {
     const groups = settings.tabs.filter((x): x is GroupTab => x.kind === 'group')
     const create: MenuItem = {
+      ...menuActionIcon('newGroup'),
       label: t('titlebar.newGroupMenu'),
-      icon: <FolderPlus size={15} />,
       onClick: () => promptNewGroup(tabId)
     }
     if (groups.length === 0) return create
     return {
+      ...menuActionIcon('addToGroup'),
       label: t('titlebar.addToGroup'),
-      icon: <FolderTree size={15} />,
       submenu: [
         ...groups.map((g) => ({ label: g.name, onClick: () => moveTabIntoGroup(tabId, g.id) })),
         { separator: true },
@@ -670,8 +671,8 @@ export function TitleBar(): React.JSX.Element {
     const name = repoDisplayName(root, settings.repoAliases, canonicalRepoName(root))
     return [
       {
+        ...menuActionIcon('openMainRepo'),
         label: interp(t('titlebar.openMainRepo'), { repo: name }),
-        icon: <FolderGit2 size={15} />,
         onClick: () => {
           const store = useSettingsStore.getState()
           if (groupTabId) store.addRepoToGroup(groupTabId, { path: root, name })
@@ -687,7 +688,7 @@ export function TitleBar(): React.JSX.Element {
       const move = moveToWorkspaceItem(tab)
       return [
         ...(move ? [move, { separator: true } as MenuItem] : []),
-        { label: t('titlebar.closeTab'), onClick: () => closeTab(tab.id) }
+        { ...menuActionIcon('closeTab'), label: t('titlebar.closeTab'), onClick: () => closeTab(tab.id) }
       ]
     }
     if (tab.kind === 'repo' && tab.repos[0]) {
@@ -698,8 +699,9 @@ export function TitleBar(): React.JSX.Element {
       // strip's own vocabulary is close, so the last rows say that.
       const alone = settings.tabs.length < 2
       extras.push(
-        { label: t('titlebar.closeThisRepo'), onClick: () => requestCloseTab(tab.id) },
+        { ...menuActionIcon('closeTab'), label: t('titlebar.closeThisRepo'), onClick: () => requestCloseTab(tab.id) },
         {
+          ...menuActionIcon('closeOtherTabs'),
           label: t('titlebar.closeOthers'),
           disabled: alone,
           title: alone ? t('titlebar.closeOthersNone') : undefined,
@@ -796,8 +798,8 @@ export function TitleBar(): React.JSX.Element {
     if (!all.length) return null
     const current = all.find((x) => x.folder.paths.includes(repoPath))?.folder.id ?? null
     return {
+      ...menuActionIcon('moveToFolder'),
       label: t('titlebar.moveToFolder'),
-      icon: <Folder size={15} />,
       submenu: [
         { label: t('titlebar.groupRoot'), disabled: current === null, onClick: () => moveRepoToFolder(tab.id, repoPath, null) },
         ...all.map(({ folder }) => ({
@@ -887,8 +889,8 @@ export function TitleBar(): React.JSX.Element {
     // With folders in play, offer to file the repo; with none yet, offer to
     // make the first one.
     const filing: MenuItem = moveRepoToFolderItem(groupTab, repoPath) ?? {
+      ...menuActionIcon('newFolder'),
       label: t('titlebar.newFolderMenu'),
-      icon: <FolderPlus size={15} />,
       onClick: () => promptNewFolder(groupTab.id, null)
     }
     return repositoryMenuItems(
@@ -902,6 +904,7 @@ export function TitleBar(): React.JSX.Element {
         filing,
         { separator: true },
         {
+          ...menuActionIcon('eject'),
           label: t('titlebar.eject'),
           onClick: () => ejectRepoFromGroup(groupTab.id, repoPath, null)
         }

@@ -101,6 +101,25 @@ kullanır; böylece Claude modelleri yalnızca çalışıyor gibi görünmek yer
 gerçekten çalışır. Gemini'ye Google'ın OpenAI uyumlu uç noktası üzerinden
 ulaşılır.
 
+### Sağlayıcı listesi
+
+Kaydedilen her sağlayıcı bir karttır: sağlayıcısının harfi, adı ve altında
+gerçekte ne kullandığı — böylece aynı sağlayıcının iki hesabı hiçbirini açmadan
+ayırt edilir.
+
+| Sağlayıcı türü | İkinci satır |
+| --- | --- |
+| Abonelik veya yerel CLI | `CLI claude · sonnet` — komut, ardından model |
+| Ollama veya özel sunucu | `http://localhost:11434 · qwen3:8b` — adres, ardından model |
+| Barındırılan API | `gpt-4o-mini · 41 model` — model ve sağlayıcının listelediği model sayısı |
+
+Model sayısı yalnızca sağlayıcı modellerini listeledikten sonra görünür;
+GitHuttBr'ın yedek olarak kullandığı yerleşik liste bir tahmindir, sayım değil.
+Durum rozeti sağdadır. Düzenlediğiniz kartın kenarı vurgu rengindedir; yanıt
+vermeyen bir kartın kenarı kırmızıdır ve nedeni adının altında, **Yeniden test
+et** ile biten bir cümlede yazar. Bir kartı listenin altındaki düzenleyicide
+açmak için ona tıklayın.
+
 ### Sağlayıcı eklemek ve düzenlemek
 
 Yarım doldurulup kaydedilen bir sağlayıcı sessiz bir tuzaktı: boş bir anahtar
@@ -110,7 +129,7 @@ yazarken hiçbir şey kaydedilmez.
 **Sağlayıcı ekle**, kesik kenarlı ve **Taslak · kaydedilmedi** işaretli bir kart
 açar. Sağlayıcıyı, anahtarı, uç noktayı ve modeli doldurup
 **Test et ve kaydet** seçin. GitHuttBr önce bu anahtarla sağlayıcının
-modellerini listeler — **Modelleri getir** ile aynı istek — ve yalnızca yanıt
+modellerini listeler — **Model** yanındaki yenile düğmesi ile aynı istek — ve yalnızca yanıt
 gelirse kaydeder. **Bağlandı · N model** görürsünüz ve sağlayıcı listeye
 **Hazır** olarak girer.
 
@@ -134,6 +153,8 @@ sağlayıcının hatası, anahtar ve token'a benzeyen her şey maskelenerek
 gösterilir.
 
 ![Sağlayıcı eklemek ve düzenlemek](../../screenshots/ai-provider-draft.webp)
+
+![Kayıtlı bir sağlayıcıyı düzenlemek: adres değişti, henüz kaydedilmedi](../../screenshots/ai-provider-editing.webp)
 
 | Sağlayıcı türü | **Test et ve kaydet** neyi denetler |
 | --- | --- |
@@ -163,8 +184,7 @@ kalır, çünkü çalıştığını kanıtlamak bir isteme mal olur.
 ### Kullanımdaki sağlayıcı
 
 **Göreve göre model** altında kendi sağlayıcısı olmayan her görevi tek bir
-sağlayıcı yanıtlar. Onun satırı **Kullanımda** olarak işaretlenir — dolu bir
-hap ve vurgu renginde bir kenar — ve listedeki yerinde kalır. Genel yapay zekâ ve
+sağlayıcı yanıtlar. Onun kartı, diğer kartlarda **Kullan** olan yerde yeşil bir **Kullanımda** ile biter ve listedeki yerinde kalır. Yeşil yalnızca kullanımda demektir: yanıt veren ama kullanımda olmayan bir sağlayıcı sakin bir gri-mavi ile **Hazır** der. Genel yapay zekâ ve
 kendi yapay zekâsı olan bir profil, her biri kendi kullanımdaki sağlayıcısına
 sahiptir; liste o an düzenlediğini değiştirir.
 
@@ -188,7 +208,8 @@ için hiçbir şey değiştirmez ve Ayarlar dışında bunu söyleyen bir şey y
 deponun altındaki durum çubuğu artık söylüyor. **Yapay zekâ:** _sağlayıcı_
 düğmesi, kullanılan profil için yanıt veren sağlayıcıyı durumunu gösteren bir
 noktayla adlandırır — yeşil **Hazır**, kırmızı **Yanıt vermiyor**, kehribar
-**Anahtar yok**, gri **Denetlenmedi**.
+**Anahtar yok**, gri **Denetlenmedi**. Sağlayıcı **Hazır** olduğunda düğmenin
+tamamı yeşile döner, böylece çalışan bir yapay zekâ kapalıymış gibi görünmez.
 
 Tıklamak küçük bir panel açar:
 
@@ -285,7 +306,7 @@ Hesaplardan önceki bir sürümden yükseltirken bu bir kez görünür. Elindeki
 ## Modeller
 
 Model listeleri doğrudan sağlayıcıdan gelir ve bir gün önbellekte tutulur;
-**Modelleri getir** birini anında tazeler. Listenin altında GitHuttBr listenin
+**Model** yanındaki yenile düğmesi birini anında tazeler. Listenin altında GitHuttBr listenin
 nereden geldiğini söyler — canlı, önbellekten (tarihiyle) ya da yerleşik yedek
 listeden, ve nedenini.
 

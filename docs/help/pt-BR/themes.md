@@ -55,6 +55,24 @@ para a branch de destino laranja (abrir no navegador fica cinza); nos seus
 comentários, ali e na página da issue, **Editar** fica no destaque e **Excluir** vermelho. O azul e o
 verde-azulado são misturas das cores do tema, então também acompanham o tema.
 
+Os menus de clique direito de commits, branches e repositórios — os commits,
+stashes e etiquetas de branch ou tag do grafo, as branches, tags e stashes da
+lateral, o seletor de branch, o menu que um arrastar e soltar abre, e o menu de
+um repositório na aba, no chip do grupo, na página Repositórios e no lançador —
+dão a cada linha um ícone colorido pelo que a ação faz, do mesmo jeito em todos
+eles:
+
+| Cor | Ações |
+|---|---|
+| Referências (destaque) | fazer checkout, criar branch ou tag, merge, rebase, cherry-pick, revert, comparar, renomear, worktree, squash, fixup; o apelido de um repositório e movê-lo para um grupo, pasta ou workspace |
+| Saída (verde) | push, criar pull request, abrir no host, ir para a release, exportar patch |
+| Entrada (ciano) | pull, fast-forward |
+| Guardados (laranja) | aplicar ou tirar um stash, fixar, favoritar, copiar, amend, editar a mensagem |
+| Segurança (vermelho) | reset, excluir, descartar, desfazer o commit, mover uma branch, remover da lista, fechar |
+| Prévia (verde-azulado) | range-diff, radar de conflitos, Local CI, mostrar worktrees, abrir no terminal, no gerenciador de arquivos ou no editor |
+
+Uma linha destrutiva fica toda vermelha, ícone incluído, como sempre ficou.
+
 | Opção | O que aparece |
 |---|---|
 | **Monocromático** | Todos os ícones cinza, como antes desta opção |
@@ -64,12 +82,53 @@ verde-azulado são misturas das cores do tema, então também acompanham o tema.
 As cores vêm do tema: um tema que muda o verde ou o destaque muda os ícones
 junto, inclusive os temas personalizados e os gerados por IA.
 
+**Paleta** escolhe que cor cada função recebe. Cada amostra mostra as suas
+cinco cores (entrada, saída, referências, guardados, segurança):
+
+| Paleta | Entrada · Saída · Referências · Guardados · Segurança |
+|---|---|
+| **Do tema** (padrão) | ciano · verde · destaque · laranja · vermelho — a tabela acima |
+| **Fria** | destaque · verde-azulado · roxo · lavanda · vinho |
+| **Quente** | laranja · amarelo · magenta · oliva · vermelho |
+| **Natureza** | verde-azulado · verde · lima · amarelo · vermelho |
+| **Pôr do sol** | roxo · laranja · magenta · amarelo · vermelho |
+| **Uma cor** | tudo no destaque; segurança continua vermelha |
+
+Toda paleta é feita das cores do próprio tema e de misturas delas, então muda
+junto com o tema e mantém o contraste no claro e no escuro. A fileira de botões
+da página de pull request também segue a paleta, cada botão com a função mais
+próxima dele. Segurança continua vermelha na maioria das paletas porque é um
+aviso; com **Monocromático** a paleta não tem o que colorir.
+
 Limites: só os botões principais da barra, os cabeçalhos das seções da lateral,
-o menu Ferramentas, as páginas das Configurações e os botões das páginas de pull
-request e de issue ganham cor; os outros menus, as
+o menu Ferramentas, os menus de clique direito de commits, branches e repositórios, as páginas das Configurações e das configurações do repositório, os botões das páginas de pull
+request e de issue e os ícones da barra de status (a pasta, Ajuda, Relatar problema) ganham cor — o número da versão fica cinza; os outros menus, as
 linhas dentro das seções e o grafo não. Uma linha de menu sob o mouse mantém o
 visual de sempre, ícone incluído. A cor nunca é a
 única pista: todo ícone mantém o nome.
+
+## Cores da nota de release
+
+O [Mission control](mission-control.md) mostra quantos commits cada repositório
+fez desde a última tag. **Cores da nota de release** decide como esse número
+aparece, para uma release atrasada se destacar e uma recente ficar discreta.
+
+São quatro faixas. As três primeiras terminam num número de commits que você
+escolhe; a última pega tudo o que passar delas. Cada faixa usa uma das cores do
+tema, ou uma **cor personalizada** pela bolinha no fim da linha.
+
+| Faixa | Padrão |
+|---|---|
+| Até 5 commits | Cinza, como o resto da linha |
+| Depois, até 20 | Amarelo |
+| Depois, até 50 | Vermelho |
+| Acima disso | Vermelho |
+
+Uma cor do tema acompanha o tema, no claro e no escuro. Uma cor personalizada
+fica exatamente como foi escolhida em qualquer tema, então escolha uma que se leia
+nos dois fundos.
+
+![Configurações → Temas: as quatro faixas da nota de release, cada uma com as cores e a bolinha personalizada](../../screenshots/settings-release-colors.webp)
 
 ## Como as Configurações se organizam
 

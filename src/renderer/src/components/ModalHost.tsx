@@ -2,8 +2,8 @@ import githuttbrLaunch from '../assets/githuttbr-launch.png'
 import { resolveWorktreeDir } from '../lib/branchMenu'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { X, Globe, Cloud, Server, GitFork, Loader2, Search, Lock, FolderGit2, Folder, Plus, Check, ChevronDown, ChevronRight, RefreshCw, Sparkles, GitMerge, ArrowUpFromLine, TextCursorInput, FolderPlus } from 'lucide-react'
-import { Github, Gitlab } from './BrandIcons'
+import { X, Globe, Cloud, Loader2, Search, Lock, FolderGit2, Folder, Plus, Check, ChevronDown, ChevronRight, RefreshCw, Sparkles, GitMerge, ArrowUpFromLine, TextCursorInput, FolderPlus } from 'lucide-react'
+import { AzureLogo, BitbucketLogo, ForgejoLogo, GithubLogo, GitlabLogo } from './HostLogos'
 import { useUIStore, type ModalSpec } from '../stores/ui'
 import { LauncherBack } from './LauncherBack'
 import { useClonesStore } from '../stores/clones'
@@ -28,7 +28,7 @@ import {
 import { SettingsPanel } from './SettingsPanel'
 import { LauncherPanel, type LauncherItem } from './Welcome'
 import { confirmRemoveRecentRepo, confirmRemoveRepoFromGroup } from '../lib/repositoryMenuItems'
-import { planWorktreeGroup, worktreeGroupName } from '../lib/worktrees'
+import { planWorktreeGroup, worktreeOpening, worktreeGroupName } from '../lib/worktrees'
 import { AIConfigWizard } from './AIConfigWizard'
 import { InteractiveRebase } from './InteractiveRebase'
 import { ConflictRadar } from './ConflictRadar'
@@ -638,13 +638,13 @@ const HOST_META: Record<
   }
 }
 
-const PROVIDER_ICONS: Record<RemoteProviderId, typeof Globe> = {
+const PROVIDER_ICONS: Record<RemoteProviderId, React.ComponentType<{ size?: number }>> = {
   url: Globe,
-  github: Github,
-  gitlab: Gitlab,
-  bitbucket: Cloud,
-  azure: Server,
-  forgejo: GitFork
+  github: GithubLogo,
+  gitlab: GitlabLogo,
+  bitbucket: BitbucketLogo,
+  azure: AzureLogo,
+  forgejo: ForgejoLogo
 }
 
 function repoToName(repo: RemoteRepo): string {
@@ -1269,7 +1269,10 @@ function AddWorktreeModal({ spec }: { spec: Extract<ModalSpec, { kind: 'add-work
   // family group, convert the standalone root tab into a new group, or
   // nothing — no family member is open.
   const tabs = useSettingsStore((s) => s.settings.tabs)
-  const groupPlan = autoGroup ? planWorktreeGroup(tabs, spec.rootPath) : null
+  // Always worked out: a project kept in a group takes its worktrees in,
+  // checkbox or not — the checkbox only decides about making a new group.
+  const groupPlan = planWorktreeGroup(tabs, spec.rootPath)
+  const opening = worktreeOpening(groupPlan, autoGroup)
 
   const submit = (): void => {
     if (invalid) return
@@ -1283,11 +1286,11 @@ function AddWorktreeModal({ spec }: { spec: Extract<ModalSpec, { kind: 'add-work
           .openWorktreeRepo(
             { path: resolvedDir(finalDir), name: `${spec.repoName} · ${effectiveBranch}` },
             spec.rootPath,
-            autoGroup
-              ? groupPlan?.kind === 'add'
-                ? groupPlan.groupName
-                : groupName
-              : undefined
+            opening === 'join' && groupPlan?.kind === 'add'
+              ? groupPlan.groupName
+              : opening === 'offer'
+                ? groupName
+                : undefined
           )
       })
   }
@@ -1360,18 +1363,21 @@ function AddWorktreeModal({ spec }: { spec: Extract<ModalSpec, { kind: 'add-work
         <span>{t('modal.worktreeIndexCodegraph')}</span>
       </label>
 
-      <label className="clone-partial">
-        <input
-          type="checkbox"
-          checked={autoGroup}
-          onChange={(e) => updateSettings((s) => ({ ...s, worktreeAutoGroup: e.target.checked }))}
-        />
-        <span>{t('modal.worktreeAutoGroup')}</span>
-      </label>
-      {autoGroup && groupPlan?.kind === 'add' && (
+      {/* The project lives in a group: the worktree goes there, said once in
+          plain words rather than behind a checkbox. */}
+      {groupPlan?.kind === 'add' ? (
         <div className="modal-hint">
           {interp(t('modal.worktreeGroupJoin'), { name: groupPlan.groupName })}
         </div>
+      ) : (
+        <label className="clone-partial">
+          <input
+            type="checkbox"
+            checked={autoGroup}
+            onChange={(e) => updateSettings((s) => ({ ...s, worktreeAutoGroup: e.target.checked }))}
+          />
+          <span>{t('modal.worktreeAutoGroup')}</span>
+        </label>
       )}
       {autoGroup && groupPlan?.kind === 'convert' && (
         <>

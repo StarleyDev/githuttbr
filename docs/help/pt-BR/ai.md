@@ -89,28 +89,51 @@ A Anthropic usa a própria API `/v1/messages` em vez de uma chamada no formato
 OpenAI, então os modelos Claude funcionam de fato em vez de apenas parecer.
 O Gemini é alcançado pelo endpoint compatível com OpenAI do Google.
 
+### A lista de provedores
+
+Cada provedor salvo é um cartão: uma letra do provedor, o nome e, embaixo do
+nome, o que ele de fato usa — assim duas contas do mesmo provedor se distinguem
+sem abrir nenhuma.
+
+| Tipo de provedor | Segunda linha |
+| --- | --- |
+| Assinatura ou CLI local | `CLI claude · sonnet` — o comando, depois o modelo |
+| Ollama ou servidor próprio | `http://localhost:11434 · qwen3:8b` — o endereço, depois o modelo |
+| API hospedada | `gpt-4o-mini · 41 modelos` — o modelo, e quantos o provedor listou |
+
+A contagem de modelos só aparece depois que o provedor listou os modelos; a
+lista embutida que o GitHuttBr usa como reserva é um palpite, não uma contagem.
+O selo de status fica à direita. O cartão que você está editando tem borda de
+destaque; um que não responde tem borda vermelha e o motivo embaixo do nome,
+terminando em **Testar de novo**. Clique num cartão para abri-lo no editor
+abaixo da lista.
+
 ### Adicionar e editar um provedor
 
 Um provedor salvo pela metade era uma armadilha silenciosa: uma chave vazia
 podia acabar em uso, e nada respondia. Por isso nada neste cartão é salvo
 enquanto você digita.
 
-**Adicionar provedor** abre um cartão marcado **Rascunho · não salvo**, com borda
-tracejada. Preencha provedor, chave, endpoint e modelo e escolha
-**Testar e salvar**. O GitHuttBr primeiro lista os modelos do provedor
-com essa chave — a mesma requisição de **Buscar modelos** — e só salva quando
-ele responde. Você vê **Conectado · N modelos**, e o provedor entra na lista como
+**Adicionar provedor** abre o editor **Novo provedor**, marcado **Rascunho ·
+não salvo**, com borda tracejada. Escolha o provedor e um nome, depois a chave
+de API — ou, para o Ollama e um servidor próprio, o endereço — e o modelo, e
+escolha **Testar e salvar**. O GitHuttBr primeiro lista os modelos do provedor
+com essa chave — a mesma requisição do botão de atualizar ao lado de
+**Modelo** — e só salva quando ele responde. Você vê **Conectado · N modelos**, e o provedor entra na lista como
 **Pronto**.
 
 Quando o teste falha, o cartão diz **Não foi possível conectar** com o motivo
-do provedor (uma chave recusada, `401`; um servidor que não está rodando) e
-**Nada foi salvo.** Corrija o campo e teste de novo, escolha
+do provedor (uma chave recusada, `401`; um servidor que não está rodando), o
+campo da chave ou do endereço ganha borda vermelha, e o rodapé diz **Nada foi
+salvo. Corrija e tente de novo, ou salve mesmo assim.** Corrija o campo e teste de novo, escolha
 **Salvar mesmo assim** para mantê-lo como está — ele passa a aparecer como
 **Não responde** — ou **Cancelar**, que não deixa rastro.
 
-Editar um provedor salvo funciona do mesmo jeito. Uma faixa diz
-**Alterações não salvas — nada muda até você salvar**, e cada campo que você mexeu fica marcado
-**· alterado**. **Descartar alterações** devolve os valores salvos;
+Editar um provedor salvo funciona do mesmo jeito. O título do editor é o nome
+do provedor, com o status ao lado. Quando você muda algo, o cartão ganha borda
+âmbar, uma faixa diz **Alterações não salvas — nada muda até você salvar**, e
+cada campo que você mexeu fica marcado **· alterado**. **Excluir provedor**
+fica à parte, à esquerda; **Descartar alterações** devolve os valores salvos;
 **Testar e salvar** testa e salva. Escolher outro provedor, adicionar um
 ou abrir **Usar minha assinatura** com alterações pendentes pergunta
 **Salvar alterações em “…”?** — **Salvar**, **Descartar alterações** ou
@@ -121,7 +144,13 @@ As chaves são salvas exatamente como antes, no seu chaveiro, e só na hora de
 salvar. O erro de um provedor aparece com a chave e qualquer coisa com cara de
 token mascaradas.
 
-![Adicionar e editar um provedor](../../screenshots/ai-provider-draft.webp)
+![Um provedor novo cujo teste falhou: o motivo, Salvar mesmo assim e Testar e salvar](../../screenshots/ai-provider-draft.webp)
+
+![Editando um provedor salvo: o endereço mudou e ainda não foi salvo](../../screenshots/ai-provider-editing.webp)
+
+O Ollama não precisa de chave, então o cartão dele mostra o endereço no lugar
+do campo de chave; uma conta do Ollama que já tem uma chave mantém o campo,
+para que a chave continue editável.
 
 | Tipo de provedor | O que **Testar e salvar** verifica |
 | --- | --- |
@@ -151,8 +180,9 @@ porque provar que funciona custaria um prompt.
 ### O provedor em uso
 
 Um provedor responde a toda tarefa que não tem um provedor próprio em
-**Modelo por tarefa**. A linha dele é marcada **Em uso** — um selo preenchido e
-uma borda de destaque — e fica onde está na lista. A IA geral e um perfil com IA
+**Modelo por tarefa**. O cartão dele termina com um **Em uso** verde, no lugar
+onde os outros têm **Usar**, e fica onde está na lista. Verde significa só em uso:
+um provedor que responde mas não está em uso diz **Pronto** num cinza-azulado discreto. A IA geral e um perfil com IA
 própria têm, cada um, o seu provedor em uso; a lista muda o que você está
 editando.
 
@@ -173,7 +203,8 @@ provedor em uso na IA geral não muda nada para esse perfil, e fora das
 Configurações nada dizia isso. A barra de status, no rodapé de um repositório,
 agora diz. O botão **IA:** _provedor_ mostra o provedor que responde pelo perfil
 em uso, com um ponto para o status — verde **Pronto**, vermelho **Não
-responde**, âmbar **Sem chave**, cinza **Não verificado**.
+responde**, âmbar **Sem chave**, cinza **Não verificado**. Com o provedor **Pronto** o botão
+inteiro fica verde, para uma IA funcionando não parecer desligada.
 
 Um clique abre um pequeno painel:
 
@@ -263,7 +294,7 @@ Ao atualizar de uma versão anterior às contas, isto aparece uma vez. O provedo
 ## Modelos
 
 As listas de modelos vêm do próprio provedor e ficam em cache por um dia;
-**Buscar modelos** atualiza uma na hora. Abaixo da lista o GitHuttBr diz de onde
+o botão de atualizar ao lado de **Modelo** atualiza uma na hora. Abaixo da lista o GitHuttBr diz de onde
 ela veio — ao vivo, do cache (com a data) ou da lista embutida de reserva, e por
 quê.
 

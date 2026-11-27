@@ -348,6 +348,31 @@ export interface AbsorbPlan {
 }
 
 /** One repository's local health, as shown in Mission Control. */
+/** A theme colour a Mission Control release note can take — tokens, so a theme repaints them. */
+export type ReleaseToneName = 'muted' | 'accent' | 'green' | 'yellow' | 'red' | 'purple'
+export const RELEASE_TONES: ReleaseToneName[] = ['muted', 'accent', 'green', 'yellow', 'red', 'purple']
+/** A theme tone, or a colour of the user's own as `#rrggbb` — that one stays as picked in every theme. */
+export type ReleaseTone = ReleaseToneName | `#${string}`
+
+/** Whether `tone` is a custom `#rrggbb` colour rather than a theme tone. */
+export function isCustomReleaseTone(tone: string): tone is `#${string}` {
+  return /^#[0-9a-f]{6}$/i.test(tone)
+}
+
+/** Ranges by commit count: up to `limits[i]` takes `tones[i]`; past the last
+ *  limit, the last tone. `tones` is one longer than `limits`. */
+export interface ReleaseNoteTiers {
+  limits: number[]
+  tones: ReleaseTone[]
+}
+
+/** How many ranges Settings offers. */
+export const RELEASE_TIER_COUNT = 4
+
+/** Quiet while a release is recent, yellow past 5 commits, red past 20 — the
+ *  range past 50 starts red too, for whoever wants it louder. */
+export const DEFAULT_RELEASE_TIERS: ReleaseNoteTiers = { limits: [5, 20, 50], tones: ['muted', 'yellow', 'red', 'red'] }
+
 export interface RepoPulse {
   path: string
   name: string
@@ -372,6 +397,12 @@ export interface RepoPulse {
   operation: ConflictOpKind | null
   /** Commits per day over the last fortnight, oldest first (row sparkline). */
   activity: number[]
+  /** HEAD's commit, null in an empty repo — the key a CI status is asked by. */
+  headSha?: string | null
+  /** The remote hosting data comes from (origin, else the first), null without one. */
+  remoteUrl?: string | null
+  /** The newest tag reachable from HEAD and how many commits came after it; null with no tag. */
+  release?: { tag: string; since: number } | null
   /** Set when the repo could not be read at all (moved, deleted, not a repo). */
   error: string | null
 }
@@ -4042,6 +4073,7 @@ export interface AppSettings {
   themeMode: ThemeMode
   codeFontSize: number
   iconColors: IconColorMode
+  iconPalette: IconPalette
   customAppThemes: AppTheme[]
   customCodeThemes: CodeTheme[]
   language: Language
@@ -4092,6 +4124,11 @@ export interface AppSettings {
    *  the first reorder, so nobody has to find the switch first. */
   todosManualOrder?: boolean
   autoFetchMinutes: number
+  /** How often Mission Control re-reads the repositories while it is on screen,
+   *  in seconds; never below 30. It does not run while the page is closed. */
+  missionRefreshSeconds?: number
+  /** How Mission Control colours "N commits since the tag", by range. */
+  missionReleaseTiers?: ReleaseNoteTiers
   /** Raise an OS notification for new review-requested / CI inbox items. */
   desktopNotifications?: boolean
   confirmForcePush: boolean
@@ -4339,6 +4376,14 @@ export type ThemeMode = 'light' | 'dark' | 'auto'
  *  all grey, a tint mixed into the grey, or the theme's colour in full. */
 export type IconColorMode = 'mono' | 'soft' | 'full'
 export const ICON_COLOR_MODES: readonly IconColorMode[] = ['mono', 'soft', 'full']
+
+/**
+ * Which hue each icon role takes (Settings → Themes → Icon colours). Every
+ * palette is built from the theme's own five colours and mixes of them, so a
+ * palette repaints with the theme and keeps its contrast, light or dark.
+ */
+export type IconPalette = 'theme' | 'cool' | 'warm' | 'forest' | 'sunset' | 'accent'
+export const ICON_PALETTES: readonly IconPalette[] = ['theme', 'cool', 'warm', 'forest', 'sunset', 'accent']
 
 export type GraphColumnId =
   | 'branch'
@@ -4677,6 +4722,7 @@ export function defaultSettings(): AppSettings {
     themeMode: 'auto',
     codeFontSize: 12,
     iconColors: 'soft',
+    iconPalette: 'theme',
     customAppThemes: [],
     customCodeThemes: [],
     language: 'en',
@@ -4700,6 +4746,8 @@ export function defaultSettings(): AppSettings {
     todosHideDone: true,
     todosManualOrder: false,
     autoFetchMinutes: 5,
+    missionRefreshSeconds: 30,
+    missionReleaseTiers: { limits: [...DEFAULT_RELEASE_TIERS.limits], tones: [...DEFAULT_RELEASE_TIERS.tones] },
     desktopNotifications: false,
     confirmForcePush: true,
     mergeCommit: true,

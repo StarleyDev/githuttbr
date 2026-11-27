@@ -12,7 +12,9 @@ Right-click a repository — a standalone tab, a chip inside a group, a chip
 inside a nested folder, a row in the welcome/launcher list, or a row in the
 toolbar's repository dropdown — and you get the same repository-scoped menu.
 The group chip itself still opens the group menu; the click has to land on the
-repository.
+repository. Every row carries an icon colored by its kind of action — in the default palette, opening
+something teal, the host green, naming and filing the accent, copying and
+starring orange, removing and closing red ([icon colors](themes.md)).
 
 ![The repository context menu on a grouped chip](../screenshots/repo-context-menu.webp)
 

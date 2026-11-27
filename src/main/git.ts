@@ -249,6 +249,7 @@ import { redactSecrets } from '../shared/redact'
 import { cloneFolderProblem } from '../shared/cloneFolder'
 import { isEphemeralTextconv, persistBlocker } from './appImagePaths'
 import { isStaleTextconv, planTextconvRepoints } from './legacyShims'
+import { parseDescribeLong, primaryRemoteUrl } from '../shared/gitDescribe'
 
 const SEP = '\x1f'
 
@@ -3160,6 +3161,26 @@ function isPlainRef(ref: string): boolean {
   return typeof ref === 'string' && ref.length > 0 && !ref.startsWith('-') && !/[\s\0]/.test(ref)
 }
 
+/**
+ * Mission Control's release column, kept per repository by HEAD: `describe`
+ * walks history back to the nearest tag, which on a long history with no tag
+ * in reach is the whole of it, and the dashboard re-reads every 30 seconds.
+ * A new commit re-asks at once; a tag made on the same commit shows within
+ * the TTL.
+ */
+const RELEASE_TTL_MS = 2 * 60_000
+const releaseCache = new Map<string, { sha: string | null; at: number; value: { tag: string; since: number } | null }>()
+
+async function pulseRelease(repoPath: string, sha: string | null): Promise<{ tag: string; since: number } | null> {
+  if (!sha) return null
+  const hit = releaseCache.get(repoPath)
+  if (hit && hit.sha === sha && Date.now() - hit.at < RELEASE_TTL_MS) return hit.value
+  const out = await runGit(repoPath, ['describe', '--tags', '--long', '--abbrev=7', 'HEAD']).catch(() => '')
+  const value = parseDescribeLong(out)
+  releaseCache.set(repoPath, { sha, at: Date.now(), value })
+  return value
+}
+
 export const gitService = {
   /** A folder picked alongside others is skipped, not opened, when this is false. */
   async isRepository(repoPath: string): Promise<boolean> {
@@ -3605,6 +3626,9 @@ export const gitService = {
         if (line.startsWith('# branch.head ')) {
           const head = line.slice('# branch.head '.length).trim()
           pulse.branch = head === '(detached)' ? '' : head
+        } else if (line.startsWith('# branch.oid ')) {
+          const oid = line.slice('# branch.oid '.length).trim()
+          pulse.headSha = oid === '(initial)' ? null : oid
         } else if (line.startsWith('# branch.upstream ')) {
           pulse.upstream = line.slice('# branch.upstream '.length).trim()
         } else if (line.startsWith('# branch.ab ')) {
@@ -3631,12 +3655,16 @@ export const gitService = {
 
     // The last commit's time, author and subject come back from the one `log`
     // the timestamp already needed, so the richer row costs no extra process.
-    const [stashes, lastCommit, operation, lastFetchAt] = await Promise.all([
+    const [stashes, lastCommit, operation, lastFetchAt, remotes, release] = await Promise.all([
       runGit(repoPath, ['stash', 'list']).catch(() => ''),
       runGit(repoPath, ['log', '-1', '--format=%ct%x1f%an%x1f%s']).catch(() => ''),
       gitService.mergeState(repoPath).catch(() => null),
-      gitService.lastFetchAt(repoPath)
+      gitService.lastFetchAt(repoPath),
+      runGit(repoPath, ['config', '--get-regexp', '^remote\\..*\\.url$']).catch(() => ''),
+      pulseRelease(repoPath, pulse.headSha ?? null)
     ])
+    pulse.remoteUrl = primaryRemoteUrl(remotes)
+    pulse.release = release
     pulse.stashes = stashes.split('\n').filter(Boolean).length
     const [at, author, subject] = lastCommit.replace(/\n$/, '').split(SEP)
     pulse.lastCommitAt = Number(at) || 0

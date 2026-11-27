@@ -32,6 +32,8 @@ che ne ha cento.
   **Apri su GitHub**, oltre a checkout, cherry-pick, revert, branch, tag e
   copia. Le azioni non sicure restano visibili e si disabilitano.
 
+![Il menu contestuale di un commit, ogni azione con la sua icona colorata](../../screenshots/commit-context-menu.webp)
+
 ## Fargli mostrare quello che vuoi
 
 - Il **focus del grafo** decide quanta storia viene disegnata — Impostazioni → **Grafo**, o il menu dell'ingranaggio nell'intestazione del grafo.
@@ -98,6 +100,12 @@ L'elenco dei file si seleziona in gruppo con i gesti consueti (clic
 *Ripristina {n} file nell'albero di lavoro* riprende quei file esattamente come
 li aveva questo commit: dopo un'unica conferma sovrascrive le copie di lavoro,
 senza toccare né HEAD né l'indice.
+
+La **descrizione** del commit — tutto ciò che segue l’oggetto — appare subito sotto, con le righe spezzate a mano riunite per stare nel pannello (elementi di elenco e righe rientrate restano come scritte). Mostra fino a sei righe e scorre al suo interno; trascina la maniglia sotto per allungarla, fino a metà pannello — l’altezza viene ricordata e un doppio clic torna a sei righe. I trailer che git tiene in fondo, come `Refs:`, diventano etichette così come sono scritti; i coautori compaiono già come avatar nella loro riga in alto. Un commit senza descrizione mostra solo l’oggetto.
+
+L’autore, il messaggio e la ricerca dei file restano fermi mentre scorri i file.
+
+![La descrizione di un commit sotto l’oggetto, con i trailer come etichette](../../screenshots/commit-body.webp)
 
 ![Una passeggiata fra i dettagli dei commit](../../screenshots/clip-commit-details.webp)
 

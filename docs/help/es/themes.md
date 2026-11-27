@@ -69,11 +69,38 @@ Los colores salen del tema: un tema que repinta su verde o su acento repinta los
 iconos con él, incluidos los temas personalizados y los generados por IA.
 
 Límites: solo se colorean los botones principales de la barra de herramientas,
-las cabeceras de las secciones de la barra lateral, el menú Herramientas, las
-páginas de Ajustes y los botones de las páginas de pull request e issue; los demás
+las cabeceras de las secciones de la barra lateral, el menú Herramientas, los
+menús contextuales de commits, ramas y repositorios, las páginas de Ajustes y los botones de las páginas de pull request e issue y los iconos de la barra de
+estado (la carpeta, Ayuda, Reportar un problema) — el número de versión sigue
+gris; los demás
 menús, las filas dentro de una sección y el grafo de commits no. Una fila de menú
 bajo el ratón conserva su aspecto habitual, icono incluido. El color nunca es la
 única pista: cada icono conserva su etiqueta.
+
+## Colores de la nota de versión
+
+El [Centro de control](mission-control.md) dice cuántos commits ha hecho cada
+repositorio desde su etiqueta más reciente. **Colores de la nota de versión**
+decide cómo se ve ese número, para que una versión atrasada destaque y una
+reciente quede discreta.
+
+Hay cuatro rangos. Los tres primeros terminan en un número de commits que eliges
+tú; el último se queda con todo lo que pase de ellos. Cada rango usa uno de los
+colores del tema, o un **Color personalizado…** desde la muestra al final de su
+fila.
+
+| Rango | De fábrica |
+|---|---|
+| Hasta 5 commits | Gris, como el resto de la fila |
+| Después, hasta 20 | Amarillo |
+| Después, hasta 50 | Rojo |
+| Más que eso | Rojo |
+
+Un color del tema sigue al tema, en claro y en oscuro. Un color personalizado se
+queda exactamente como lo elegiste en cualquier tema, así que elige uno que se lea
+sobre los dos fondos.
+
+![Ajustes → Temas: los cuatro rangos de la nota de versión, cada uno con sus colores y una muestra personalizada](../../screenshots/settings-release-colors.webp)
 
 ## Cómo se organizan los Ajustes
 

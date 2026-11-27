@@ -32,6 +32,8 @@ depo gibi kayar.
   etiket ve kopyalama sunar. Güvenli olmayan eylemler görünür kalır ve devre
   dışı olur.
 
+![Bir commit’in sağ tık menüsü, her eylem renkli simgesiyle](../../screenshots/commit-context-menu.webp)
+
 ## İstediğinizi göstermesi
 
 - **Grafik odağı**, geçmişin ne kadarının çizileceğini belirler — Ayarlar → **Grafik** ya da grafik başlığındaki dişli menüsü. *Her şey* hepsini
@@ -97,6 +99,12 @@ Dosya listesi alışıldık hareketlerle çoklu seçilir
 çalışma ağacına geri yükle* o dosyaları tam bu commit'teki hâlleriyle alır: tek
 bir onaydan sonra çalışma kopyalarının üzerine yazar; HEAD'e de indekse de
 dokunmaz.
+
+Commit’in **açıklaması** — başlığın altındaki her şey — hemen altında görünür; elle bölünmüş satırlar panele sığacak şekilde birleştirilir (liste öğeleri ve girintili satırlar yazıldığı gibi kalır). En fazla altı satır gösterir ve içinde kayar; büyütmek için altındaki tutamacı panelin yarısına kadar sürükleyin — yükseklik hatırlanır, çift tıklama altı satıra döner. git’in sonda tuttuğu `Refs:` gibi ekler yazıldığı gibi etiket olur; ortak yazarlar zaten yukarıda kendi satırlarında avatar olarak görünür. Açıklaması olmayan commit yalnızca başlığını gösterir.
+
+Dosyaları kaydırırken yazar, mesaj ve dosya araması yerinde kalır.
+
+![Başlığın altında commit açıklaması, ekler etiket olarak](../../screenshots/commit-body.webp)
 
 ![Commit ayrıntılarında gezinme](../../screenshots/clip-commit-details.webp)
 

@@ -92,11 +92,18 @@ What these do **not** do:
 
 ### Grouping worktrees in the header
 
-Worktree tabs open with `root · branch` labels, which gets wide fast. Tick
-**Offer to group worktrees that share a root repository** in the add-worktree
-dialog (off by default, remembered like the codegraph option) and the dialog
-adapts to the family: if the root or a sibling worktree already sits in a
-group it says so and the new worktree joins it; if the root is open as a
+Worktree tabs open with `root · branch` labels, which gets wide fast.
+
+**A project kept in a group takes its worktrees in.** When the repository — or
+one of its worktrees — already sits in a group, a new worktree opens inside
+that group, beside it, with nothing to tick: the add-worktree dialog just says
+which group, and **Open in worktree** from a branch's menu does the same
+without asking. A worktree opened later from Recents or a folder joins it too.
+Drag the chip out of the group if you want it on its own.
+
+For a repository in a tab of its own, tick **Offer to group worktrees that
+share a root repository** in the add-worktree dialog (off by default,
+remembered like the codegraph option): if the root is open as a
 standalone tab a **Group name** field appears (prefilled with the root's
 folder name) and both land in a new group; with no family member open it just
 says the worktree opens as its own tab. Inside the group, chips collapse to

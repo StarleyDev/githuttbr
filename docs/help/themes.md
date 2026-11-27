@@ -58,6 +58,23 @@ teal, go to source branch green and go to target branch orange (open in browser
 stays grey), and your own comments' **Edit** takes the accent and **Delete**
 red — there and on the issue page. Blue and teal are mixes of the theme's colors, so they follow it too.
 
+The right-click menus of commits, branches and repositories — the graph's
+commits, stashes and branch or tag badges, the sidebar's branches, tags and
+stashes, the branch picker, the menu a drag-and-drop opens, and a repository's
+menu on its tab, its group chip, the Repositories page and the launcher — give
+every row an icon colored by what its action does, the same way in each of them:
+
+| Color | Actions |
+|---|---|
+| Refs (the accent) | check out, create a branch or tag, merge, rebase, cherry-pick, revert, compare, rename, worktree, squash, fixup; a repository's alias, and moving it into a group, folder or workspace |
+| Sending (green) | push, create a pull request, open on the host, go to the release, export a patch |
+| Receiving (cyan) | pull, fast-forward |
+| Set aside (orange) | apply or pop a stash, pin, star, copy, amend, edit the message |
+| Security (red) | reset, delete, drop, undo the commit, move a branch, remove from the list, close |
+| Preview (teal) | range-diff, conflict radar, local CI, show worktrees, open in the terminal, file manager or editor |
+
+A destructive row is red throughout, icon included, as it always was.
+
 | Option | What you see |
 |---|---|
 | **Monochrome** | Every icon grey, as before this option existed |
@@ -67,11 +84,51 @@ red — there and on the issue page. Blue and teal are mixes of the theme's colo
 The colors come from the theme — a theme that repaints its green or its accent
 repaints the icons with it, custom and AI-generated themes included.
 
+**Palette** picks which color each role takes. Each swatch shows its five colors
+(receiving, sending, refs, set aside, security):
+
+| Palette | Receiving · Sending · Refs · Set aside · Security |
+|---|---|
+| **From the theme** (default) | cyan slot · green · accent · orange slot · red — the table above |
+| **Cool** | accent · teal · purple · lavender · wine |
+| **Warm** | orange · yellow · magenta · olive · red |
+| **Nature** | teal · green · lime · yellow · red |
+| **Sunset** | purple · orange · magenta · yellow · red |
+| **One color** | everything in the accent; security stays red |
+
+Every palette is made of the theme's own colors and mixes of them, so it changes
+with the theme and keeps its contrast in light and dark. The pull request page's
+row of buttons follows the palette too, each button taking the role nearest to
+it. Security stays red in most palettes because it is a warning; with
+**Monochrome** the palette has nothing to color.
+
 Limits: only the toolbar's main buttons, the sidebar section headers, the Tools
-menu, the Settings pages and the buttons of the pull request and issue pages are colored; other menus, the rows inside a section
+menu, the right-click menus of commits, branches and repositories, the Settings and repository settings pages, the buttons of the pull request and issue pages and the status bar's icons (the folder, Help, Report issue) are colored — the version number stays grey; other menus, the rows inside a section
 and the commit graph are not. A hovered menu row keeps its usual look, icon
 included. Color
 is never the only clue — every icon keeps its label.
+
+## Release note colors
+
+[Mission control](mission-control.md) says how many commits each repository has
+made since its latest tag. **Release note colors** decides how that count looks,
+so a release that is overdue stands out and a recent one stays quiet.
+
+There are four ranges. The first three end at a number of commits you choose;
+the last takes everything past them. Each range takes one of the theme's colors,
+or a **custom color** from the swatch at the end of its row.
+
+| Range | Out of the box |
+|---|---|
+| Up to 5 commits | Grey, as the rest of the row |
+| Then up to 20 | Yellow |
+| Then up to 50 | Red |
+| More than that | Red |
+
+A theme color follows the theme, in light and dark. A custom color stays exactly
+as picked in every theme, so pick one that reads on both backgrounds.
+
+![Settings → Themes: the four release note ranges, each with its colors and a custom swatch](../screenshots/settings-release-colors.webp)
 
 ## How Settings is organised
 

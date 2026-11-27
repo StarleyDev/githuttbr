@@ -105,6 +105,14 @@ exécutable personnalisé. L’apparence du terminal (thème, taille et famille 
 police) se règle dans Paramètres → Thèmes → Thème du terminal et s’applique en
 direct à toutes les sessions.
 
+**Un terminal avec un autre shell.** Le **▾** à côté du **+** de la liste des
+terminaux ouvre *Nouveau terminal avec…* : les mêmes shells — le défaut du
+système, chaque shell utilisable de `/etc/shells` ou les préréglages Windows —
+avec le défaut actuel coché. En choisir un ouvre un seul terminal avec ce shell,
+et une division de ce terminal s’ouvre aussi avec lui ; le défaut des Paramètres
+ne change pas. *Changer le shell par défaut dans les Paramètres…*, tout en bas,
+mène directement au sélecteur.
+
 Si [Oh My Posh](https://ohmyposh.dev) est installé, la section liste aussi chaque
 `*.omp.json` de `%POSH_THEMES_PATH%` avec un aperçu en direct — en choisir un
 l’injecte comme `POSH_THEME` dans les nouveaux terminaux, si bien qu’un simple

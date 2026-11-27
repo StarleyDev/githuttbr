@@ -11,6 +11,9 @@ export interface TermPanel {
   /** When set, this panel renders a launch (Run/Debug) session bound to this
    *  main-process pty id instead of spawning an interactive shell. */
   launchId?: number
+  /** The shell this panel opened with, picked from "New terminal with…";
+   *  unset follows Settings → Layout & terminal. */
+  shell?: string
 }
 
 export interface TermGroup {
@@ -39,8 +42,8 @@ function nextNum(groups: TermGroup[]): number {
   return groups.reduce((m, g) => Math.max(m, g.num), 0) + 1
 }
 
-function mkGroup(cwd: string, num: number): TermGroup {
-  const panel: TermPanel = { id: uid('panel'), cwd, flex: 1 }
+function mkGroup(cwd: string, num: number, shell?: string): TermGroup {
+  const panel: TermPanel = { id: uid('panel'), cwd, flex: 1, ...(shell ? { shell } : {}) }
   return { id: uid('group'), num, title: '', panels: [panel], activePanelId: panel.id }
 }
 
@@ -52,7 +55,8 @@ interface TerminalsState {
   byRepo: Record<string, RepoTerms>
 
   ensureRepo(repoPath: string, cwd: string): void
-  addGroup(repoPath: string, cwd: string): void
+  /** A new terminal; `shell` opens it with that shell instead of the default. */
+  addGroup(repoPath: string, cwd: string, shell?: string): void
   /** Add a Run/Debug launch session as its own group, backed by an existing
    *  main-process pty. Returns the new group + panel ids. `panelTitle` names the
    *  panel itself (used by compounds, whose group carries the compound name). */
@@ -99,10 +103,10 @@ export const useTerminalsStore = create<TerminalsState>((set, get) => ({
     }))
   },
 
-  addGroup: (repoPath, cwd) => {
+  addGroup: (repoPath, cwd, shell) => {
     set((s) => {
       const repo = s.byRepo[repoPath] ?? emptyRepo()
-      const group = mkGroup(cwd, nextNum(repo.groups))
+      const group = mkGroup(cwd, nextNum(repo.groups), shell)
       return {
         byRepo: {
           ...s.byRepo,
@@ -163,10 +167,15 @@ export const useTerminalsStore = create<TerminalsState>((set, get) => ({
   },
 
   splitGroup: (repoPath, groupId, cwd) => {
-    const panel: TermPanel = { id: uid('panel'), cwd, flex: 1 }
     set((s) => {
       const repo = s.byRepo[repoPath]
       if (!repo) return s
+      // A split of a terminal opened with another shell opens with that shell
+      // too — the focused panel's, else the first shell panel's.
+      const group = repo.groups.find((g) => g.id === groupId)
+      const focused = group?.panels.find((p) => p.id === group.activePanelId && !p.launchId)
+      const shell = focused ? focused.shell : group?.panels.find((p) => !p.launchId && p.shell)?.shell
+      const panel: TermPanel = { id: uid('panel'), cwd, flex: 1, ...(shell ? { shell } : {}) }
       const groups = repo.groups.map((g) =>
         g.id === groupId
           ? { ...g, panels: [...g.panels, panel], activePanelId: panel.id }

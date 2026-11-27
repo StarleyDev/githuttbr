@@ -367,8 +367,12 @@ export interface CommitEditFileDraft {
  *  component because switching repository tabs unmounts the centre pane — and
  *  that must not throw an edit away. */
 export interface CommitEditDraft {
-  /** null until the commit's own message has loaded. */
-  message: string | null
+  /**
+   * The summary and description as typed, kept apart: joined into one message
+   * and split again on the way back, an emptied summary handed its line to the
+   * description's first line. null until the commit's own message has loaded.
+   */
+  parts: { summary: string; description: string } | null
   files: Record<string, CommitEditFileDraft>
   selFile: string
   dirty: boolean
@@ -421,6 +425,9 @@ export interface PanelLayout {
   terminalListWidth: number
   terminalListCollapsed: boolean
   composerUnstagedRatio: number
+  /** Height of a commit's description in the details panel, dragged by the user;
+   *  0 = the default, six lines. Capped at half the panel when shown. */
+  commitBodyHeight: number
   /** Conflict editor: share of the width taken by the left (ours) side. */
   conflictSideRatio: number
   /** Conflict editor: share of the height taken by the two side panes. */
@@ -441,6 +448,7 @@ const DEFAULT_LAYOUT: PanelLayout = {
   terminalListWidth: 220,
   terminalListCollapsed: false,
   composerUnstagedRatio: 0.5,
+  commitBodyHeight: 0,
   conflictSideRatio: 0.5,
   conflictFilesRatio: 0.55,
   composerConflictedCollapsed: false,

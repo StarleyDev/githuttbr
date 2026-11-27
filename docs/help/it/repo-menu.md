@@ -13,7 +13,10 @@ gruppo, una pillola dentro una cartella annidata, una riga nell'elenco di
 benvenuto/launcher, o una riga nel menu a discesa dei repository nella barra
 degli strumenti — e ottieni lo stesso menu dedicato al repository. La pillola
 del gruppo continua ad aprire il menu del gruppo; il clic deve atterrare sul
-repository.
+repository. Ogni riga ha un’icona colorata secondo il tipo di azione — nella tavolozza
+predefinita, aprire qualcosa in verde acqua, l’host in verde, dare un nome e
+archiviare nel colore d’accento, copiare e aggiungere ai preferiti in arancione,
+rimuovere e chiudere in rosso ([colori delle icone](themes.md)).
 
 ![Il menu contestuale del repository su una pillola in un gruppo](../../screenshots/repo-context-menu.webp)
 

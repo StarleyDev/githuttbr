@@ -1234,6 +1234,26 @@ describe('repoPulse — mission control (playground)', () => {
     expect(before.stashes).toBeGreaterThan(0)
   })
 
+  it('carries HEAD, the remote hosting data comes from, and the newest tag HEAD reaches', async () => {
+    const R = repoPath('tags-and-releases')
+    const p = await gitService.repoPulse(R)
+    const git = (...args: string[]): string => execFileSync('git', args, { cwd: R, encoding: 'utf8' }).trim()
+    expect(p.headSha).toBe(git('rev-parse', 'HEAD'))
+    const [tag, since] = /^(.+)-(\d+)-g[0-9a-f]+$/.exec(git('describe', '--tags', '--long'))!.slice(1)
+    expect(p.release).toEqual({ tag, since: Number(since) })
+    expect((await gitService.repoPulse(repoPath('absorb'))).remoteUrl).toBe(
+      execFileSync('git', ['remote', 'get-url', 'origin'], { cwd: repoPath('absorb'), encoding: 'utf8' }).trim()
+    )
+  })
+
+  it('has no release in a repository without tags, and re-reads it once HEAD moves', async () => {
+    const R = cloneFixture('absorb')
+    expect((await gitService.repoPulse(R)).release).toBeNull()
+    execFileSync('git', ['tag', 'v9.9.9'], { cwd: R })
+    execFileSync('git', ['commit', '--allow-empty', '-m', 'chore: after the tag'], { cwd: R })
+    expect((await gitService.repoPulse(R)).release).toEqual({ tag: 'v9.9.9', since: 1 })
+  })
+
   it('reports an unreadable path instead of throwing', async () => {
     const p = await gitService.repoPulse('/definitely/not/a/repo')
     expect(p.error).toBeTruthy()

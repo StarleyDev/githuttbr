@@ -55,6 +55,23 @@ export function planWorktreeGroup(tabs: TabState[], rootPath: string): WorktreeG
 }
 
 /**
+ * What opening a new worktree does with its tab:
+ * - `join` — the project already sits in a group, so the worktree joins it.
+ *   Always: a project kept in a group means its worktrees belong there, and
+ *   asking every time only adds a click.
+ * - `offer` — the project is a tab of its own and grouping is switched on:
+ *   the app offers to turn it into a group (Settings decides, as before).
+ * - `tab` — a tab of its own.
+ */
+export type WorktreeOpening = 'join' | 'offer' | 'tab'
+
+export function worktreeOpening(plan: WorktreeGroupPlan | null, offerGrouping: boolean): WorktreeOpening {
+  if (plan?.kind === 'add') return 'join'
+  if (plan?.kind === 'convert' && offerGrouping) return 'offer'
+  return 'tab'
+}
+
+/**
  * Short chip label for a worktree inside a group that holds its family —
  * the part after `root · ` in the stored name, else the folder leaf.
  * Returns null when the repo is no worktree or is the group's only family
@@ -119,4 +136,13 @@ export function isRepoOpenInTabs(tabSets: TabState[][], path: string): boolean {
   return tabSets.some((tabs) =>
     tabs.some((tab) => tab.kind !== 'page' && tab.repos.some((r) => canonicalRepoPath(r.path) === target))
   )
+}
+
+/**
+ * Whether opening a repository should first ask git which worktree family it
+ * belongs to: when grouping is offered, or when some group is open that a
+ * worktree could join. Otherwise the tab opens at once, with no rev-parse.
+ */
+export function shouldResolveWorktreeFamily(tabs: TabState[], offerGrouping: boolean): boolean {
+  return offerGrouping || tabs.some((tab) => tab.kind === 'group')
 }
