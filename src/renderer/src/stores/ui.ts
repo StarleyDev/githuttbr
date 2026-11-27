@@ -139,6 +139,8 @@ export type ModalSpec =
       message: string
       danger?: boolean
       confirmLabel?: string
+      /** The way out that does nothing. "Cancel" unless the question needs another word. */
+      cancelLabel?: string
       autoFocusConfirm?: boolean
       onConfirm: () => void
       /** Runs when the dialog closes any other way: Cancel, Esc, ✕, or another dialog replacing it. */

@@ -279,7 +279,7 @@ function AIStep({
         <div className="onboarding-subtitle">{t('onboarding.aiSubtitle')}</div>
       </div>
       <div className="settings-form">
-        <AIPage ai={buildProfile(data).ai} onChange={(next) => patch({ ai: { ...data.ai, ...next } })} />
+        <AIPage commitOnEdit ai={buildProfile(data).ai} onChange={(next) => patch({ ai: { ...data.ai, ...next } })} />
       </div>
     </>
   )

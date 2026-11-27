@@ -22,6 +22,8 @@ export default {
     include: [
       'test/prFileThreads.test.ts',
       'test/pureLogic.test.ts',
+      // Provider drafts, status badges and the masking of provider errors.
+      'test/aiAccountDraft.test.ts',
       'test/fileTree.test.ts',
       'test/prViewed.test.ts',
       'test/i18n.test.ts',
