@@ -18893,16 +18893,11 @@ button.insights-row:hover { background: var(--bg-2); }
 }
 
 /* ─── Commit editing ───────────────────────────────────────────────────── */
-.commitedit { display: flex; flex-direction: column; min-height: 0; flex: 1; gap: 8px; }
-/* The commit editor lives in the centre pane, like the file viewer and the
-   conflict resolver: the files and the editor take every pixel the message and
-   the cascade bar leave, however few files the commit has. */
-.commitedit-view .commitedit { padding: 12px 16px 14px; overflow: hidden; }
-.commitedit-title { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; font-size: 13px; }
+.commitedit-title { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; font-size: 13px; }
 .commitedit-title svg { flex-shrink: 0; color: var(--accent, #6366f1); }
 .commitedit-title .commitedit-sha,
 .commitedit-title .commitedit-subject { margin-left: 0; }
-.commitedit-title .commitedit-subject { max-width: none; flex: 1; min-width: 0; }
+.commitedit-title .commitedit-subject { max-width: none; flex: 0 1 auto; min-width: 0; }
 .commitedit-empty { padding: 10px; }
 .commitedit-sha {
   font-family: var(--mono, monospace);
@@ -18935,31 +18930,207 @@ button.insights-row:hover { background: var(--bg-2); }
 }
 .commitedit-banner.error { background: color-mix(in srgb, var(--red, #e5484d) 12%, transparent); color: var(--red, #e5484d); }
 .commitedit-banner.warn { background: color-mix(in srgb, var(--yellow, #f5a524) 14%, transparent); color: var(--yellow, #b8860b); }
-.commitedit-label { font-size: 11px; font-weight: 600; color: var(--text-2); }
-.commitedit-label-row { display: flex; align-items: center; gap: 6px; }
 /* The composer's message tools (CommitMessageEditor), laid out as in the commit box. */
-.commitedit-message { display: flex; flex-direction: column; gap: 8px; }
-/* min-height keeps the editor usable in a short window; flex: 1 does the rest. */
-.commitedit-split { display: flex; gap: 10px; flex: 1; min-height: 200px; }
+.commitedit-message { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; }
+/* The files list and the editor share the card's height; they wrap under each
+   other only when the card is too narrow for both. */
+.commitedit-split { display: flex; flex-wrap: wrap; flex: 1; min-height: 0; }
 .commitedit-files {
-  width: clamp(220px, 24%, 340px);
-  flex-shrink: 0;
-  border: 1px solid var(--border-soft);
-  border-radius: 8px;
+  flex: 1 1 200px;
+  max-width: 240px;
+  min-height: 0;
+  padding: 8px;
+  border-right: 1px solid var(--border);
   overflow-y: auto;
 }
 .commitedit-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent, #6366f1); flex-shrink: 0; }
-.commitedit-editor { position: relative; flex: 1; min-width: 0; display: flex; border: 1px solid var(--border-soft); border-radius: 8px; overflow: hidden; }
 /* The editor itself is the shared CodeEditor (see .code-editor); it fills this box. */
-.commitedit-cascade { border-top: 1px solid var(--border-soft); padding-top: 8px; }
-.commitedit-cascade-head { display: flex; align-items: center; gap: 10px; }
-.commitedit-steps { margin-top: 8px; max-height: min(30vh, 220px); overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
-.commitedit-step { display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 2px 4px; color: var(--text-1); }
-.commitedit-step.clean svg { color: var(--green, #46a758); }
-.commitedit-step.conflict { color: var(--red, #e5484d); }
-.commitedit-step.blocked { color: var(--text-2); }
-.commitedit-step-subject { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.commitedit-step-files { flex-shrink: 0; font-size: 11px; font-weight: 600; }
+.commitedit-editor { position: relative; flex: 999 1 420px; min-width: 0; min-height: 0; display: flex; overflow: hidden; }
+
+/* ─── Commit editing — cards and the "What will happen" panel ──────────── */
+/* Wide: the message and files cards on the left, the impact panel on the right,
+   each scrolling on its own. Narrow (container below 900px): the panel stacks
+   under the cards and the whole body scrolls instead. */
+.commitedit-view { container-type: inline-size; }
+.commitedit-header { flex-wrap: wrap; gap: 12px; padding: 14px 24px; }
+.commitedit-heading { margin: 0; font-size: 16px; font-weight: 700; color: var(--text-0); white-space: nowrap; }
+.commitedit-header .commitedit-sha { color: var(--accent, #6366f1); background: var(--bg-3); border-radius: 4px; padding: 1px 7px; }
+.commitedit-header .commitedit-subject { font-size: 13px; color: var(--text-1); }
+.commitedit-byline { font-size: 12px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.commitedit-pill {
+  flex-shrink: 0;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--yellow, #f5a524) 14%, transparent);
+  color: var(--yellow, #b8860b);
+}
+.commitedit-notlinear { margin: 12px 24px 0; }
+.commitedit-body { flex: 1; min-height: 0; display: flex; flex-wrap: wrap; align-items: stretch; overflow: hidden; }
+.commitedit-main {
+  flex: 999 1 560px;
+  min-width: 0;
+  max-height: 100%;
+  padding: 18px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+}
+.commitedit-card { border: 1px solid var(--border); border-radius: 10px; flex-shrink: 0; }
+.commitedit-message-card { background: var(--bg-1); }
+.commitedit-files-card { flex: 1 0 420px; display: flex; flex-direction: column; overflow: hidden; }
+.commitedit-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+.commitedit-files-card .commitedit-card-head { gap: 10px; padding: 8px 14px; }
+.commitedit-card-spacer { flex: 1; }
+.commitedit-edited {
+  padding: 0 6px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  letter-spacing: 0;
+  text-transform: none;
+  background: color-mix(in srgb, var(--accent, #6366f1) 18%, transparent);
+  color: var(--accent, #6366f1);
+}
+.commitedit-link {
+  all: unset;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--accent, #6366f1);
+}
+.commitedit-link:hover:not(:disabled) { text-decoration: underline; }
+.commitedit-link:disabled { opacity: 0.5; cursor: default; }
+.commitedit-link:focus-visible { outline: 2px solid var(--accent, #6366f1); outline-offset: 2px; border-radius: 3px; }
+/* The AI row and the original subject share one line under the description. */
+.commitedit-ai-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.commitedit-before {
+  font-size: 12px;
+  color: var(--text-3);
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.commitedit-before-subject { color: var(--text-1); }
+.commitedit-seg {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  font-size: 12px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.commitedit-seg button { all: unset; cursor: pointer; padding: 4px 10px; color: var(--text-1); }
+.commitedit-seg button:hover { background: var(--bg-2); }
+.commitedit-seg button.active { background: color-mix(in srgb, var(--accent, #6366f1) 20%, transparent); color: var(--accent, #6366f1); }
+.commitedit-seg button:focus-visible { outline: 2px solid var(--accent, #6366f1); outline-offset: -2px; }
+.commitedit-files .snapshot-file-row { border-top: none; border-radius: 6px; padding: 6px 8px; font-size: 13px; }
+.commitedit-files .snapshot-file-status.st-m { color: var(--yellow, #b8860b); }
+.commitedit-files .snapshot-file-status.st-extra { color: var(--accent, #6366f1); }
+.commitedit-compare { flex: 1; min-width: 0; overflow: auto; }
+.commitedit-addfile { border-bottom: 1px solid var(--border); padding: 8px 14px; display: flex; flex-direction: column; gap: 6px; }
+.commitedit-addfile-input {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--field-bg, var(--bg-2));
+  color: var(--text-0);
+  font: inherit;
+  font-size: 12.5px;
+}
+.commitedit-addfile-list { max-height: 160px; overflow-y: auto; display: flex; flex-direction: column; }
+.commitedit-addfile-item {
+  all: unset;
+  cursor: pointer;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-family: var(--mono, monospace);
+  font-size: 12px;
+  color: var(--text-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.commitedit-addfile-item:hover,
+.commitedit-addfile-item:focus-visible { background: var(--bg-2); }
+
+.commitedit-impact {
+  flex: 1 1 300px;
+  max-width: 400px;
+  max-height: 100%;
+  box-sizing: border-box;
+  padding: 18px 20px;
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+}
+.commitedit-impact-title { margin: 0; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-2); }
+.commitedit-chain { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; font-size: 13px; }
+.commitedit-chain-row { display: flex; gap: 10px; align-items: flex-start; min-width: 0; }
+.commitedit-chain-dot { margin-top: 3px; width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--text-3); flex: none; box-sizing: border-box; }
+.commitedit-chain-row.self .commitedit-chain-dot { margin-top: 2px; width: 12px; height: 12px; border: none; background: var(--accent, #6366f1); }
+.commitedit-chain-row.more { color: var(--text-3); font-size: 12px; }
+.commitedit-chain-row.more .commitedit-chain-dot { border-style: dotted; }
+.commitedit-chain-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.commitedit-chain-subject { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-1); }
+.commitedit-chain-row.self .commitedit-chain-subject { color: var(--text-0); font-weight: 700; }
+.commitedit-chain-merge { vertical-align: -1px; margin-right: 4px; color: var(--purple, var(--accent, #6366f1)); }
+.commitedit-chain-status { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; }
+.commitedit-chain-status.clean { color: var(--green, #46a758); }
+.commitedit-chain-status.conflict { color: var(--yellow, #b8860b); }
+.commitedit-chain-status.blocked { color: var(--text-3); }
+.commitedit-chain-status.self { color: var(--accent, #6366f1); }
+.commitedit-chain-head { flex-shrink: 0; font-family: var(--mono, monospace); font-size: 11.5px; color: var(--text-3); }
+.commitedit-note {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--bg-2);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-1);
+}
+.commitedit-note > svg { vertical-align: -2px; margin-right: 2px; }
+.commitedit-note strong { color: var(--text-0); }
+.commitedit-note.warn {
+  background: color-mix(in srgb, var(--yellow, #f5a524) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--yellow, #f5a524) 35%, transparent);
+}
+.commitedit-note.warn strong { color: var(--yellow, #b8860b); }
+.commitedit-impact-spacer { flex: 1; }
+.commitedit-impact .btn { justify-content: center; padding: 9px 14px; border-radius: 8px; font-size: 13px; flex-shrink: 0; }
+.commitedit-impact .btn.primary { padding: 10px 14px; font-size: 13.5px; font-weight: 700; }
+.commitedit-impact-preview { background: var(--bg-3); color: var(--text-1); border: none; }
+.commitedit-impact-preview:hover:not(:disabled) { background: var(--bg-4, var(--bg-3)); }
+.commitedit-impact .btn:disabled { opacity: 0.5; cursor: default; }
+.commitedit-impact-hint { margin: 0; font-size: 11.5px; color: var(--text-3); text-align: center; }
+
+@container (max-width: 900px) {
+  .commitedit-body { overflow-y: auto; align-content: flex-start; }
+  .commitedit-main { max-height: none; overflow: visible; padding: 14px 16px; }
+  .commitedit-impact { max-width: none; max-height: none; overflow: visible; border-left: none; border-top: 1px solid var(--border); padding: 16px; }
+  .commitedit-header { padding: 12px 16px; }
+}
 
 /* ─── Stacked PRs ──────────────────────────────────────────────────────── */
 .stack-pr-chip {

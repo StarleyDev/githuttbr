@@ -84,6 +84,7 @@ import type {
   SnapshotKind,
   TeammateRadarEntry,
   TeammateRadarResult,
+  CommitEditAbove,
   CommitEditInfo,
   CommitEditStep,
   CommitEditPreview,
@@ -2388,6 +2389,9 @@ async function rewriteWithEdits(
     await unlink(tmpBlob).catch(() => {})
   }
 }
+
+/** Commits above an edited one listed for the side panel; the count covers the rest. */
+const COMMIT_EDIT_ABOVE_MAX = 100
 
 /**
  * What stands between `sha` and HEAD. Editing needs only ancestry — merges in
@@ -10030,14 +10034,39 @@ export const gitService = {
     const descendants = range.ancestor
       ? Number((await runGit(repoPath, ['rev-list', '--count', `${sha}..HEAD`])).trim())
       : 0
-    const pushed = Boolean((await runGit(repoPath, ['branch', '-r', '--contains', sha]).catch(() => '')).trim())
+    // `origin/HEAD -> origin/main` is an alias, not a branch of its own.
+    const remoteBranches = (await runGit(repoPath, ['branch', '-r', '--contains', sha]).catch(() => ''))
+      .split('\n')
+      .map((l) => l.trim())
+      .filter((l) => l && !l.includes(' -> '))
+    // Exactly the set the rewrite replays: descendants of the commit that HEAD
+    // reaches. Side-branch commits in `sha..HEAD` keep their identity, so
+    // --ancestry-path leaves them out. Capped — the list is for reading.
+    const above: CommitEditAbove[] = []
+    let aboveTotal = 0
+    if (range.ancestor) {
+      const listed = await runGit(repoPath, [
+        'log', '--ancestry-path', '--topo-order', `--max-count=${COMMIT_EDIT_ABOVE_MAX}`,
+        '--format=%H%x00%P%x00%s', `${sha}..HEAD`
+      ])
+      for (const line of listed.split('\n').filter(Boolean)) {
+        const [h, p, ...s] = line.split('\x00')
+        above.push({ sha: h, subject: s.join('\x00'), merge: p.split(' ').filter(Boolean).length > 1 })
+      }
+      aboveTotal = Number(
+        (await runGit(repoPath, ['rev-list', '--count', '--ancestry-path', `${sha}..HEAD`])).trim()
+      )
+    }
     const id = await commitIdentity(repoPath, sha)
     return {
       linear: range.ancestor && range.merges === 0,
       ancestor: range.ancestor,
       merges: range.merges,
       descendants,
-      pushed,
+      pushed: remoteBranches.length > 0,
+      remoteBranches,
+      above,
+      aboveTotal,
       message: id.message,
       authorName: id.name,
       authorDate: id.date
@@ -10052,6 +10081,23 @@ export const gitService = {
     const buf = await readBlobBuffer(repoPath, `${sha}:${file}`)
     const binary = buf.subarray(0, 8192).includes(0)
     return { content: binary ? null : buf.toString('utf-8'), binary, size }
+  },
+
+  /**
+   * The files of the commit's snapshot the rewrite can take an edit to —
+   * regular blobs only, since the engine refuses symlinks and submodules. Lets
+   * an edit reach a file the commit itself did not touch.
+   */
+  async commitEditableFiles(repoPath: string, sha: string): Promise<string[]> {
+    const listing = await runGit(repoPath, ['ls-tree', '-r', '-z', sha], undefined, 256 * 1024 * 1024)
+    const out: string[] = []
+    for (const entry of listing.split('\0')) {
+      const tab = entry.indexOf('\t')
+      if (tab < 0) continue
+      const mode = entry.slice(0, entry.indexOf(' '))
+      if (mode === '100644' || mode === '100755') out.push(entry.slice(tab + 1))
+    }
+    return out
   },
 
   /** Dry-run the rewrite: same engine as apply, no ref ever moves. */
@@ -10523,6 +10569,7 @@ const READ_METHODS = new Set<string>([
   'commitEditInfo',
   'commitMenuProbe',
   'blobAtCommit',
+  'commitEditableFiles',
   'semanticDiff',
   'rangeDiff',
   'refTips',

@@ -215,9 +215,22 @@ export interface CommitEditInfo {
   descendants: number
   /** Reachable from a remote ref — rewriting means a force push later. */
   pushed: boolean
+  /** The remote-tracking branches that already hold it (`origin/main`), for the warning. */
+  remoteBranches: string[]
+  /** The commits a rewrite replays — descendants of it up to HEAD, newest first, capped. */
+  above: CommitEditAbove[]
+  /** How many commits a rewrite replays, uncapped; `above` may list fewer. */
+  aboveTotal: number
   message: string
   authorName: string
   authorDate: string // ISO
+}
+
+/** One commit above the edited one, before any preview has run. */
+export interface CommitEditAbove {
+  sha: string
+  subject: string
+  merge: boolean
 }
 
 /** A historical blob, loaded for in-place editing. */

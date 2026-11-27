@@ -30,6 +30,8 @@ export default {
       // First-run steps and how each AI card becomes an account.
       'test/onboarding.test.ts',
       'test/commitBody.test.ts',
+      // The commit editor's change count, cascade rows and "Add file" search.
+      'test/commitEditPanel.test.ts',
       // Mission Control's refresh, hosting cadence and release column.
       'test/missionHosting.test.ts',
       'test/fileTree.test.ts',
