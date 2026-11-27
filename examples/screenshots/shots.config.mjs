@@ -3306,6 +3306,47 @@ export const shots = [
     }
   },
   {
+    // A commit with a description: it shows under the subject, a long one
+    // collapsed to its first lines, and the trailers git keeps at the end as
+    // chips. The commit is made here, on the playground's own identity.
+    out: 'commit-body',
+    repos: ['commit-template'],
+    themes: ['dark'],
+    prepare: async ({ repoPaths, run }) => {
+      const repo = repoPaths['commit-template']
+      await run('git', ['-C', repo, 'add', 'app.js'])
+      await run('git', [
+        '-C',
+        repo,
+        '-c',
+        'user.name=Playground',
+        '-c',
+        'user.email=playground@example.com',
+        'commit',
+        '-m',
+        'fix(app): greet the visitor again after a dropped connection',
+        '-m',
+        'What: the greeting kept the last name only in memory, so a dropped\nconnection in the middle of a session greeted the visitor as a stranger.',
+        '-m',
+        'Why: visitors on an unstable network saw "Hello, there" after every\nreconnect.',
+        '-m',
+        'How:\n- the name is saved on every confirmed greeting;\n- a reconnect reads it back before greeting;\n- a name older than a day is dropped.',
+        '-m',
+        'Co-authored-by: Sam Example <sam@example.com>\nRefs: APP-42'
+      ])
+    },
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['commit-template']
+      await page.evaluate((p) => {
+        const s = window.__shot
+        const commit = s.repo.getState().repos[p].commits.find((c) => c.subject.startsWith('fix(app)'))
+        if (commit) s.repo.getState().select(p, { type: 'commit', hash: commit.hash })
+      }, repo)
+      await page.waitForSelector('.commit-body', { timeout: 10000 })
+      await page.waitForTimeout(400)
+    }
+  },
+  {
     out: 'semantic-diff',
     repos: ['semantic-diff'],
     themes: ['dark'],

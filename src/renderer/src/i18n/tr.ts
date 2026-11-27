@@ -2908,6 +2908,10 @@ export const tr: Dict = {
   'commitPanel.restoreMsg': '{n} dosyanın çalışma kopyasının üzerine {hash} sürümü yazılsın mı?',
   'commitPanel.restoreConfirm': 'Geri yükle',
   'commitPanel.messageLabel': 'Mesaj',
+  'commitPanel.trailers': 'Ekler',
+  'commitPanel.coAuthorTrailer': 'Ortak yazar: {name}',
+  'commitPanel.showAllBody': 'Tümünü göster · {n} satır daha',
+  'commitPanel.showLessBody': 'Daha az göster',
   'commitPanel.refsLabel': 'Ref’ler',
   'commitPanel.coauthorsLabel': 'Ortak yazarlar',
 

@@ -2948,6 +2948,10 @@ export const uk: Dict = {
   'commitPanel.restoreMsg': 'Перезаписати робочу копію {n} файлів їхньою версією з {hash}?',
   'commitPanel.restoreConfirm': 'Відновити',
   'commitPanel.messageLabel': 'Повідомлення',
+  'commitPanel.trailers': 'Трейлери',
+  'commitPanel.coAuthorTrailer': 'Співавтор: {name}',
+  'commitPanel.showAllBody': 'Показати все · ще {n} рядків',
+  'commitPanel.showLessBody': 'Згорнути',
   'commitPanel.refsLabel': 'Ref',
   'commitPanel.coauthorsLabel': 'Співавтори',
 

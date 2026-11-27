@@ -2908,6 +2908,10 @@ export const ja: Dict = {
   'commitPanel.restoreMsg': '{n} 件のファイルの作業コピーを {hash} 時点の内容で上書きしますか？',
   'commitPanel.restoreConfirm': '復元',
   'commitPanel.messageLabel': 'メッセージ',
+  'commitPanel.trailers': 'トレーラー',
+  'commitPanel.coAuthorTrailer': '共同作成者: {name}',
+  'commitPanel.showAllBody': 'すべて表示 · あと {n} 行',
+  'commitPanel.showLessBody': '折りたたむ',
   'commitPanel.refsLabel': 'ref',
   'commitPanel.coauthorsLabel': '共著者',
 

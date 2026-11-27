@@ -4237,6 +4237,69 @@ body.col-resizing .node-ava {
   user-select: text;
   border-bottom: 1px solid var(--border-soft);
 }
+/* With a description below, the rule moves under it: subject and body read as one message. */
+.commit-subject:has(+ .commit-body-block) {
+  padding-bottom: 8px;
+  border-bottom: none;
+}
+.commit-body-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 0 16px 12px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.commit-body {
+  position: relative;
+  align-self: stretch;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  background: var(--bg-2);
+  overflow: hidden;
+}
+.commit-body-text {
+  padding: 8px 10px;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--text-1);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+/* A collapsed description ends in a fade, so the cut reads as "there is more". */
+.commit-body-fade {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 40px;
+  background: linear-gradient(to bottom, transparent, var(--bg-2));
+  pointer-events: none;
+}
+.commit-trailers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.commit-trailer {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--bg-3);
+  color: var(--text-1);
+  font-size: 11.5px;
+}
+.commit-body-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
 
 .commit-subject-input {
   width: 100%;

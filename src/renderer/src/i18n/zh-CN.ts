@@ -2948,6 +2948,10 @@ export const zhCN: Dict = {
   'commitPanel.restoreMsg': '用 {hash} 中的版本覆盖 {n} 个文件的工作副本？',
   'commitPanel.restoreConfirm': '恢复',
   'commitPanel.messageLabel': '信息',
+  'commitPanel.trailers': '尾注',
+  'commitPanel.coAuthorTrailer': '共同作者：{name}',
+  'commitPanel.showAllBody': '显示全部 · 还有 {n} 行',
+  'commitPanel.showLessBody': '收起',
   'commitPanel.refsLabel': 'Ref',
   'commitPanel.coauthorsLabel': '共同作者',
 

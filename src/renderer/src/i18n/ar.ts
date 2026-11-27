@@ -2948,6 +2948,10 @@ export const ar: Dict = {
   'commitPanel.restoreMsg': 'أتُستبدل نسخة العمل لعدد {n} من الملفات بنسختها من {hash}؟',
   'commitPanel.restoreConfirm': 'استعادة',
   'commitPanel.messageLabel': 'الرسالة',
+  'commitPanel.trailers': 'التذييلات',
+  'commitPanel.coAuthorTrailer': 'مؤلف مشارك: {name}',
+  'commitPanel.showAllBody': 'عرض الكل · {n} أسطر أخرى',
+  'commitPanel.showLessBody': 'عرض أقل',
   'commitPanel.refsLabel': 'المراجع',
   'commitPanel.coauthorsLabel': 'المؤلفون المشاركون',
 

@@ -2908,6 +2908,10 @@ export const fr: Dict = {
   'commitPanel.restoreMsg': 'Écraser la copie de travail de {n} fichier(s) avec leur version de {hash} ?',
   'commitPanel.restoreConfirm': 'Restaurer',
   'commitPanel.messageLabel': 'Message',
+  'commitPanel.trailers': 'Trailers',
+  'commitPanel.coAuthorTrailer': 'Coauteur : {name}',
+  'commitPanel.showAllBody': 'Tout afficher · {n} lignes de plus',
+  'commitPanel.showLessBody': 'Afficher moins',
   'commitPanel.refsLabel': 'Réfs',
   'commitPanel.coauthorsLabel': 'Co-auteurs',
 

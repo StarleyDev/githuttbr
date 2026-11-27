@@ -98,6 +98,10 @@ Dosya listesi alışıldık hareketlerle çoklu seçilir
 bir onaydan sonra çalışma kopyalarının üzerine yazar; HEAD'e de indekse de
 dokunmaz.
 
+Commit’in **açıklaması** — başlığın altındaki her şey — hemen altında görünür; elle bölünmüş satırlar panele sığacak şekilde birleştirilir (liste öğeleri ve girintili satırlar yazıldığı gibi kalır). Uzun bir açıklama ilk satırlarını ve **Tümünü göster**i gösterir. git’in sonda tuttuğu ekler etiket olur: her `Co-authored-by` için *Ortak yazar: ad*, `Refs:` gibi diğerleri yazıldığı gibi. Açıklaması olmayan commit yalnızca başlığını gösterir.
+
+![Başlığın altında commit açıklaması, ekler etiket olarak](../../screenshots/commit-body.webp)
+
 ![Commit ayrıntılarında gezinme](../../screenshots/clip-commit-details.webp)
 
 **Ayrıca bakınız:** [Blame ve dosya geçmişi](blame.md) · [Arama](search.md) · [Zaman makinesi](time-machine.md)

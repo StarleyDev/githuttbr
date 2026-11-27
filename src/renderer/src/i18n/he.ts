@@ -2948,6 +2948,10 @@ export const he: Dict = {
   'commitPanel.restoreMsg': 'לדרוס את עותק העבודה של {n} קבצים בגרסתם מ-{hash}?',
   'commitPanel.restoreConfirm': 'שחזור',
   'commitPanel.messageLabel': 'הודעה',
+  'commitPanel.trailers': 'טריילרים',
+  'commitPanel.coAuthorTrailer': 'מחבר שותף: {name}',
+  'commitPanel.showAllBody': 'הצגת הכול · עוד {n} שורות',
+  'commitPanel.showLessBody': 'הצגת פחות',
   'commitPanel.refsLabel': 'Refs',
   'commitPanel.coauthorsLabel': 'שותפים לכתיבה',
 

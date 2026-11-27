@@ -2947,6 +2947,10 @@ export const en = {
   'commitPanel.restoreMsg': 'Overwrite the working copy of {n} file(s) with their version from {hash}?',
   'commitPanel.restoreConfirm': 'Restore',
   'commitPanel.messageLabel': 'Message',
+  'commitPanel.trailers': 'Trailers',
+  'commitPanel.coAuthorTrailer': 'Co-author: {name}',
+  'commitPanel.showAllBody': 'Show all · {n} more lines',
+  'commitPanel.showLessBody': 'Show less',
   'commitPanel.refsLabel': 'Refs',
   'commitPanel.coauthorsLabel': 'Co-authors',
 

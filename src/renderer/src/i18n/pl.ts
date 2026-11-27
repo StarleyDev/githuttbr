@@ -2948,6 +2948,10 @@ export const pl: Dict = {
   'commitPanel.restoreMsg': 'Nadpisać kopię roboczą {n} plików ich wersją z {hash}?',
   'commitPanel.restoreConfirm': 'Przywróć',
   'commitPanel.messageLabel': 'Wiadomość',
+  'commitPanel.trailers': 'Stopki',
+  'commitPanel.coAuthorTrailer': 'Współautor: {name}',
+  'commitPanel.showAllBody': 'Pokaż wszystko · jeszcze {n} wierszy',
+  'commitPanel.showLessBody': 'Pokaż mniej',
   'commitPanel.refsLabel': 'Refy',
   'commitPanel.coauthorsLabel': 'Współautorzy',
 

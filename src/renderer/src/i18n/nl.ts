@@ -2949,6 +2949,10 @@ export const nl: Dict = {
   'commitPanel.restoreMsg': 'Werkkopie van {n} bestand(en) overschrijven met hun versie uit {hash}?',
   'commitPanel.restoreConfirm': 'Terugzetten',
   'commitPanel.messageLabel': 'Bericht',
+  'commitPanel.trailers': 'Trailers',
+  'commitPanel.coAuthorTrailer': 'Co-auteur: {name}',
+  'commitPanel.showAllBody': 'Alles tonen · nog {n} regels',
+  'commitPanel.showLessBody': 'Minder tonen',
   'commitPanel.refsLabel': 'Refs',
   'commitPanel.coauthorsLabel': 'Co-auteurs',
 
