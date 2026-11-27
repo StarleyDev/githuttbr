@@ -187,6 +187,7 @@ import type {
   RepoFacts,
   RepoChatAttachment,
   RepoChatMessage,
+  RepoChatProgress,
   RepoChatReply,
   RepoChatExecutionResult,
   PreparedRepoChatFileAction,
@@ -884,7 +885,9 @@ export const aiApi = {
     messages: RepoChatMessage[],
     result: RepoChatExecutionResult,
     cfg: AIConfig
-  ) => window.api.ai.repoChatFinalize(repoPath, messages, result, cfg) as Promise<RepoChatReply>
+  ) => window.api.ai.repoChatFinalize(repoPath, messages, result, cfg) as Promise<RepoChatReply>,
+  /** What a pending chat request is doing — thinking, or reading files it asked for. */
+  onRepoChatProgress: (cb: (p: RepoChatProgress) => void): (() => void) => window.api.ai.onRepoChatProgress(cb)
 }
 
 export const wikiApi = {

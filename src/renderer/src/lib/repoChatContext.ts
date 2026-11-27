@@ -1,4 +1,10 @@
-import { aiProviderPreset, type AIConfig, type RepoChatAttachment } from '../../../shared/types'
+import {
+  aiProviderPreset,
+  type AIConfig,
+  type RepoChatAttachment,
+  type RepoChatProgressStep
+} from '../../../shared/types'
+import type { TranslationKey } from '../i18n'
 import { accountLabel } from '../../../shared/aiAccounts'
 
 /**
@@ -130,4 +136,18 @@ export function suggestedAttachments(input: ChatSuggestionInput): RepoChatAttach
   if (input.openFile) out.push({ kind: 'file', path: input.openFile })
   if (input.selectedCommit) out.push({ kind: 'commit', hash: input.selectedCommit })
   return out.filter((item) => !pinned.has(attachmentKey(item)))
+}
+
+/**
+ * The waiting line under a pending chat message. It says what the request is
+ * actually doing — a greeting never claims to be reading the repository — and
+ * returns a key so the panel translates it in the current language.
+ */
+export function chatProgressLabel(step: RepoChatProgressStep | null): {
+  key: TranslationKey
+  vars?: Record<string, number>
+} {
+  if (step?.phase !== 'reading') return { key: 'chat.thinking' }
+  if (step.files > 0) return { key: 'chat.readingFiles', vars: { count: step.files } }
+  return { key: 'chat.searchingRepo' }
 }

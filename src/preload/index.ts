@@ -198,7 +198,12 @@ const api = {
     repoChat: (repoPath: string, messages: unknown, cfg: unknown, attachments: unknown): Promise<unknown> =>
       ipcRenderer.invoke('ai:repoChat', repoPath, messages, cfg, attachments),
     repoChatFinalize: (repoPath: string, messages: unknown, result: unknown, cfg: unknown): Promise<unknown> =>
-      ipcRenderer.invoke('ai:repoChatFinalize', repoPath, messages, result, cfg)
+      ipcRenderer.invoke('ai:repoChatFinalize', repoPath, messages, result, cfg),
+    onRepoChatProgress: (cb: (p: unknown) => void): (() => void) => {
+      const listener = (_e: unknown, p: unknown): void => cb(p)
+      ipcRenderer.on('ai:repoChatProgress', listener)
+      return () => ipcRenderer.removeListener('ai:repoChatProgress', listener)
+    }
   },
 
   wiki: {

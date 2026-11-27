@@ -27,7 +27,8 @@ import type {
   RepoChatAction,
   RepoChatActionErrorCode,
   RepoChatAttachment,
-  RepoChatExecutionResult
+  RepoChatExecutionResult,
+  RepoChatProgressStep
 } from '../../../shared/types'
 import { modelFor, resolveAI } from '../../../shared/aiAccounts'
 import { useModelCatalogs } from './useModelCatalogs'
@@ -46,6 +47,7 @@ import {
   attachmentLabel,
   attachmentTitle,
   chatModelGroups,
+  chatProgressLabel,
   parseChatDrop,
   suggestedAttachments
 } from '../lib/repoChatContext'
@@ -54,7 +56,7 @@ import { askActionDetail, askActionsAutoRun, destructiveAskFiles } from '../lib/
 import { actionErrorText, executeRepoChatActions, planGuardSnapshot } from '../lib/askActionRun'
 import { repoChatActionMeta } from '../lib/askActionMeta'
 import { ActionResultLinks, ActionWidget } from './ActionWidgets'
-import { gitApi } from '../infrastructure/api'
+import { aiApi, gitApi } from '../infrastructure/api'
 import { useRepoChatStore, type RepoChatEntry } from '../stores/chat'
 import { repoActions, useRepoStore } from '../stores/repo'
 import { useSettingsStore } from '../stores/settings'
@@ -439,6 +441,18 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
   const pending = thread?.pending ?? false
   const attachments = thread?.attachments ?? []
   const skipped = thread?.skipped ?? []
+  const [progress, setProgress] = useState<RepoChatProgressStep | null>(null)
+  // Only this repository's request moves the line; a new request starts at "thinking".
+  useEffect(() => {
+    if (!pending) {
+      setProgress(null)
+      return
+    }
+    return aiApi.onRepoChatProgress(({ repoPath: from, ...step }) => {
+      if (from === repoPath) setProgress(step as RepoChatProgressStep)
+    })
+  }, [pending, repoPath])
+  const progressLabel = chatProgressLabel(progress)
   const { catalogs } = useModelCatalogs(ai)
   const modelGroups = useMemo(
     () => chatModelGroups(ai, Object.fromEntries(Object.entries(catalogs).map(([id, c]) => [id, c.models]))),
@@ -814,7 +828,7 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
                   <Bot size={14} />
                 </div>
                 <div className="repo-chat-bubble repo-chat-thinking">
-                  <Loader2 size={14} className="spin" /> {t('chat.thinking')}
+                  <Loader2 size={14} className="spin" /> {interp(t(progressLabel.key), progressLabel.vars ?? {})}
                 </div>
               </div>
             )}

@@ -168,6 +168,7 @@ interface PreloadApi {
     planActions(prompt: string, status: unknown, cfg: unknown): Promise<unknown>
     repoChat(repoPath: string, messages: unknown, cfg: unknown, attachments: unknown): Promise<unknown>
     repoChatFinalize(repoPath: string, messages: unknown, result: unknown, cfg: unknown): Promise<unknown>
+    onRepoChatProgress(cb: (p: import('../../shared/types').RepoChatProgress) => void): () => void
   }
   wiki: {
     facts(repoPath: string): Promise<unknown>
