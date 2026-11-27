@@ -1,4 +1,5 @@
-import type { CiState, ConflictOpKind, PullRequest, RepoPulse } from '../../../shared/types'
+import type { CiState, ConflictOpKind, PullRequest, ReleaseNoteTiers, ReleaseTone, RepoPulse } from '../../../shared/types'
+import { DEFAULT_RELEASE_TIERS, RELEASE_TONES } from '../../../shared/types'
 import type { TranslationKey } from '../i18n'
 
 /**
@@ -247,4 +248,29 @@ export function releaseNote(release: RepoPulse['release']): { key: TranslationKe
   if (!release) return { key: 'mission.release.none' }
   if (release.since === 0) return { key: 'mission.release.current' }
   return { key: 'mission.release.since', n: release.since }
+}
+
+/**
+ * The tiers as Settings holds them, made usable: whole non-negative counts,
+ * the second never below the first, and a known tone in each slot — an
+ * imported or hand-edited file can carry anything.
+ */
+export function normalizeReleaseTiers(raw: Partial<ReleaseNoteTiers> | undefined): ReleaseNoteTiers {
+  const count = (n: unknown, fallback: number): number =>
+    typeof n === 'number' && Number.isFinite(n) ? Math.max(0, Math.round(n)) : fallback
+  const warnAfter = count(raw?.warnAfter, DEFAULT_RELEASE_TIERS.warnAfter)
+  const alertAfter = Math.max(warnAfter, count(raw?.alertAfter, DEFAULT_RELEASE_TIERS.alertAfter))
+  const tone = (i: number): ReleaseTone => {
+    const t = raw?.tones?.[i]
+    return t && RELEASE_TONES.includes(t) ? t : DEFAULT_RELEASE_TIERS.tones[i]
+  }
+  return { warnAfter, alertAfter, tones: [tone(0), tone(1), tone(2)] }
+}
+
+/** The colour of a release note: by how many commits HEAD is past its tag. */
+export function releaseTone(release: RepoPulse['release'], tiers: ReleaseNoteTiers): ReleaseTone {
+  if (!release) return 'muted'
+  if (release.since <= tiers.warnAfter) return tiers.tones[0]
+  if (release.since <= tiers.alertAfter) return tiers.tones[1]
+  return tiers.tones[2]
 }

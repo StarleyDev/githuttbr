@@ -32,7 +32,7 @@ counts compare like a table:
 | **Last commit** | Its subject and author: what the repository was last doing, without opening it |
 | **Local** | Conflicts · ↓ to pull · ↑ to push · staged · modified · untracked · stashes. Hover any of them for what it counts |
 | **Hosting** | The open pull requests, with the ones waiting for **your** review in amber, and HEAD's CI. Click the count to open that repository's **Pull requests** page, or **CI** to open its runs |
-| **Release** | The newest tag HEAD reaches, and how many commits came after it — **up to date** when none |
+| **Release** | The newest tag HEAD reaches, and how many commits came after it — **up to date** when none. The count is coloured by how far behind a release is: grey up to 5 commits, yellow up to 20, red beyond, all of it changeable in **Settings → Git & sync → Release note colours** |
 | **Activity** | A 14-day commit sparkline, and how many commits that is |
 | **Time** | How long since the last commit, and since the last **fetch** |
 
@@ -45,7 +45,11 @@ fetched for a day or more, or never has, the age turns amber — fetch it before
 trusting a 0. The dashboard reads the fetch time from git itself, so a
 `git fetch` in a terminal counts too.
 
-On a narrow window the last-commit and release columns step aside first; the counts and hosting stay.
+![Settings → Git & sync: Mission Control's refresh and the release note colours](../screenshots/settings-git-sync.webp)
+
+On a narrow window every column stays, and the table scrolls sideways inside its frame.
+
+**Open** at the end of a row shows that repository itself — its graph — even when its tab was last showing the pull request list the PR count opened.
 
 Expand a row (the chevron, or <kbd>space</kbd>) to see exactly which commits are
 waiting to be pushed and which files are dirty.

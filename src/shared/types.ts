@@ -348,6 +348,19 @@ export interface AbsorbPlan {
 }
 
 /** One repository's local health, as shown in Mission Control. */
+/** A theme colour a Mission Control release note can take — tokens, so a theme repaints them. */
+export type ReleaseTone = 'muted' | 'accent' | 'green' | 'yellow' | 'red' | 'purple'
+export const RELEASE_TONES: ReleaseTone[] = ['muted', 'accent', 'green', 'yellow', 'red', 'purple']
+
+export interface ReleaseNoteTiers {
+  warnAfter: number
+  alertAfter: number
+  tones: [ReleaseTone, ReleaseTone, ReleaseTone]
+}
+
+/** Quiet while a release is recent, yellow past 5 commits, red past 20. */
+export const DEFAULT_RELEASE_TIERS: ReleaseNoteTiers = { warnAfter: 5, alertAfter: 20, tones: ['muted', 'yellow', 'red'] }
+
 export interface RepoPulse {
   path: string
   name: string
@@ -4102,6 +4115,9 @@ export interface AppSettings {
   /** How often Mission Control re-reads the repositories while it is on screen,
    *  in seconds; never below 30. It does not run while the page is closed. */
   missionRefreshSeconds?: number
+  /** How Mission Control colours "N commits since the tag": up to `warnAfter`
+   *  in the first tone, up to `alertAfter` in the second, more in the third. */
+  missionReleaseTiers?: ReleaseNoteTiers
   /** Raise an OS notification for new review-requested / CI inbox items. */
   desktopNotifications?: boolean
   confirmForcePush: boolean
@@ -4720,6 +4736,7 @@ export function defaultSettings(): AppSettings {
     todosManualOrder: false,
     autoFetchMinutes: 5,
     missionRefreshSeconds: 30,
+    missionReleaseTiers: { ...DEFAULT_RELEASE_TIERS, tones: [...DEFAULT_RELEASE_TIERS.tones] },
     desktopNotifications: false,
     confirmForcePush: true,
     mergeCommit: true,

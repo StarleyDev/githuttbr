@@ -6,7 +6,9 @@ import {
   hostingDue,
   hostingTotals,
   missionRefreshMs,
+  normalizeReleaseTiers,
   releaseNote,
+  releaseTone,
   summarizePrs,
   type HostingSummary
 } from '../src/renderer/src/lib/missionControl'
@@ -101,5 +103,25 @@ describe('the release column', () => {
     expect(releaseNote(null)).toEqual({ key: 'mission.release.none' })
     expect(releaseNote({ tag: 'v1', since: 0 })).toEqual({ key: 'mission.release.current' })
     expect(releaseNote({ tag: 'v1', since: 9 })).toEqual({ key: 'mission.release.since', n: 9 })
+  })
+})
+
+describe('release note colours', () => {
+  const tiers = normalizeReleaseTiers(undefined)
+
+  it('starts quiet, turns yellow past 5 commits and red past 20', () => {
+    expect(tiers).toEqual({ warnAfter: 5, alertAfter: 20, tones: ['muted', 'yellow', 'red'] })
+    expect(releaseTone({ tag: 'v1', since: 0 }, tiers)).toBe('muted')
+    expect(releaseTone({ tag: 'v1', since: 5 }, tiers)).toBe('muted')
+    expect(releaseTone({ tag: 'v1', since: 6 }, tiers)).toBe('yellow')
+    expect(releaseTone({ tag: 'v1', since: 20 }, tiers)).toBe('yellow')
+    expect(releaseTone({ tag: 'v1', since: 21 }, tiers)).toBe('red')
+    expect(releaseTone(null, tiers)).toBe('muted')
+  })
+
+  it('repairs what a hand-edited file may hold', () => {
+    const fixed = normalizeReleaseTiers({ warnAfter: 30, alertAfter: 10, tones: ['green', 'nope' as never, 'purple'] })
+    expect(fixed).toEqual({ warnAfter: 30, alertAfter: 30, tones: ['green', 'yellow', 'purple'] })
+    expect(normalizeReleaseTiers({ warnAfter: -3.4 }).warnAfter).toBe(0)
   })
 })

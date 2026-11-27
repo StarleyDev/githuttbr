@@ -33,7 +33,9 @@ import {
   hostingTotals,
   isFetchStale,
   missionRefreshMs,
+  normalizeReleaseTiers,
   releaseNote,
+  releaseTone,
   summarizePrs,
   type HostingSummary,
   OP_LABEL,
@@ -229,8 +231,6 @@ function rowBadges(p: RepoPulse): Badge[] {
  */
 export function MissionControlPage(): React.JSX.Element {
   const tabs = useSettingsStore((s) => s.settings.tabs)
-  const setActiveTab = useSettingsStore((s) => s.setActiveTab)
-  const setGroupActiveRepo = useSettingsStore((s) => s.setGroupActiveRepo)
   // Tabs belong to the active workspace, so this dashboard is inherently
   // per-workspace: switching workspaces swaps the whole tab strip, this view
   // included. Naming it makes that obvious rather than implicit.
@@ -239,8 +239,9 @@ export function MissionControlPage(): React.JSX.Element {
   )
   const refreshSeconds = useSettingsStore((s) => s.settings.missionRefreshSeconds)
   const refreshMs = missionRefreshMs(refreshSeconds)
+  const rawTiers = useSettingsStore((s) => s.settings.missionReleaseTiers)
+  const tiers = useMemo(() => normalizeReleaseTiers(rawTiers), [rawTiers])
   const toast = useUIStore((s) => s.toast)
-  const setMissionOpen = useUIStore((s) => s.setMissionOpen)
   const t = useT()
 
   const [pulses, setPulses] = useState<Record<string, RepoPulse>>({})
@@ -400,16 +401,9 @@ export function MissionControlPage(): React.JSX.Element {
     }
   }, [pulses])
 
-  const open = useCallback(
-    (path: string): void => {
-      const row = rows.find((r) => r.path === path)
-      if (!row) return
-      setActiveTab(row.tabId)
-      if (row.group) setGroupActiveRepo(row.tabId, path)
-      setMissionOpen(false)
-    },
-    [rows, setActiveTab, setGroupActiveRepo, setMissionOpen]
-  )
+  // The repository itself — its graph — not a page parked on its tab: the PR
+  // chip may have left the pull request list open there.
+  const open = useCallback((path: string): void => useSettingsStore.getState().showRepoView(path), [])
 
   const run = useCallback(
     // `busyKey` names the button that started a bulk run, so the spinner lands on it and not on
@@ -783,7 +777,9 @@ export function MissionControlPage(): React.JSX.Element {
                             <Tag size={11} /> <span>{p.release.tag}</span>
                           </span>
                         )}
-                        <span className="mc-release-note">{interp(t(note.key), { n: String(note.n ?? '') })}</span>
+                        <span className="mc-release-note" data-tone={releaseTone(p.release ?? null, tiers)}>
+                          {interp(t(note.key), { n: String(note.n ?? '') })}
+                        </span>
                       </div>
                     </>
                   )}

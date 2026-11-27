@@ -9450,6 +9450,32 @@ body.col-resizing .node-ava {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+/* Release note colours: a label, a count and a row of theme swatches per tier. */
+.release-tiers { display: flex; flex-direction: column; gap: 8px; }
+.release-tier {
+  display: grid;
+  grid-template-columns: minmax(140px, 200px) 90px auto;
+  align-items: center;
+  gap: 12px;
+}
+.release-tier-label { font-size: 12.5px; color: var(--text-1); }
+.release-tier input[type='number'] { width: 90px; }
+.release-tones { display: flex; gap: 6px; }
+.release-tone {
+  --release-tone: var(--text-2);
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  background: var(--release-tone);
+  box-shadow: inset 0 0 0 2px var(--bg-1);
+  cursor: pointer;
+}
+.release-tone:hover { border-color: color-mix(in srgb, var(--release-tone) 50%, var(--text-0)); }
+.release-tone.on { border-color: var(--text-0); }
+.release-tone:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
 /* A number needs a few digits of room, not the whole column. */
 .settings-grid-numbers input[type='number'] {
   width: 120px;
@@ -14364,13 +14390,9 @@ input[type='range']:focus-visible {
   border-bottom: 1px solid var(--border-soft);
 }
 .mc-row-wrap:last-child .mc-row { border-bottom: 0; }
-/* Narrow window: the last commit and the release step aside; the counts stay. */
-@container (max-width: 1100px) {
-  .mc-row { grid-template-columns: 22px 16px 22px minmax(150px, 1fr) 160px 180px 80px 96px 118px; }
-  /* Scoped under .mc-row so they outrank the base rules further down. */
-  .mc-row .mc-commit, .mc-row .mc-release { display: none; }
-  .mc-row .mc-error { grid-column: span 2; }
-}
+/* A narrow window keeps every column, as drawn: the table scrolls sideways
+   inside its card instead of dropping the last commit and the release. */
+.mc-row, .mc-detail { min-width: 1400px; }
 .mc-row:not(.mc-head):hover { background: color-mix(in srgb, var(--text-0) 4%, transparent); }
 .mc-head {
   position: sticky;
@@ -14488,6 +14510,18 @@ input[type='range']:focus-visible {
 .mc-tag svg { flex: none; color: var(--yellow); }
 .mc-tag span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mc-release-note { font-size: 11px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Settings → Git & sync → Release note colours picks these by commit count. */
+.mc-release-note[data-tone='accent'],
+.release-tone[data-tone='accent'] { --release-tone: var(--accent); }
+.mc-release-note[data-tone='green'],
+.release-tone[data-tone='green'] { --release-tone: var(--green); }
+.mc-release-note[data-tone='yellow'],
+.release-tone[data-tone='yellow'] { --release-tone: var(--yellow); }
+.mc-release-note[data-tone='red'],
+.release-tone[data-tone='red'] { --release-tone: var(--danger, var(--red)); }
+.mc-release-note[data-tone='purple'],
+.release-tone[data-tone='purple'] { --release-tone: var(--purple); }
+.mc-release-note[data-tone]:not([data-tone='muted']) { color: var(--release-tone); font-weight: 600; }
 
 .mc-activity { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; color: var(--accent); }
 .mc-activity-n { font-size: 11px; color: var(--text-2); white-space: nowrap; }

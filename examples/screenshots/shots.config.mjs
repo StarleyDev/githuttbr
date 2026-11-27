@@ -847,6 +847,17 @@ export const shots = [
     }
   },
   {
+    // Settings → Git & sync: the auto-fetch and Mission Control refresh side by
+    // side, and the release note colours under them.
+    out: 'settings-git-sync',
+    repos: ['octopus-merge'],
+    themes: ['dark'],
+    drive: async (page) => {
+      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'git' }))
+      await page.waitForTimeout(600)
+    }
+  },
+  {
     // Settings → AI, scrolled to Commit messages: the style cards with their
     // sample lines, the two switches, the extra rules and the static preview.
     out: 'settings-ai-commits',

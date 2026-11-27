@@ -96,6 +96,7 @@ const KNOWN_SETTINGS: { [K in keyof Required<AppSettings>]: true } = {
   todosManualOrder: true,
   autoFetchMinutes: true,
   missionRefreshSeconds: true,
+  missionReleaseTiers: true,
   desktopNotifications: true,
   confirmForcePush: true,
   mergeCommit: true,

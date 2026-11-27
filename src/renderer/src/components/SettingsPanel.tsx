@@ -133,6 +133,7 @@ import { AIAccountsEditor } from './AIAccounts'
 import { AIBehaviourSettings } from './AIBehaviourSettings'
 import { LanguagePicker } from './LanguagePicker'
 import { NumberField } from './NumberField'
+import { ReleaseTierSettings } from './ReleaseTierSettings'
 import { ScanRootsEditor } from './ScanRootsEditor'
 import { ShortcutEditor } from './CheatsheetModal'
 import { AUTHOR_NAME, AUTHOR_URL, PRODUCT_NAME } from '../../../shared/brand'
@@ -3364,6 +3365,7 @@ function GitSyncPage(): React.JSX.Element {
           <span className="settings-hint">{t('settings.missionRefreshHint')}</span>
         </label>
       </div>
+      <ReleaseTierSettings />
 
       <h4 className="settings-section-title">
         <GitMerge size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />

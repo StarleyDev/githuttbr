@@ -193,6 +193,7 @@ export const SETTINGS_INDEX: readonly SettingsEntry[] = [
   e('git', 'settings.gitSync', undefined, 'general'),
   e('git', 'settings.autoFetch', 'settings.autoFetchHint', 'general'),
   e('git', 'settings.missionRefresh', 'settings.missionRefreshHint', 'general'),
+  e('git', 'settings.missionReleaseTiers', 'settings.missionReleaseTiersHint', 'general'),
   e('git', 'settings.gitMerging', undefined, 'general'),
   e('git', 'settings.mergeCommit', 'settings.mergeCommitHint', 'general'),
   e('git', 'rerere.title', 'rerere.intro', 'general'),
