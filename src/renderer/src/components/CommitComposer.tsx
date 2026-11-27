@@ -85,7 +85,13 @@ export function CommitComposer({ repo }: { repo: RepoData }): React.JSX.Element 
   const t = useT()
   const summary = useRepoStore((s) => s.drafts[repo.path] ?? '')
   const setSummary = useRepoStore((s) => s.setDraft).bind(null, repo.path)
-  const [description, setDescription] = useState('')
+  const description = useRepoStore((s) => s.descriptionDrafts[repo.path] ?? '')
+  // Takes a value or an updater, like the useState setter it replaced.
+  const setDescription = (next: string | ((current: string) => string)): void => {
+    const store = useRepoStore.getState()
+    const value = typeof next === 'function' ? next(store.descriptionDrafts[repo.path] ?? '') : next
+    store.setDescriptionDraft(repo.path, value)
+  }
   // Commit message recall: ↑/↓ in the summary cycles recent commit subjects.
   const histIdx = useRef(-1)
   const histSaved = useRef('')

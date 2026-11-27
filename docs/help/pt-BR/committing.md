@@ -67,24 +67,26 @@ Limites:
 
 ## Escrevendo a mensagem com IA
 
-Com a IA ligada, **Gerar com IA** fica abaixo da descrição. Ele lê o diff
-preparado (staged) e escreve o resumo e a descrição no estilo acima. O botão
-diz quem vai responder — *conta · modelo*, o par escolhido para mensagens de
+Com a IA ligada, o botão **✦** (*Gerar com IA* no hover) fica abaixo da
+descrição. Ele lê o diff preparado (staged) e escreve o resumo e a descrição no
+estilo acima. Ao lado, a linha diz quem vai responder — *conta · modelo*, o par escolhido para mensagens de
 commit em **Configurações → IA → Modelo por tarefa** — para que um modelo local
 lento ou um caro nunca seja surpresa.
 
 - **▾** ao lado do nome lista as contas salvas, cada uma com alguns dos seus
   modelos. A escolha vale **só para aquela geração**; as Configurações não
   mudam.
-- Enquanto roda, a caixa mostra *Gerando com conta · modelo… 12s* e
+- Enquanto roda, o ✦ gira e a mesma linha mostra os segundos até ali e
   **Cancelar**, que interrompe a própria requisição, não só o indicador. Depois
   de 30 segundos também oferece **Usar** outra conta pronta, que roda a mesma
   geração nela. O aviso global *está demorando mais que o esperado*
   ([IA](ai.md)) continua aparecendo também.
-- O texto novo **substitui** o que havia, e o antigo é guardado: uma faixa diz
-  *Gerado por conta · modelo em 7 s* e oferece **Desfazer**, que devolve o seu
-  resumo e a sua descrição, e **Gerar de novo**. Ela some assim que você edita o
-  texto ou faz o commit.
+- O texto novo **substitui** o que havia, e o antigo é guardado: **Desfazer** e
+  **Gerar de novo** aparecem na mesma linha (no hover, *Gerado por conta ·
+  modelo em 7 s*). Desfazer devolve o seu resumo e a sua descrição. Os dois
+  somem assim que você edita o texto ou faz o commit.
+- A descrição que você digitou, ou a que a IA escreveu, continua lá quando você
+  troca de aba e volta, como o resumo.
 
 ![Gerar com IA e o menu de contas](../../screenshots/commit-ai-generate.webp)
 
@@ -96,7 +98,7 @@ Limites:
 - Só o diff preparado é enviado, cortado quando é muito grande — nunca mudanças
   não preparadas nem outros arquivos.
 - Desfazer guarda um passo: o texto de antes da primeira geração seguida.
-  Quando a faixa some, essa cópia some junto.
+  Quando o Desfazer some, essa cópia some junto.
 - Cancelar não devolve tokens que o provedor já gastou na requisição.
 - A lista do ▾ mostra todas as contas salvas, inclusive uma ainda sem chave;
   escolhê-la falha com o erro daquela conta.
