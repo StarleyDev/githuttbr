@@ -5614,6 +5614,149 @@ body.col-resizing .node-ava {
   opacity: 1;
 }
 
+/* ─── AI in the status bar ─────────────────────────────────────────────── */
+
+.status-ai-btn {
+  max-width: 220px;
+}
+.status-ai-btn > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ai-chip-dot {
+  flex-shrink: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text-2);
+  opacity: 0.7;
+}
+.ai-chip-dot.ready {
+  background: var(--ok, var(--green));
+  opacity: 1;
+}
+.ai-chip-dot.failing {
+  background: var(--danger);
+  opacity: 1;
+}
+.ai-chip-dot.no-key {
+  background: var(--warn);
+  opacity: 1;
+}
+
+.ai-chip-popover {
+  position: fixed;
+  z-index: 990;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg-3);
+  color: var(--text-1);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  box-shadow: 0 14px 42px rgba(0, 0, 0, 0.35);
+  font-size: 12px;
+}
+
+.ai-chip-head {
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.ai-chip-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+.ai-chip-profile {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ai-chip-scope {
+  margin: 4px 0 0;
+  color: var(--text-0);
+}
+
+.ai-chip-rows {
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  overflow-y: auto;
+  min-height: 0;
+}
+.ai-chip-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+}
+.ai-chip-row.in-use {
+  background: var(--accent-soft);
+}
+.ai-chip-row-text {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+}
+.ai-chip-row-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-0);
+}
+.ai-chip-row-reason {
+  font-size: 11px;
+  color: var(--danger);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.ai-chip-in-use {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+}
+.ai-chip-use {
+  flex-shrink: 0;
+}
+
+.ai-chip-foot {
+  display: flex;
+  gap: 4px;
+  padding: 6px;
+  border-top: 1px solid var(--border-soft);
+}
+.ai-chip-link {
+  all: unset;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  border-radius: 5px;
+  color: var(--text-1);
+}
+.ai-chip-link:hover {
+  background: var(--bg-2);
+  color: var(--text-0);
+}
+.ai-chip-link:focus-visible,
+.status-ai-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
 /* ─── Zoom control ──────────────────────────────────────────────────────── */
 
 .zoom-control {
