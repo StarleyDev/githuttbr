@@ -2,8 +2,8 @@
 title: Pull requests page
 category: Sync & many repos
 order: 57
-summary: Every pull request of a repository on one page — by state, filtered by author, reviewer, target and CI — ‹ › to walk the filtered list from inside a PR, its commits, its updates (each push, what it changed, what is new since your last visit), and comments on a line of its diff.
-keywords: reference title hover card work item AB# issue number tooltip pull requests list page merge requests pr mr filter author reviewer mine awaiting my review review requested ci failing target branch drafts merged closed search triage previous next alt arrow navigation checkout branch go to source target branch copy branch name fetch line comment inline comment review comment diff comment comment on line files tab code review commits tab commit list pr commits commit history open commit copy sha fetch pr branch fork pr commits refs/pull head updates iterations pushes force push rebase history rewritten diff versions what changed since last visit new badge mark as seen compare update markdown editor toolbar preview mention file tree folder tree view path view viewed files mark folder viewed edit delete remove edited typo rendered comments images tracking pixel blocked image click load task table block
+summary: Every pull request of a repository on one page — by state, filtered by author, reviewer, target and CI — ‹ › to walk the filtered list from inside a PR, its commits, its updates (each push, what it changed, what is new since your last visit), and comments on a line of its diff. The conversation as one timeline, with what is new since your last visit.
+keywords: reference title hover card work item AB# issue number tooltip pull requests list page merge requests pr mr filter author reviewer mine awaiting my review review requested ci failing target branch drafts merged closed search triage previous next alt arrow navigation checkout branch go to source target branch copy branch name fetch line comment inline comment review comment diff comment comment on line files tab code review commits tab commit list pr commits commit history open commit copy sha fetch pr branch fork pr commits refs/pull head updates iterations pushes force push rebase history rewritten diff versions what changed since last visit new badge mark as seen compare update markdown editor toolbar preview mention file tree folder tree view path view viewed files mark folder viewed edit delete remove edited typo rendered comments images tracking pixel blocked image click load task table block conversation timeline open threads resolved thread approved requested changes pushed commits reviewer role new since last visit
 ---
 
 # Pull requests page
@@ -556,6 +556,62 @@ What it does not do:
   for them yet — so a line comment there is still made on the website.
 - **A file without a diff** (binary, or too large for the host to include)
   has no lines to comment on.
+
+## The conversation
+
+A pull request's story is scattered: the description at the top, comments in
+one list, line threads in another, verdicts only in the sidebar, pushes in a
+tab of their own. Catching up meant reading all of them and putting the order
+back together in your head. The **Conversation** tab tells it as one
+**timeline**, down a rail, in the order it happened.
+
+![The conversation as a timeline: two pushes, a line thread still open with its lines, a change request, the line marking what is new since the last visit, and an approval](../screenshots/pull-request-page.webp)
+
+| On the timeline | What it shows |
+|---|---|
+| **The description** | Always first, with who opened the pull request and when |
+| **Comments** | The conversation, each with its author's role: **Author**, **Reviewer**, and **You** on your own |
+| **Pushes** | *sam pushed 2 commits*, then one line per commit; a click on a hash opens the Commits tab |
+| **Line threads** | In place, at their first comment: the file and line, the diff lines it is about, the replies and a reply box. The path and **View in Files →** open that file in the Files tab |
+| **Review verdicts** | **approved** in green, **requested changes** in red with what the reviewer wrote, or a review's own comment |
+
+A thread the host reports **open** carries an amber pill, and the bar above the
+timeline counts them: **1 open thread** shows only those, the ones still waiting
+for an answer. A **resolved** thread folds to one line — *Resolved thread in
+src/palette.tsx:18 · 2 comments* — and a click unfolds it. **All · Comments ·
+Reviews · Commits** narrow the timeline to one kind.
+
+The sidebar's **Reviewers** say each person's verdict in words — **✓ approved**
+or **requested changes** — and a clock for someone still to answer.
+
+### New since your last visit
+
+When you leave a pull request's page (another page, another tab, closing it),
+the app notes the time. Next time, a line marks where you stopped — **New since
+your last visit** — and the bar says how many entries came after it. The mark
+is made on leaving, not on opening, so it stays put while you read. The first
+time you open a pull request nothing is marked new.
+
+Times read *2d ago*; hover for the full date.
+
+*Limits:*
+
+- **When a commit was pushed** is not something the hosts say. Pushes are
+  rebuilt from the commit list: consecutive commits by the same author, each
+  within an hour of the one before, count as one push, placed at the last
+  one's date. A rebase that rewrote the dates moves them. The Updates tab is the
+  host's own record where there is one.
+- **Open or resolved** comes from GitHub (one extra GraphQL request per read)
+  and GitLab. Azure DevOps, Bitbucket Data Center and Forgejo threads show no
+  pill and are not counted.
+- **Verdicts on the timeline** need a date: GitHub, GitLab (an approval, dated
+  by the note GitLab writes for it) and Forgejo give one. Azure DevOps votes and
+  Bitbucket Data Center approvals have none, so they appear only in the sidebar.
+- A GitHub review with no text of its own — the envelope every batch of line
+  comments is filed under — gets no line; its threads already show.
+- Your last visits are kept for the 300 most recent pull requests, on this
+  computer only. Quitting the app with a pull request open does not count as
+  leaving it.
 
 ## Writing comments
 

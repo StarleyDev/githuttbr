@@ -787,6 +787,11 @@ export interface PrComment {
 export interface PrReview {
   author: string
   state: 'APPROVED' | 'CHANGES_REQUESTED' | 'COMMENTED' | 'DISMISSED' | 'PENDING'
+  /** ISO date the review was submitted. Absent where the host does not say (Azure DevOps votes,
+   *  Bitbucket Data Center); without it the review shows in the sidebar, not on the timeline. */
+  submittedAt?: string
+  /** The review's own text (the summary written with "Request changes"), when the host gives one. */
+  body?: string
 }
 
 /** One comment within an inline review thread. */
@@ -825,6 +830,9 @@ export interface PrReviewThread {
    * the Files tab then lists it only in the conversation, never on a guessed line.
    */
   side?: PrLineSide
+  /** The host marks the thread resolved (GitHub, GitLab). Absent where the host does not say
+   *  or the read failed — unknown, which the page shows as neither open nor resolved. */
+  resolved?: boolean
 }
 
 /** Which version of a file a diff line belongs to: before the change, or after. */
@@ -4106,6 +4114,12 @@ export interface AppSettings {
   repoTodos?: Record<string, RepoTodo[]>
   /** Bookmarked places in the code, per repository. */
   repoBookmarks?: Record<string, RepoBookmark[]>
+  /**
+   * When each pull request page was last left, in ms since the epoch, keyed by
+   * remote identity + number (lib/prVisits.ts) — what "new since your last
+   * visit" counts from. Capped to the most recent pull requests.
+   */
+  prVisits?: Record<string, number>
   /**
    * When the Problems dock is allowed to run the project's analyzers. They are
    * the repository's own toolchain — `tsc`, `eslint`, `cargo clippy` — so this

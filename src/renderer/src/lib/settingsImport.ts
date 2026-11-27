@@ -103,6 +103,8 @@ const PART_OF_KEY: Record<keyof AppSettings, ImportPart> = {
   // drops them); classed here only so the map stays complete.
   settingsFormat: 'machine',
   versionRollback: 'machine',
+  // What this install has read, not a preference to carry to another computer.
+  prVisits: 'machine',
   // Programs on this computer: an executable path from another OS launches nothing.
   terminalShell: 'machine',
   terminalPoshTheme: 'machine',

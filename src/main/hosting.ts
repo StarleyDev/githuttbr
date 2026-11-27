@@ -15,7 +15,13 @@ import {
 } from './credentials'
 import { atServer, HttpStatusError } from './httpStatusError'
 import { titleForDraft } from './prDraftTitle'
-import { addReviewThreadReply, createGithubGraphqlPost, createGithubGraphqlRawPost, findReviewThread } from './githubGraphql'
+import {
+  addReviewThreadReply,
+  createGithubGraphqlPost,
+  createGithubGraphqlRawPost,
+  findReviewThread,
+  getReviewThreadResolution
+} from './githubGraphql'
 import {
   getAnchorLine,
   getAnchorSide,
@@ -1833,6 +1839,9 @@ interface GlNote {
   author: GlUser | null
   body: string
   created_at: string
+  /** A note that can be resolved (a review thread's), and whether it is. */
+  resolvable?: boolean
+  resolved?: boolean
   position?: {
     new_path?: string | null
     old_path?: string | null
@@ -1917,6 +1926,15 @@ async function glMergeRequestDetail(remoteUrl: string, token: string | undefined
   for (const d of discussions) d.notes.forEach((n) => seen(n.author))
   ;(approvals.approved_by ?? []).forEach((a) => seen(a.user))
   const approvedBy = new Set((approvals.approved_by ?? []).map((a) => a.user?.username).filter(Boolean))
+  // The approvals endpoint gives no date; the system note GitLab writes for an
+  // approval does. The latest one per person is when that approval was given.
+  const approvedAt = new Map<string, string>()
+  for (const d of discussions)
+    for (const n of d.notes)
+      if (n.system && n.author?.username && /^approved this merge request\b/i.test(n.body)) {
+        const prev = approvedAt.get(n.author.username)
+        if (!prev || prev < n.created_at) approvedAt.set(n.author.username, n.created_at)
+      }
 
   // Discussions hold both kinds of comment: a note with a position is an inline
   // review thread, one without is plain conversation. System notes are noise.
@@ -1943,6 +1961,8 @@ async function glMergeRequestDetail(remoteUrl: string, token: string | undefined
               ? { side: 'old' as const }
               : {}
           : {}),
+        // Resolution is per note; the thread is resolved once every resolvable note is.
+        ...(notes.some((n) => n.resolvable) ? { resolved: notes.every((n) => !n.resolvable || !!n.resolved) } : {}),
         // One notes endpoint edits and deletes both kinds. No "edited" mark: a
         // note's updated_at also moves when its thread is resolved.
         comments: notes.map((n) => ({
@@ -2012,10 +2032,10 @@ async function glMergeRequestDetail(remoteUrl: string, token: string | undefined
     mergeable: mr.merge_status === 'can_be_merged' ? true : mr.merge_status === 'cannot_be_merged' ? false : null,
     url: mr.web_url,
     comments,
-    reviews: (approvals.approved_by ?? []).map((a) => ({
-      author: a.user?.username ?? 'unknown',
-      state: 'APPROVED' as const
-    })),
+    reviews: (approvals.approved_by ?? []).map((a) => {
+      const at = a.user?.username ? approvedAt.get(a.user.username) : undefined
+      return { author: a.user?.username ?? 'unknown', state: 'APPROVED' as const, ...(at ? { submittedAt: at } : {}) }
+    }),
     reviewThreads
   }
 }
@@ -2333,8 +2353,8 @@ async function pullRequestDetail(
     const a = await azRepoOf(remoteUrl, tokens.azure)
     return azurePrDetail(a.ado, a.repo, number, a.optional)
   }
-  const { owner, repo, token, api } = await ghRepoOf(remoteUrl, tokens.github)
-  const [pr, comments, reviews, reviewComments] = await Promise.all([
+  const { owner, repo, token, api, ep } = await ghRepoOf(remoteUrl, tokens.github)
+  const [pr, comments, reviews, reviewComments, resolution] = await Promise.all([
     ghJson<{
       number: number
       title: string
@@ -2372,11 +2392,19 @@ async function pullRequestDetail(
       )
     ),
     allPages((page) =>
-      ghJson<Array<{ user: GhUser | null; state: string }>>(`${api}/pulls/${number}/reviews?per_page=100&page=${page}`, token)
+      ghJson<Array<{ user: GhUser | null; state: string; body?: string | null; submitted_at?: string | null }>>(
+        `${api}/pulls/${number}/reviews?per_page=100&page=${page}`,
+        token
+      )
     ),
     allPages((page) =>
       ghJson<GhReviewComment[]>(`${api}/pulls/${number}/comments?per_page=100&page=${page}`, token, GH_FULL_BODY)
-    ).catch(() => [] as GhReviewComment[])
+    ).catch(() => [] as GhReviewComment[]),
+    // Resolved or not is GraphQL only. A failure (a token without GraphQL, a
+    // limit) leaves every thread unknown: the page shows no pill, nothing breaks.
+    getReviewThreadResolution(createGithubGraphqlPost(ep.graphqlUrl, token), owner, repo, number).catch(
+      () => new Map<number, boolean>()
+    )
   ])
 
   // Group inline review comments into threads. Replies (in_reply_to_id) attach to
@@ -2408,7 +2436,10 @@ async function pullRequestDetail(
         ...(rc.line != null && rc.side ? { side: rc.side === 'LEFT' ? ('old' as const) : ('new' as const) } : {})
       })
   }
-  const reviewThreads = [...threadById.values()]
+  const reviewThreads = [...threadById.values()].map((th) => {
+    const resolved = resolution.get(Number(th.rootId)) ?? resolution.get(th.comments[0]?.id ?? -1)
+    return resolved === undefined ? th : { ...th, resolved }
+  })
 
   // Every user object the API handed back carries its avatar: collect them once
   // so the page can draw a face next to any login without asking again.
@@ -2456,7 +2487,12 @@ async function pullRequestDetail(
     comments: comments.map(mapGhIssueComment),
     reviews: reviews
       .filter((r) => r.state !== 'PENDING')
-      .map((r) => ({ author: r.user?.login ?? 'unknown', state: r.state as PrReview['state'] })),
+      .map((r) => ({
+        author: r.user?.login ?? 'unknown',
+        state: r.state as PrReview['state'],
+        ...(r.submitted_at ? { submittedAt: r.submitted_at } : {}),
+        ...(r.body?.trim() ? { body: r.body } : {})
+      })),
     reviewThreads
   }
 }
