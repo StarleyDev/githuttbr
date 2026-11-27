@@ -1842,6 +1842,8 @@ export interface DetectedCli {
   binary: AICliBinary
   label: string
   path: string
+  /** Only when asked for (`detectCli({ versions: true })`) and the CLI printed one. */
+  version?: string
 }
 
 export interface AIConfig {

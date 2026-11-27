@@ -4,12 +4,13 @@ import type { SubscriptionCli, SubscriptionTest } from '../../../shared/types'
 import { aiApi, shellApi } from '../infrastructure/api'
 import { interp, useT, type TranslationKey } from '../i18n'
 
-const PLANS = {
+export const SUBSCRIPTION_PLANS = {
   codex: { label: 'ChatGPT (Codex)', login: 'codex login', guide: 'https://developers.openai.com/codex/cli/' }, // i18n-ignore product names
   claude: { label: 'Claude (Claude Code)', login: 'claude auth login', guide: 'https://code.claude.com/docs/en/quickstart' } // i18n-ignore product names
 }
 
-const STATUS: Record<SubscriptionTest, TranslationKey> = {
+/** What a subscription test result tells the user; `{command}` is the sign-in command. */
+export const SUBSCRIPTION_STATUS: Record<SubscriptionTest, TranslationKey> = {
   connected: 'settings.connected',
   missing: 'settings.cliNotFound',
   login: 'settings.planLogin',
@@ -26,7 +27,7 @@ export function SubscriptionSetup({ onConnect }: {
   const [busy, setBusy] = useState(false)
   const [status, setStatus] = useState<SubscriptionTest>()
   const request = useRef<string | null>(null)
-  const plan = PLANS[binary]
+  const plan = SUBSCRIPTION_PLANS[binary]
 
   useEffect(() => () => {
     if (request.current) void aiApi.cancelSubscriptionSignIn(request.current).catch(() => undefined)
@@ -75,7 +76,7 @@ export function SubscriptionSetup({ onConnect }: {
           setStatus(undefined)
           setPath('')
         }}>
-          {Object.entries(PLANS).map(([id, entry]) => <option key={id} value={id}>{entry.label}</option>)}
+          {Object.entries(SUBSCRIPTION_PLANS).map(([id, entry]) => <option key={id} value={id}>{entry.label}</option>)}
         </select>
       </label>
       <span className="settings-hint">{interp(t('settings.planLogin'), { command: plan.login })}</span>
@@ -106,7 +107,7 @@ export function SubscriptionSetup({ onConnect }: {
         )}
       </div>
       {status && <span role="status" className={status === 'connected' ? 'settings-hint' : 'settings-hint warn'}>
-        {interp(t(STATUS[status]), { command: plan.login })}
+        {interp(t(SUBSCRIPTION_STATUS[status]), { command: plan.login })}
       </span>}
     </div>
   )

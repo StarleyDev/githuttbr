@@ -151,7 +151,7 @@ interface PreloadApi {
     signInSubscription(binary: string, path: string, requestId: string): Promise<unknown>
     cancelSubscriptionSignIn(requestId: string): Promise<void>
     testSubscription(binary: string, path: string): Promise<unknown>
-    detectCli(): Promise<unknown>
+    detectCli(opts?: { versions?: boolean }): Promise<unknown>
     explainCode(code: string, lang: string, cfg: unknown): Promise<unknown>
     editSelection(req: unknown, cfg: unknown): Promise<unknown>
     hoverExplain(req: unknown, cfg: unknown): Promise<unknown>

@@ -166,7 +166,7 @@ const api = {
     cancelSubscriptionSignIn: (requestId: string): Promise<void> =>
       ipcRenderer.invoke('ai:cancelSubscriptionSignIn', requestId),
     testSubscription: (binary: string, path: string): Promise<unknown> => ipcRenderer.invoke('ai:testSubscription', binary, path),
-    detectCli: (): Promise<unknown> => ipcRenderer.invoke('ai:detectCli'),
+    detectCli: (opts?: { versions?: boolean }): Promise<unknown> => ipcRenderer.invoke('ai:detectCli', opts),
     explainCode: (code: string, lang: string, cfg: unknown): Promise<unknown> =>
       ipcRenderer.invoke('ai:explainCode', code, lang, cfg),
     editSelection: (req: unknown, cfg: unknown): Promise<unknown> =>

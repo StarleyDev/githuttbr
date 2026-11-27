@@ -877,7 +877,8 @@ export const aiApi = {
   cancelSubscriptionSignIn: (requestId: string) => window.api.ai.cancelSubscriptionSignIn(requestId),
   testSubscription: (binary: SubscriptionCli, path: string) =>
     window.api.ai.testSubscription(binary, path) as Promise<SubscriptionTest>,
-  detectCli: () => window.api.ai.detectCli() as Promise<DetectedCli[]>,
+  /** `versions` also runs each found CLI's `--version` — one spawn per CLI, so only where it is shown. */
+  detectCli: (opts?: { versions?: boolean }) => window.api.ai.detectCli(opts) as Promise<DetectedCli[]>,
   explainCode: (code: string, lang: string, cfg: AIConfig) =>
     guarded(cfg, (c) => window.api.ai.explainCode(code, lang, c) as Promise<string>),
   editSelection: (req: EditSelectionRequest, cfg: AIConfig) =>

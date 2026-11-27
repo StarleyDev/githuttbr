@@ -211,7 +211,7 @@ does not test the provider it puts in use.
 
 ### Using a subscription instead of an API key
 
-In onboarding’s AI step or **Settings → AI**, choose **Use my subscription**.
+In **Settings → AI**, choose **Use my subscription**. On [first run](first-run.md), the AI step's **My subscription** card finds Claude Code or Codex and tests it in one step, and falls back to this same setup when neither is found.
 Select the plan you use, then open **Documentation** for the provider's installation instructions.
 Once installed, choose **Connect ChatGPT (Codex)** or **Connect Claude (Claude Code)**.
 The provider's CLI opens its sign-in page in your browser and stores its own session.
@@ -227,7 +227,7 @@ Connecting also tests the session. If you signed in from a terminal, choose **Te
 prompt from an empty temporary directory. The request counts toward your provider’s allowance.
 After **Connected**, choose **Add account**. The first account of the general AI is put **In use**.
 For an existing setup, choose **Use** on its row or assign individual features below.
-To skip setup, continue onboarding and return to Settings when ready.
+To skip setup on first run, choose **Skip, no AI** and return to Settings when ready.
 
 If GitHuttBr cannot find the CLI, install it or enter its full executable path and test again.
 If sign-in has expired or the CLI is using an API key, sign in with the subscription account.

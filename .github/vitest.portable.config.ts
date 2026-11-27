@@ -24,6 +24,8 @@ export default {
       'test/pureLogic.test.ts',
       // Provider drafts, status badges and the masking of provider errors.
       'test/aiAccountDraft.test.ts',
+      // First-run steps and how each AI card becomes an account.
+      'test/onboarding.test.ts',
       'test/fileTree.test.ts',
       'test/prViewed.test.ts',
       'test/i18n.test.ts',
