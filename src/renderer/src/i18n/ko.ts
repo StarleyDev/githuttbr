@@ -2948,6 +2948,10 @@ export const ko: Dict = {
   'commitPanel.restoreMsg': '파일 {n}개의 작업 사본을 {hash} 버전으로 덮어쓸까요?',
   'commitPanel.restoreConfirm': '복원',
   'commitPanel.messageLabel': '메시지',
+  'commitPanel.trailers': '트레일러',
+  'commitPanel.coAuthorTrailer': '공동 작성자: {name}',
+  'commitPanel.showAllBody': '모두 보기 · {n}줄 더',
+  'commitPanel.showLessBody': '접기',
   'commitPanel.refsLabel': 'Ref',
   'commitPanel.coauthorsLabel': '공동 작성자',
 

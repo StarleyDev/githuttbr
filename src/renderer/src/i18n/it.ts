@@ -2909,6 +2909,10 @@ export const it: Dict = {
   'commitPanel.restoreMsg': 'Sovrascrivere la copia di lavoro di {n} file con la loro versione da {hash}?',
   'commitPanel.restoreConfirm': 'Ripristina',
   'commitPanel.messageLabel': 'Messaggio',
+  'commitPanel.trailers': 'Trailer',
+  'commitPanel.coAuthorTrailer': 'Coautore: {name}',
+  'commitPanel.showAllBody': 'Mostra tutto · altre {n} righe',
+  'commitPanel.showLessBody': 'Mostra meno',
   'commitPanel.refsLabel': 'Ref',
   'commitPanel.coauthorsLabel': 'Co-autori',
 

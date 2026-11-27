@@ -97,6 +97,10 @@ La lista de archivos se selecciona en grupo con los gestos habituales (clic con
 como estaban en este commit: tras una única confirmación sobrescribe las copias
 de trabajo, sin tocar HEAD ni el índice.
 
+La **descripción** del commit — todo lo que va debajo del asunto — aparece justo debajo, con las líneas cortadas a mano unidas para caber en el panel (los elementos de lista y las líneas con sangría quedan como se escribieron). Una descripción larga muestra sus primeras líneas y **Mostrar todo**. Los trailers que git guarda al final se vuelven etiquetas: *Coautor: nombre* por cada `Co-authored-by`, y otros como `Refs:` tal cual. Un commit sin descripción muestra solo el asunto.
+
+![La descripción de un commit bajo su asunto, con los trailers como etiquetas](../../screenshots/commit-body.webp)
+
 ![Recorriendo los detalles de un commit](../../screenshots/clip-commit-details.webp)
 
 **Ver también:** [Blame e historial de archivo](blame.md) · [Búsqueda](search.md) · [Máquina del tiempo](time-machine.md)

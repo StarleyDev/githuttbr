@@ -114,6 +114,10 @@ The file list multi-selects with the usual gestures
 after one confirmation it overwrites the working copies, and touches neither
 HEAD nor the index.
 
+The commit's **description** — everything below its subject — shows under it, its hand-wrapped lines joined to fit the panel (list items and indented lines stay as written). A long one shows its first lines and **Show all**. The trailers git keeps at the end become chips: *Co-author: name* for each `Co-authored-by`, and others such as `Refs:` as written. A commit with no description shows only its subject.
+
+![A commit's description under its subject, with its trailers as chips](../screenshots/commit-body.webp)
+
 ![Walking through commit details](../screenshots/clip-commit-details.webp)
 
 **See also:** [Blame & file history](blame.md) · [Search](search.md) · [Time machine](time-machine.md) · [Author avatars](avatars.md)

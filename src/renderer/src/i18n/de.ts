@@ -2948,6 +2948,10 @@ export const de: Dict = {
   'commitPanel.restoreMsg': 'Arbeitskopie von {n} Datei(en) mit ihrer Version aus {hash} überschreiben?',
   'commitPanel.restoreConfirm': 'Wiederherstellen',
   'commitPanel.messageLabel': 'Nachricht',
+  'commitPanel.trailers': 'Trailer',
+  'commitPanel.coAuthorTrailer': 'Mitautor: {name}',
+  'commitPanel.showAllBody': 'Alles anzeigen · {n} weitere Zeilen',
+  'commitPanel.showLessBody': 'Weniger anzeigen',
   'commitPanel.refsLabel': 'Refs',
   'commitPanel.coauthorsLabel': 'Co-Autor:innen',
 

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ExternalLink, Laptop, Tag, Cloud, Copy, StickyNote, Pencil, Trash2, FilePenLine } from 'lucide-react'
+import { ExternalLink, Laptop, Tag, Cloud, Copy, StickyNote, Pencil, Trash2, FilePenLine, ChevronDown, ChevronUp } from 'lucide-react'
 import type { CodeSearchHit, CommitBranchInfo, FileEntry, GraphCommit, RemoteInfo } from '../../../shared/types'
 import { autolink, remoteWebUrl } from '../lib/autolink'
 import { gitApi, shellApi } from '../infrastructure/api'
@@ -27,6 +27,7 @@ import { openWithMenuItems } from '../lib/openWith'
 import { stepRange, claimRangeKeys, ownsRangeKeys, rangeKeysBlocked, domOrder } from '../lib/rangeSelect'
 import { ChangeSummary } from './ChangeSummary'
 import { emojifyGitmoji } from '../../../shared/gitmoji'
+import { isCoAuthorTrailer, previewCommitBody, reflowCommitBody, splitCommitBody, trailerPersonName } from '../lib/commitBody'
 import { getReferenceHost } from '../lib/references'
 import { getReferenceAutolinkOptions, ReferenceScope } from './ReferenceLink'
 
@@ -62,6 +63,36 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
   const editor = useSettingsStore((s) => s.settings.editor)
   const commit: GraphCommit | undefined = repo.commits.find((c) => c.hash === hash)
   const t = useT()
+
+  // The message below the subject. The graph log carries subjects only (a body
+  // for every commit would slow a big repository's load), so the selected
+  // commit's whole message is read here, one commit at a time.
+  const [message, setMessage] = useState<{ hash: string; text: string } | null>(null)
+  const [bodyExpanded, setBodyExpanded] = useState(false)
+  useEffect(() => {
+    setBodyExpanded(false)
+    let live = true
+    void gitApi
+      .getCommitMessage(repo.path, hash)
+      .then((text) => {
+        if (live) setMessage({ hash, text })
+      })
+      .catch(() => {
+        if (live) setMessage({ hash, text: '' })
+      })
+    return () => {
+      live = false
+    }
+  }, [repo.path, hash])
+  const body = useMemo(
+    () => {
+      if (!message || message.hash !== hash) return { text: '', trailers: [] }
+      const split = splitCommitBody(message.text)
+      return { ...split, text: reflowCommitBody(split.text) }
+    },
+    [message, hash]
+  )
+  const bodyPreview = useMemo(() => previewCommitBody(body.text), [body.text])
 
   // Multi-select over the commit's file list (⌘/Ctrl-click, Shift-click,
   // Shift+↑/↓), so "restore from this commit" can take several files at once.
@@ -394,6 +425,49 @@ export function CommitDetails({ repo, hash }: { repo: RepoData; hash: string }):
               getReferenceAutolinkOptions(refHost)
             )}
           </p>
+          {/* The description, absent when the commit has none; a long one shows its
+              first lines and "Show all". The trailers git keeps at the end are chips. */}
+          {(body.text || body.trailers.length > 0) && (
+            <div className="commit-body-block">
+              {body.text && (
+                <div className="commit-body">
+                  <div className="commit-body-text">
+                    {autolink(
+                      emojifyGitmoji(bodyExpanded || !bodyPreview.hidden ? body.text : bodyPreview.shown),
+                      remoteWebUrl(refRemote),
+                      repo.config?.config?.links?.tickets,
+                      getReferenceAutolinkOptions(refHost)
+                    )}
+                  </div>
+                  {bodyPreview.hidden > 0 && !bodyExpanded && <div className="commit-body-fade" aria-hidden="true" />}
+                </div>
+              )}
+              {body.trailers.length > 0 && (
+                <ul className="commit-trailers" aria-label={t('commitPanel.trailers')}>
+                  {body.trailers.map((trailer, i) => (
+                    <li key={i} className="commit-trailer" title={`${trailer.key}: ${trailer.value}`}>
+                      {isCoAuthorTrailer(trailer)
+                        ? interp(t('commitPanel.coAuthorTrailer'), { name: trailerPersonName(trailer.value) })
+                        : `${trailer.key}: ${trailer.value}` /* i18n-ignore git trailer, shown as written */}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {bodyPreview.hidden > 0 && (
+                <button
+                  type="button"
+                  className="btn ghost small commit-body-toggle"
+                  aria-expanded={bodyExpanded}
+                  onClick={() => setBodyExpanded((open) => !open)}
+                >
+                  {bodyExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}{' '}
+                  {bodyExpanded
+                    ? t('commitPanel.showLessBody')
+                    : interp(t('commitPanel.showAllBody'), { n: bodyPreview.hidden })}
+                </button>
+              )}
+            </div>
+          )}
         </ReferenceScope>
 
         {/* Full-bleed like the subject above it, and absent entirely when there
