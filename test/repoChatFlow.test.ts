@@ -63,7 +63,11 @@ describe('repository chat flow', () => {
     expect(promptOf(bodies[0])).not.toMatch(/What changed/)
     const prompt = promptOf(bodies[0])
     expect(prompt).toMatch(/Answer whatever the user asks, on any subject/)
-    expect(prompt).not.toMatch(/Git client/)
+    // Neutral first: opening on "an assistant inside a Git client" made a small
+    // model refuse anything else. Where it runs comes after, as a fact.
+    expect(prompt).toMatch(/^You are a helpful, knowledgeable assistant/)
+    expect(prompt).toMatch(/GitHuttBr/)
+    expect(prompt).toMatch(/the repository's name, not the app's/)
     expect(prompt).not.toMatch(/Eligible tracked files:/)
     expect(prompt).not.toMatch(/Staged|Unstaged|Untracked files/)
     expect(prompt).toMatch(/Nothing from it has been read/)
