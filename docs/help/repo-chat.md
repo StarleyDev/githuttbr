@@ -27,18 +27,25 @@ something.
 
 It works like any chat: **your message is what is sent**, with nothing but the
 repository's name and branch beside it — no Git state, no file list, no file
-contents. A greeting or a question that is not about the repository is
-answered right there, in one call, and nothing from the repository leaves your
-machine.
+contents — and the reply comes back as plain text. A greeting or a question
+that is not about the repository is answered right there, in one call, and
+nothing from the repository leaves your machine.
 
-**Reading on demand.** When the question is about the code, the model asks for
-what it needs instead of guessing: first the **overview** (the Git state and the
-tracked-file list), then exact paths from that list, literal searches, or commit
-hashes from the recent history. The app reads those and puts the question again
-with what they turned up. That happens at most four times — each round is
-another model call you wait for — and on the last one it must answer with what
-it has. A repository answer may cite only the excerpts it was given: a
-made-up file or line is a validation error, not a plausible-looking answer.
+**When the repository comes in.** It is opened for the model in three cases:
+
+| You… | What happens |
+|------|--------------|
+| Name a tracked file (`config.json`, `src/app.ts`) | That file is read before the model answers |
+| Say so in words — "this repository", "my changes", "uncommitted", "current branch" | The Git state and tracked-file list are sent |
+| Ask something the model decides needs it | It replies with a single `@repo` line, and the app opens the repository for it |
+
+From there the model asks for what else it needs instead of guessing: exact
+paths from the list, literal searches, or commit hashes from the recent
+history. The app reads those and puts the question again with what they turned
+up. That happens at most four times — each round is another model call you wait
+for — and on the last one it must answer with what it has. These answers cite
+the excerpts they used, and a made-up file or line is a validation error, not a
+plausible-looking answer.
 
 While you wait, the line under your message says what is happening:
 **Thinking…** while the model works, **Reading files (N)…** or **Searching the
@@ -261,6 +268,11 @@ nothing is sent until you press Send.
   With action proposals off, chat does not even propose changes.
 - **Conversations live in memory only.** Switching repositories keeps each
   thread separate; quitting GitHuttBr discards them.
+- **Small local models are weaker at repository questions.** Measured with a
+  3B model: general questions are answered as well as in its own terminal, but
+  it may not ask for the repository when it should, and a long answer built from
+  files can come back cut short. Naming the file, or saying "this repository",
+  makes the app open it regardless. A 7B model or larger does noticeably better.
 
 ## Opening it
 

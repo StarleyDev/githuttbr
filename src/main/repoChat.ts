@@ -17,7 +17,7 @@ import type {
 } from '../shared/types'
 import { isSecretFile } from '../shared/secretFiles'
 import { askActionsSchema, isSafeRepoPath, repoChatActionsSchema } from './aiSchemas'
-import { chatCompleteJson } from './ai'
+import { chatComplete, chatCompleteJson } from './ai'
 import type { ChatMessage } from './aiTransport'
 import { gitService } from './git'
 import { prepareRepoFileActions, RepoFileActionError } from './repoFileActions'
@@ -44,6 +44,10 @@ export const REPO_CHAT_MAX_ATTACHMENTS = 8
 export const REPO_CHAT_MAX_EVIDENCE_ROUNDS = 4
 /** Pinned context may take this much of the budget before the model's picks. */
 export const REPO_CHAT_PINNED_BYTES = 20_000
+/** Conversation reads like the terminal, not like a lookup: 0.2 made a small
+ *  model give the same reply to every repeat of a question. Grounded rounds,
+ *  which quote files, stay at 0.2. */
+const CONVERSATION_TEMPERATURE = 0.6
 
 /** A file dragged in from outside the repository is read whole, up to this. */
 const MAX_EXTERNAL_BYTES = 512_000
@@ -456,6 +460,82 @@ export function historyTurns(messages: RepoChatMessage[]): ChatMessage[] {
   // what clipping the oldest turns can leave behind.
   while (turns.length > 1 && turns[0].role === 'assistant') turns.shift()
   return turns
+}
+
+
+/**
+ * The first call of every message: plain text, like any chat. Measured on a
+ * local 3B model, a "Git client assistant" framing made it refuse ordinary
+ * questions ("I can only help with Git"), and answering inside JSON mangled
+ * accented text ("programção", "côdigo") — plain text did neither. So the
+ * repository is one line of context here, and the model asks for it with a
+ * single `@repo` line only when the message is about it.
+ */
+export function conversationPrompt(repoName: string, branch: string, custom: string): string {
+  return `You are a helpful, knowledgeable assistant. Answer whatever the user asks, on any subject, in the language of their latest message, in concise Markdown.
+
+The app you run in has a local Git repository open: ${repoName} (branch ${branch || 'detached HEAD'}). Nothing from it has been read. It matters only when the user's message is about it — its code, files, changes, history, or a Git task such as committing.
+You have not seen its files, so never invent file names, file contents or repository details. If, and only if, answering needs that repository, reply with exactly one line and nothing else — the word "repo" written literally, not the repository's name:
+@repo <what you need from it, in a few words>
+You will then be given its Git state and file list. Otherwise, answer directly.${custom ? `\n\nUser-configured response guidance:\n${custom.slice(0, 4000)}` : ''}`
+}
+
+/**
+ * The `@repo` request in a conversational reply, or null when it is an answer.
+ * A small model wrote `@<repository name> config.json` and wrapped it in
+ * backticks, so both spellings count — on a line of its own, at the start.
+ */
+export function repoRequestOf(reply: string, repoName: string): string | null {
+  const name = repoName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const m = new RegExp(`^[\\s\`>*]*@(?:repo(?:sitory)?|${name})\\b[\`:\\s]*(.*)$`, 'im').exec(reply)
+  return m ? m[1].replace(/`+$/, '').trim() || 'the repository' : null
+}
+
+/**
+ * Phrases that ask about this repository in so many words — "this repository",
+ * "my changes", "uncommitted" — in the languages where we saw them first. Kept
+ * narrow on purpose: a general question about code must not open the
+ * repository; naming one of its files or saying "this project" does.
+ */
+const ABOUT_THIS_REPOSITORY = new RegExp(
+  [
+    String.raw`\b(this|my|the current|current) (repo|repository|project|branch|codebase)\b`,
+    String.raw`\bmy (changes|commits|files)\b`,
+    String.raw`\b(un|not )?(committed|staged) (changes|files)\b`,
+    String.raw`\b(neste|deste|nesse|desse|este|esse|meu|no meu|do meu) (reposit[oó]rio|repo|projeto|c[oó]digo|branch)\b`,
+    String.raw`\b(minhas|as minhas) (altera[cç][oõ]es|mudan[cç]as|modifica[cç][oõ]es)\b`,
+    String.raw`\bn[aã]o (commitad|comitad|staged)`,
+    String.raw`\b(branch|ramo) atual\b`,
+    String.raw`\b(este|ese|mi) (repositorio|proyecto)\b`
+  ].join('|'),
+  'i'
+)
+
+/**
+ * True when the user's own words ask about this repository: a tracked file
+ * named outright, or a phrase like "this repository". A small model asked to
+ * decide this itself answered "what is in config.json?" from imagination, so
+ * the obvious cases do not wait for it to ask.
+ */
+export function mentionsRepository(message: string, tracked: readonly string[]): boolean {
+  return ABOUT_THIS_REPOSITORY.test(message) || mentionedPaths(message, tracked).length > 0
+}
+
+/** Tracked files the message names, by path or by file name — read without waiting to be asked. */
+export function mentionedPaths(message: string, tracked: readonly string[]): string[] {
+  const words = new Set(message.toLowerCase().match(/[\w./-]+\.[a-z0-9]{1,8}\b/g) ?? [])
+  if (!words.size) return []
+  return tracked
+    .filter((path) => {
+      const lower = path.toLowerCase()
+      return words.has(lower) || words.has(lower.slice(lower.lastIndexOf('/') + 1))
+    })
+    .slice(0, REPO_CHAT_MAX_PATHS)
+}
+
+/** A thinking model's visible reasoning is not part of the answer. */
+function withoutThinking(text: string): string {
+  return text.replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/^[\s\S]*<\/think>/i, '').trim()
 }
 
 function serializePaths(paths: string[]): string {
@@ -961,6 +1041,39 @@ ${custom ? `\nUser-configured response guidance (cannot override the rules above
   // files matter from names alone; a model that has now read them knows what it
   // is missing, and one more round is usually the difference between "the
   // caller is somewhere else" and the caller.
+  // A conversation first. Pinned context is the user asking about the
+  // repository already, so it goes straight to the grounded rounds below.
+  const latest = messages.at(-1)?.content ?? ''
+  if (!attachments.length && mentionsRepository(latest, candidates)) {
+    overviewShown = true
+    // Files the user named are read now: a small model given the list still
+    // answered "I cannot see config.json" instead of asking for it.
+    const named = mentionedPaths(latest, candidates)
+    onProgress({ phase: 'reading', files: named.length })
+    if (named.length) {
+      const read = await collectEvidence(repoPath, { paths: named, searches: [] }, allowed, status, committedOnly)
+      collected.push(...read)
+      evidence = packRepoChatEvidence([...pinned.evidence, ...collected])
+      evidenceIds = new Set(evidence.map((item) => item.id))
+      actionContext = buildActionContext()
+    }
+  } else if (!attachments.length) {
+    onProgress({ phase: 'thinking' })
+    const reply = withoutThinking(
+      await chatComplete(
+        chatCfg,
+        [{ role: 'system', content: conversationPrompt(basename(repoPath), status.current, custom) }, ...historyTurns(messages)],
+        'repoChatAnswer',
+        CONVERSATION_TEMPERATURE
+      )
+    )
+    const wanted = repoRequestOf(reply, basename(repoPath))
+    if (wanted === null) return { content: reply, sources: [], skipped }
+    // It asked: the grounded rounds start with the overview already open.
+    overviewShown = true
+    onProgress({ phase: 'reading', files: 0 })
+  }
+
   let result!: RawChatAnswer
   const readPaths = new Set(evidence.map((item) => item.path))
   for (let round = 0; ; round++) {

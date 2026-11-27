@@ -623,6 +623,8 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
     if (!canSubmitRepoChat(ai.enabled !== false, pending, content)) return
     setDraft('')
     void send(repoPath, content, { ...resolveAI(ai, 'chat'), cliCwd: repoPath })
+    // Sent with the button: back to the field, ready for the next message.
+    draftRef.current?.focus()
   }
 
   const resolveImg = (ref: string): Promise<string | null> => {
@@ -892,7 +894,9 @@ export function RepoChatPanel({ repoPath, repoName }: { repoPath: string; repoNa
               rows={3}
               maxLength={8000}
               placeholder={t('chat.placeholder')}
-              disabled={pending}
+              // Never disabled: a disabled field drops focus, so every message
+              // cost a click back into it. While a reply is pending, typing
+              // goes on and only sending waits (canSubmitRepoChat).
               onChange={(event) => setDraft(event.target.value)}
               onKeyDown={(event) => {
                 if (shouldSubmitRepoChatOnKeyDown(event.nativeEvent)) {
