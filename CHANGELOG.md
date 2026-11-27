@@ -1,5 +1,23 @@
 
 
+## [4.60.0](https://github.com/StarleyDev/githuttbr/compare/v4.59.1...v4.60.0) (2026-11-27)
+
+### Features
+
+* **ai:** a chat that answers anything, clearer AI settings, and a redesigned app ([6218645](https://github.com/StarleyDev/githuttbr/commit/6218645e13c7fd87ba9c58fe44186a4e164193ee))
+  - The repository chat answers any question, opens the repository only when the question is about it, and keeps its input enabled while it answers.
+  - The chat header shows the account and model in use, what the chat may do and how it asks before acting, each changeable in place.
+  - A slow or closed local server is reported while you wait: keep waiting, move the same request to another account, or stop it.
+  - Providers are edited as drafts with a Save button; the account in use is marked "In use", and any other one is a click away with "Use".
+  - Every AI setting lives on the AI page, and the behaviour screen follows the engine in use; models per task follow the provider.
+  - The status bar shows the AI in use and switches it in one click.
+  - Writing a commit message with AI names the account and model, lets you pick another one for that run, and can be cancelled and undone.
+  - Settings are regrouped into focused pages and the window is larger.
+  - First run is a short stepper with an optional AI step that finds and tests Claude Code or Codex.
+  - The sidebar has one filter for every section, counts, keyboard reordering and quick Checkout and Create PR on branches.
+  - Repository settings have a grouped side menu and a summary header.
+  - Every corner is rounded, and the PR file list colours its status chips and folders.
+
 ## [4.59.1](https://github.com/StarleyDev/githuttbr/compare/v4.59.0...v4.59.1) (2026-11-26)
 
 ### Bug Fixes
