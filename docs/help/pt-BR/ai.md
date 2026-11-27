@@ -180,8 +180,9 @@ porque provar que funciona custaria um prompt.
 ### O provedor em uso
 
 Um provedor responde a toda tarefa que não tem um provedor próprio em
-**Modelo por tarefa**. O cartão dele diz **Em uso** logo depois do nome, e fica
-onde está na lista. A IA geral e um perfil com IA
+**Modelo por tarefa**. O cartão dele termina com um **Em uso** verde, no lugar
+onde os outros têm **Usar**, e fica onde está na lista. Verde significa só em uso:
+um provedor que responde mas não está em uso diz **Pronto** num cinza-azulado discreto. A IA geral e um perfil com IA
 própria têm, cada um, o seu provedor em uso; a lista muda o que você está
 editando.
 

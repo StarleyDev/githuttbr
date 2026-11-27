@@ -921,11 +921,6 @@ export function AIAccountsEditor({
                     >
                       {accountLabel(a)}
                     </button>
-                    {role === 'in-use' && (
-                      <span className="ai-accounts-item-in-use" title={t('settings.accountInUseTitle')}>
-                        {t('settings.accountInUse')}
-                      </span>
-                    )}
                     {editDraft && editDraft.original?.id === a.id && dirty && (
                       <span
                         className="ai-accounts-item-unsaved"
@@ -940,6 +935,14 @@ export function AIAccountsEditor({
                   <AccountSummary account={a} catalog={catalogs[a.id]} />
                 </div>
                 <StatusBadge view={view} />
+                {/* At the end, where the other rows have Use: the same place
+                    answers "is this the one?" on every row. */}
+                {role === 'in-use' && (
+                  <span className="ai-accounts-item-in-use" title={t('settings.accountInUseTitle')}>
+                    <Check size={12} strokeWidth={3} />
+                    {t('settings.accountInUse')}
+                  </span>
+                )}
                 {role === 'use' && (
                   <button
                     type="button"

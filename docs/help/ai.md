@@ -189,8 +189,9 @@ prompt.
 ### The provider in use
 
 One provider answers every task that has no provider of its own under
-**Model per task**. Its card says **In use** right after the name, and stays
-where it is in the list. The general AI and a profile with its
+**Model per task**. Its card ends with a green **In use**, where the other cards have **Use**, and
+stays where it is in the list. Green means in use only: a provider that answers
+but is not in use says **Ready** in a quiet grey-blue. The general AI and a profile with its
 own AI each have their own provider in use; the list changes the one you are
 editing.
 
