@@ -342,7 +342,9 @@ function AssistantMessage({
         <Bot size={14} />
       </div>
       <div className="repo-chat-bubble" onContextMenu={copyMenu}>
-        <div ref={htmlRef} className="repo-chat-markdown" dangerouslySetInnerHTML={{ __html: html }} />
+        {message.content.trim() !== '' && (
+          <div ref={htmlRef} className="repo-chat-markdown" dangerouslySetInnerHTML={{ __html: html }} />
+        )}
         {message.notice === 'file-read-only' && (
           <div className="repo-chat-skipped" role="status">
             <span>

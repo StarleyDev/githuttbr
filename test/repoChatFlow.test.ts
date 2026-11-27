@@ -308,8 +308,8 @@ describe('when the JSON answer fails', () => {
 describe('a request to change something', () => {
   it('goes to the rounds that can propose it, never to the plain conversation', async () => {
     const repo = cloneFixture('cherry-pick')
-    const { bodies } = scriptedModel([{ content: 'File changes are off.', sourceIds: [] }])
-    await answerRepoChat(repo, [{ role: 'user', content: 'Crie um arquivo na raiz chamado teste.txt' }], {
+    const { bodies } = scriptedModel([{ content: 'Commit proposed.', sourceIds: [] }])
+    await answerRepoChat(repo, [{ role: 'user', content: 'faça commit das alterações' }], {
       ...cfg,
       repoChatActions: true
     })
@@ -321,10 +321,13 @@ describe('a request to change something', () => {
 
   it('says itself that file changes are off, whatever the model wrote', async () => {
     const repo = cloneFixture('cherry-pick')
-    scriptedModel([{ content: 'olá mundo', sourceIds: [] }])
+    const silent = scriptedModel([{ content: 'Criei o arquivo teste.txt.', sourceIds: [] }])
     const ask = 'Crie um arquivo na raiz chamado teste.txt com o texto olá mundo'
     const off = await answerRepoChat(repo, [{ role: 'user', content: ask }], { ...cfg, repoChatActions: true })
     expect(off.notice).toBe('file-read-only')
+    // No model is asked, so none can claim the file was created.
+    expect(off.content).toBe('')
+    expect(silent.bodies).toHaveLength(0)
 
     scriptedModel([{ content: 'Proposed.', sourceIds: [] }])
     const on = await answerRepoChat(repo, [{ role: 'user', content: ask }], { ...cfg, repoChatActions: true, repoChatReadOnly: false })
@@ -396,6 +399,19 @@ describe('asking for the repository', () => {
 })
 
 describe('chat turns', () => {
+  it('leaves out a reply that was only the app\'s note', () => {
+    expect(
+      historyTurns([
+        { role: 'user', content: 'crie teste.txt' },
+        { role: 'assistant', content: '' },
+        { role: 'user', content: 'Onde você criou?' }
+      ])
+    ).toEqual([
+      { role: 'user', content: 'crie teste.txt' },
+      { role: 'user', content: 'Onde você criou?' }
+    ])
+  })
+
   it('keeps the order, newest last, and never opens with the assistant', () => {
     expect(
       historyTurns([

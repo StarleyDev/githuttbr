@@ -484,6 +484,8 @@ export function historyTurns(messages: RepoChatMessage[]): ChatMessage[] {
   const turns: ChatMessage[] = []
   let used = 0
   for (const message of [...messages].reverse()) {
+    // A reply that was only the app's note has no text, and Anthropic refuses an empty turn.
+    if (!message.content.trim()) continue
     if (turns.length && used + message.content.length > MAX_HISTORY_CHARS) break
     const content = message.content.slice(0, Math.max(0, MAX_HISTORY_CHARS - used))
     turns.unshift({ role: message.role === 'user' ? 'user' : 'assistant', content })
@@ -1229,6 +1231,10 @@ ${actionRules}
   // Said by the app, not left to the model: told that file changes were off,
   // a model asked to create teste.txt answered with the file's text instead.
   const fileChangeRefused = actionsEnabled && !fileActionsEnabled && asksToChangeFiles(typed)
+  // Known to be impossible before any model is asked, so none is: Gemini,
+  // told file changes were off, still answered "I created teste.txt" above the
+  // app's own note, and kept to it in the next turns.
+  if (fileChangeRefused) return { content: '', sources: [], skipped, notice: 'file-read-only' }
   // A request to do something needs the rounds that can propose it — the
   // plain conversation cannot act, and a model there answered "Done! teste.txt
   // was created" when nothing had been.
