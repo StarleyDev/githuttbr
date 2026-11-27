@@ -23,8 +23,8 @@ Die linke Spalte listet die Schritte. Ein grüner Haken markiert einen ausgefül
 
 | Schritt | Was er setzt | Wo später ändern |
 |---|---|---|
-| Git-Identität | Den Profilnamen sowie Name und E-Mail deiner Commits | Einstellungen → Profil |
-| Konten | Tokens für GitHub, GitLab, Azure DevOps, Bitbucket, Forgejo und eigene Server, und die App für **Öffnen mit…** | Einstellungen → Integrationen; die App unter Einstellungen → Allgemein |
+| Git-Identität | Den Profilnamen sowie Name und E-Mail deiner Commits | Einstellungen → Profil & Identität |
+| Konten | Tokens für GitHub, GitLab, Azure DevOps, Bitbucket, Forgejo und eigene Server, und die App für **Öffnen mit…** | Einstellungen → Verbundene Konten; die App unter Einstellungen → Git & Synchronisierung |
 | Künstliche Intelligenz | Ein KI-Konto, in Verwendung gesetzt | Einstellungen → KI |
 | Darstellung | Theme und heller, dunkler oder automatischer Modus | Einstellungen → Themes |
 | Fertig | Nichts Neues — eine Übersicht des Eingerichteten | — |

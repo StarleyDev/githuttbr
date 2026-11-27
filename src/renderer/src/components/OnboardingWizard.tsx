@@ -585,6 +585,14 @@ export function OnboardingWizard(): React.JSX.Element {
   }
 
   const next = (): void => { setDir(1); setStep((s) => Math.min(LAST, s + 1)) }
+  // "Skip, no AI" means no AI: the default config is on, with an OpenAI account
+  // that has no key, which left a red "AI: OpenAI" chip and AI buttons behind
+  // while the Done step said "No AI".
+  const skipAIStep = (): void => {
+    const state = useSettingsStore.getState()
+    saveAIFor(state.settings.activeProfileId, { enabled: false })
+    next()
+  }
   const back = (): void => { setDir(-1); setStep((s) => Math.max(WELCOME, s - 1)) }
   const continueAI = async (): Promise<void> => {
     if (await ai.continueStep()) next()
@@ -775,7 +783,7 @@ export function OnboardingWizard(): React.JSX.Element {
                 <div className="onboarding-footer-right">
                   {step === aiIndex ? (
                     <>
-                      <button className="onboarding-skip" onClick={next} disabled={busy}>
+                      <button className="onboarding-skip" onClick={skipAIStep} disabled={busy}>
                         {t('onboarding.skipNoAI')}
                       </button>
                       <button className="btn primary" onClick={() => void continueAI()} disabled={busy}>

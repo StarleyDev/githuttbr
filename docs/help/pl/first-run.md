@@ -23,8 +23,8 @@ Lewa kolumna pokazuje kroki. Zielony znaczek oznacza krok wypełniony, kreska kr
 
 | Krok | Co ustawia | Gdzie zmienić później |
 |---|---|---|
-| Tożsamość Git | Nazwę profilu oraz imię i email w commitach | Ustawienia → Profil |
-| Konta | Tokeny GitHub, GitLab, Azure DevOps, Bitbucket, Forgejo i własnych serwerów oraz aplikację dla **Otwórz za pomocą…** | Ustawienia → Integracje; aplikacja w Ustawienia → Ogólne |
+| Tożsamość Git | Nazwę profilu oraz imię i email w commitach | Ustawienia → Profil i tożsamość |
+| Konta | Tokeny GitHub, GitLab, Azure DevOps, Bitbucket, Forgejo i własnych serwerów oraz aplikację dla **Otwórz za pomocą…** | Ustawienia → Połączone konta; aplikacja w Ustawienia → Git i synchronizacja |
 | Sztuczna inteligencja | Jedno konto AI, ustawione jako używane | Ustawienia → AI |
 | Wygląd | Motyw i tryb jasny, ciemny lub automatyczny | Ustawienia → Motywy |
 | Gotowe | Nic nowego — podsumowanie ustawień | — |

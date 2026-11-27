@@ -31,8 +31,8 @@ are.
 
 | Step | What it sets | Where to change it later |
 |---|---|---|
-| Git identity | The profile's name, and the name and email on your commits | Settings → Profile |
-| Accounts | Tokens for GitHub, GitLab, Azure DevOps, Bitbucket, Forgejo and self-hosted servers, and the app for **Open with…** | Settings → Integrations; the app in Settings → General |
+| Git identity | The profile's name, and the name and email on your commits | Settings → Profile & identity |
+| Accounts | Tokens for GitHub, GitLab, Azure DevOps, Bitbucket, Forgejo and self-hosted servers, and the app for **Open with…** | Settings → Connected accounts; the app in Settings → Git & sync |
 | Artificial intelligence | One AI account, put in use | Settings → AI |
 | Appearance | Theme and light, dark or automatic mode | Settings → Themes |
 | Done | Nothing new — a summary of what was set up | — |
@@ -41,7 +41,8 @@ are.
 
 ## The AI step
 
-AI is optional. Pick one of three cards, or **Skip, no AI**:
+AI is optional. Pick one of three cards, or **Skip, no AI**, which turns AI off
+until you set it up in [Settings → AI](ai.md):
 
 | Card | What it uses | What it needs |
 |---|---|---|

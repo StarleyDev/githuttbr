@@ -23,8 +23,8 @@ La columna izquierda lista los pasos. Una marca verde señala un paso completado
 
 | Paso | Qué define | Dónde cambiarlo después |
 |---|---|---|
-| Identidad de Git | El nombre del perfil, y el nombre y el email de tus commits | Ajustes → Perfil |
-| Cuentas | Tokens de GitHub, GitLab, Azure DevOps, Bitbucket, Forgejo y servidores propios, y la app de **Abrir con…** | Ajustes → Integraciones; la app en Ajustes → General |
+| Identidad de Git | El nombre del perfil, y el nombre y el email de tus commits | Ajustes → Perfil e identidad |
+| Cuentas | Tokens de GitHub, GitLab, Azure DevOps, Bitbucket, Forgejo y servidores propios, y la app de **Abrir con…** | Ajustes → Cuentas conectadas; la app en Ajustes → Git y sincronización |
 | Inteligencia artificial | Una cuenta de IA, puesta en uso | Ajustes → IA |
 | Apariencia | Tema y modo claro, oscuro o automático | Ajustes → Temas |
 | Listo | Nada nuevo — un resumen de lo configurado | — |

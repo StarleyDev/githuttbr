@@ -23,8 +23,8 @@ De linkerkolom toont de stappen. Een groen vinkje markeert een ingevulde stap, e
 
 | Stap | Wat hij instelt | Waar later aanpassen |
 |---|---|---|
-| Git-identiteit | De profielnaam, en de naam en het e-mailadres in je commits | Instellingen → Profiel |
-| Accounts | Tokens voor GitHub, GitLab, Azure DevOps, Bitbucket, Forgejo en eigen servers, en de app voor **Openen met…** | Instellingen → Integraties; de app in Instellingen → Algemeen |
+| Git-identiteit | De profielnaam, en de naam en het e-mailadres in je commits | Instellingen → Profiel & identiteit |
+| Accounts | Tokens voor GitHub, GitLab, Azure DevOps, Bitbucket, Forgejo en eigen servers, en de app voor **Openen met…** | Instellingen → Gekoppelde accounts; de app in Instellingen → Git & synchronisatie |
 | Kunstmatige intelligentie | Eén AI-account, in gebruik gezet | Instellingen → AI |
 | Weergave | Thema en lichte, donkere of automatische modus | Instellingen → Thema’s |
 | Klaar | Niets nieuws — een overzicht van wat is ingesteld | — |

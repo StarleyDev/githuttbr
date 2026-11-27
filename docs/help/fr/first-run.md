@@ -23,8 +23,8 @@ La colonne de gauche liste les étapes. Une coche verte marque une étape rempli
 
 | Étape | Ce qu’elle règle | Où la modifier ensuite |
 |---|---|---|
-| Identité Git | Le nom du profil, et le nom et l’email de vos commits | Paramètres → Profil |
-| Comptes | Jetons GitHub, GitLab, Azure DevOps, Bitbucket, Forgejo et serveurs auto-hébergés, et l’application de **Ouvrir avec…** | Paramètres → Intégrations ; l’application dans Paramètres → Général |
+| Identité Git | Le nom du profil, et le nom et l’email de vos commits | Paramètres → Profil et identité |
+| Comptes | Jetons GitHub, GitLab, Azure DevOps, Bitbucket, Forgejo et serveurs auto-hébergés, et l’application de **Ouvrir avec…** | Paramètres → Comptes connectés ; l’application dans Paramètres → Git et synchronisation |
 | Intelligence artificielle | Un compte IA, mis en service | Paramètres → IA |
 | Apparence | Thème et mode clair, sombre ou automatique | Paramètres → Thèmes |
 | Terminé | Rien de nouveau — un résumé de ce qui a été réglé | — |

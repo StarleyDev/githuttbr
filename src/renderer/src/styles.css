@@ -20507,7 +20507,7 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .repos-section-bar {
   display: flex;
   align-items: center;
-  border-radius: 8px;
+  border-radius: 0;
   background: color-mix(in srgb, var(--repos-section-color, var(--text-0)) 12%, var(--bg-2));
   border: none;
   border-bottom: 1px solid color-mix(in srgb, var(--repos-section-color, var(--text-0)) 22%, var(--border-soft));
@@ -22068,6 +22068,14 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .licenses-row,
 .todo-row,
 .prp-commit,
-.prl-row {
+.prl-row,
+.compare-commit,
+/* Segments of one control: the container is rounded and clips them, so a
+   rounded active segment would show the container's colour at the seam. */
+.view-toggle button,
+.fs-mode-switch button,
+.radar-scope-btn,
+.tl-speed,
+.mc-sort {
   border-radius: 0;
 }

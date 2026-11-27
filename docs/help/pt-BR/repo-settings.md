@@ -57,7 +57,9 @@ para todos que o clonam; as linhas abaixo do aviso são só suas.
 
 **Remover da lista…** tira o repositório de [Repositórios](repositories.md).
 Pergunta antes, e a pergunta diz o que não faz: a pasta no disco não é tocada, e
-uma aba aberta continua aberta. Abrir o repositório de novo o devolve à lista.
+uma aba aberta continua aberta. Abrir o repositório de novo o devolve à lista — e
+a próxima abertura do app também, enquanto a aba dele estiver aberta, porque a
+lista é refeita a partir das abas abertas. Feche a aba também para que ele saia.
 
 ## Imagem da aba
 

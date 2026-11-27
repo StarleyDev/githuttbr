@@ -23,8 +23,8 @@ A coluna da esquerda lista os passos. Um check verde marca um passo preenchido, 
 
 | Passo | O que define | Onde mudar depois |
 |---|---|---|
-| Identidade Git | O nome do perfil, e o nome e o email dos seus commits | Configurações → Perfil |
-| Contas | Tokens do GitHub, GitLab, Azure DevOps, Bitbucket, Forgejo e servidores próprios, e o app de **Abrir com…** | Configurações → Integrações; o app em Configurações → Geral |
+| Identidade Git | O nome do perfil, e o nome e o email dos seus commits | Configurações → Perfil e identidade |
+| Contas | Tokens do GitHub, GitLab, Azure DevOps, Bitbucket, Forgejo e servidores próprios, e o app de **Abrir com…** | Configurações → Contas conectadas; o app em Configurações → Git e sincronização |
 | Inteligência artificial | Uma conta de IA, colocada em uso | Configurações → IA |
 | Aparência | Tema e modo claro, escuro ou automático | Configurações → Temas |
 | Pronto | Nada novo — um resumo do que foi configurado | — |
@@ -33,7 +33,8 @@ A coluna da esquerda lista os passos. Um check verde marca um passo preenchido, 
 
 ## O passo de IA
 
-A IA é opcional. Escolha um dos três cartões, ou **Pular, sem IA**:
+A IA é opcional. Escolha um dos três cartões, ou **Pular, sem IA**, que desliga a IA
+até você configurá-la em [Configurações → IA](ai.md):
 
 | Cartão | O que usa | O que precisa |
 |---|---|---|

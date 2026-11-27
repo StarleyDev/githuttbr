@@ -16,7 +16,7 @@ import {
   type FolderTotals
 } from '../lib/fileTree'
 import { ViewToggle } from './CommitComposer'
-import { useT, interp } from '../i18n'
+import { useT, interp, type TranslationKey } from '../i18n'
 import { sumThreadCounts } from '../lib/prFileThreads'
 import { hasKnownLineCounts } from '../lib/prNoPatch'
 
@@ -41,8 +41,17 @@ function ThreadBadge({ count }: { count: number }): React.JSX.Element | null {
   )
 }
 
-function getStatusLetter(status: string): string {
-  return status === 'added' ? 'A' : status === 'removed' ? 'D' : status === 'renamed' ? 'R' : 'M'
+/** The host's status word (GitHub: added/removed/renamed/copied/modified/changed) as a letter and a label key. */
+const FILE_STATUS: Record<string, { letter: string; labelKey: TranslationKey }> = {
+  added: { letter: 'A', labelKey: 'prPage.statusAdded' },
+  removed: { letter: 'D', labelKey: 'prPage.statusRemoved' },
+  renamed: { letter: 'R', labelKey: 'prPage.statusRenamed' },
+  copied: { letter: 'C', labelKey: 'prPage.statusCopied' }
+}
+const MODIFIED_STATUS = { letter: 'M', labelKey: 'prPage.statusModified' as TranslationKey }
+
+function fileStatusOf(status: string): { letter: string; labelKey: TranslationKey } {
+  return FILE_STATUS[status] ?? MODIFIED_STATUS
 }
 
 const NO_TOTALS: FolderTotals<PrFile> = { additions: 0, deletions: 0, files: [] }
@@ -101,8 +110,8 @@ const FileRow = memo(function FileRow({
         onClick={(e) => e.stopPropagation()}
         onChange={() => onSetFilesViewed([file.filename], !isViewed)}
       />
-      <span className={`prd-file-status st-${file.status}`} title={file.status}>
-        {getStatusLetter(file.status)}
+      <span className={`prd-file-status st-${file.status}`} title={t(fileStatusOf(file.status).labelKey)}>
+        {fileStatusOf(file.status).letter}
       </span>
       <span className="prd-file-name" title={file.filename}>
         {label}

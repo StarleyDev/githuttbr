@@ -23,8 +23,8 @@ La colonna di sinistra elenca i passi. Un segno di spunta verde indica un passo 
 
 | Passo | Cosa imposta | Dove cambiarlo poi |
 |---|---|---|
-| Identità Git | Il nome del profilo, e nome ed email dei tuoi commit | Impostazioni → Profilo |
-| Account | Token per GitHub, GitLab, Azure DevOps, Bitbucket, Forgejo e server self-hosted, e l’app di **Apri con…** | Impostazioni → Integrazioni; l’app in Impostazioni → Generali |
+| Identità Git | Il nome del profilo, e nome ed email dei tuoi commit | Impostazioni → Profilo e identità |
+| Account | Token per GitHub, GitLab, Azure DevOps, Bitbucket, Forgejo e server self-hosted, e l’app di **Apri con…** | Impostazioni → Account collegati; l’app in Impostazioni → Git e sincronizzazione |
 | Intelligenza artificiale | Un account AI, messo in uso | Impostazioni → AI |
 | Aspetto | Tema e modalità chiara, scura o automatica | Impostazioni → Temi |
 | Fatto | Niente di nuovo — un riepilogo di ciò che è stato impostato | — |

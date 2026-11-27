@@ -23,8 +23,8 @@ Sol sütun adımları listeler. Yeşil onay doldurduğunuz adımı, çizgi doldu
 
 | Adım | Ne ayarlar | Sonra nereden değişir |
 |---|---|---|
-| Git kimliği | Profil adı ile commit’lerinizdeki ad ve e-posta | Ayarlar → Profil |
-| Hesaplar | GitHub, GitLab, Azure DevOps, Bitbucket, Forgejo ve kendi sunucularınız için tokenlar, ve **Birlikte aç…** uygulaması | Ayarlar → Entegrasyonlar; uygulama Ayarlar → Genel’de |
+| Git kimliği | Profil adı ile commit’lerinizdeki ad ve e-posta | Ayarlar → Profil ve kimlik |
+| Hesaplar | GitHub, GitLab, Azure DevOps, Bitbucket, Forgejo ve kendi sunucularınız için tokenlar, ve **Birlikte aç…** uygulaması | Ayarlar → Bağlı hesaplar; uygulama Ayarlar → Git ve eşitleme’de |
 | Yapay zekâ | Kullanıma alınmış bir yapay zekâ hesabı | Ayarlar → Yapay zekâ |
 | Görünüm | Tema ve açık, koyu ya da otomatik mod | Ayarlar → Temalar |
 | Bitti | Yeni bir şey yok — kurulanların özeti | — |

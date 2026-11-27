@@ -57,7 +57,9 @@ to everyone who clones it; the rows under the banner are yours alone.
 **Remove from list…** drops the repository from [Repositories](repositories.md).
 It asks first, and the question says what it does not do: the folder on disk is
 not touched, and a tab you have open stays open. Opening the repository again
-puts it back on the list.
+puts it back on the list — and so does the next start while its tab is still
+open, because the list is rebuilt from the open tabs. Close the tab too to make
+it stick.
 
 ## Tab image
 
