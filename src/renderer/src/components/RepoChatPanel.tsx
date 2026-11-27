@@ -354,7 +354,7 @@ function AssistantMessage({
           <div className="repo-chat-skipped" role="status">
             <span>
               {interp(t('chat.fileReadOnlyNotice'), {
-                setting: t('settings.repoChatReadOnly'),
+                setting: t('settings.repoChatFiles'),
                 section: t('settings.repoChat')
               })}
             </span>
