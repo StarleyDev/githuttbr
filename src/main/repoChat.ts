@@ -1277,6 +1277,7 @@ ${actionRules}
   // Said by the app, not left to the model: told that file changes were off,
   // a model asked to create teste.txt answered with the file's text instead.
   const fileChangeRefused = actionsEnabled && !fileActionsEnabled && asksToChangeFiles(actionRequest ?? typed)
+  const fileChangeWanted = fileActionsEnabled && asksToChangeFiles(actionRequest ?? typed)
   // Known to be impossible before any model is asked, so none is: Gemini,
   // told file changes were off, still answered "I created teste.txt" above the
   // app's own note, and kept to it in the next turns.
@@ -1376,6 +1377,14 @@ ${actionRules}
             const root = asObject(value)
             const rawActions = Array.isArray(root?.actions) ? root.actions : []
             const fileActions = rawActions.filter(isRepoChatFileAction)
+            // Asked for a file and answered "I created review.txt" with no
+            // action — Gemini did exactly that. Sent back once to propose it;
+            // a second miss ends in the honest plain-text fallback instead.
+            if (!fileActions.length && fileChangeWanted && !asObject(root?.needMore)) {
+              return [
+                'The user asked to create or change a file. Put it in "actions" as a write_file or edit_file action; describing it in "content" does not create it, and "content" must say it is proposed, not done.'
+              ]
+            }
             if (!fileActions.length) return []
 
             const targets = [...new Set(fileActions.map((action) => action.path.trim().replace(/\\/g, '/')))]
@@ -1421,7 +1430,10 @@ ${actionRules}
           0.2
         )
       )
-      return { content: text, sources: [], skipped, ...(fileChangeRefused ? { notice: 'file-read-only' as const } : {}) }
+      // The app says what the model would not: asked twice for the file and
+      // given none, qwen3 then answered "I cannot touch the file system".
+      const notice = fileChangeRefused ? ('file-read-only' as const) : fileChangeWanted ? ('file-not-prepared' as const) : undefined
+      return { content: text, sources: [], skipped, ...(notice ? { notice } : {}) }
     }
 
     const more = mayAskMore ? normalizeNeedMore(result.needMore, allowed, readPaths, overviewShown) : null

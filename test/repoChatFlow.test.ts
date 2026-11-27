@@ -329,7 +329,13 @@ describe('a request to change something', () => {
     expect(off.content).toBe('')
     expect(silent.bodies).toHaveLength(0)
 
-    scriptedModel([{ content: 'Proposed.', sourceIds: [] }])
+    scriptedModel([
+      {
+        content: 'Proposed.',
+        sourceIds: [],
+        actions: [{ type: 'write_file', path: 'teste.txt', content: 'olá mundo', mode: 'create', description: 'Create teste.txt' }]
+      }
+    ])
     const on = await answerRepoChat(repo, [{ role: 'user', content: ask }], { ...cfg, repoChatActions: true, repoChatReadOnly: false })
     expect(on.notice).toBeUndefined()
 
@@ -351,6 +357,48 @@ describe('a request to change something', () => {
     const { bodies } = scriptedModel(['Olá!'])
     await answerRepoChat(repo, [{ role: 'user', content: 'olá' }], cfg)
     expect(promptOf(bodies[0])).toMatch(/never say you created, edited, committed or ran something/)
+  })
+})
+
+describe('a file request answered without the file', () => {
+  it('is sent back once, and the second answer carries the action', async () => {
+    const repo = cloneFixture('cherry-pick')
+    const { bodies } = scriptedModel([
+      { content: 'Criei o arquivo review.txt com a review.', sourceIds: [] },
+      {
+        content: 'Proponho criar review.txt com a review.',
+        sourceIds: [],
+        actions: [{ type: 'write_file', path: 'review.txt', content: 'ok', mode: 'create', description: 'Create review.txt' }]
+      }
+    ])
+    const reply = await answerRepoChat(
+      repo,
+      [{ role: 'user', content: 'Faça a review do último commit e crie um arquivo review.txt na raiz com ela' }],
+      { ...cfg, repoChatActions: true, repoChatReadOnly: false }
+    )
+    expect(bodies).toHaveLength(2)
+    expect(promptOf(bodies[1])).toMatch(/Put it in "actions" as a write_file or edit_file action/)
+    expect(reply.actions?.map((a) => a.type)).toEqual(['write_file'])
+  })
+
+  it('a second miss ends in the honest fallback, not a claimed file', async () => {
+    const repo = cloneFixture('cherry-pick')
+    const { bodies } = scriptedModel([
+      { content: 'Criei o arquivo.', sourceIds: [] },
+      { content: 'Criei o arquivo.', sourceIds: [] },
+      'Não consegui preparar a criação do arquivo desta vez; reenvie o pedido.'
+    ])
+    const reply = await answerRepoChat(
+      repo,
+      [{ role: 'user', content: 'crie um arquivo notas.txt com o texto oi' }],
+      { ...cfg, repoChatActions: true, repoChatReadOnly: false }
+    )
+    expect(bodies).toHaveLength(3)
+    expect(bodies[2].response_format).toBeUndefined()
+    expect(reply.actions ?? []).toEqual([])
+    expect(reply.content).not.toMatch(/Criei o arquivo\./)
+    // Said by the app, whatever the fallback wrote.
+    expect(reply.notice).toBe('file-not-prepared')
   })
 })
 
