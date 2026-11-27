@@ -313,6 +313,13 @@ describe('when the JSON answer fails', () => {
     expect(bodies[2].response_format).toBeUndefined()
     // The plain retry still carries the commit that was read.
     expect(promptOf(bodies[2])).toMatch(/Latest commit \(HEAD\)/)
+    // One system message, first, in every call: some local chat templates
+    // reject a second one, and the context rides inside it.
+    for (const body of bodies) {
+      const roles = (body.messages as { role: string }[]).map((m) => m.role)
+      expect(roles.filter((r) => r === 'system')).toHaveLength(1)
+      expect(roles[0]).toBe('system')
+    }
   })
 })
 

@@ -1366,21 +1366,20 @@ ${actionRules}
     const mayAskMore = round < REPO_CHAT_MAX_EVIDENCE_ROUNDS
     onProgress({ phase: 'thinking' })
     // Reference material, not a question — so it goes before the turns, and
-    // the user's latest message is the last thing the model reads.
-    const context: ChatMessage = {
-      role: 'system',
-          content: overviewShown
-            ? // Evidence last, nearest the question: a 3B model given the file list
-              // after the excerpt answered "1.0.0" with package.json in hand.
-              `Repository context (reference only; the user's question is the last message):\nRepository: ${basename(repoPath)}\n${state}${mayAskMore ? fileList : ''}\n\nEvidence:\n${serializeEvidence(evidence) || '(none read yet)'}`
-            : `Repository context (reference only; the user's question is the last message):\n${briefing()}${evidence.length ? `\n\nEvidence:\n${serializeEvidence(evidence)}` : ''}`
-    }
+    // the user's latest message is the last thing the model reads. Inside the
+    // one system message: some local chat templates (Mistral-style, in
+    // llama.cpp and LM Studio) accept a single system message, first, and
+    // reject or drop a second one.
+    const context = overviewShown
+      ? // Evidence last, nearest the question: a 3B model given the file list
+        // after the excerpt answered "1.0.0" with package.json in hand.
+        `Repository context (reference only; the user's question is the last message):\nRepository: ${basename(repoPath)}\n${state}${mayAskMore ? fileList : ''}\n\nEvidence:\n${serializeEvidence(evidence) || '(none read yet)'}`
+      : `Repository context (reference only; the user's question is the last message):\n${briefing()}${evidence.length ? `\n\nEvidence:\n${serializeEvidence(evidence)}` : ''}`
     try {
       result = await chatCompleteJson<RawChatAnswer>(
         chatCfg,
         [
-          { role: 'system', content: `${system}${mayAskMore ? `\n${MORE_EVIDENCE_RULE}` : ''}` },
-          context,
+          { role: 'system', content: `${system}${mayAskMore ? `\n${MORE_EVIDENCE_RULE}` : ''}\n\n${context}` },
           ...historyTurns(messages)
         ],
         'repoChatAnswer',
@@ -1442,9 +1441,8 @@ ${actionRules}
           [
             {
               role: 'system',
-              content: `You are a helpful assistant. Answer the user's latest message in its language, in concise Markdown, using the repository context below where it applies. Never invent file names, file contents or commits that are not in it.${actionsEnabled ? `\n${PLAIN_FALLBACK_ACTION_RULE}` : ''}`
+              content: `You are a helpful assistant. Answer the user's latest message in its language, in concise Markdown, using the repository context below where it applies. Never invent file names, file contents or commits that are not in it.${actionsEnabled ? `\n${PLAIN_FALLBACK_ACTION_RULE}` : ''}\n\n${context}`
             },
-            context,
             ...historyTurns(messages)
           ],
           'repoChatAnswer',
@@ -1453,7 +1451,7 @@ ${actionRules}
       )
       // The app says what the model would not: asked twice for the file and
       // given none, qwen3 then answered "I cannot touch the file system".
-      const notice = fileChangeRefused ? ('file-read-only' as const) : fileChangeWanted ? ('file-not-prepared' as const) : undefined
+      const notice = fileChangeWanted ? ('file-not-prepared' as const) : undefined
       return { content: text, sources: [], skipped, ...(notice ? { notice } : {}) }
     }
 
@@ -1516,8 +1514,7 @@ ${actionRules}
     content,
     sources,
     skipped,
-    ...(actions.length ? { actions: actions as RepoChatReply['actions'] } : {}),
-    ...(fileChangeRefused ? { notice: 'file-read-only' as const } : {})
+    ...(actions.length ? { actions: actions as RepoChatReply['actions'] } : {})
   }
 }
 

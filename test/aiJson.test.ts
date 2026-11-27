@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { chatCompleteJson, validateJsonReply } from '../src/main/ai'
-import { aiErrorMessage } from '../src/main/aiTransport'
+import { chatCompleteJson, rejectsJsonSchema, validateJsonReply } from '../src/main/ai'
+import { aiErrorMessage, withOneSystemMessage } from '../src/main/aiTransport'
 import { migrateAIConfig } from '../src/shared/aiAccounts'
 import type { AIProvider } from '../src/shared/types'
 
@@ -467,5 +467,54 @@ describe('AI JSON validation', () => {
     expect(bodies[1].response_format).toBeDefined()
     expect(bodies[2].response_format).toBeUndefined()
     expect(bodies[2].max_tokens).toBe(512)
+  })
+})
+
+describe('one system message for local chat templates', () => {
+  it('folds every system message into the first, keeping the turns in order', () => {
+    const folded = withOneSystemMessage([
+      { role: 'system', content: 'rules' },
+      { role: 'system', content: 'context' },
+      { role: 'user', content: 'hi' },
+      { role: 'assistant', content: 'hello' },
+      { role: 'user', content: 'and?' }
+    ])
+    expect(folded).toEqual([
+      { role: 'system', content: 'rules\n\ncontext' },
+      { role: 'user', content: 'hi' },
+      { role: 'assistant', content: 'hello' },
+      { role: 'user', content: 'and?' }
+    ])
+  })
+
+  it('leaves a single leading system message, or none, as it is', () => {
+    const one = [
+      { role: 'system' as const, content: 'rules' },
+      { role: 'user' as const, content: 'hi' }
+    ]
+    expect(withOneSystemMessage(one)).toBe(one)
+    const none = [{ role: 'user' as const, content: 'hi' }]
+    expect(withOneSystemMessage(none)).toBe(none)
+  })
+})
+
+describe('when a rejected request earns a retry without the schema', () => {
+  it('retries a 400 about the schema, Gemini wording included', () => {
+    expect(rejectsJsonSchema(new Error('AI request failed (400): Invalid response_format'))).toBe(true)
+    expect(
+      rejectsJsonSchema(new Error('AI request failed (400): The specified schema produces a constraint that has too many states'))
+    ).toBe(true)
+  })
+
+  it('does not retry a prompt that is too long — it would fail the same way', () => {
+    expect(
+      rejectsJsonSchema(new Error("AI request failed (400): This model's maximum context length is 8192 tokens"))
+    ).toBe(false)
+    expect(rejectsJsonSchema(new Error('AI request failed (400): context_length_exceeded'))).toBe(false)
+  })
+
+  it('never retries auth or rate-limit failures', () => {
+    expect(rejectsJsonSchema(new Error('AI request failed (401): bad key'))).toBe(false)
+    expect(rejectsJsonSchema(new Error('AI request failed (429): slow down'))).toBe(false)
   })
 })
