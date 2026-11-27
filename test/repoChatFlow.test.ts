@@ -1,5 +1,5 @@
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest'
-import { answerRepoChat, historyTurns, mentionedPaths, mentionsRepository, repoRequestOf } from '../src/main/repoChat'
+import { answerRepoChat, historyTurns, mentionedPaths, mentionsRepository, normalizeChatSources, repoRequestOf, typedAs } from '../src/main/repoChat'
 import { migrateAIConfig } from '../src/shared/aiAccounts'
 import type { RepoChatProgressStep } from '../src/shared/types'
 import { chatProgressLabel } from '../src/renderer/src/lib/repoChatContext'
@@ -149,7 +149,52 @@ describe('a message that names the repository', () => {
     const reply = await answerRepoChat(repo, [{ role: 'user', content: 'O que tem no config.json?' }], cfg)
     expect(reply.content).toBe('It holds settings.')
     expect(bodies).toHaveLength(1)
-    expect(promptOf(bodies[0])).toMatch(/Eligible tracked files:/)
+    // The named file is read; the long file list stays out so it cannot bury it.
+    expect(promptOf(bodies[0])).toMatch(/demo-main/)
+    expect(promptOf(bodies[0])).not.toMatch(/Eligible tracked files:/)
+  })
+})
+
+describe('file names as typed', () => {
+  const tracked = ['package.json', 'examples/demo/package.json', 'src/app.ts', 'src/api.ts', 'README.md']
+
+  it('forgives a slip in a longer name, and prefers the root copy', () => {
+    expect(mentionedPaths('Qual a versão do packate.json', tracked)[0]).toBe('package.json')
+    expect(mentionedPaths('Qual a versão do pakage.json', tracked)[0]).toBe('package.json')
+    expect(mentionedPaths('Qual a versão no package.json?', tracked)).toEqual(['package.json', 'examples/demo/package.json'])
+  })
+
+  it('says which typed name was read as which file', () => {
+    expect(typedAs('versão do packate.json', ['package.json'])).toEqual([
+      'The user\'s "packate.json" is package.json, which was read below.'
+    ])
+    expect(typedAs('versão do package.json', ['package.json'])).toEqual([])
+  })
+
+  it('does not stretch an exact match, a short name or another extension', () => {
+    expect(mentionedPaths('open app.ts', tracked)).toEqual(['src/app.ts'])
+    expect(mentionedPaths('open apx.ts', tracked)).toEqual([])
+    expect(mentionedPaths('package.yaml', tracked)).toEqual([])
+  })
+})
+
+describe('citations', () => {
+  const evidence = [{ id: 'E1', path: 'package.json', startLine: 1, endLine: 5, text: '{}' }]
+
+  it('keeps known ids, maps a cited path to its excerpt, drops the rest', () => {
+    expect(normalizeChatSources({ content: 'x', sourceIds: ['E1', 'package.json', 'test/other.test.ts', 7] }, evidence)).toEqual({
+      content: 'x',
+      sourceIds: ['E1']
+    })
+    expect(normalizeChatSources({ content: 'x' }, evidence)).toEqual({ content: 'x', sourceIds: [] })
+  })
+
+  it('an invented citation no longer costs the user the answer', async () => {
+    const repo = cloneFixture('cherry-pick')
+    scriptedModel([{ content: 'The version is 1.5.0-main.', sourceIds: ['test/cloneLinkedAccount.test.ts'] }])
+    const reply = await answerRepoChat(repo, [{ role: 'user', content: 'Qual a versão no config.json?' }], cfg)
+    expect(reply.content).toBe('The version is 1.5.0-main.')
+    expect(reply.sources).toEqual([])
   })
 })
 
