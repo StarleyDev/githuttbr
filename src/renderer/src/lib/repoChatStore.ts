@@ -29,6 +29,8 @@ export interface RepoChatEntry {
   /** Validated actions the assistant proposed with this reply. */
   actions?: RepoChatAction[]
   actionsState?: ChatActionsState
+  /** The app's own note under the reply (see RepoChatReply.notice). */
+  notice?: RepoChatReply['notice']
   /** Authoritative result of the one execution attempt for this proposal. */
   execution?: RepoChatExecutionResult
   /** The mutations remain authoritative even when the narrative call fails. */
@@ -153,7 +155,8 @@ export function createRepoChatStore(
           role: 'assistant',
           content: reply.content,
           sources: reply.sources,
-          ...(reply.actions?.length ? { actions: reply.actions, actionsState: 'pending' as const } : {})
+          ...(reply.actions?.length ? { actions: reply.actions, actionsState: 'pending' as const } : {}),
+          ...(reply.notice ? { notice: reply.notice } : {})
         }
         patch(repoPath, {
           messages: trimMessages([...current.messages, assistant]),

@@ -4142,6 +4142,7 @@ export const ja: Dict = {
   'chat.skipBinary': '{name} はテキストではありません。送信しませんでした',
   'chat.skipTooLarge': '{name} は大きすぎます。送信しませんでした',
   'chat.skipUnreadable': '{name} を読み取れませんでした',
+  'chat.fileReadOnlyNotice': 'チャットではファイルの変更がオフのため、何も作成・編集されていません。許可するには、設定の {section} で「{setting}」をオフにしてください。',
   'chat.copySelection': 'コピー',
   'chat.copyMessage': 'メッセージをコピー',
   'chat.copyLink': 'リンクをコピー',

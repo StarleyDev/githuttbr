@@ -49,7 +49,8 @@ describe('repository chat grounding', () => {
     const actionRules = repoChatActionRules(true, false)
 
     expect(actionRules).toContain('{"type":"stage"')
-    expect(actionRules).toContain('File creation, editing, replacement, and deletion are disabled')
+    expect(actionRules).toContain('Creating, editing, replacing and deleting files is turned off')
+    expect(actionRules).toContain('"File read-only mode" setting')
     expect(actionRules).not.toContain('edit_file')
     expect(actionRules).not.toContain('write_file')
     expect(actionRules).not.toContain('delete_file')

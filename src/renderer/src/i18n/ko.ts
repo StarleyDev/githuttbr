@@ -4202,6 +4202,7 @@ export const ko: Dict = {
   'chat.skipBinary': '{name}은(는) 텍스트가 아니어서 보내지 않았습니다',
   'chat.skipTooLarge': '{name}은(는) 너무 커서 보내지 않았습니다',
   'chat.skipUnreadable': '{name}을(를) 읽을 수 없습니다',
+  'chat.fileReadOnlyNotice': '채팅에서 파일 변경이 꺼져 있어 아무것도 만들거나 편집하지 않았습니다. 허용하려면 설정의 {section}에서 “{setting}”을(를) 끄세요.',
   'chat.copySelection': '복사',
   'chat.copyMessage': '메시지 복사',
   'chat.copyLink': '링크 복사',

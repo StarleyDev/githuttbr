@@ -148,7 +148,7 @@ export function repoChatActionRules(
   {"type":"delete_file","path":"obsolete.txt","description":"…"}
 - Put every file action before every Git action. Existing file targets must be literal repo-relative paths from evidence; use create only for a genuinely new path. Prefer exact edit_file over whole-file replacement.
 ${REPO_CONFIG_RULE}`
-    : '- File creation, editing, replacement, and deletion are disabled by file read-only mode. Git actions remain available.'
+    : '- Creating, editing, replacing and deleting files is turned off by the user\'s "File read-only mode" setting (Settings → AI → Repository chat). When asked to change a file, propose nothing for it: say plainly that file changes are off and name that setting — never pretend the file was changed. Git actions remain available.'
 
   const remoteRules = remoteActionsEnabled
     ? `  {"type":"fetch","remote":"origin","description":"…"} / {"type":"pull","mode":"rebase","description":"…"}
@@ -510,7 +510,7 @@ export function conversationPrompt(repoName: string, branch: string): string {
 You run inside ${PRODUCT_NAME}, a Git client. It has a local Git repository open — its folder is named "${repoName}" (branch ${branch || 'detached HEAD'}); that is the repository's name, not the app's. Nothing from it has been read. It matters only when the user's message is about it — its code, files, changes, history, or a Git task such as committing.
 You have not seen its files, so never invent file names, file contents or repository details. If, and only if, answering needs that repository, reply with exactly one line and nothing else — the word "repo" written literally, not the repository's name:
 @repo <what you need from it, in a few words>
-You will then be given its Git state and file list. Otherwise, answer directly. Never say you will check, look or review something later: you cannot act between messages, so either answer now or send the @repo line.`
+You will then be given its Git state and file list. Otherwise, answer directly. Never say you will check, look or review something later: you cannot act between messages, so either answer now or send the @repo line. You cannot change anything from here either: never say you created, edited, committed or ran something.`
 }
 
 /**
@@ -653,6 +653,13 @@ const ASK_FOR_ACTION_AT_START = new RegExp(
     String.raw`(${GIT_VERBS}|create|delete|remove|add|ignore|undo|rename|edit|change|update|fix|write|rewrite|move|apply|squash|amend)\b`,
   'i'
 )
+
+/** A request to create, edit, write or delete a file — the part File read-only mode turns off. */
+export function asksToChangeFiles(message: string): boolean {
+  return /\b(crie|cria|criar|edite|edita|editar|altere|altera|escreva|escrever|apague|apaga|apagar|exclua|delete|remova|renomeie|create|edit|write|rewrite|rename|crea|edita|escribe|borra)\b[\s\S]{0,60}\b(arquivo|arquivos|file|files|archivo|archivos|\S+\.[a-z0-9]{1,8})\b/i.test(
+    message
+  )
+}
 
 /**
  * True when the user's latest message asks for something to be done, not
@@ -1219,7 +1226,14 @@ ${actionRules}
     ? undefined
     : followUpOf(messages).find((text) => mentionsRepository(text, candidates))
   const latest = anchor ?? typed
-  if (!attachments.length && mentionsRepository(latest, candidates)) {
+  // Said by the app, not left to the model: told that file changes were off,
+  // a model asked to create teste.txt answered with the file's text instead.
+  const fileChangeRefused = actionsEnabled && !fileActionsEnabled && asksToChangeFiles(typed)
+  // A request to do something needs the rounds that can propose it — the
+  // plain conversation cannot act, and a model there answered "Done! teste.txt
+  // was created" when nothing had been.
+  const wantsAction = actionsEnabled
+  if (!attachments.length && (mentionsRepository(latest, candidates) || wantsAction)) {
     // Files the user named are read now: a small model given the list still
     // answered "I cannot see config.json" instead of asking for it. With the
     // file in hand the 16 000-character list only buries it, so the overview
@@ -1356,7 +1370,7 @@ ${actionRules}
           0.2
         )
       )
-      return { content: text, sources: [], skipped }
+      return { content: text, sources: [], skipped, ...(fileChangeRefused ? { notice: 'file-read-only' as const } : {}) }
     }
 
     const more = mayAskMore ? normalizeNeedMore(result.needMore, allowed, readPaths, overviewShown) : null
@@ -1418,7 +1432,8 @@ ${actionRules}
     content,
     sources,
     skipped,
-    ...(actions.length ? { actions: actions as RepoChatReply['actions'] } : {})
+    ...(actions.length ? { actions: actions as RepoChatReply['actions'] } : {}),
+    ...(fileChangeRefused ? { notice: 'file-read-only' as const } : {})
   }
 }
 

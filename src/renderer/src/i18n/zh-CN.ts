@@ -4202,6 +4202,7 @@ export const zhCN: Dict = {
   'chat.skipBinary': '{name} 不是文本，未发送',
   'chat.skipTooLarge': '{name} 太大，未发送',
   'chat.skipUnreadable': '无法读取 {name}',
+  'chat.fileReadOnlyNotice': '聊天中的文件更改已关闭，因此没有创建或编辑任何内容。要允许更改，请在设置的 {section} 中关闭“{setting}”。',
   'chat.copySelection': '复制',
   'chat.copyMessage': '复制消息',
   'chat.copyLink': '复制链接',
