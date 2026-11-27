@@ -28,7 +28,7 @@ import {
 import { SettingsPanel } from './SettingsPanel'
 import { LauncherPanel, type LauncherItem } from './Welcome'
 import { confirmRemoveRecentRepo, confirmRemoveRepoFromGroup } from '../lib/repositoryMenuItems'
-import { planWorktreeGroup, worktreeGroupName } from '../lib/worktrees'
+import { planWorktreeGroup, worktreeOpening, worktreeGroupName } from '../lib/worktrees'
 import { AIConfigWizard } from './AIConfigWizard'
 import { InteractiveRebase } from './InteractiveRebase'
 import { ConflictRadar } from './ConflictRadar'
@@ -1269,7 +1269,10 @@ function AddWorktreeModal({ spec }: { spec: Extract<ModalSpec, { kind: 'add-work
   // family group, convert the standalone root tab into a new group, or
   // nothing — no family member is open.
   const tabs = useSettingsStore((s) => s.settings.tabs)
-  const groupPlan = autoGroup ? planWorktreeGroup(tabs, spec.rootPath) : null
+  // Always worked out: a project kept in a group takes its worktrees in,
+  // checkbox or not — the checkbox only decides about making a new group.
+  const groupPlan = planWorktreeGroup(tabs, spec.rootPath)
+  const opening = worktreeOpening(groupPlan, autoGroup)
 
   const submit = (): void => {
     if (invalid) return
@@ -1283,11 +1286,11 @@ function AddWorktreeModal({ spec }: { spec: Extract<ModalSpec, { kind: 'add-work
           .openWorktreeRepo(
             { path: resolvedDir(finalDir), name: `${spec.repoName} · ${effectiveBranch}` },
             spec.rootPath,
-            autoGroup
-              ? groupPlan?.kind === 'add'
-                ? groupPlan.groupName
-                : groupName
-              : undefined
+            opening === 'join' && groupPlan?.kind === 'add'
+              ? groupPlan.groupName
+              : opening === 'offer'
+                ? groupName
+                : undefined
           )
       })
   }
@@ -1360,18 +1363,21 @@ function AddWorktreeModal({ spec }: { spec: Extract<ModalSpec, { kind: 'add-work
         <span>{t('modal.worktreeIndexCodegraph')}</span>
       </label>
 
-      <label className="clone-partial">
-        <input
-          type="checkbox"
-          checked={autoGroup}
-          onChange={(e) => updateSettings((s) => ({ ...s, worktreeAutoGroup: e.target.checked }))}
-        />
-        <span>{t('modal.worktreeAutoGroup')}</span>
-      </label>
-      {autoGroup && groupPlan?.kind === 'add' && (
+      {/* The project lives in a group: the worktree goes there, said once in
+          plain words rather than behind a checkbox. */}
+      {groupPlan?.kind === 'add' ? (
         <div className="modal-hint">
           {interp(t('modal.worktreeGroupJoin'), { name: groupPlan.groupName })}
         </div>
+      ) : (
+        <label className="clone-partial">
+          <input
+            type="checkbox"
+            checked={autoGroup}
+            onChange={(e) => updateSettings((s) => ({ ...s, worktreeAutoGroup: e.target.checked }))}
+          />
+          <span>{t('modal.worktreeAutoGroup')}</span>
+        </label>
       )}
       {autoGroup && groupPlan?.kind === 'convert' && (
         <>

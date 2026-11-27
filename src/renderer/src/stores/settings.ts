@@ -49,7 +49,7 @@ import type { WorkspaceCandidate } from '../lib/workspacePlan'
 import { useUIStore } from './ui'
 import { useProfileAvatarsStore } from './profileAvatars'
 import { focusOpenRepo } from '../lib/tabLookup'
-import { planWorktreeGroup } from '../lib/worktrees'
+import { planWorktreeGroup, worktreeOpening } from '../lib/worktrees'
 import { applyRepoAlias, canonicalRepoPath, migrateRepoAliases, repoDisplayName } from '../lib/repoAlias'
 import { sortBookmarks } from '../lib/bookmarks'
 import { prRemoteIdentity } from '../lib/hosting'
@@ -1027,8 +1027,13 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   openWorktreeRepo: (repo, rootPath, groupName) => {
     const repoRef: RepoRef = { ...repo, worktreeRoot: rootPath }
     const s = get().settings
-    const plan = s.worktreeAutoGroup ? planWorktreeGroup(s.tabs, rootPath) : null
-    if (!plan) {
+    const plan = planWorktreeGroup(s.tabs, rootPath)
+    const opening = worktreeOpening(plan, s.worktreeAutoGroup)
+    if (opening === 'join' && plan) {
+      get().addRepoToGroup(plan.tabId, repoRef)
+      return
+    }
+    if (opening === 'tab' || !plan) {
       get().openRepoTab(repoRef)
       return
     }

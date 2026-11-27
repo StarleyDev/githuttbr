@@ -88,6 +88,7 @@ import { resolveUpdateOffer } from '../src/renderer/src/lib/updateOffer'
 import {
   isRepoOpenInTabs,
   planWorktreeGroup,
+  worktreeOpening,
   prunableWorktreeCount,
   worktreeDisplayName,
   worktreeForBranch,
@@ -5988,6 +5989,21 @@ describe('worktree grouping', () => {
       tabId: 't1',
       defaultName: 'mastery'
     })
+  })
+
+  it('a project kept in a group takes its new worktree in, whatever the grouping setting', () => {
+    const tabs = [groupTab('g1', 'Work', [ref('/src/mastery', 'mastery'), ref('/src/other', 'other')])]
+    const plan = planWorktreeGroup(tabs, '/src/mastery')
+    expect(worktreeOpening(plan, false)).toBe('join')
+    expect(worktreeOpening(plan, true)).toBe('join')
+  })
+
+  it('a project in a tab of its own is offered a group only when grouping is on', () => {
+    const tabs = [repoTab('t1', ref('/src/mastery', 'mastery'))]
+    const plan = planWorktreeGroup(tabs, '/src/mastery')
+    expect(worktreeOpening(plan, true)).toBe('offer')
+    expect(worktreeOpening(plan, false)).toBe('tab')
+    expect(worktreeOpening(null, true)).toBe('tab')
   })
 
   it('adds to the group the root already lives in', () => {
