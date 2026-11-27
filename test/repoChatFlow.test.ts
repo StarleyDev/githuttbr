@@ -1,5 +1,5 @@
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest'
-import { answerRepoChat, asksForAction, followUpOf, historyTurns, mentionedPaths, mentionsRepository, normalizeChatSources, repoRequestOf, typedAs } from '../src/main/repoChat'
+import { answerRepoChat, asksForAction, followUpOf, historyTurns, mentionsLastCommit, mentionedPaths, mentionsRepository, normalizeChatSources, repoRequestOf, typedAs } from '../src/main/repoChat'
 import { migrateAIConfig } from '../src/shared/aiAccounts'
 import type { RepoChatProgressStep } from '../src/shared/types'
 import { chatProgressLabel } from '../src/renderer/src/lib/repoChatContext'
@@ -252,6 +252,24 @@ describe('short follow-ups', () => {
   })
 })
 
+describe('the last commit', () => {
+  it('is recognised in either language', () => {
+    expect(mentionsLastCommit('Faça uma review do ultimo commit')).toBe(true)
+    expect(mentionsLastCommit('review the last commit')).toBe(true)
+    expect(mentionsLastCommit('o que mudou no HEAD?')).toBe(true)
+    expect(mentionsLastCommit('o que é um commit?')).toBe(false)
+  })
+
+  it('is read before the model answers', async () => {
+    const repo = cloneFixture('cherry-pick')
+    const { bodies } = scriptedModel([{ content: 'Looks fine.', sourceIds: [] }])
+    const steps: RepoChatProgressStep[] = []
+    await answerRepoChat(repo, [{ role: 'user', content: 'Faça uma review do ultimo commit' }], cfg, [], (s) => steps.push(s))
+    expect(steps[0]).toEqual({ phase: 'reading', files: 1 })
+    expect(promptOf(bodies[0])).toMatch(/Pinned commit [0-9a-f]{10}/)
+  })
+})
+
 describe('citations', () => {
   const evidence = [{ id: 'E1', path: 'package.json', startLine: 1, endLine: 5, text: '{}' }]
 
@@ -261,6 +279,11 @@ describe('citations', () => {
       sourceIds: ['E1']
     })
     expect(normalizeChatSources({ content: 'x' }, evidence)).toEqual({ content: 'x', sourceIds: [] })
+  })
+
+  it('a reply without text, or with text as a list, is not an error', () => {
+    expect(normalizeChatSources({ sourceIds: [], needMore: { commits: ['abc1234'] } }, evidence)).toMatchObject({ content: '' })
+    expect(normalizeChatSources({ content: ['a', 'b'], sourceIds: [] }, evidence)).toMatchObject({ content: 'a\nb' })
   })
 
   it('an invented citation no longer costs the user the answer', async () => {

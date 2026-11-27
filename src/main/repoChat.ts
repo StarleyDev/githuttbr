@@ -408,7 +408,17 @@ export function normalizeChatSources(value: unknown, evidence: readonly RepoChat
         .filter((id): id is string => id !== null)
     )
   ].slice(0, 12)
-  return { ...root, sourceIds }
+  // A model asking for more sent no "content" at all, and the whole reply
+  // was rejected; another sent its text as a list. Neither is worth an error.
+  const content =
+    typeof root.content === 'string'
+      ? root.content
+      : Array.isArray(root.content)
+        ? root.content.filter((part): part is string => typeof part === 'string').join('\n')
+        : typeof asObject(root.content)?.text === 'string'
+          ? (asObject(root.content)?.text as string)
+          : ''
+  return { ...root, content, sourceIds }
 }
 
 export function validateChatAnswer(
@@ -565,7 +575,14 @@ const ABOUT_THIS_REPOSITORY = new RegExp(
  * the obvious cases do not wait for it to ask.
  */
 export function mentionsRepository(message: string, tracked: readonly string[]): boolean {
-  return ABOUT_THIS_REPOSITORY.test(message) || mentionedPaths(message, tracked).length > 0
+  return ABOUT_THIS_REPOSITORY.test(message) || mentionsLastCommit(message) || mentionedPaths(message, tracked).length > 0
+}
+
+/** "review the last commit", "o último commit", "HEAD": the commit is read, not guessed. */
+export function mentionsLastCommit(message: string): boolean {
+  return /\b([uú]ltimo|last|latest|most recent|[uú]ltima altera[cç][aã]o)\s+commit\b|\bcommit\s+(mais recente|atual|anterior)\b|\bHEAD\b/i.test(
+    message
+  )
 }
 
 /** Edit distance, stopping early once it passes `limit`. */
@@ -1198,12 +1215,27 @@ ${actionRules}
     // file in hand the 16 000-character list only buries it, so the overview
     // opens only when no file was named ("this repository", "my changes").
     const named = mentionedPaths(latest, candidates)
-    overviewShown = named.length === 0
+    const lastCommit = mentionsLastCommit(latest)
+    overviewShown = named.length === 0 && !lastCommit
     readAs = typedAs(latest, named)
-    onProgress({ phase: 'reading', files: named.length })
+    onProgress({ phase: 'reading', files: named.length + (lastCommit ? 1 : 0) })
+    if (lastCommit) {
+      // Read the way a pinned commit is: its message, author and diff hunks.
+      const head = await collectAttachmentEvidence(
+        repoPath,
+        [{ kind: 'commit', hash: 'HEAD' }],
+        ignored,
+        status,
+        skipped,
+        committedOnly
+      )
+      collected.push(...head.evidence)
+      readAs.push(...head.notes)
+    }
     if (named.length) {
-      const read = await collectEvidence(repoPath, { paths: named, searches: [] }, allowed, status, committedOnly)
-      collected.push(...read)
+      collected.push(...(await collectEvidence(repoPath, { paths: named, searches: [] }, allowed, status, committedOnly)))
+    }
+    if (collected.length) {
       evidence = packRepoChatEvidence([...pinned.evidence, ...collected])
       evidenceIds = new Set(evidence.map((item) => item.id))
       actionContext = buildActionContext()
