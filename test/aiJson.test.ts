@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { chatCompleteJson, validateJsonReply } from '../src/main/ai'
 import { aiErrorMessage } from '../src/main/aiTransport'
 import { migrateAIConfig } from '../src/shared/aiAccounts'
+import type { AIProvider } from '../src/shared/types'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -282,6 +283,99 @@ describe('AI JSON validation', () => {
       'AI request failed (400): model not found'
     )
     expect(aiErrorMessage(500, 'y'.repeat(5000)).length).toBeLessThan(1600)
+  })
+
+  it('falls back to prompt-only JSON when Gemini finds the schema too complex', async () => {
+    const bodies: Record<string, unknown>[] = []
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_input: string | URL | Request, init?: RequestInit) => {
+        const body = JSON.parse(String(init?.body)) as Record<string, unknown>
+        bodies.push(body)
+        if (bodies.length === 1) {
+          // Google's OpenAI-compatible surface answers with an array.
+          return new Response(
+            JSON.stringify([
+              {
+                error: {
+                  code: 400,
+                  message:
+                    'The specified schema produces a constraint that has too many states for serving. Typical causes of this error are schemas with lots of text (for example, very long property or enum names).',
+                  status: 'INVALID_ARGUMENT'
+                }
+              }
+            ]),
+            { status: 400, headers: { 'content-type': 'application/json' } }
+          )
+        }
+        return new Response('{"choices":[{"message":{"content":"{\\"value\\":\\"x\\"}"}}]}', {
+          status: 200,
+          headers: { 'content-type': 'application/json' }
+        })
+      })
+    )
+
+    const cfg = migrateAIConfig({ provider: 'google', apiKey: 'test-key', model: 'gemini-2.5-flash' })
+    const value = await chatCompleteJson<{ value: string }>(cfg, [{ role: 'user', content: 'Return JSON.' }], 'test', {
+      name: 'gemini_schema_test',
+      schema: { type: 'object' },
+      validate: () => [],
+      maxTokens: 1024
+    })
+
+    expect(value).toEqual({ value: 'x' })
+    expect(bodies).toHaveLength(2)
+    expect(bodies[0].response_format).toBeDefined()
+    expect(bodies[1].response_format).toBeUndefined()
+  })
+
+  // One stub server: the first call answers with `status`/`body`, the next one succeeds.
+  const rejectFirst = (status: number, body: unknown): Record<string, unknown>[] => {
+    const bodies: Record<string, unknown>[] = []
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_input: string | URL | Request, init?: RequestInit) => {
+        bodies.push(JSON.parse(String(init?.body)) as Record<string, unknown>)
+        if (bodies.length === 1) {
+          return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } })
+        }
+        return new Response('{"choices":[{"message":{"content":"{\\"value\\":\\"x\\"}"}}]}', {
+          status: 200,
+          headers: { 'content-type': 'application/json' }
+        })
+      })
+    )
+    return bodies
+  }
+  const askJson = (provider: AIProvider): Promise<unknown> =>
+    chatCompleteJson(
+      migrateAIConfig({ provider, apiKey: 'test-key', model: 'some-model', endpoint: 'http://127.0.0.1:4000/v1' }),
+      [{ role: 'user', content: 'Return JSON.' }],
+      'test',
+      { name: 'provider_test', schema: { type: 'object' }, validate: () => [], maxTokens: 256 }
+    )
+
+  it.each([
+    ['groq', 400, { error: { message: 'This model does not support response format `json_schema`.' } }],
+    ['mistral', 422, { detail: [{ msg: 'Value error, unsupported keyword maxItems', type: 'value_error' }] }],
+    ['openrouter', 400, { error: { message: 'Provider returned error', code: 400 } }],
+    ['openai', 400, { error: { message: "Invalid schema for response_format 'x': 'oneOf' is not permitted." } }]
+  ])('%s: a %i to the schema request is retried once without it', async (provider, status, body) => {
+    const bodies = rejectFirst(status as number, body)
+    await expect(askJson(provider as AIProvider)).resolves.toEqual({ value: 'x' })
+    expect(bodies).toHaveLength(2)
+    expect(bodies[0].response_format).toBeDefined()
+    expect(bodies[1].response_format).toBeUndefined()
+  })
+
+  it.each([
+    [401, { error: { message: 'Invalid API key' } }],
+    [404, { error: { message: 'The model `some-model` does not exist' } }],
+    [429, { error: { message: 'Rate limit reached' } }]
+  ])('a %i is reported as is, without a second call', async (status, body) => {
+    const bodies = rejectFirst(status as number, body)
+    await expect(askJson('openai')).rejects.toThrow(new RegExp(`failed \\(${status}\\)`))
+    expect(bodies).toHaveLength(1)
   })
 
   it('falls back to prompt-only JSON when native structured validation is exhausted', async () => {
