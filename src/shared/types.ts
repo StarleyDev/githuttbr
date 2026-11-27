@@ -1989,7 +1989,7 @@ export interface RepoChatReply {
   actions?: RepoChatAction[]
   /** Something the app itself must say, whatever the model wrote — set when a
    *  file change was asked for while File read-only mode is on. */
-  notice?: 'file-read-only'
+  notice?: 'file-read-only' | 'file-not-prepared'
 }
 
 /** Co-author trailer appended when AIConfig.coAuthor is enabled (default on). */
