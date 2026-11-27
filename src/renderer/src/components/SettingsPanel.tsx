@@ -64,6 +64,7 @@ import {
   Globe,
   Info,
   AlertTriangle,
+  GitMerge,
   Lock,
   EyeOff,
   History,

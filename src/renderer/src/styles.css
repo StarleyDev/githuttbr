@@ -8673,7 +8673,10 @@ body.col-resizing .node-ava {
 }
 
 /* Settings → Profile & identity → Connected accounts: one row per host. */
+/* flex: none — the page is a flex column, and overflow: hidden would let it
+   squeeze the list to nothing. */
 .settings-accounts-summary {
+  flex: none;
   list-style: none;
   margin: 8px 0 0;
   padding: 0;
@@ -8928,7 +8931,13 @@ body.col-resizing .node-ava {
 .ai-card-header h4 { flex: 1; min-width: 0; }
 .ai-card-header + .settings-hint { margin-top: -6px; }
 
-.ai-style-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+/* Flex, not an auto-fit grid: the grid gave "More styles" one equal 150px
+   column, too narrow for options like "Auto — ticket from branch, else conventional".
+   Its card asks for 320px and takes the slack; on a narrow window it wraps to a
+   full-width row of its own. */
+.ai-style-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.ai-style-row .ai-style-card { flex: 1 1 150px; }
+.settings-form .ai-style-row .ai-style-card.more { flex: 2 1 min(320px, 100%); }
 .ai-style-cards { display: contents; }
 .settings-form .ai-style-card {
   display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
