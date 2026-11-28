@@ -31,6 +31,8 @@ interface GhRun {
   updated_at?: string | null
   html_url: string
   workflow_id?: number
+  /** Empty for a run from a fork: GitHub only lists pull requests of the same repository. */
+  pull_requests?: { number: number }[] | null
 }
 
 interface GhStep {
@@ -99,7 +101,8 @@ export function githubRun(r: GhRun): CiRun {
     // `updated_at` is the last change; on a finished run that is when it ended.
     finishedAt: phase === 'completed' ? isoToMs(r.updated_at) : undefined,
     url: r.html_url,
-    workflowId: r.workflow_id != null ? String(r.workflow_id) : undefined
+    workflowId: r.workflow_id != null ? String(r.workflow_id) : undefined,
+    pullRequest: r.pull_requests?.[0]?.number
   }
 }
 

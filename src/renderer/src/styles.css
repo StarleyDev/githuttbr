@@ -23088,47 +23088,22 @@ button.pck-chip:hover { color: var(--text-0); }
 }
 
 /* ── CI runs page ─────────────────────────────────────────────────────────── */
-.ci-runs-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; }
-.ci-runs-toolbar .codesearch-tab { display: inline-flex; align-items: center; gap: 4px; }
 .ci-runs-filter { flex: 1 1 220px; min-width: 160px; }
 .ci-runs-empty { color: var(--text-2); font-size: 13px; padding: 16px 2px; display: flex; align-items: center; gap: 6px; }
 .ci-runs-error { color: var(--red, #e5484d); font-size: 12.5px; margin: 6px 0 10px; overflow-wrap: anywhere; }
 .ci-runs-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
-.ci-runs-page .changelog-inner { max-width: 960px; }
 .ci-run { border: 1px solid var(--border); border-radius: 8px; background: var(--bg-2); }
 .ci-run.open { border-color: var(--accent); }
 .ci-run-head { display: flex; align-items: center; gap: 6px; padding-inline-end: 6px; min-width: 0; }
-.ci-run-toggle {
-  flex: 1 1 auto;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
-  background: none;
-  border: none;
-  color: inherit;
-  text-align: start;
-  cursor: pointer;
-}
 .ci-run-info { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.ci-run-info strong { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ci-run-meta { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 11.5px; color: var(--text-2); }
 .ci-run-meta code { font-size: 11px; }
 .ci-run-branch { display: inline-flex; align-items: center; gap: 3px; color: var(--text-1); }
 .ci-run-state { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; font-size: 12px; color: var(--text-1); }
 .ci-run-time { font-variant-numeric: tabular-nums; color: var(--text-2); margin-inline-start: 6px; font-size: 11.5px; }
-.ci-run-state .ci-run-time { margin-inline-start: 0; }
-.ci-run-ago { font-size: 11px; color: var(--text-2); }
-.ci-run-actions { flex: none; display: flex; gap: 2px; }
-.ci-run-actions .btn { display: inline-flex; align-items: center; gap: 4px; }
-.ci-run-jobs { border-top: 1px solid var(--border); padding: 8px 12px 10px 30px; font-size: 12.5px; }
 .ci-stage + .ci-stage { margin-top: 8px; }
 .ci-stage-name { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-2); margin: 2px 0 4px; }
 .ci-job { display: flex; flex-direction: column; }
-.ci-job .prd-check-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ci-job-toggle { background: none; border: none; color: var(--text-2); padding: 0; display: inline-flex; cursor: pointer; }
-.ci-job-toggle-space { width: 12px; flex: none; }
 .ci-steps { list-style: none; margin: 2px 0 6px 22px; padding: 0; display: flex; flex-direction: column; gap: 2px; }
 .ci-step { display: flex; align-items: center; gap: 8px; font-size: 12px; }
 .ci-step-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-1); }
@@ -23137,6 +23112,115 @@ button.pck-chip:hover { color: var(--text-0); }
 .ci-dispatch-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; }
 .ci-dispatch-row label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--text-2); }
 .ci-dispatch-row select, .ci-dispatch-row input { min-width: 180px; }
+
+/* ── CI runs: workflow cards, quick filters, run cards ── */
+/* As wide as the Pull requests page: same column, same gutters, same top offset. */
+.ci-runs-page .changelog-inner { max-width: 1420px; }
+.ci-runs-page { --ci-pending: #e0a020; }
+.ci-runs-header { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 14px; }
+.ci-runs-icon { color: var(--accent); flex: none; }
+.ci-runs-heading { display: flex; flex-direction: column; min-width: 0; }
+.ci-runs-heading h1 { margin: 0; font-size: 21px; color: var(--text-0); }
+.ci-runs-subtitle { font-size: 12px; color: var(--text-2); }
+.ci-runs-spacer { flex: 1 1 auto; }
+.ci-runs-btn {
+  display: inline-flex; align-items: center; gap: 5px; flex: none; padding: 5px 11px; border: none; border-radius: 6px;
+  background: var(--bg-3); color: var(--text-1); font: inherit; font-size: 12px; cursor: pointer; white-space: nowrap;
+}
+.ci-runs-header .ci-runs-btn { padding: 6px 12px; font-size: 12.5px; }
+.ci-runs-btn:hover { background: var(--bg-4); color: var(--text-0); }
+.ci-runs-body { display: flex; flex-direction: column; gap: 14px; }
+.ci-runs-body > .ci-dispatch, .ci-runs-body > .ci-runs-error { margin: 0; }
+
+.ci-wf-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 760px) { .ci-wf-grid { grid-template-columns: minmax(0, 1fr); } }
+.ci-wf-card {
+  display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 12px 14px; border: 1px solid var(--border);
+  border-radius: 10px; background: var(--bg-2); color: var(--text-1); font: inherit; text-align: start; cursor: pointer;
+}
+.ci-wf-card:hover { border-color: color-mix(in srgb, var(--accent) 50%, var(--border)); }
+.ci-wf-card.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.ci-wf-top { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.ci-wf-name { color: var(--text-0); font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ci-wf-triggers, .ci-wf-foot { font-size: 12px; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ci-wf-rate { flex: none; font-size: 12px; font-weight: 600; }
+.ci-wf-rate.good { color: var(--green); }
+.ci-wf-rate.warn { color: var(--ci-pending); }
+.ci-wf-rate.bad { color: var(--red); }
+.ci-wf-squares { display: flex; gap: 4px; }
+.ci-wf-square { width: 14px; height: 14px; border-radius: 3px; background: var(--text-2); }
+.ci-wf-square.passed { background: var(--green); }
+.ci-wf-square.failed { background: var(--red); }
+.ci-wf-square.running { background: var(--ci-pending); }
+
+.ci-runs-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.ci-seg { display: inline-flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+.ci-seg-btn { padding: 6px 12px; border: none; background: none; color: var(--text-1); font: inherit; font-size: 12.5px; cursor: pointer; }
+.ci-seg-btn.mono { font-family: var(--font-mono, ui-monospace, monospace); font-size: 12px; }
+.ci-seg-btn:hover:not(:disabled) { color: var(--text-0); }
+.ci-seg-btn.active { background: color-mix(in srgb, var(--accent) 24%, transparent); color: var(--text-0); }
+.ci-seg-btn:disabled { opacity: 0.5; cursor: default; }
+.ci-quick { display: inline-flex; gap: 6px; }
+.ci-quick-chip {
+  padding: 5px 11px; border: 1px solid transparent; border-radius: 999px; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer;
+}
+.ci-quick-chip.fail { background: color-mix(in srgb, var(--red) 14%, transparent); color: var(--red); }
+.ci-quick-chip.running { background: color-mix(in srgb, var(--ci-pending) 14%, transparent); color: var(--ci-pending); }
+.ci-quick-chip.active { border-color: currentColor; }
+.ci-quick-chip:disabled { opacity: 0.45; cursor: default; }
+.ci-runs-controls .ci-runs-filter {
+  flex: 1 1 260px; min-width: 160px; padding: 7px 10px; border-radius: 6px; border: 1px solid var(--border);
+  background: var(--field-bg); color: var(--text-0); font: inherit; font-size: 12.5px;
+}
+
+.ci-runs-list { gap: 14px; }
+.ci-runs-list .ci-run { border: 1px solid var(--border); border-radius: 10px; background: none; overflow: hidden; }
+.ci-runs-list .ci-run.open { border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); }
+.ci-run-head { flex-wrap: wrap; gap: 10px; padding: 11px 14px; cursor: pointer; }
+.ci-run.open .ci-run-head { background: var(--bg-2); border-bottom: 1px solid var(--border); }
+.ci-run-dot, .ci-job-dot { flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--text-2); }
+.ci-job-dot { width: 8px; height: 8px; }
+.ci-run-dot.pass, .ci-job-dot.pass { background: var(--green); }
+.ci-run-dot.fail, .ci-job-dot.fail { background: var(--red); }
+.ci-run-dot.pending, .ci-job-dot.pending { background: var(--ci-pending); }
+.ci-run-title {
+  padding: 0; border: none; background: none; color: var(--text-0); font: inherit; font-size: 13.5px; font-weight: 700;
+  text-align: start; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;
+}
+.ci-runs-list .ci-run-meta { display: block; font-size: 11.5px; color: var(--text-2); }
+.ci-run-meta > span + span::before { content: ' · '; }
+.ci-run-meta .mono, .ci-job-detail .mono { font-family: var(--font-mono, ui-monospace, monospace); }
+.ci-run-link { padding: 0; border: none; background: none; color: var(--accent); font: inherit; cursor: pointer; }
+.ci-run-link.mono { font-family: var(--font-mono, ui-monospace, monospace); }
+.ci-run-link:hover { color: var(--text-0); }
+.ci-runs-list .ci-run-state { display: inline; font-size: 12px; color: var(--text-1); }
+.ci-run-state.pass, .ci-job-state.pass { color: var(--green); }
+.ci-run-state.fail, .ci-job-state.fail { color: var(--red); }
+.ci-run-state.pending, .ci-job-state.pending { color: var(--ci-pending); }
+.ci-run-progress { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ci-pending); font-variant-numeric: tabular-nums; }
+.ci-run-bar { width: 90px; height: 5px; border-radius: 999px; background: var(--border); overflow: hidden; }
+.ci-run-bar > span { display: block; height: 100%; background: var(--ci-pending); transition: width 0.3s ease; }
+/* Out of the layout until pointed at, so the state sits flush right as drawn; keyboard focus shows it too. */
+.ci-run-more { display: inline-flex; gap: 2px; }
+.ci-run-head:not(:hover):not(:focus-within) .ci-run-more { position: absolute; opacity: 0; pointer-events: none; }
+.ci-run-head { position: relative; }
+.ci-run .pck-failures { gap: 6px; }
+.ci-run-body { display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; font-size: 13px; }
+.ci-run .pck-failures + .ci-run-body { padding-top: 0; }
+.ci-stage { display: flex; flex-direction: column; gap: 6px; }
+.ci-job-line { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.ci-job-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-0); }
+.ci-job.neutral .ci-job-name { color: var(--text-2); }
+.ci-job-state { flex: none; font-size: 12px; color: var(--text-2); }
+.ci-job-view { padding: 0; border: none; background: none; color: var(--accent); font: inherit; font-size: 12px; cursor: pointer; }
+.ci-job-view:hover { color: var(--text-0); }
+/* A failed job shows its way in; the others keep their line quiet until pointed at. */
+.ci-job:not(.fail) .ci-job-view:not([aria-expanded='true']) { opacity: 0; }
+.ci-job-line:hover .ci-job-view, .ci-job-view:focus-visible { opacity: 1 !important; }
+.ci-job-detail { display: flex; flex-direction: column; gap: 6px; margin: 2px 0 6px 16px; }
+.ci-job-detail .ci-steps { margin: 0; }
+.ci-job-detail > .pck-link { align-self: flex-start; }
+.ci-job-detail .prp-check-log { margin: 0; }
 
 /* ── Pull requests page ───────────────────────────────────────────────────── */
 .prl-page .changelog-inner { max-width: 1420px; }

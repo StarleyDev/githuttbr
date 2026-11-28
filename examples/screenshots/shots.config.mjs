@@ -1356,8 +1356,9 @@ export const shots = [
     }
   },
   {
-    // The CI runs page with a failed run opened on its jobs: the failing job's
-    // steps and the end of its log. Every host answer is faked in main — no
+    // The CI runs page: a card per workflow with its last runs, the quick
+    // filters, the failed run opened on the test its log names and its jobs,
+    // and a running run's progress. Every host answer is faked in main — no
     // network, no account.
     out: 'ci-runs',
     repos: ['pr-ready-branch'],
@@ -1372,32 +1373,51 @@ export const shots = [
           event: 'push', actor: 'sam', phase: 'completed', outcome: 'success', url: 'https://github.com/example/pr-ready-branch/actions',
           workflowId: '7', ...over
         })
+        // A finished run `ago` minutes back that took `took` minutes.
+        const done = (ago, took) => ({ createdAt: now - ago * min, startedAt: now - ago * min, finishedAt: now - (ago - took) * min })
+        const older = [
+          ['Tidy the session store', 'success', 'pull_request'], ['Fix a typo in the README', 'failure', 'pull_request'],
+          ['Cache the avatar lookups', 'success', 'push'], ['Extract the mailer', 'success', 'pull_request'],
+          ['Upgrade the router', 'success', 'push'], ['Log slow queries', 'success', 'pull_request'],
+          ['Rename the config keys', 'success', 'push']
+        ].map(([title, outcome, event], i) =>
+          run(145 - i, { title, outcome, event, actor: i % 2 ? 'alex' : 'sam', sha: `${'0123456'.slice(i)}abcdef9876`.slice(0, 12), ...done(3 * 60 + i * 90, 3.8 + (i % 3) * 0.3) }))
         const runs = [
-          run(148, { title: 'Add password reset form', branch: 'feature/password-reset', event: 'pull_request', phase: 'running', outcome: null,
-            createdAt: now - 3 * min, startedAt: now - 2.6 * min, sha: 'f00dbabe1234' }),
+          run(148, { title: 'Add password reset form', branch: 'feature/password-reset', event: null, phase: 'running', outcome: null,
+            createdAt: now - 3 * min, startedAt: now - 2.62 * min, sha: 'f00dbabe1234' }),
           run(147, { title: 'Validate email before sign-up', branch: 'feature/signup-email', event: 'pull_request', outcome: 'failure',
-            createdAt: now - 26 * min, startedAt: now - 25.8 * min, finishedAt: now - 21.4 * min, sha: 'c0ffee98a7b6' }),
-          run(146, { title: 'Bump test runner', actor: 'alex', createdAt: now - 2 * 60 * min, startedAt: now - 119 * min, finishedAt: now - 114 * min, sha: 'beadfeed4321' }),
-          run(31, { name: 'Release', title: 'Release 2.4.0', branch: 'v2.4.0', event: 'release', number: 31, createdAt: now - 5 * 60 * min,
-            startedAt: now - 299 * min, finishedAt: now - 291 * min, sha: 'deadc0de5678' }),
-          run(145, { title: 'Nightly', name: 'Nightly', event: 'schedule', actor: null, outcome: 'cancelled', createdAt: now - 14 * 60 * min,
-            startedAt: now - 839 * min, finishedAt: now - 836 * min, sha: '0ddba11cafe0' })
+            pullRequest: 52, sha: 'c0ffee98a7b6', createdAt: now - 26 * min, startedAt: now - 25.8 * min, finishedAt: now - 21.4 * min }),
+          run(146, { title: 'Bump test runner', actor: 'alex', sha: 'beadfeed4321', ...done(120, 5) }),
+          ...older,
+          ...[0, 1, 2, 3].map((i) => run(31 - i, { name: 'Release', title: `Release 2.${4 - i}.0`, branch: `v2.${4 - i}.0`, event: 'release',
+            workflowId: '9', sha: `deadc0de${i}678`, ...done(5 * 60 + 8 + i * 2 * 24 * 60, 8) })),
+          ...['cancelled', 'success', 'failure', 'success'].map((outcome, i) => run(90 - i, { name: 'Nightly', title: 'Nightly', event: 'schedule',
+            actor: null, outcome, workflowId: '11', sha: `0ddba11${i}afe0`, ...done(14 * 60 + i * 24 * 60, 3) }))
         ]
         ipcMain.handle('hosting:ciRuns', () => ({
           supported: true, runs, capabilities: { rerun: true, rerunFailed: true, cancel: true, dispatch: true }
         }))
         const step = (name, outcome, from, to) => ({ name, phase: 'completed', outcome, startedAt: now - from * 1000, finishedAt: now - to * 1000 })
-        ipcMain.handle('hosting:ciRunJobs', () => [
-          { id: '9001', name: 'lint', phase: 'completed', outcome: 'success', startedAt: now - 1548e3, finishedAt: now - 1490e3, url: '', hasLog: true,
-            steps: [step('Set up job', 'success', 1548, 1546), step('Run npm run lint', 'success', 1546, 1490)] },
-          { id: '9002', name: 'test (node 20)', phase: 'completed', outcome: 'failure', startedAt: now - 1548e3, finishedAt: now - 1284e3, url: '', hasLog: true,
-            steps: [
-              step('Set up job', 'success', 1548, 1545), step('Checkout', 'success', 1545, 1541),
-              step('Install dependencies', 'success', 1541, 1470), step('Run tests', 'failure', 1470, 1286),
-              { name: 'Upload coverage', phase: 'completed', outcome: 'skipped' }
-            ] },
-          { id: '9003', name: 'build', phase: 'completed', outcome: 'skipped', url: '', hasLog: false, steps: [] }
-        ])
+        ipcMain.handle('hosting:ciRunJobs', (_e, _repo, _remote, _tokens, runId) => runId === '148'
+          ? [
+              { id: '9101', name: 'test (node 20)', phase: 'running', outcome: null, startedAt: now - 157e3, url: '', hasLog: false,
+                steps: [
+                  step('Set up job', 'success', 157, 155), step('Install dependencies', 'success', 155, 90),
+                  { name: 'Run tests', phase: 'running', outcome: null, startedAt: now - 90e3 },
+                  { name: 'Upload coverage', phase: 'queued', outcome: null }, { name: 'Complete job', phase: 'queued', outcome: null }
+                ] }
+            ]
+          : [
+              { id: '9001', name: 'lint', phase: 'completed', outcome: 'success', startedAt: now - 1548e3, finishedAt: now - 1490e3, url: '', hasLog: true,
+                steps: [step('Set up job', 'success', 1548, 1546), step('Run npm run lint', 'success', 1546, 1490)] },
+              { id: '9002', name: 'test (node 20)', phase: 'completed', outcome: 'failure', startedAt: now - 1548e3, finishedAt: now - 1284e3, url: '', hasLog: true,
+                steps: [
+                  step('Set up job', 'success', 1548, 1545), step('Checkout', 'success', 1545, 1541),
+                  step('Install dependencies', 'success', 1541, 1470), step('Run tests', 'failure', 1470, 1286),
+                  { name: 'Upload coverage', phase: 'completed', outcome: 'skipped' }
+                ] },
+              { id: '9003', name: 'build', phase: 'completed', outcome: 'skipped', url: '', hasLog: false, steps: [] }
+            ])
         ipcMain.handle('hosting:ciJobLog', () => [
           '\u001b[36m> app@1.0.0 test\u001b[0m',
           '\u001b[36m> vitest run\u001b[0m',
@@ -1407,6 +1427,9 @@ export const shots = [
           ' \u001b[31m✗\u001b[0m test/signup.test.ts (6 tests | 1 failed) 35ms',
           '   \u001b[31m× rejects an address without a domain\u001b[0m',
           '',
+          '⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯',
+          '',
+          ' FAIL  test/signup.test.ts > rejects an address without a domain',
           '\u001b[31mAssertionError: expected true to be false\u001b[0m',
           ' ❯ test/signup.test.ts:48:31',
           '     46|   it(\'rejects an address without a domain\', () => {',
@@ -1419,13 +1442,10 @@ export const shots = [
         ].join('\n'))
       })
       await page.evaluate((repoPath) => window.__shot.settings.getState().openPageTab({ type: 'ci-runs', repoPath }), repos['pr-ready-branch'])
-      const failed = page.locator('.ci-run', { hasText: 'Validate email before sign-up' })
-      await failed.waitFor()
-      await failed.locator('.ci-run-toggle').click()
-      const job = page.locator('.ci-job', { hasText: 'test (node 20)' })
-      await job.waitFor()
-      await job.locator('.prd-check-logs').first().click()
-      await page.locator('.prp-check-log pre').waitFor()
+      // The newest failed run opens by itself, on the test its log names.
+      await page.locator('.ci-run.open .pck-failure').waitFor()
+      await page.locator('.ci-run-progress').waitFor()
+      await page.locator('.ci-wf-foot', { hasText: 'test (node 20)' }).waitFor()
       await page.waitForTimeout(500)
     }
   },
