@@ -178,8 +178,12 @@ interface PreloadApi {
     imports(repoPath: string, depth: number): Promise<unknown>
     get(repoPath: string, model: string): Promise<unknown>
     generate(repoPath: string, cfg: unknown): Promise<unknown>
+    status(repoPath: string): Promise<unknown>
+    cancel(repoPath: string): Promise<unknown>
     export(repoPath: string): Promise<unknown>
     clear(repoPath: string): Promise<unknown>
+    chooseDir(repoPath: string): Promise<unknown>
+    removeExport(repoPath: string): Promise<unknown>
     onProgress(cb: (payload: unknown) => void): () => void
   }
   analytics: {

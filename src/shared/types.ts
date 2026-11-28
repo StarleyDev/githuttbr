@@ -2276,6 +2276,8 @@ export interface RepoWiki {
   pages: WikiPage[]
   /** The model's grouping of the dependencies the manifests declare. */
   stack: TechStack | null
+  /** Set when read back from the repo's wiki folder (relative path) rather than this machine's store. */
+  importedFrom?: string
 }
 
 /** Progress pushed while a wiki is being generated. */
@@ -2283,6 +2285,7 @@ export type WikiProgress =
   | { phase: 'planning' }
   | { phase: 'page'; slug: string; title: string; done: number; total: number }
   | { phase: 'done' }
+  | { phase: 'cancelled' }
   | { phase: 'error'; message: string }
 
 /** Key that must be held for hover-to-explain to fire. */

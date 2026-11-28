@@ -220,8 +220,12 @@ const api = {
     get: (repoPath: string, model: string): Promise<unknown> => ipcRenderer.invoke('wiki:get', repoPath, model),
     generate: (repoPath: string, cfg: unknown): Promise<unknown> =>
       ipcRenderer.invoke('wiki:generate', repoPath, cfg),
+    status: (repoPath: string): Promise<unknown> => ipcRenderer.invoke('wiki:status', repoPath),
+    cancel: (repoPath: string): Promise<unknown> => ipcRenderer.invoke('wiki:cancel', repoPath),
     export: (repoPath: string): Promise<unknown> => ipcRenderer.invoke('wiki:export', repoPath),
     clear: (repoPath: string): Promise<unknown> => ipcRenderer.invoke('wiki:clear', repoPath),
+    chooseDir: (repoPath: string): Promise<unknown> => ipcRenderer.invoke('wiki:chooseDir', repoPath),
+    removeExport: (repoPath: string): Promise<unknown> => ipcRenderer.invoke('wiki:removeExport', repoPath),
     onProgress: (cb: (payload: unknown) => void): (() => void) => {
       const listener = (_e: unknown, payload: unknown): void => cb(payload)
       ipcRenderer.on('wiki:progress', listener)

@@ -413,6 +413,10 @@ açıklama, çakışmalar, temalar, wiki — çünkü hepsi aynı çağrıdan ge
   baştan bir oturum başlatır.
 - Anahtarlar hesap başına işletim sisteminizin anahtar zincirinde saklanır. Bir
   hesabı silmek anahtarını da siler — önce sorar ve geri alınamaz.
+- **Tek** hesap da silinebilir — yanıt vermeyi bırakan bir sağlayıcı, önce
+  ikinci bir hesap uydurmanızı gerektirmemeli. Siz yenisini kurana kadar yerini
+  boş bir hesap alır ve onay iletisi bunu söyler. Silinecek bir şeyi olmayan tek
+  hesap, o dokunulmamış boş hesaptır.
 - Genel yapay zekâdan önceki bir sürüme dönmek, genel yapay zekânın anahtarlarını
   kaybettirir: o sürüm anahtarların nerede tutulduğunu bilmez ve kaydederken
   onları atar. Hesaplar kalır; anahtarları yeniden yazın. Bir profilin kendi

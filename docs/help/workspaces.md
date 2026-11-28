@@ -118,7 +118,11 @@ tooltip, and a long tag or title is cut short with an ellipsis.
   repository's name** — to come back to the repository. While a page is
   showing, the name grows a pointer cursor and a small pill on hover: it is the
   way back.
-- **Hover an icon** for the ✕ that closes just that page.
+- **Hover an icon** and a ✕ opens beside it, the way a tab's own does; it
+  closes just that page.
+- While a repository has pages open, **its own ✕ is hidden**: next to the page
+  icons it read as a page's close. Middle-click the tab, or use its right-click
+  menu, to close the repository itself.
 - Inside a **group**, the icons sit on the chip of the repository they belong
   to, and only while that repository is the selected one. Picking another repo
   in the group shows *that* repository, not its neighbour's tool.

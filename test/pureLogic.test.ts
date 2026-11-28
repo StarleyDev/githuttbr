@@ -207,7 +207,14 @@ import {
   upsertRule
 } from '../src/renderer/src/lib/gitattributes'
 import { parseToolHelp, sortTools } from '../src/shared/diffTools'
-import { migrateAIConfig, modelFor, newAccount, resolveAI } from '../src/shared/aiAccounts'
+import {
+  isBlankStarter,
+  migrateAIConfig,
+  modelFor,
+  newAccount,
+  removeAccount,
+  resolveAI
+} from '../src/shared/aiAccounts'
 import { authHeaders, baseUrl, missingCredential, transportOf } from '../src/main/aiTransport'
 import { flattenMessages } from '../src/main/aiCli'
 import { buildModelLists, normalizeModelIds } from '../src/shared/aiModelNames'
@@ -317,6 +324,9 @@ import {
   cleanPageTitle,
   validateTechStack,
   wikiExportFiles,
+  parseExportedWiki,
+  normalizeWikiDir,
+  isExportedWikiFile,
   WIKI_PROMPT_VERSION
 } from '../src/main/wikiSchemas'
 import { isReadableSource, rankPlanFiles, buildPagePack, serializePack } from '../src/main/wikiPack'
@@ -3775,6 +3785,195 @@ describe('repo wiki — exporting to the repo', () => {
     for (const file of wikiExportFiles(wiki, 'githuttbr')) {
       expect(isSafeRepoPath(file.path)).toBe(true)
     }
+  })
+
+  it('writes into a chosen folder instead of docs/wiki', () => {
+    expect(wikiExportFiles(wiki, 'githuttbr', 'handbook/wiki').map((f) => f.path)).toEqual([
+      'handbook/wiki/README.md',
+      'handbook/wiki/overview.md',
+      'handbook/wiki/data.md'
+    ])
+  })
+})
+
+describe('repo wiki — reading an exported wiki back', () => {
+  const page = {
+    slug: 'data',
+    title: 'Data layer',
+    archetype: 'workflow' as const,
+    summary: 'How data is read.',
+    sections: [
+      {
+        heading: 'Reading',
+        claims: [
+          { text: 'Rows are read lazily.', sourcePaths: ['src/db.ts', 'src/rows.ts'] },
+          { text: 'A claim nobody cited.', sourcePaths: [] }
+        ]
+      }
+    ],
+    related: ['overview'],
+    markdown: ''
+  }
+  const overview = {
+    slug: 'overview', title: 'Overview', archetype: 'overview' as const, summary: 'What this is.',
+    sections: [], related: [], markdown: ''
+  }
+  const wiki = {
+    headSha: 'abc1234567',
+    generatedAt: Date.UTC(2026, 0, 15),
+    model: 'gpt-4o-mini',
+    promptVersion: WIKI_PROMPT_VERSION,
+    stack: null,
+    pages: [overview, page].map((p) => ({ ...p, markdown: renderWikiPage(p) }))
+  }
+  const asFolder = (files: { path: string; content: string }[]): { name: string; content: string }[] =>
+    files.map((f) => ({ name: f.path.split('/').pop()!, content: f.content }))
+
+  it('round-trips pages, claims, links and archetypes through the export', () => {
+    const back = parseExportedWiki(asFolder(wikiExportFiles(wiki, 'repo')), 'docs/wiki')!
+    expect(back.importedFrom).toBe('docs/wiki')
+    expect(back.headSha).toBe('abc1234')
+    expect(back.generatedAt).toBe(Date.UTC(2026, 0, 15))
+    expect(back.pages.map((p) => [p.slug, p.archetype])).toEqual([['overview', 'overview'], ['data', 'workflow']])
+    const data = back.pages[1]
+    expect(data.title).toBe('Data layer')
+    expect(data.summary).toBe('How data is read.')
+    expect(data.sections).toEqual(page.sections)
+    expect(data.related).toEqual(['overview'])
+    // The page's own Markdown, without the export's note, See also and index link.
+    expect(data.markdown).toBe(renderWikiPage(page))
+  })
+
+  it('reads a folder exported before archetypes were stamped', () => {
+    const old = asFolder(wikiExportFiles(wiki, 'repo')).map((f) => ({
+      ...f, content: f.content.replace(/<!-- archetype: \w+ -->\n/, '')
+    }))
+    const back = parseExportedWiki(old, 'docs/wiki')!
+    expect(back.pages.map((p) => p.archetype)).toEqual(['overview', 'module'])
+  })
+
+  it('skips pages the index lists but the folder lacks, and drops links to them', () => {
+    const files = asFolder(wikiExportFiles(wiki, 'repo')).filter((f) => f.name !== 'overview.md')
+    const back = parseExportedWiki(files, 'docs/wiki')!
+    expect(back.pages.map((p) => p.slug)).toEqual(['data'])
+    expect(back.pages[0].related).toEqual([])
+  })
+
+  it('carries the stack through the index, even with -- inside it', () => {
+    const stack = { summary: 'Built on Electron -- and React.', groups: [{ name: 'UI', items: [{ dep: 'react', role: 'views' }] }] }
+    const files = asFolder(wikiExportFiles({ ...wiki, stack }, 'repo'))
+    const index = files.find((f) => f.name === 'README.md')!.content
+    // `--` inside an HTML comment would end it early and spill the JSON onto the page.
+    expect(index.match(/<!--[\s\S]*?-->/g)!.some((c) => c.includes('wiki-stack') && c.includes('Electron'))).toBe(true)
+    expect(parseExportedWiki(files, 'docs/wiki')!.stack).toEqual(stack)
+  })
+
+  it('reads the pages when the stack comment was edited into nonsense', () => {
+    const files = asFolder(wikiExportFiles({ ...wiki, stack: { summary: 's', groups: [] } }, 'repo')).map((f) =>
+      f.name === 'README.md' ? { ...f, content: f.content.replace(/wiki-stack: .*? -->/, 'wiki-stack: {oops -->') } : f
+    )
+    const back = parseExportedWiki(files, 'docs/wiki')!
+    expect(back.stack).toBeNull()
+    expect(back.pages).toHaveLength(2)
+  })
+
+  it('tells the files the export wrote from anything else in the folder', () => {
+    for (const file of wikiExportFiles(wiki, 'repo')) expect(isExportedWikiFile(file.content)).toBe(true)
+    expect(isExportedWikiFile('# My own notes\n\nGenerated by hand.')).toBe(false)
+    // Exported under an earlier product name: still the export's own file.
+    expect(isExportedWikiFile('<!-- Generated by OldName from abc1234 on 2026-01-15. Regenerate… -->')).toBe(true)
+    expect(isExportedWikiFile('<!-- Generated by GitHuttBr from the working tree on 2026-01-15. -->')).toBe(true)
+  })
+
+  it('never lets a page read from the folder cite a file outside the repo', () => {
+    const files = asFolder(wikiExportFiles(wiki, 'repo')).map((f) =>
+      f.name === 'data.md'
+        ? { ...f, content: f.content.replace('`src/db.ts`', '`../../../../home/u/.ssh/id_rsa`, `/etc/passwd`, `src/db.ts`') }
+        : f
+    )
+    const data = parseExportedWiki(files, 'docs/wiki')!.pages[1]
+    expect(data.sections[0].claims[0].sourcePaths).toEqual(['src/db.ts', 'src/rows.ts'])
+  })
+
+  it('keeps what a person added — a comment, text after See also — so a re-export does not lose it', () => {
+    const files = asFolder(wikiExportFiles(wiki, 'repo')).map((f) =>
+      f.name === 'data.md'
+        ? { ...f, content: f.content.replace('# Data layer', '<!-- TODO: diagram -->\n# Data layer').replace('[← Index]', 'A closing note.\n\n[← Index]') }
+        : f
+    )
+    const data = parseExportedWiki(files, 'docs/wiki')!.pages[1]
+    expect(data.markdown).toContain('<!-- TODO: diagram -->')
+    expect(data.markdown).toContain('A closing note.')
+    expect(data.markdown).not.toContain('## See also')
+    expect(data.related).toEqual(['overview'])
+  })
+
+  it('keeps the date of a wiki exported before the first commit', () => {
+    const back = parseExportedWiki(asFolder(wikiExportFiles({ ...wiki, headSha: '' }, 'repo')), 'docs/wiki')!
+    expect(back.headSha).toBe('')
+    expect(back.generatedAt).toBe(Date.UTC(2026, 0, 15))
+  })
+
+  it('reads only the exported pages, not notes the team keeps in the same folder', () => {
+    const files = [...asFolder(wikiExportFiles(wiki, 'repo')), { name: 'NOTES.md', content: '# Notes\n\nOpen questions.' }]
+    expect(parseExportedWiki(files, 'docs/wiki')!.pages.map((p) => p.slug)).toEqual(['overview', 'data'])
+  })
+
+  it('finds nothing in a folder without wiki pages', () => {
+    expect(parseExportedWiki([], 'docs/wiki')).toBeNull()
+    expect(parseExportedWiki([{ name: 'notes.md', content: 'no title here' }], 'docs/wiki')).toBeNull()
+  })
+
+  it('judges a read-back wiki by its commit alone', () => {
+    const back = parseExportedWiki(asFolder(wikiExportFiles(wiki, 'repo')), 'docs/wiki')!
+    expect(wikiFreshness(back, { headSha: 'abc1234567', model: 'any' })).toBe('current')
+    expect(wikiFreshness(back, { headSha: 'def9999999', model: 'any' })).toBe('behind')
+    expect(wikiFreshness({ ...back, headSha: '' }, { headSha: 'abc1234567', model: 'any' })).toBe('behind')
+  })
+})
+
+describe('repo wiki — choosing its folder', () => {
+  it('accepts a folder inside the repo, normalised', () => {
+    expect(normalizeWikiDir('docs/wiki')).toBe('docs/wiki')
+    expect(normalizeWikiDir('./handbook//wiki/')).toBe('handbook/wiki')
+    expect(normalizeWikiDir('docs\\wiki')).toBe('docs/wiki')
+  })
+
+  it('refuses the repo root, .git and anything outside', () => {
+    expect(normalizeWikiDir('')).toBeNull()
+    expect(normalizeWikiDir('.')).toBeNull()
+    expect(normalizeWikiDir('.git')).toBeNull()
+    expect(normalizeWikiDir('.git/wiki')).toBeNull()
+    expect(normalizeWikiDir('../elsewhere')).toBeNull()
+    expect(normalizeWikiDir('docs/../../x')).toBeNull()
+  })
+})
+
+describe('AI accounts — deleting one', () => {
+  const ai = migrateAIConfig({ enabled: true, provider: 'ollama', endpoint: 'http://localhost:11434/v1', apiKey: '', model: 'llama3' })
+
+  it('deletes the only account, leaving a blank starter under a fresh id', () => {
+    const only = ai.accounts![0]
+    const next = removeAccount({ ...ai, assignments: { wiki: { accountId: only.id, model: 'llama3' } } }, only.id)
+    expect(next.accounts).toHaveLength(1)
+    expect(next.accounts![0].id).not.toBe(only.id)
+    expect(next.defaultAccountId).toBe(next.accounts![0].id)
+    expect(next.assignments?.wiki).toBeUndefined()
+    expect(isBlankStarter(next.accounts!)).toBe(true)
+  })
+
+  it('keeps the default when another account is deleted', () => {
+    const second = newAccount(ai.accounts!, 'anthropic')
+    const both = { ...ai, accounts: [...ai.accounts!, second] }
+    const next = removeAccount(both, second.id)
+    expect(next.accounts!.map((a) => a.id)).toEqual([ai.accounts![0].id])
+    expect(next.defaultAccountId).toBe(both.defaultAccountId)
+  })
+
+  it('has nothing to delete on the untouched starter, and ignores unknown ids', () => {
+    expect(isBlankStarter([newAccount([], 'openai')])).toBe(true)
+    expect(isBlankStarter(ai.accounts!)).toBe(false)
+    expect(removeAccount(ai, 'nope')).toBe(ai)
   })
 })
 

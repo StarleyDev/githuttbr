@@ -405,5 +405,9 @@ explicar, conflitos, temas, a wiki — porque todos passam pela mesma chamada.
   inicia uma sessão inteira a cada pedido.
 - As chaves ficam guardadas por conta no chaveiro do seu sistema. Excluir uma
   conta exclui a chave dela.
+- A **única** conta também pode ser excluída — um provedor que parou de responder
+  não deveria exigir que você invente uma segunda antes. Uma conta em branco
+  fica no lugar até você configurar outra, e a confirmação avisa. Só essa conta
+  em branco, intocada, não tem o que excluir.
 
 **Veja também:** [Wiki do repo](repo-wiki.md) · [Segurança e segredos](security.md)

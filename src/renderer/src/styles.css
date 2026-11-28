@@ -5161,14 +5161,13 @@ body.col-resizing .node-ava {
 }
 
 /* Pages that ride on a repository's tab. Small enough to read as part of the
-   tab rather than as tabs of their own; the close affordance only appears on
-   hover, so a row of chips does not turn into a row of ✕. */
+   tab rather than as tabs of their own; each one's ✕ opens beside it on hover. */
 .tab-page-chip {
   display: inline-flex;
   align-items: center;
   position: relative;
   padding: 2px;
-  margin-inline-start: 2px;
+  margin-inline-start: 6px;
   border-radius: 5px;
   color: var(--text-2);
   cursor: pointer;
@@ -5187,7 +5186,7 @@ body.col-resizing .node-ava {
 .tab-page-chip-pr {
   gap: 4px;
   padding: 2px 7px 2px 5px;
-  margin-inline-start: 4px;
+  margin-inline-start: 6px;
   border: 1px solid var(--accent);
   border-radius: 999px;
   background: var(--bg-2);
@@ -5198,23 +5197,31 @@ body.col-resizing .node-ava {
 .tab-page-chip-pr:hover { background: var(--bg-3); color: var(--text-0); }
 .tab-page-chip-pr.active { background: var(--accent); border-color: var(--accent); color: #fff; }
 .tab-page-chip-pr.active svg { color: #fff; }
-.tab-page-chip-pr .tab-page-close svg { width: 9px; height: 9px; color: inherit; }
+.tab-page-chip-pr .tab-page-close svg { color: inherit; }
+/* The ✕ sits beside the chip's label, like a tab's own, and opens on hover:
+   shut it takes no room, so a row of chips does not turn into a row of ✕. */
 .tab-page-close {
-  position: absolute;
-  inset-block-start: -4px;
-  inset-inline-end: -5px;
-  display: none;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: var(--bg-1);
-  border: 1px solid var(--border);
+  width: 0;
+  height: 16px;
+  margin-inline-start: 0;
+  border-radius: 4px;
+  overflow: hidden;
+  opacity: 0;
   color: var(--text-2);
+  cursor: pointer;
+  transition: width 0.16s ease, margin 0.16s ease, opacity 0.16s ease, background 0.12s;
 }
-.tab-page-chip:hover .tab-page-close { display: inline-flex; }
-.tab-page-close:hover { color: var(--red, #ff5c7a); }
+.tab-page-chip:hover .tab-page-close,
+.tab-page-chip:focus-within .tab-page-close {
+  width: 16px;
+  margin-inline-start: 4px;
+  opacity: 1;
+}
+.tab-page-close:hover { color: var(--text-0); background: var(--bg-4); }
+.tab-page-chip-pr.active .tab-page-close:hover { color: #fff; background: rgb(255 255 255 / 0.22); }
 
 /* ─── DevTools page (embedded webview) ───────────────────────────────────── */
 
@@ -8782,8 +8789,6 @@ body.col-resizing .node-ava {
   margin: 0 auto;
   padding: 32px 32px 64px;
 }
-/* The wiki is prose: a 1420px line is too long to read, so it keeps a reading width. */
-.changelog-inner.wiki-reading { max-width: 860px; }
 .changelog-inner:has(> .page-head) {
   padding-top: 0;
 }
@@ -15920,7 +15925,9 @@ input[type='range']:focus-visible {
 .ai-pr-section-title.ai-pr-suggest { color: var(--green, #4caf50); }
 .ai-pr-text { font-size: 12.5px; line-height: 1.55; color: var(--text-0); }
 .ai-pr-empty { padding: 20px; font-size: 13px; color: var(--text-2); text-align: center; }
-/* Generated repo wiki page */
+/* Generated repo wiki page — the same width and gutters as the pull requests page, its sibling tab. */
+.wiki-page .changelog-inner { padding-inline: 28px; }
+.wiki-from-folder { margin: 0 0 14px; }
 .wiki-actions { display: flex; gap: 6px; margin-inline-start: auto; }
 .wiki-stale { font-size: 12px; color: var(--yellow, #f59e0b); background: color-mix(in srgb, var(--yellow, #f59e0b) 12%, transparent); border-radius: 6px; padding: 6px 10px; margin: 0 0 10px; }
 .wiki-progress { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }

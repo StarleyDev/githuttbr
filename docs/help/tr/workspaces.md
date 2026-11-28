@@ -119,7 +119,11 @@ Tam ad ipucundadır ve uzun bir etiket ya da başlık üç noktayla kısaltılı
 - **Bir simgeye tıkla**, o sayfa görünsün. **Tekrar tıkla — ya da deponun adına
   tıkla** — depoya dönersin. Bir sayfa açıkken ad, işaretçi imleci ve üstüne
   gelince küçük bir hap alır: dönüş yolu odur.
-- **Bir simgenin üstüne gel**, yalnızca o sayfayı kapatan ✕ çıksın.
+- **Bir simgenin üstüne gel**, bir sekmenin kendi ✕'i gibi yanında bir ✕ açılır;
+  yalnızca o sayfayı kapatır.
+- Bir deponun açık sayfaları varken **kendi ✕'i gizlenir**: sayfa simgelerinin
+  yanında bir sayfayı kapatıyormuş gibi okunuyordu. Deponun kendisini kapatmak
+  için sekmeye orta tıkla ya da sağ tık menüsünü kullan.
 - Bir **grup** içinde simgeler, ait oldukları deponun rozetinde durur ve
   yalnızca o depo seçiliyken. Gruptan başka bir depo seçmek *o* depoyu gösterir,
   komşusunun aracını değil.

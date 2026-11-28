@@ -351,12 +351,15 @@ export async function callModel(
       ...(transport !== 'cli' && isLocal(base) ? { probeUrl: `${base}/models` } : {})
     },
     (signal) => {
-      const watched = { ...options, signal }
+      // A caller's own signal (the wiki's cancel) must end the call too, not
+      // only the tracker's.
+      const merged = options?.signal ? AbortSignal.any([options.signal, signal]) : signal
+      const watched = { ...options, signal: merged }
       switch (transport) {
         case 'anthropic':
           return callAnthropic(cfg, messages, temperature, watched)
         case 'cli':
-          return runCliModel(cfg, messages, signal)
+          return runCliModel(cfg, messages, merged)
         default:
           return callOpenAI(cfg, messages, temperature, watched)
       }

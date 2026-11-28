@@ -431,6 +431,10 @@ même appel.
 - Les clés sont stockées par compte dans le trousseau de votre système.
   Supprimer un compte supprime sa clé — il demande d’abord, et c’est
   irréversible.
+- Le **seul** compte peut aussi être supprimé — un fournisseur qui ne répond
+  plus ne devrait pas obliger à en inventer d'abord un second. Un compte vierge
+  prend sa place jusqu'à ce que vous en configuriez un, et la confirmation le
+  dit. Seul ce compte vierge, intact, n'a rien à supprimer.
 - Revenir à une version antérieure à l'IA générale perd les clés de l'IA
   générale : cette version ne sait pas où elles sont conservées et les abandonne
   en enregistrant. Les comptes restent ; saisissez à nouveau les clés. L'IA

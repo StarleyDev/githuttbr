@@ -79,7 +79,8 @@ const EXPECTED = [
   'test-suite',
   'multi-branch-push',
   'branch-cleanup',
-  'object-model'
+  'object-model',
+  'repo-wiki'
 ]
 
 describe('playground fixtures', () => {

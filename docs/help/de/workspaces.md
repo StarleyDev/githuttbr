@@ -130,7 +130,12 @@ Auslassungspunkten gekürzt.
   Namen des Repositories** — bringt zum Repository zurück. Solange eine Seite
   gezeigt wird, bekommt der Name einen Zeigefinger-Cursor und beim Überfahren
   eine kleine Pille: er ist der Weg zurück.
-- **Über ein Symbol fahren** zeigt das ✕, das genau diese Seite schließt.
+- **Über ein Symbol fahren** öffnet daneben ein ✕, so wie es ein Tab selbst hat;
+  es schließt genau diese Seite.
+- Solange ein Repository offene Seiten hat, **ist sein eigenes ✕ ausgeblendet**:
+  neben den Seitensymbolen las es sich wie das Schließen einer Seite. Klicke mit
+  der mittleren Maustaste auf den Tab oder nutze sein Rechtsklickmenü, um das
+  Repository selbst zu schließen.
 - In einer **Gruppe** sitzen die Symbole am Chip des Repositories, zu dem sie
   gehören, und nur solange dieses Repository ausgewählt ist. Ein anderes Repo
   der Gruppe zeigt *dieses* Repository, nicht das Werkzeug des Nachbarn.

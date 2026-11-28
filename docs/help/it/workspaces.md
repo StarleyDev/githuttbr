@@ -124,7 +124,12 @@ tooltip, e un tag o un titolo lungo viene accorciato con i puntini di sospension
   il nome del repository** — per tornare al repository. Finché una pagina è
   aperta, il nome prende il cursore a mano e una pastiglia al passaggio: è la
   via del ritorno.
-- **Passa sopra un’icona** per la ✕ che chiude solo quella pagina.
+- **Passa sopra un’icona** e accanto si apre una ✕, come quella di una scheda;
+  chiude solo quella pagina.
+- Finché un repository ha pagine aperte, **la sua ✕ è nascosta**: accanto alle
+  icone delle pagine sembrava chiudere una pagina. Fai clic con il tasto
+  centrale sulla scheda, o usa il suo menu del tasto destro, per chiudere il
+  repository stesso.
 - Dentro un **gruppo**, le icone stanno sulla targhetta del repository a cui
   appartengono, e solo finché quel repository è quello selezionato. Scegliere
   un altro repo del gruppo mostra *quel* repository, non lo strumento del

@@ -78,6 +78,46 @@ export function accountConnectionKey(account: AIAccount): string {
   ].join('|')
 }
 
+/** True for the untouched starter: one OpenAI account, no key, nothing to delete. */
+export function isBlankStarter(accounts: AIAccount[]): boolean {
+  if (accounts.length !== 1) return false
+  const [only] = accounts
+  const starter = newAccount([], 'openai')
+  return (
+    only.provider === 'openai' &&
+    !(only.apiKey ?? '').trim() &&
+    !only.subscription &&
+    accountEndpoint(only) === accountEndpoint(starter) &&
+    (only.model ?? '') === (starter.model ?? '')
+  )
+}
+
+/**
+ * Removes an account. Deleting the last one swaps in a blank starter rather than
+ * refusing: `accounts` is never empty, but a provider that stopped answering must
+ * still be removable without first inventing a second one. The starter gets a
+ * fresh id so nothing filed under the removed one — a keychain entry, an
+ * assignment — can attach to it.
+ */
+export function removeAccount(ai: AIConfig, id: string): AIConfig {
+  const accounts = ai.accounts ?? []
+  if (!accounts.some((a) => a.id === id)) return ai
+  const kept = accounts.filter((a) => a.id !== id)
+  const remaining = kept.length > 0 ? kept : [newAccount(accounts, 'openai')]
+  // Assignments pointing at the removed account fall back to the default
+  // rather than silently keeping a model that no longer has a connection.
+  const assignments = { ...(ai.assignments ?? {}) }
+  for (const feature of AI_FEATURES) {
+    if (assignments[feature]?.accountId === id) delete assignments[feature]
+  }
+  return {
+    ...ai,
+    accounts: remaining,
+    defaultAccountId: ai.defaultAccountId === id || kept.length === 0 ? remaining[0].id : ai.defaultAccountId,
+    assignments
+  }
+}
+
 export function findAccount(ai: AIConfig, accountId: string | undefined): AIAccount | undefined {
   if (!accountId) return undefined
   return (ai.accounts ?? []).find((a) => a.id === accountId)

@@ -1,6 +1,6 @@
-import { app, ipcMain, type WebContents } from 'electron'
-import { dirname, join } from 'path'
-import { readFile, writeFile, mkdir } from 'fs/promises'
+import { app, BrowserWindow, dialog, ipcMain, type WebContents } from 'electron'
+import { basename, dirname, isAbsolute, join, relative } from 'path'
+import { readdir, readFile, realpath, rm, writeFile, mkdir } from 'fs/promises'
 import type {
   AIConfig,
   DependencyRef,
@@ -30,6 +30,10 @@ import {
   validateTechStack,
   validateWikiPage,
   validateWikiPlan,
+  isExportedWikiFile,
+  normalizeWikiDir,
+  parseExportedWiki,
+  WIKI_EXPORT_DIR,
   wikiExportFiles,
   wikiFreshness,
   type WikiFreshness
@@ -44,6 +48,10 @@ import {
 } from '../shared/repoFacts'
 import { buildImportGraph } from '../shared/importGraph'
 import { writePrivateFile } from './privateFile'
+import { AI_CANCELLED } from './aiRequests'
+
+/** Thrown between steps once the user cancelled; the generator turns it into a quiet stop. */
+const cancelled = (): Error => new Error(`${AI_CANCELLED} Wiki generation was cancelled.`)
 
 // A generated wiki for a repository: the model plans the pages, writes each one
 // from files the app hands it, and may only cite those files. Everything is
@@ -52,7 +60,55 @@ import { writePrivateFile } from './privateFile'
 
 interface WikiData {
   repos: Record<string, RepoWiki>
+  /** Per repo, the folder the wiki is exported to and read back from, when not the default. */
+  dirs?: Record<string, string>
 }
+
+/**
+ * The store's key for a repo. A path opened as `/x/repo/` and one opened as
+ * `/x/repo` are the same repo — keyed apart, a wiki saved under one was never
+ * found under the other and the page said there was none.
+ */
+function repoKey(repoPath: string): string {
+  return repoPath.length > 1 ? repoPath.replace(/[\\/]+$/, '') : repoPath
+}
+
+function storedWiki(data: WikiData, repoPath: string): RepoWiki | null {
+  const key = repoKey(repoPath)
+  if (data.repos[key]) return data.repos[key]
+  // Entries saved before keys were normalised.
+  const legacy = Object.keys(data.repos).find((k) => repoKey(k) === key)
+  return legacy ? data.repos[legacy] : null
+}
+
+/** Drops every spelling of this repo's key, so a stale legacy entry cannot resurface. */
+function forget(data: WikiData, repoPath: string): void {
+  const key = repoKey(repoPath)
+  for (const k of Object.keys(data.repos)) if (repoKey(k) === key) delete data.repos[k]
+}
+
+function wikiDir(data: WikiData, repoPath: string): string {
+  return data.dirs?.[repoKey(repoPath)] ?? WIKI_EXPORT_DIR
+}
+
+/** The wiki exported into the repo's folder, if there is one. */
+async function folderWiki(repoPath: string, dir: string): Promise<RepoWiki | null> {
+  const root = join(repoPath, dir)
+  const names = await readdir(root).catch(() => [] as string[])
+  const files = await Promise.all(
+    names
+      .filter((name) => name.endsWith('.md'))
+      .map(async (name) => ({ name, content: await readFile(join(root, name), 'utf-8').catch(() => '') }))
+  )
+  return parseExportedWiki(files, dir)
+}
+
+/** The wiki this app keeps, else the one in the repo's wiki folder. */
+async function currentWiki(data: WikiData, repoPath: string): Promise<RepoWiki | null> {
+  return storedWiki(data, repoPath) ?? folderWiki(repoPath, wikiDir(data, repoPath))
+}
+
+const repoName = (repoPath: string): string => basename(repoKey(repoPath)) || repoPath
 
 const filePath = (): string => join(app.getPath('userData'), 'githuttbr-wiki.json')
 const empty = (): WikiData => ({ repos: {} })
@@ -100,7 +156,8 @@ async function planWiki(
   repoPath: string,
   repoName: string,
   files: string[],
-  cfg: AIConfig
+  cfg: AIConfig,
+  signal: AbortSignal
 ): Promise<WikiPagePlan[]> {
   const [branch, insights] = await Promise.all([
     gitService.open(repoPath).then((r) => r.current).catch(() => ''),
@@ -145,7 +202,8 @@ Reply ONLY with valid JSON (no markdown fences):
       normalize: (v) => sanitizeWikiPlan(v, known),
       validate: (v) => validateWikiPlan(v, known),
       maxTokens: 2048,
-      nativeStructuredOutput: nativeWikiSchema(cfg)
+      nativeStructuredOutput: nativeWikiSchema(cfg),
+      signal
     },
     0.2
   )
@@ -156,7 +214,8 @@ async function writePage(
   repoPath: string,
   plan: WikiPagePlan,
   slugs: Set<string>,
-  cfg: AIConfig
+  cfg: AIConfig,
+  signal: AbortSignal
 ): Promise<WikiPage> {
   const paths = plan.scopePaths.slice(0, PAGE_FILE_LIMIT)
   const contents = await Promise.all(
@@ -199,7 +258,8 @@ ${serializePack(pack)}`
       schema: WIKI_PAGE_SCHEMA,
       validate: (v) => validateWikiPage(v, allowed),
       maxTokens: 4096,
-      nativeStructuredOutput: nativeWikiSchema(cfg)
+      nativeStructuredOutput: nativeWikiSchema(cfg),
+      signal
     },
     0.3
   )
@@ -251,7 +311,7 @@ async function repoFacts(repoPath: string, files: string[]): Promise<RepoFacts> 
  * the manifests — the model only decides where each belongs and what it is for,
  * and is rejected if it names something the project does not declare.
  */
-async function describeStack(facts: RepoFacts, cfg: AIConfig): Promise<TechStack | null> {
+async function describeStack(facts: RepoFacts, cfg: AIConfig, signal: AbortSignal): Promise<TechStack | null> {
   // Scaffolding out, sub-packages folded in: the model should be reasoning about
   // what this project is built on, not about ts-loader.
   const notable = meaningfulDependencies(facts.dependencies)
@@ -299,7 +359,8 @@ ${list}`
         schema: TECH_STACK_SCHEMA,
         validate: (v) => validateTechStack(v, declared),
         maxTokens: 2048,
-        nativeStructuredOutput: nativeWikiSchema(cfg)
+        nativeStructuredOutput: nativeWikiSchema(cfg),
+        signal
       },
       0.2
     )
@@ -334,12 +395,18 @@ async function importGraph(repoPath: string, depth: number): Promise<ImportGraph
   return buildImportGraph(contents, { depth })
 }
 
-/** Runs `task` over `items`, `limit` at a time, preserving input order. */
-async function pool<T, R>(items: T[], limit: number, task: (item: T, index: number) => Promise<R>): Promise<R[]> {
+/** Runs `task` over `items`, `limit` at a time, preserving input order. Stops picking up work once aborted. */
+async function pool<T, R>(
+  items: T[],
+  limit: number,
+  task: (item: T, index: number) => Promise<R>,
+  signal?: AbortSignal
+): Promise<R[]> {
   const results = new Array<R>(items.length)
   let next = 0
   const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
     while (next < items.length) {
+      if (signal?.aborted) throw cancelled()
       const index = next++
       results[index] = await task(items[index], index)
     }
@@ -348,30 +415,52 @@ async function pool<T, R>(items: T[], limit: number, task: (item: T, index: numb
   return results
 }
 
-async function generate(repoPath: string, cfg: AIConfig, wc: WebContents | null): Promise<RepoWiki> {
-  const send = (progress: WikiProgress): void => {
-    if (wc && !wc.isDestroyed()) wc.send('wiki:progress', { repoPath, progress })
+/** A generation in flight. Lives in main, so leaving the wiki page does not stop it. */
+interface WikiJob {
+  controller: AbortController
+  progress: WikiProgress
+  promise: Promise<RepoWiki | null>
+}
+
+const jobs = new Map<string, WikiJob>()
+
+async function generate(
+  repoPath: string,
+  cfg: AIConfig,
+  signal: AbortSignal,
+  send: (progress: WikiProgress) => void
+): Promise<RepoWiki | null> {
+  const check = (): void => {
+    if (signal.aborted) throw cancelled()
   }
 
   try {
     send({ phase: 'planning' })
-    const repoName = repoPath.split('/').pop() || repoPath
     const files = await candidateFiles(repoPath)
     if (files.length === 0) throw new Error('This repository has no tracked files to read.')
 
     const facts = await repoFacts(repoPath, files)
-    const plan = await planWiki(repoPath, repoName, files, cfg)
+    check()
+    const plan = await planWiki(repoPath, repoName(repoPath), files, cfg, signal)
     const slugs = new Set(plan.map((p) => p.slug))
 
     let done = 0
-    const pages = await pool(plan, WORKERS, async (pagePlan) => {
-      const page = await writePage(repoPath, pagePlan, slugs, cfg)
-      done++
-      send({ phase: 'page', slug: pagePlan.slug, title: pagePlan.title, done, total: plan.length })
-      return page
-    })
+    const pages = await pool(
+      plan,
+      WORKERS,
+      async (pagePlan) => {
+        const page = await writePage(repoPath, pagePlan, slugs, cfg, signal)
+        done++
+        send({ phase: 'page', slug: pagePlan.slug, title: pagePlan.title, done, total: plan.length })
+        return page
+      },
+      signal
+    )
 
-    const stack = await describeStack(facts, cfg)
+    check()
+    const stack = await describeStack(facts, cfg, signal)
+    // Last chance to back out: past this point the previous wiki is replaced.
+    check()
 
     // Publish all at once: if any page threw, the previous wiki is still there.
     const wiki: RepoWiki = {
@@ -383,15 +472,59 @@ async function generate(repoPath: string, cfg: AIConfig, wc: WebContents | null)
       stack
     }
     const data = await load()
-    data.repos[repoPath] = wiki
+    forget(data, repoPath)
+    data.repos[repoKey(repoPath)] = wiki
     await save(data)
     send({ phase: 'done' })
     return wiki
   } catch (err) {
+    // A cancel is an answer, not a failure: the stored wiki is untouched.
+    if (signal.aborted) {
+      send({ phase: 'cancelled' })
+      return null
+    }
     const message = err instanceof Error ? err.message : String(err)
     send({ phase: 'error', message })
     throw err
   }
+}
+
+/**
+ * Starts a generation, or joins the one already running for this repo — the
+ * page may have been left and reopened, and a second click must not start a
+ * second, competing run.
+ */
+function startJob(repoPath: string, cfg: AIConfig, wc: WebContents | null): Promise<RepoWiki | null> {
+  const running = jobs.get(repoKey(repoPath))
+  if (running) return running.promise
+
+  const controller = new AbortController()
+  const job: WikiJob = { controller, progress: { phase: 'planning' }, promise: Promise.resolve(null) }
+  let ended = false
+  const send = (progress: WikiProgress): void => {
+    // Once the run has ended, a page still finishing in another worker must not
+    // tell the UI it is generating again.
+    if (ended) return
+    if (progress.phase === 'done' || progress.phase === 'error' || progress.phase === 'cancelled') ended = true
+    job.progress = progress
+    if (wc && !wc.isDestroyed()) wc.send('wiki:progress', { repoPath, progress })
+  }
+  // The window that asked is gone: nobody is left to wait for the result.
+  const abandon = (): void => controller.abort()
+  wc?.once('destroyed', abandon)
+  job.promise = generate(repoPath, cfg, controller.signal, send)
+    .catch((err: unknown) => {
+      // One page failed: stop the others rather than keep paying for a wiki
+      // that will not be published.
+      controller.abort()
+      throw err
+    })
+    .finally(() => {
+      wc?.removeListener('destroyed', abandon)
+      if (jobs.get(repoKey(repoPath)) === job) jobs.delete(repoKey(repoPath))
+    })
+  jobs.set(repoKey(repoPath), job)
+  return job.promise
 }
 
 export interface StoredWiki {
@@ -399,48 +532,121 @@ export interface StoredWiki {
   freshness: WikiFreshness
   /** HEAD at the time of asking, so the UI can say how far behind the wiki is. */
   headSha: string
+  /** The repo-relative folder the wiki is exported to and read back from. */
+  dir: string
 }
 
 async function get(repoPath: string, model: string): Promise<StoredWiki> {
   const data = await load()
-  const wiki = data.repos[repoPath] ?? null
+  const wiki = await currentWiki(data, repoPath)
   const head = await headSha(repoPath)
-  return { wiki, freshness: wikiFreshness(wiki, { headSha: head, model }), headSha: head }
+  return { wiki, freshness: wikiFreshness(wiki, { headSha: head, model }), headSha: head, dir: wikiDir(data, repoPath) }
 }
 
 /**
  * Writes the stored wiki into the repo as Markdown, so it can be committed and
  * read on the host. Returns the paths written, relative to the repo.
  */
-async function exportToRepo(repoPath: string): Promise<string[]> {
+export type WikiExportResult = { written: string[] } | { conflicts: string[] }
+
+async function exportToRepo(repoPath: string): Promise<WikiExportResult> {
   const data = await load()
-  const wiki = data.repos[repoPath]
+  const wiki = await currentWiki(data, repoPath)
   if (!wiki) throw new Error('There is no wiki for this repository yet.')
 
-  const repoName = repoPath.split('/').pop() || repoPath
-  const files = wikiExportFiles(wiki, repoName)
+  const files = wikiExportFiles(wiki, repoName(repoPath), wikiDir(data, repoPath))
+  // Slugs are validated kebab-case, but this writes into the user's repo —
+  // check anyway rather than trust the shape of stored data.
+  for (const file of files) if (!isSafeRepoPath(file.path)) throw new Error(`Refusing to write ${file.path}`)
+  // The folder may be one the user chose, holding the project's own README.md:
+  // only a file the export wrote before may be replaced. Checked for every file
+  // first, so a refusal writes nothing at all.
+  const conflicts: string[] = []
   for (const file of files) {
-    // Slugs are validated kebab-case, but this writes into the user's repo —
-    // check anyway rather than trust the shape of stored data.
-    if (!isSafeRepoPath(file.path)) throw new Error(`Refusing to write ${file.path}`)
+    const existing = await readFile(join(repoPath, file.path), 'utf-8').catch(() => null)
+    if (existing !== null && !isExportedWikiFile(existing)) conflicts.push(file.path)
+  }
+  if (conflicts.length > 0) return { conflicts }
+  for (const file of files) {
     const full = join(repoPath, file.path)
     await mkdir(dirname(full), { recursive: true })
     await writeFile(full, file.content, 'utf-8')
   }
-  return files.map((f) => f.path)
+  return { written: files.map((f) => f.path) }
 }
 
 async function clear(repoPath: string): Promise<void> {
   const data = await load()
-  delete data.repos[repoPath]
+  forget(data, repoPath)
   await save(data)
+}
+
+/**
+ * Deletes a wiki read back from the repo's folder: only the files the export
+ * wrote (they carry its note), never anything else living there. Returns the
+ * repo-relative paths removed.
+ */
+async function removeExport(repoPath: string): Promise<string[]> {
+  const data = await load()
+  const dir = wikiDir(data, repoPath)
+  const root = join(repoPath, dir)
+  const names = await readdir(root).catch(() => [] as string[])
+  const removed: string[] = []
+  for (const name of names.filter((n) => n.endsWith('.md'))) {
+    const rel = `${dir}/${name}`
+    if (!isSafeRepoPath(rel)) continue
+    const content = await readFile(join(root, name), 'utf-8').catch(() => '')
+    if (!isExportedWikiFile(content)) continue
+    await rm(join(root, name), { force: true })
+    removed.push(rel)
+  }
+  return removed
+}
+
+/**
+ * Lets the user point the wiki at another folder of the repo. Null when the
+ * dialog was cancelled; throws when the folder is not one the export may use.
+ */
+export type WikiDirChoice = { dir: string } | { invalid: true } | null
+
+async function chooseDir(repoPath: string, wc: WebContents): Promise<WikiDirChoice> {
+  const data = await load()
+  const current = join(repoPath, wikiDir(data, repoPath))
+  const win = BrowserWindow.fromWebContents(wc)
+  const options = {
+    defaultPath: current,
+    properties: ['openDirectory', 'createDirectory'] as ('openDirectory' | 'createDirectory')[]
+  }
+  const picked = win ? await dialog.showOpenDialog(win, options) : await dialog.showOpenDialog(options)
+  if (picked.canceled || !picked.filePaths[0]) return null
+
+  // Both resolved: the dialog may answer with the real path (/private/tmp/…)
+  // of a repo opened through a symlink (/tmp/…).
+  const real = async (p: string): Promise<string> => realpath(p).catch(() => p)
+  const rel = relative(await real(repoKey(repoPath)), await real(picked.filePaths[0]))
+  const dir = isAbsolute(rel) ? null : normalizeWikiDir(rel)
+  // The renderer words the refusal: it is the user's language, not main's.
+  if (!dir) return { invalid: true }
+  const key = repoKey(repoPath)
+  const dirs = { ...(data.dirs ?? {}) }
+  // The default is not stored, so a later change of default reaches this repo too.
+  if (dir === WIKI_EXPORT_DIR) delete dirs[key]
+  else dirs[key] = dir
+  await save({ ...data, dirs })
+  return { dir }
 }
 
 export function registerWikiHandlers(): void {
   ipcMain.handle('wiki:imports', (_e, repoPath: string, depth: number) => importGraph(repoPath, depth))
   ipcMain.handle('wiki:facts', async (_e, repoPath: string) => repoFacts(repoPath, await candidateFiles(repoPath)))
   ipcMain.handle('wiki:get', (_e, repoPath: string, model: string) => get(repoPath, model))
-  ipcMain.handle('wiki:generate', (e, repoPath: string, cfg: AIConfig) => generate(repoPath, cfg, e.sender))
+  ipcMain.handle('wiki:generate', (e, repoPath: string, cfg: AIConfig) => startJob(repoPath, cfg, e.sender))
+  ipcMain.handle('wiki:status', (_e, repoPath: string) => jobs.get(repoKey(repoPath))?.progress ?? null)
+  ipcMain.handle('wiki:cancel', (_e, repoPath: string) => {
+    jobs.get(repoKey(repoPath))?.controller.abort()
+  })
   ipcMain.handle('wiki:export', (_e, repoPath: string) => exportToRepo(repoPath))
   ipcMain.handle('wiki:clear', (_e, repoPath: string) => clear(repoPath))
+  ipcMain.handle('wiki:removeExport', (_e, repoPath: string) => removeExport(repoPath))
+  ipcMain.handle('wiki:chooseDir', (e, repoPath: string) => chooseDir(repoPath, e.sender))
 }

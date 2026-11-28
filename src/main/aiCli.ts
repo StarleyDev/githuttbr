@@ -112,6 +112,10 @@ function run(
       // The signal kills the child when the user cancels or switches account.
       { timeout, maxBuffer: CLI_MAX_BUFFER, windowsHide: true, cwd, env, ...(signal ? { signal } : {}) },
       (err, stdout, stderr) => {
+        if (signal?.aborted) {
+          reject(new Error(`\`${file}\` was cancelled.`))
+          return
+        }
         if (err && (err as NodeJS.ErrnoException).code === 'ENOENT') {
           reject(new Error(`\`${file}\` was not found. Install it, or set an explicit path on the account.`))
           return

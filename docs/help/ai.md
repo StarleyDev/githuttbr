@@ -406,6 +406,10 @@ conflicts, themes, the wiki — because they all go through the same call.
   session per request.
 - Keys are stored per account in your OS keychain. Deleting an account deletes
   its key — it asks first, and there is no undo.
+- The **only** account can be deleted too — a provider that stopped answering
+  should not need a second one invented first. A blank account takes its place
+  until you set one up, and the confirm says so. Only that untouched blank
+  account has nothing to delete.
 - Going back to a version from before the general AI loses the general AI's keys:
   that version does not know where they are kept and drops them when it saves.
   The accounts stay; type the keys again. A profile's own AI is not affected.

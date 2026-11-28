@@ -239,6 +239,8 @@ export interface JsonSpec {
   nativeStructuredOutput?: boolean
   /** Safely removes unusable optional entries before semantic validation. */
   normalize?: (value: unknown) => unknown
+  /** Cancels the call, and the correction retry with it. */
+  signal?: AbortSignal
 }
 
 /** Parse and semantically validate one provider reply without provider I/O. */
@@ -319,7 +321,8 @@ export async function chatCompleteJson<T>(
   const options: ModelCallOptions = {
     disableThinking: true,
     ...(spec.maxTokens !== undefined ? { maxTokens: spec.maxTokens } : {}),
-    ...(spec.nativeStructuredOutput === false ? {} : { extra: format })
+    ...(spec.nativeStructuredOutput === false ? {} : { extra: format }),
+    ...(spec.signal ? { signal: spec.signal } : {})
   }
   const complete = async (turns: ChatMessage[]): Promise<string> => {
     try {

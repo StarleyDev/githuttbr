@@ -33,8 +33,10 @@ import {
   assignFeatureAccount,
   assignFeatureModel,
   findAccount,
+  isBlankStarter,
   modelFor,
   newAccount,
+  removeAccount,
   resolveAI
 } from '../../../shared/aiAccounts'
 import { aiApi } from '../infrastructure/api'
@@ -292,6 +294,7 @@ function AccountCard({
   settled,
   clis,
   canDelete,
+  lastOne,
   onEdit,
   onDelete,
   onRefresh,
@@ -320,6 +323,8 @@ function AccountCard({
   clis: DetectedCli[]
   /** The last provider cannot be deleted: something has to answer. */
   canDelete: boolean
+  /** Deleting it leaves a blank starter, which the confirm has to say. */
+  lastOne: boolean
   onEdit: (next: AIAccount) => void
   onDelete: () => void
   onRefresh: () => void
@@ -537,7 +542,9 @@ function AccountCard({
                 openModal({
                   kind: 'confirm',
                   title: t('settings.deleteAccount'),
-                  message: interp(t('settings.deleteAccountConfirm'), { name: accountLabel(account) }),
+                  message: interp(t(lastOne ? 'settings.deleteLastAccountConfirm' : 'settings.deleteAccountConfirm'), {
+                    name: accountLabel(account)
+                  }),
                   danger: true,
                   confirmLabel: t('settings.deleteAccountAction'),
                   onConfirm: onDelete
@@ -851,22 +858,10 @@ export function AIAccountsEditor({
     if (next !== latest.current.ai) onChange(next)
   }
 
-  const deleteAccount = (id: string): void => {
-    const remaining = accounts.filter((a) => a.id !== id)
-    if (remaining.length === 0) return
-    // Assignments pointing at the removed account fall back to the default
-    // rather than silently keeping a model that no longer has a connection.
-    const assignments = { ...(ai.assignments ?? {}) }
-    for (const feature of AI_FEATURES) {
-      if (assignments[feature]?.accountId === id) delete assignments[feature]
-    }
-    onChange({
-      ...ai,
-      accounts: remaining,
-      defaultAccountId: ai.defaultAccountId === id ? remaining[0].id : ai.defaultAccountId,
-      assignments
-    })
-  }
+  // removeAccount swaps a blank starter in when the last one goes, so a provider
+  // that stopped answering is removable without inventing a second account first.
+  const deleteAccount = (id: string): void => onChange(removeAccount(ai, id))
+
 
   // A draft whose connection differs from the saved one has no fetched list of
   // its own: until a test brings one, it shows the provider's bundled models.
@@ -1045,7 +1040,10 @@ export function AIAccountsEditor({
           loading={!newDraft && sameConnection && loading.includes(shown.id)}
           settled={shownCatalog ? true : sameConnection ? settled.includes(shown.id) : true}
           clis={clis}
-          canDelete={accounts.length > 1}
+          // The last account can go too — a blank starter takes its place —
+          // unless it already is that starter and deleting changes nothing.
+          canDelete={!isBlankStarter(accounts)}
+          lastOne={accounts.length < 2}
           onEdit={editAccount}
           onDelete={() => {
             const id = shown.id

@@ -3387,6 +3387,32 @@ export const shots = [
     }
   },
   {
+    // The wiki read back from the repository's docs/wiki — exported elsewhere,
+    // never stored on this machine — with the folder icon beside Export. Two
+    // page chips on the repository's tab, the open one hovered: its ✕ opens
+    // beside it, and the repository's own ✕ is gone while pages are open.
+    out: 'repo-wiki',
+    repos: ['repo-wiki'],
+    themes: ['dark'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['repo-wiki']
+      await page.evaluate((p) => {
+        const settings = window.__shot.settings.getState()
+        settings.openPageTab({ type: 'insights', repoPath: p })
+        settings.openPageTab({ type: 'wiki', repoPath: p })
+      }, repo)
+      await page.locator('.wiki-nav-item').first().waitFor()
+      await page.locator('.wiki-stack-group').first().waitFor()
+      // The ✕ slides open on hover; capture once it has, not mid-transition.
+      await page.hover('.tab-page-chip.active .tab-page-num')
+      await page.waitForFunction(() => {
+        const x = document.querySelector('.tab-page-chip.active .tab-page-close')
+        return !!x && getComputedStyle(x).opacity === '1' && x.getBoundingClientRect().width >= 15
+      })
+      await page.waitForTimeout(300)
+    }
+  },
+  {
     // LAUNCH picker — runs a .vscode/launch.json config in the integrated
     // terminal, with the floating debug toolbar (pause / restart / stop).
     out: 'launch-configs',

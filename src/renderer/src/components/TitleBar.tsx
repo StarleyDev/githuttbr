@@ -964,7 +964,7 @@ export function TitleBar(): React.JSX.Element {
             else closeRepoPage(tabId, index)
           }}
         >
-          <X size={9} />
+          <X size={12} />
         </span>
       </span>
     ))
@@ -1024,17 +1024,22 @@ export function TitleBar(): React.JSX.Element {
         {/* Only on the selected repository: the icons belong to it, and every
             chip carrying its own row of them would drown the group. */}
         {isActiveRepo && renderPageChips(tab.id, tab.pages, tab.activePage, repo.path)}
-        <button
-          className="tab-close"
-          aria-label={interp(t('a11y.closeTab'), { name: chipLabel })}
-          title={interp(t('a11y.closeTab'), { name: chipLabel })}
-          onClick={(e) => {
-            e.stopPropagation()
-            confirmRemoveRepo(tab.id, repo.path)
-          }}
-        >
-          <X size={12} />
-        </button>
+        {/* While its page chips are showing the repository's ✕ is hidden: beside
+            them it reads as a page's close. Middle-click and the context menu
+            still close the repository. */}
+        {!(isActiveRepo && pagesForRepo(tab.pages, repo.path).length > 0) && (
+          <button
+            className="tab-close"
+            aria-label={interp(t('a11y.closeTab'), { name: chipLabel })}
+            title={interp(t('a11y.closeTab'), { name: chipLabel })}
+            onClick={(e) => {
+              e.stopPropagation()
+              confirmRemoveRepo(tab.id, repo.path)
+            }}
+          >
+            <X size={12} />
+          </button>
+        )}
       </motion.div>
     )
   }
@@ -1191,17 +1196,20 @@ export function TitleBar(): React.JSX.Element {
                   }
                 />
                 {renderPageChips(tab.id, tab.pages, tab.activePage, tab.repos[0]?.path ?? '')}
-                <button
-                  className="tab-close"
-                  aria-label={interp(t('a11y.closeTab'), { name: tab.name })}
-                  title={interp(t('a11y.closeTab'), { name: tab.name })}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    requestCloseTab(tab.id)
-                  }}
-                >
-                  <X size={12} />
-                </button>
+                {/* Hidden while the repository has pages open, so it is not taken for a page's close. */}
+                {pagesForRepo(tab.pages, tab.repos[0]?.path ?? '').length === 0 && (
+                  <button
+                    className="tab-close"
+                    aria-label={interp(t('a11y.closeTab'), { name: tab.name })}
+                    title={interp(t('a11y.closeTab'), { name: tab.name })}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      requestCloseTab(tab.id)
+                    }}
+                  >
+                    <X size={12} />
+                  </button>
+                )}
               </motion.div>
             ]
           }

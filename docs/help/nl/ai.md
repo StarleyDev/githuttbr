@@ -416,6 +416,10 @@ conflicten, thema's, de wiki — omdat ze allemaal via dezelfde aanroep lopen.
 - Sleutels worden per account in de sleutelhanger van je systeem bewaard. Een
   account verwijderen verwijdert zijn sleutel — het vraagt eerst, en ongedaan
   maken kan niet.
+- Ook het **enige** account kan worden verwijderd — een provider die niet meer
+  antwoordt zou niet moeten vereisen dat je eerst een tweede verzint. Een leeg
+  account neemt zijn plaats in tot je er een instelt, en de bevestiging zegt
+  dat. Alleen dat onaangeroerde lege account heeft niets te verwijderen.
 - Teruggaan naar een versie van vóór de algemene AI kost de sleutels van de
   algemene AI: die versie weet niet waar ze bewaard worden en laat ze vallen bij
   het opslaan. De accounts blijven; typ de sleutels opnieuw in. De eigen AI van

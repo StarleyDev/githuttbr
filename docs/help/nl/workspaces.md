@@ -125,7 +125,12 @@ een beletselteken.
   naam van de repository** — om terug te gaan. Zolang een pagina getoond wordt,
   krijgt de naam een handcursor en bij hover een klein pilletje: dat is de weg
   terug.
-- **Zweef over een pictogram** voor de ✕ die alleen die pagina sluit.
+- **Zweef over een pictogram** en er gaat een ✕ naast open, zoals bij een
+  tabblad zelf; die sluit alleen die pagina.
+- Zolang een repository pagina's open heeft, **is zijn eigen ✕ verborgen**:
+  naast de paginapictogrammen las hij als het sluiten van een pagina. Klik met
+  de middelste muisknop op het tabblad, of gebruik het rechtermuisknopmenu, om
+  de repository zelf te sluiten.
 - In een **groep** zitten de pictogrammen op de chip van de repository waar ze
   bij horen, en alleen zolang die repository de geselecteerde is. Een andere
   repo kiezen toont *die* repository, niet het gereedschap van de buurman.

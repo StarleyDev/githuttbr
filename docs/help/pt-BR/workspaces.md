@@ -125,7 +125,11 @@ completo fica na dica do mouse, e uma tag ou título longo é cortado com "…".
   do repositório** — para voltar ao repositório. Enquanto uma página está à
   mostra, o nome ganha cursor de mão e uma pequena pílula ao passar o mouse: é o
   caminho de volta.
-- **Passe o mouse num ícone** para ver o ✕ que fecha só aquela página.
+- **Passe o mouse num ícone** e um ✕ se abre ao lado dele, como o de uma aba;
+  ele fecha só aquela página.
+- Enquanto um repositório tem páginas abertas, **o ✕ dele fica escondido**: ao
+  lado dos ícones das páginas, ele parecia fechar uma página. Clique com o botão
+  do meio na aba, ou use o menu do botão direito, para fechar o repositório.
 - Dentro de um **grupo**, os ícones ficam no chip do repositório a que
   pertencem, e só enquanto aquele repositório é o selecionado. Escolher outro
   repo no grupo mostra *aquele* repositório, não a ferramenta do vizinho.

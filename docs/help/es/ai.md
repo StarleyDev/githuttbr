@@ -418,6 +418,10 @@ explicar, conflictos, temas, la wiki — porque todas pasan por la misma llamada
   binario arranca una sesión entera por petición.
 - Las claves se guardan por cuenta en el llavero del sistema. Borrar una cuenta
   borra su clave — pregunta antes, y no se puede deshacer.
+- La **única** cuenta también se puede borrar — un proveedor que dejó de
+  responder no debería obligarte a inventar una segunda antes. Una cuenta en
+  blanco ocupa su lugar hasta que configures otra, y la confirmación lo avisa.
+  Sólo esa cuenta en blanco, sin tocar, no tiene nada que borrar.
 - Volver a una versión anterior a la IA general pierde las claves de la IA
   general: esa versión no sabe dónde se guardan y las descarta al guardar. Las
   cuentas se mantienen; vuelve a escribir las claves. La IA propia de un perfil

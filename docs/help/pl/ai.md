@@ -410,6 +410,10 @@ wywołanie.
   uruchamia całą sesję na każde zapytanie.
 - Klucze są przechowywane osobno dla każdego konta w pęku kluczy systemu.
   Usunięcie konta usuwa jego klucz — najpierw pyta, i nie da się tego cofnąć.
+- Usunąć można też **jedyne** konto — dostawca, który przestał odpowiadać, nie
+  powinien wymagać, żeby najpierw wymyślić drugie. Dopóki go nie skonfigurujesz,
+  jego miejsce zajmuje puste konto, i potwierdzenie o tym mówi. Tylko to
+  nietknięte puste konto nie ma czego usuwać.
 - Powrót do wersji sprzed ogólnej AI gubi klucze ogólnej AI: tamta wersja nie
   wie, gdzie są przechowywane, i porzuca je przy zapisie. Konta zostają; wpisz
   klucze ponownie. Własnej AI profilu to nie dotyczy.

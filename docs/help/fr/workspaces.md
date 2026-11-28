@@ -131,7 +131,12 @@ raccourci par des points de suspension.
   du dépôt** — pour revenir au dépôt. Tant qu’une page est affichée, le nom
   prend un curseur de pointeur et une petite pastille au survol : c’est le
   chemin du retour.
-- **Survolez une icône** pour la ✕ qui ferme cette page seule.
+- **Survolez une icône** et une ✕ s'ouvre à côté, comme celle d'un onglet ;
+  elle ferme cette page seule.
+- Tant qu'un dépôt a des pages ouvertes, **sa propre ✕ est masquée** : à côté
+  des icônes de page, elle se lisait comme la fermeture d'une page. Faites un
+  clic du milieu sur l'onglet, ou utilisez son menu contextuel, pour fermer le
+  dépôt lui-même.
 - Dans un **groupe**, les icônes se posent sur la pastille du dépôt auquel
   elles appartiennent, et seulement tant que ce dépôt est celui qui est
   sélectionné. Choisir un autre dépôt du groupe affiche *ce* dépôt, pas l’outil

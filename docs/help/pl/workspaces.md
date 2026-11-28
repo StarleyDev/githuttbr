@@ -125,7 +125,12 @@ długi tag lub tytuł jest skracany wielokropkiem.
   nazwę repozytorium** — żeby wrócić do repozytorium. Dopóki strona jest
   otwarta, nazwa dostaje kursor wskaźnika i małą plakietkę pod najechaniem: to
   droga powrotna.
-- **Najedź na ikonę**, żeby zobaczyć ✕ zamykające tylko tę stronę.
+- **Najedź na ikonę**, a obok niej otworzy się ✕, tak jak na samej karcie;
+  zamyka tylko tę stronę.
+- Dopóki repozytorium ma otwarte strony, **jego własne ✕ jest ukryte**: obok
+  ikon stron wyglądało jak zamknięcie strony. Kliknij kartę środkowym
+  przyciskiem albo użyj jej menu pod prawym przyciskiem, żeby zamknąć samo
+  repozytorium.
 - Wewnątrz **grupy** ikony siedzą na plakietce repozytorium, do którego należą,
   i tylko dopóki to repozytorium jest wybrane. Wybranie innego repo pokazuje
   *tamto* repozytorium, nie narzędzie sąsiada.

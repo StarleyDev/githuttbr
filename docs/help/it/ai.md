@@ -422,6 +422,10 @@ conflitti, temi, la wiki — perché passano tutte dalla stessa chiamata.
   avvia un'intera sessione a ogni richiesta.
 - Le chiavi sono salvate per account nel portachiavi del sistema. Eliminare un
   account elimina la sua chiave — chiede prima, e non si può annullare.
+- Si può eliminare anche l'**unico** account — un fornitore che ha smesso di
+  rispondere non dovrebbe costringerti a inventarne prima un secondo. Al suo
+  posto resta un account vuoto finché non ne configuri uno, e la conferma lo
+  dice. Solo quell'account vuoto, mai toccato, non ha nulla da eliminare.
 - Tornare a una versione precedente all'IA generale fa perdere le chiavi dell'IA
   generale: quella versione non sa dove sono conservate e le scarta al
   salvataggio. Gli account restano; digita di nuovo le chiavi. L'IA propria di un

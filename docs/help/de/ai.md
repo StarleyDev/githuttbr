@@ -433,6 +433,10 @@ Konflikte, Themes, das Wiki — denn sie laufen alle über denselben Aufruf.
 - Schlüssel werden pro Konto im Schlüsselbund deines Systems abgelegt. Ein Konto
   zu löschen löscht seinen Schlüssel — es fragt vorher, und es gibt kein
   Rückgängig.
+- Auch das **einzige** Konto lässt sich löschen — ein Anbieter, der nicht mehr
+  antwortet, sollte nicht verlangen, dass man erst ein zweites erfindet. Ein
+  leeres Konto tritt an seine Stelle, bis du eines einrichtest, und die
+  Bestätigung sagt das. Nur dieses unberührte leere Konto hat nichts zu löschen.
 - Der Wechsel zurück zu einer Version vor der allgemeinen KI verliert die
   Schlüssel der allgemeinen KI: Diese Version weiß nicht, wo sie liegen, und
   verwirft sie beim Speichern. Die Konten bleiben; gib die Schlüssel neu ein. Die

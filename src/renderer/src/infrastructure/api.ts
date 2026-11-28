@@ -947,11 +947,24 @@ export const wikiApi = {
       wiki: RepoWiki | null
       freshness: 'current' | 'behind' | 'outdated'
       headSha: string
+      /** Repo-relative folder the wiki is exported to and read back from. */
+      dir: string
     }>,
+  /** Resolves to null when the run was cancelled. */
   generate: (repoPath: string, cfg: AIConfig) =>
-    guarded(cfg, (c) => window.api.wiki.generate(repoPath, c) as Promise<RepoWiki>),
-  export: (repoPath: string) => window.api.wiki.export(repoPath) as Promise<string[]>,
+    guarded(cfg, (c) => window.api.wiki.generate(repoPath, c) as Promise<RepoWiki | null>),
+  /** The running generation's last progress, or null when none is running. */
+  status: (repoPath: string) => window.api.wiki.status(repoPath) as Promise<WikiProgress | null>,
+  cancel: (repoPath: string) => window.api.wiki.cancel(repoPath) as Promise<void>,
+  /** The paths written, or the existing files it refused to replace (writing nothing). */
+  export: (repoPath: string) =>
+    window.api.wiki.export(repoPath) as Promise<{ written: string[] } | { conflicts: string[] }>,
   clear: (repoPath: string) => window.api.wiki.clear(repoPath) as Promise<void>,
+  /** The newly chosen folder; `invalid` when it is outside the repo, its root or .git; null when cancelled. */
+  chooseDir: (repoPath: string) =>
+    window.api.wiki.chooseDir(repoPath) as Promise<{ dir: string } | { invalid: true } | null>,
+  /** Deletes the exported files of a wiki read back from the folder; the paths removed. */
+  removeExport: (repoPath: string) => window.api.wiki.removeExport(repoPath) as Promise<string[]>,
   onProgress: (cb: (payload: { repoPath: string; progress: WikiProgress }) => void) =>
     window.api.wiki.onProgress(cb as (payload: unknown) => void)
 }

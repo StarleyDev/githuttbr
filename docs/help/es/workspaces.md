@@ -127,7 +127,12 @@ puntos suspensivos.
   nombre del repositorio** — para volver al repositorio. Mientras hay una
   página abierta, el nombre coge cursor de mano y una pastilla al pasar por
   encima: es el camino de vuelta.
-- **Hover sobre un icono** para la ✕ que cierra solo esa página.
+- **Hover sobre un icono** y se abre una ✕ a su lado, como la de una pestaña;
+  cierra solo esa página.
+- Mientras un repositorio tiene páginas abiertas, **su propia ✕ queda oculta**:
+  junto a los iconos de las páginas parecía cerrar una página. Haz clic con el
+  botón central en la pestaña, o usa su menú contextual, para cerrar el propio
+  repositorio.
 - Dentro de un **grupo**, los iconos van en el chip del repositorio al que
   pertenecen, y solo mientras ese repositorio es el seleccionado. Elegir otro
   repo del grupo muestra *ese* repositorio, no la herramienta del vecino.
