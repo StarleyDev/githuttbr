@@ -4,6 +4,7 @@ import { gitApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
 import { useRepoStore } from '../stores/repo'
 import { useT, interp } from '../i18n'
+import { MarkdownEditor } from './MarkdownEditor'
 
 export function ChangelogGenModal({ repoPath }: { repoPath: string }): React.JSX.Element {
   const t = useT()
@@ -126,7 +127,18 @@ export function ChangelogGenModal({ repoPath }: { repoPath: string }): React.JSX
         )}
       </div>
 
-      <textarea className="clgen-preview" value={markdown} onChange={(e) => setMarkdown(e.target.value)} spellCheck={false} />
+      {/* Write / Preview with the formatting toolbar, as a pull request's description:
+          the changelog is Markdown, and reading it rendered is how it gets checked. */}
+      <MarkdownEditor
+        className="clgen-editor"
+        inputClassName="clgen-preview"
+        value={markdown}
+        onChange={setMarkdown}
+        ariaLabel={t('changelogGen.title')}
+        spellCheck={false}
+        // A dialog would cover the handbook page the full guide opens.
+        helpLink={false}
+      />
 
       <div className="modal-actions">
         <button className="btn ghost" onClick={() => void copy()} disabled={!markdown}>
