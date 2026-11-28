@@ -2485,8 +2485,8 @@ export function ModalHost(): React.JSX.Element {
                   ? 'modal-branch-cleanup'
                   : modal.kind === 'create-pr'
                   ? 'modal-create-pr'
-                  : modal.kind === 'pr-preview'
-                  ? 'modal-std modal-pr-preview'
+                  : ['pr-preview', 'export', 'gitflow', 'subtree', 'history-purge'].includes(modal.kind)
+                  ? 'modal-lg-auto'
                   : modal.kind === 'settings'
                   ? 'modal-wide modal-settings'
                   : modal.kind === 'settings-import' || modal.kind === 'settings-export'
@@ -2522,7 +2522,13 @@ export function ModalHost(): React.JSX.Element {
                       modal.kind === 'local-ci' ||
                       modal.kind === 'cli-edit' ||
                       modal.kind === 'stack'
-                    ? 'modal-tall'
+                    ? // Dialogs browsed from inside keep Settings' height: sized to their
+                      // content, they would open tiny and jump as you pick a file or a result.
+                      ['time-machine', 'timelapse', 'range-diff', 'code-search', 'todos', 'objects', 'cli-edit', 'ai-pr-review'].includes(
+                          modal.kind
+                        )
+                      ? 'modal-tall modal-tall-fixed'
+                      : 'modal-tall'
                     : 'modal-std'
               }`}
               initial={{ opacity: 0, scale: 0.94, y: 16 }}

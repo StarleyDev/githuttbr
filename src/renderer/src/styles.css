@@ -6632,9 +6632,6 @@ body.col-resizing .node-ava {
   max-height: calc(100vh - 40px);
   padding-bottom: 10px;
 }
-/* Preview locally: 50px over the standard width, so the pr ref, the remote
-   and the worktree path read on one line. */
-.modal.modal-std.modal-pr-preview { width: calc(var(--modal-w) + 50px); }
 .modal-scroll {
   flex: 1 1 auto;
   min-height: 0;
@@ -14643,14 +14640,23 @@ input[type='range']:focus-visible {
 }
 
 /* ── Branch comparison: a centre-pane view (was a modal) ── */
-/* Dialogs full of information take the large group's size, Settings' own. */
+/* Dialogs full of information take Settings' width. Their height follows the
+   content up to Settings' height and no further: past it the body scrolls under
+   a fixed header and footer. Settings and repository settings keep a fixed
+   height of their own, as their pages change under one side menu.
+   .modal-lg-auto: dialogs that are not full of information but whose content
+   varies a lot (Preview locally, Bundle & archive, Git flow, Subtrees, Remove a
+   file from history) take the same width, so they read as one family. */
 .modal.modal-tall,
 .modal.modal-clone,
-.modal.modal-branch-cleanup {
+.modal.modal-branch-cleanup,
+.modal.modal-lg-auto {
   width: var(--modal-w-lg);
-  height: var(--modal-h-lg);
+  height: auto;
+  max-height: var(--modal-h-lg);
   max-width: calc(100vw - 48px);
 }
+.modal.modal-tall.modal-tall-fixed { height: var(--modal-h-lg); }
 /* Their height is fixed, so a short body left the footer mid-dialog. The box
    that holds the footer — the scroller, or the dialog's one root — becomes a
    column, and an empty item ordered between the body and the footer takes the
@@ -19491,11 +19497,16 @@ button.insights-row:hover { background: var(--bg-2); }
   font-size: 12.5px;
   line-height: 1.5;
   padding: 12px;
-  background: var(--bg-0);
+  /* The field surface, not --bg-0: the theme's darkest shade reads as black. */
+  background: var(--field-bg);
   color: var(--text-0);
   border: 1px solid var(--border);
   border-radius: 8px;
 }
+/* The editor fills the dialog's free height; Preview scrolls in the same box. */
+.clgen-editor { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.clgen-editor .mde-input,
+.clgen-editor .mde-preview { flex: 1; min-height: 240px; overflow: auto; }
 @media (max-width: 720px) { .clgen-controls { grid-template-columns: 1fr 1fr; } }
 
 /* ─── Word-level diff ──────────────────────────────────────────────────── */
