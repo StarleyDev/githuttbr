@@ -89,13 +89,27 @@ export function PrListRow({
         )}
       </span>
       <span className="prl-review">
-        {review.lines.map((line, i) => (
-          <span key={i} className={`prl-tone-${line.tone}`}>
-            {/* "No reviewers" is a plain remark, not a verdict: no mark in front. */}
-            {line.key !== 'prList.reviewNone' && <span aria-hidden="true">{REVIEW_GLYPH[line.tone]} </span>}
-            {interp(t(line.key), line.vars)}
-          </span>
-        ))}
+        {review.lines.map((line, i) =>
+          // A reviewer's name on its own line, the verdict under it in its colour:
+          // a long display name and "requested changes" on one line did not fit.
+          line.vars.name ? (
+            <span key={i} className="prl-review-item">
+              <span className="prl-review-name" title={line.vars.name}>
+                {line.vars.name}
+              </span>
+              <span className={`prl-review-verdict prl-tone-${line.tone}`}>
+                <span aria-hidden="true">{REVIEW_GLYPH[line.tone]} </span>
+                {interp(t(line.key), line.vars)}
+              </span>
+            </span>
+          ) : (
+            <span key={i} className={`prl-tone-${line.tone}`}>
+              {/* "No reviewers" is a plain remark, not a verdict: no mark in front. */}
+              {line.key !== 'prList.reviewNone' && <span aria-hidden="true">{REVIEW_GLYPH[line.tone]} </span>}
+              {interp(t(line.key), line.vars)}
+            </span>
+          )
+        )}
         {review.more > 0 && <span className="prl-tone-muted">{interp(t('prList.reviewMore'), { n: review.more })}</span>}
       </span>
       <span className="prl-ci" title={pr.ci ? ciTitle(pr.ci, pr.ciCounts, t) : undefined}>

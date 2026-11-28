@@ -23408,6 +23408,10 @@ button.pck-chip:hover { color: var(--text-0); }
 .prl-del { color: var(--red); }
 .prl-review { display: flex; flex-direction: column; gap: 2px; min-width: 0; font-size: 12px; }
 .prl-review > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prl-review { gap: 6px; }
+.prl-review-item { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.prl-review-name { color: var(--text-0); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prl-review-verdict { font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .prl-tone-green { color: var(--green); }
 .prl-tone-red { color: var(--red); }
 .prl-tone-yellow { color: color-mix(in srgb, var(--yellow) 80%, var(--text-0)); }
