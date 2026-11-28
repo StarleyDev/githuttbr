@@ -17359,6 +17359,9 @@ mark.find-hit.active {
 .prd-actions { align-items: center; flex-wrap: wrap; gap: 6px; }
 .prd-approve { color: var(--ok, #2ea043); }
 .prd-reject { color: var(--red); }
+/* The composer's Approve in green words, as Request changes is in red ones
+   (.btn.ghost.danger): `.btn.ghost` outranks the plain class above. */
+.btn.ghost.prd-approve { color: var(--green); }
 .prd-merge { display: inline-flex; align-items: center; gap: 6px; }
 .prd-merge select {
   padding: 5px 7px; background: var(--bg-1); border: 1px solid var(--border); border-radius: 6px;

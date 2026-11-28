@@ -4021,7 +4021,10 @@ export type PageContent =
   // page has loaded the real one.
   // `via: 'list'` — opened from the pull requests page, so its ‹ › walk the
   // filtered list it came from rather than the repository's open PRs.
-  | { type: 'pr'; repoPath: string; remoteUrl: string; number: number; title: string; via?: 'list' }
+  // `listFrom: 'mission'` — that list was opened from Mission Control: its
+  // "← Pull requests" takes the flag back, so the list keeps its way back there.
+  | { type: 'pr'; repoPath: string; remoteUrl: string; number: number; title: string; via?: 'list'
+      listFrom?: 'mission' }
   // `from: 'mission'` — opened from Mission Control, so the page offers the way back.
   | { type: 'pull-requests'; repoPath: string; from?: 'mission' }
 

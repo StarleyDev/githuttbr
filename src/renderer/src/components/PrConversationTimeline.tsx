@@ -4,7 +4,6 @@ import type { PrComment, PrCommit, PrDetail, PrReview, PrReviewThread } from '..
 import { HostUserAvatar as Avatar } from './HostUserAvatar'
 import { useT, interp, type TranslationKey } from '../i18n'
 import { timeAgo } from '../lib/timeAgo'
-import { splitByLastVisit } from '../lib/prVisits'
 import type { ReviewerState } from '../lib/prSummary'
 import {
   buildPrTimeline,
@@ -12,6 +11,7 @@ import {
   filterPrTimeline,
   getHunkLines,
   getPrPersonRoles,
+  splitPrTimelineByVisit,
   type PrTimelineFilter,
   type PrTimelineItem
 } from '../lib/prTimeline'
@@ -105,9 +105,10 @@ export function PrConversationTimeline({
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set())
 
   const items = useMemo(() => buildPrTimeline(pr, commits), [pr, commits])
-  const freshCount = useMemo(() => splitByLastVisit(items, lastVisit).fresh.length, [items, lastVisit])
+  // What you wrote yourself is never "new" to you (lib/prTimeline.ts).
+  const freshCount = useMemo(() => splitPrTimelineByVisit(items, lastVisit, pr).freshCount, [items, lastVisit, pr])
   const shown = useMemo(() => filterPrTimeline(items, filter, openOnly), [items, filter, openOnly])
-  const { seen, fresh } = useMemo(() => splitByLastVisit(shown, lastVisit), [shown, lastVisit])
+  const { seen, fresh } = useMemo(() => splitPrTimelineByVisit(shown, lastVisit, pr), [shown, lastVisit, pr])
   const openThreads = countOpenThreads(pr.reviewThreads)
 
   const name = (login: string): ReactNode => {

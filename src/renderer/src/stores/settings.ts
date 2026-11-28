@@ -292,6 +292,23 @@ async function flushPending(): Promise<void> {
   await inFlight
 }
 
+/**
+ * Sends a pending debounced save at once, without waiting for it: what a page
+ * that is going away can still do. Quitting or reloading inside the 250ms lost
+ * the last change — a pull request's visit, recorded as its page is left. The
+ * IPC message leaves before the page is torn down, and main waits for the
+ * write before it quits (`waitForSettingsWrites`).
+ */
+export function sendPendingSettingsSave(): void {
+  if (!saveTimer) return
+  void flushPending()
+}
+
+// Guarded on the function: tests stub a `window` without it.
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+  window.addEventListener('beforeunload', sendPendingSettingsSave)
+}
+
 /** Mirror the live `tabs`/`activeTabId` into the active workspace record so a
  *  workspace switch (or the next app launch) restores the exact tab strip.
  *  Runs on every settings mutation — cheap, and keeps the two in lockstep

@@ -23,7 +23,9 @@ without going back.
   requests*).
 - *Pull requests…* in the command palette (⌘K), or **Tools → Pull requests…**.
 - The **pull requests chip** on a repository's row in [Mission Control](mission-control.md).
-  Opened from there, the page starts with **← Back to Mission control**.
+  Opened from there, the page starts with **← Back to Mission control**, and
+  keeps it when you open one of its pull requests and come back with
+  **← Pull requests**.
 
 Like the wiki and [CI runs](ci-runs.md), the page rides on the repository's tab.
 
@@ -670,11 +672,16 @@ or **requested changes** — and a clock for someone still to answer.
 
 ### New since your last visit
 
-When you leave a pull request's page (another page, another tab, closing it),
-the app notes the time. Next time, a line marks where you stopped — **New since
-your last visit** — and the bar says how many entries came after it. The mark
-is made on leaving, not on opening, so it stays put while you read. The first
-time you open a pull request nothing is marked new.
+When you leave a pull request's page (another page, another tab, closing it,
+quitting or reloading the app), the app notes the time. Next time, a line marks
+where you stopped — **New since your last visit** — and the bar says how many
+entries came after it. The mark is made on leaving, not on opening, so it stays
+put while you read. The first time you open a pull request nothing is marked new.
+
+What you wrote yourself is never new to you: your own comments, replies and
+reviews neither count nor move the line. A thread that began before your visit
+and got a reply from someone else since counts as new too — it stays where it
+began on the timeline, so look for it above the line.
 
 Times read *2d ago*; hover for the full date.
 
@@ -694,8 +701,10 @@ Times read *2d ago*; hover for the full date.
 - A GitHub review with no text of its own — the envelope every batch of line
   comments is filed under — gets no line; its threads already show.
 - Your last visits are kept for the 300 most recent pull requests, on this
-  computer only. Quitting the app with a pull request open does not count as
-  leaving it.
+  computer only. A crash, or the app being killed, records no visit.
+- **Yours** is told by your account on the host. Where the host names authors
+  only by display name and gives no id to match, your own entries count like
+  anyone's.
 
 ## Writing comments
 

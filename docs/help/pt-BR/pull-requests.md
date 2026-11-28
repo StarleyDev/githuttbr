@@ -26,7 +26,8 @@ pull request, **‹ ›** levam ao próximo da mesma lista sem precisar voltar.
   requests…**.
 - O **chip de pull requests** na linha de um repositório no
   [Mission control](mission-control.md). Aberta por ali, a página começa com
-  **← Voltar ao Mission control**.
+  **← Voltar ao Mission control**, e continua com ele quando você abre um dos
+  pull requests dela e volta com **← Pull requests**.
 
 Como a wiki e as [execuções de CI](ci-runs.md), a página fica presa à aba do
 repositório.
@@ -700,11 +701,18 @@ respondeu.
 
 ### Novo desde a sua última visita
 
-Quando você sai da página de um pull request (outra página, outra aba, ou
-fechando-a), o app anota a hora. Na próxima vez, uma linha marca onde você
-parou — **Novo desde a sua última visita** — e a barra diz quantos itens vieram
-depois. A marca é feita ao sair, não ao abrir, então ela fica parada enquanto
-você lê. Na primeira vez que você abre um pull request, nada aparece como novo.
+Quando você sai da página de um pull request (outra página, outra aba,
+fechando-a, ou fechando ou recarregando o app), o app anota a hora. Na próxima
+vez, uma linha marca onde você parou — **Novo desde a sua última visita** — e a
+barra diz quantos itens vieram depois. A marca é feita ao sair, não ao abrir,
+então ela fica parada enquanto você lê. Na primeira vez que você abre um pull
+request, nada aparece como novo.
+
+O que você mesmo escreveu nunca é novo para você: os seus comentários,
+respostas e revisões não entram na contagem nem mudam a linha de lugar. Uma
+thread que começou antes da sua visita e recebeu resposta de outra pessoa
+depois também conta como nova — ela fica onde começou na linha do tempo, então
+procure-a acima da linha.
 
 Os horários aparecem como *há 2d*; passe o mouse para ver a data completa.
 
@@ -726,8 +734,11 @@ Os horários aparecem como *há 2d*; passe o mouse para ver a data completa.
   comentários de linha é arquivado — não ganha linha; as threads dela já
   aparecem.
 - Suas últimas visitas ficam guardadas para os 300 pull requests mais recentes,
-  só neste computador. Fechar o app com um pull request aberto não conta como
-  sair dele.
+  só neste computador. Um travamento, ou o app encerrado à força, não registra
+  a visita.
+- **Seus** é decidido pela sua conta no host. Onde o host só nomeia os autores
+  pelo nome de exibição, sem um id para comparar, os seus itens contam como os
+  de qualquer pessoa.
 
 ## Escrever comentários
 

@@ -12,7 +12,8 @@ import {
   filterPrTimeline,
   getHunkLines,
   getPrPersonRoles,
-  groupPrCommitPushes
+  groupPrCommitPushes,
+  splitPrTimelineByVisit
 } from '../src/renderer/src/lib/prTimeline'
 import {
   getLastVisit,
@@ -181,6 +182,43 @@ describe('prVisits', () => {
     const items = [{ at: 1 }, { at: 5 }, { at: 9 }]
     expect(splitByLastVisit(items, 5)).toEqual({ seen: [{ at: 1 }, { at: 5 }], fresh: [{ at: 9 }] })
     expect(splitByLastVisit(items, null)).toEqual({ seen: items, fresh: [] })
+  })
+
+  it('leaves your own entries out of "new", and counts an old thread with a new reply', () => {
+    const visit = Date.parse('2026-11-05T00:00:00Z')
+    const reply = (id: number, author: string, at: string): PrReviewThread['comments'][number] => ({
+      id, author, body: 'ok', createdAt: at
+    })
+    const oldThread: PrReviewThread = {
+      ...thread(7, '2026-11-02T10:00:00Z'),
+      comments: [reply(7, 'kalani', '2026-11-02T10:00:00Z'), reply(8, 'kalani', '2026-11-06T10:00:00Z')]
+    }
+    // Answered since, but only by you: nothing new.
+    const mineAnswered: PrReviewThread = {
+      ...thread(9, '2026-11-03T10:00:00Z'),
+      comments: [reply(9, 'kalani', '2026-11-03T10:00:00Z'), reply(10, 'me', '2026-11-06T11:00:00Z')]
+    }
+    const detail = pr({
+      viewer: 'me',
+      comments: [
+        { author: 'me', body: 'mine, after the visit', createdAt: '2026-11-06T09:00:00Z' },
+        { author: 'alex', body: 'theirs, after', createdAt: '2026-11-06T12:00:00Z' }
+      ],
+      reviewThreads: [oldThread, mineAnswered]
+    })
+    const items = buildPrTimeline(detail, null)
+    const split = splitPrTimelineByVisit(items, visit, detail)
+    // alex's comment, and the old thread for kalani's reply — not your own comment.
+    expect(split.freshCount).toBe(2)
+    // The divider sits before alex's comment, not before yours; your comment stays above it.
+    expect(split.fresh.map((it) => it.id)).toEqual([items[items.length - 1].id])
+    expect(split.seen.some((it) => it.kind === 'comment' && it.comment.author === 'me')).toBe(true)
+    // The old thread keeps its place, where it began.
+    expect(split.seen.map((it) => it.id)).toContain('t:7')
+    // A first visit: nothing new.
+    expect(splitPrTimelineByVisit(items, null, detail)).toMatchObject({ fresh: [], freshCount: 0 })
+    // Without knowing who you are, your comment counts like anyone's.
+    expect(splitPrTimelineByVisit(items, visit, { ...detail, viewer: null }).freshCount).toBe(4)
   })
 
   it('keeps only the most recent visits and ignores unreadable ones', () => {

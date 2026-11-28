@@ -230,7 +230,8 @@ export function PullRequestsPage({
         entries: ordered.map((r) => ({ number: r.pr.id, title: r.pr.title, remoteUrl: r.remoteUrl })),
         filters,
         tab
-      }
+      },
+      fromMission ? 'mission' : undefined
     )
   }
 

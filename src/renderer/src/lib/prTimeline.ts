@@ -1,4 +1,5 @@
 import type { PrComment, PrCommit, PrDetail, PrReview, PrReviewThread } from '../../../shared/types'
+import { isWrittenByViewer, type CommentViewer } from './commentEdit'
 
 /**
  * The Conversation tab as one timeline: what goes on it, in which order, and
@@ -98,6 +99,57 @@ export function buildPrTimeline(
   // Array.prototype.sort is stable: equal times keep the order above.
   items.sort((a, b) => a.at - b.at)
   return [{ kind: 'description', id: 'description', at: parseTime(pr.createdAt) }, ...items]
+}
+
+/** Who wrote a timeline entry; a thread is its first comment's, a push its committer's. */
+function getEntryAuthor(it: PrTimelineItem, prAuthor: string): { author: string; authorId?: string; authorUniqueName?: string } {
+  switch (it.kind) {
+    case 'comment':
+      return it.comment
+    case 'thread':
+      return it.thread.comments[0] ?? { author: '' }
+    case 'review':
+      return it.review
+    case 'push':
+      return { author: it.author }
+    default:
+      return { author: prAuthor }
+  }
+}
+
+/**
+ * "New since your last visit" on the Conversation tab, over the entries shown.
+ *
+ * - `seen` / `fresh`: where the divider goes — before the first entry after the
+ *   visit that someone else wrote. Entries keep their places: your own reply
+ *   after it stays under the divider, it just does not move it.
+ * - `freshCount`: what the summary says — entries after the visit not written
+ *   by you, plus threads that began earlier but got a reply from someone else
+ *   since. Such a thread stays where it began; only the count sees the reply.
+ *
+ * No last visit (a first look) is "nothing new", as in lib/prVisits.ts.
+ */
+export function splitPrTimelineByVisit(
+  items: readonly PrTimelineItem[],
+  lastVisit: number | null,
+  who: CommentViewer & { author: string }
+): { seen: PrTimelineItem[]; fresh: PrTimelineItem[]; freshCount: number } {
+  if (lastVisit === null) return { seen: [...items], fresh: [], freshCount: 0 }
+  const others = (entry: { author: string; authorId?: string; authorUniqueName?: string }): boolean =>
+    !isWrittenByViewer(entry, who)
+  const isNewByOthers = (it: PrTimelineItem): boolean => it.at > lastVisit && others(getEntryAuthor(it, who.author))
+  const firstFresh = items.findIndex(isNewByOthers)
+  const cut = firstFresh < 0 ? items.length : firstFresh
+  let freshCount = 0
+  for (const it of items) {
+    if (isNewByOthers(it)) freshCount++
+    else if (
+      it.kind === 'thread' &&
+      it.thread.comments.some((c) => parseTime(c.createdAt) > lastVisit && others(c))
+    )
+      freshCount++
+  }
+  return { seen: items.slice(0, cut), fresh: items.slice(cut), freshCount }
 }
 
 /** A thread the host says is still open. Unknown (no `resolved`) is not open. */

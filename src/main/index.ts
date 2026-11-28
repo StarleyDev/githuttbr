@@ -12,7 +12,7 @@ import type { AppRelease } from '../shared/types'
 import { getUrlScheme, isAppNavigation } from '../shared/externalUrl'
 import { openExternalUrl } from './externalLinks'
 import { abortAllClones, registerGitHandlers, repointGlobalLegacyTextconvs } from './git'
-import { readSettings, registerSettingsHandlers } from './settings'
+import { readSettings, registerSettingsHandlers, waitForSettingsWrites } from './settings'
 import { registerAiHandlers } from './ai'
 import { registerRepoChatHandlers } from './repoChat'
 import { registerWikiHandlers } from './wiki'
@@ -573,6 +573,18 @@ app.whenReady().then(() => {
 app.on('before-quit', () => {
   void releaseAllWaits()
   abortAllClones()
+})
+
+// A closing window sends its last settings save as it goes (a pull request's
+// visit): hold the quit until that write lands, a few seconds at most. The
+// tick first lets the message that left with the window reach its handler.
+let settingsWritten = false
+app.on('will-quit', (e) => {
+  if (settingsWritten) return
+  e.preventDefault()
+  settingsWritten = true
+  const writes = new Promise<void>((done) => setImmediate(done)).then(() => waitForSettingsWrites())
+  void Promise.race([writes, new Promise<void>((done) => setTimeout(done, 3000))]).finally(() => app.quit())
 })
 
 app.on('window-all-closed', () => {

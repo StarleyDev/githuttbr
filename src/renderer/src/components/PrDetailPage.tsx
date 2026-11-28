@@ -48,7 +48,7 @@ import { PrUpdatesSection, usePrUpdates, usePrUpdatesSeen } from './PrUpdatesSec
 import { PrUpdateDiffBanner, usePrUpdateDiff, type UpdateDiffView } from './PrUpdateDiff'
 import { forgetFinished } from '../stores/prList'
 import { useUIStore } from '../stores/ui'
-import { useSettingsStore } from '../stores/settings'
+import { sendPendingSettingsSave, useSettingsStore } from '../stores/settings'
 import { repoActions, useRepoStore } from '../stores/repo'
 import { remoteForPrUrl } from '../lib/prBranchGo'
 import { remoteWebUrl, type AutolinkOptions } from '../lib/autolink'
@@ -621,7 +621,17 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
   const visited = useRef(false)
   useEffect(() => {
     visited.current = false
+    // Quitting or reloading with the page open unmounts nothing: the visit is
+    // recorded as the window goes too, and sent at once (stores/settings.ts).
+    const leave = (): void => {
+      if (!visited.current) return
+      visited.current = false
+      recordVisit(visitKey, Date.now())
+      sendPendingSettingsSave()
+    }
+    window.addEventListener('beforeunload', leave)
     return () => {
+      window.removeEventListener('beforeunload', leave)
       if (visited.current) recordVisit(visitKey, Date.now())
     }
   }, [visitKey])

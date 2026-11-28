@@ -141,6 +141,13 @@ let pendingClears: SecretView = new Map()
  * unlock installing what it read — lost one of them.
  */
 let secretsChain: Promise<unknown> = Promise.resolve()
+/** Resolves once every save queued so far has been written (or has failed):
+ *  the app waits for it before quitting, so the save a closing window sent
+ *  as it went is not cut off. */
+export function waitForSettingsWrites(): Promise<void> {
+  return secretsChain.then(() => undefined)
+}
+
 function exclusive<T>(fn: () => Promise<T>): Promise<T> {
   const run = secretsChain.then(fn, fn)
   secretsChain = run.catch(() => undefined)

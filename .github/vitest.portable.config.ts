@@ -21,6 +21,8 @@ export default {
     globalSetup: [],
     include: [
       'test/prFileThreads.test.ts',
+      // "← Pull requests" keeps the list's way back to Mission control.
+      'test/prListMissionBack.test.ts',
       'test/pureLogic.test.ts',
       // The conflict workspace: unmerged codes, the file strip, picks from the result cards.
       'test/conflictWorkspace.test.ts',
