@@ -16,7 +16,7 @@ significava abrir cada um, ler, voltar, abrir o próximo. A **página de pull
 requests** responde a essas perguntas numa tela só e, depois que você abre um
 pull request, **‹ ›** levam ao próximo da mesma lista sem precisar voltar.
 
-![A página de pull requests buscando "pix": os trechos encontrados destacados, os seus marcados com "você", um CI falhando e um rascunho](../../screenshots/pull-requests.webp)
+![A página de pull requests aberta pelo Mission control: dois aguardando a sua revisão, três seus, os outros recolhidos; cada linha com o tamanho, a situação de cada revisor, os checks e um ponto onde mudou desde a sua última visita](../../screenshots/pull-requests.webp)
 
 ## Como abrir
 
@@ -24,13 +24,18 @@ pull request, **‹ ›** levam ao próximo da mesma lista sem precisar voltar.
   todos os pull requests*).
 - *Pull requests…* na paleta de comandos (⌘K), ou **Ferramentas → Pull
   requests…**.
+- O **chip de pull requests** na linha de um repositório no
+  [Mission control](mission-control.md). Aberta por ali, a página começa com
+  **← Voltar ao Mission control**.
 
 Como a wiki e as [execuções de CI](ci-runs.md), a página fica presa à aba do
 repositório.
 
-## Abas
+## Estados
 
-| Aba | O que mostra |
+O controle segmentado à esquerda da busca tem os quatro estados, com quantos cada um tem.
+
+| Estado | O que mostra |
 |---|---|
 | **Abertos** | Todos os pull requests abertos, rascunhos incluídos |
 | **Rascunhos** | Só os abertos marcados como rascunho |
@@ -45,16 +50,22 @@ por sessão; **Atualizar** pede de novo.
 
 | Filtro | Mantém |
 |---|---|
-| **Buscar** | Pull requests cujo título, descrição, branches ou número contêm todas as palavras digitadas. `#482` ou `482` encontra esse número; os trechos encontrados ficam destacados no título |
+| **Buscar** | Pull requests cujo título, descrição, autor, branches ou número contêm todas as palavras digitadas. `#482` ou `482` encontra esse número; os trechos encontrados ficam destacados no título |
 | **Autor** | Um autor — cada um com quantos tem nesta aba. **Eu** vem primeiro |
 | **Revisor** | Um revisor pedido, ou **Pedem minha revisão** |
 | **Branch de destino** | Pull requests para essa branch |
-| **Meus** | Atalho para *Autor: Eu* |
 | **Aguardando minha revisão** | Atalho para *Revisor: pedem minha revisão* |
+| **Meus** | Atalho para *Autor: Eu* |
 | **CI falhando** | Pull requests cujos checks no head falharam |
 
-A linha abaixo dos filtros diz quantos pull requests da aba aparecem e quais
-filtros estão ligados, com **limpar filtros** para tirar todos.
+A busca e os três chips ficam numa linha só; cada chip diz quantos pull
+requests do estado atual ele manteria. **Autor**, **Revisor** e **Branch de
+destino** ficam em **Mais filtros ▾**, que fica aceso enquanto um deles está
+ligado.
+
+Com algum filtro ligado, uma linha acima da lista diz quantos pull requests do
+estado aparecem e quais filtros estão ligados, com **limpar filtros** para tirar
+todos.
 
 Os filtros ficam guardados por repositório **enquanto o app está aberto** — saia
 da página, volte, e estão como você deixou. Eles não são salvos entre
@@ -70,18 +81,52 @@ ou não há token, **Eu**, **Meus** e **Aguardando minha revisão** não aparece
 
 ## A lista
 
-| Coluna | O que mostra |
+Abertos e Rascunhos se dividem em três seções, na ordem em que você trabalha:
+
+| Seção | O que tem |
 |---|---|
-| **#** | O número, com um ícone de aberto, rascunho, mesclado ou fechado |
-| **Título** | O título, um selo *rascunho* e quem ainda tem revisão pedida — na cor de destaque quando é você |
-| **Autor** | A foto do host, quando ele dá uma, senão a inicial, e **você** nos seus |
-| **Branches** | Origem → destino |
-| **Checks** | Os checks do head resumidos — `6/6`, `1 falhou`, `2 rodando`; passe o mouse para ver as contagens |
+| **Aguardando sua revisão** | Pull requests em que pediram a sua revisão — o título em amarelo |
+| **Seus pull requests** | Os que você escreveu |
+| **Outros** | Todo o resto, recolhido atrás de **mostrar** enquanto as duas de cima têm algo; uma busca ou um filtro abre a seção |
+
+Quando o host não sabe dizer quem é você, não há o que separar e a lista é um
+cartão só. Mesclados e Fechados são histórico: um cartão, sem seções.
+
+Cada linha se lê da esquerda para a direita:
+
+| Parte | O que mostra |
+|---|---|
+| **Ponto** | O pull request mudou desde a última vez que você saiu da página dele. Um que você nunca abriu não tem ponto — não há com o que comparar |
+| **#** | O número — verde enquanto aberto, cinza num rascunho |
+| **Título** | O título, o tipo [Conventional Commits](committing.md) num chip colorido (`feat`, `fix`, `docs`…) e um selo *rascunho*. Embaixo: o autor (omitido nos seus), origem → destino e **N comentários** — ou **N comentários novos** quando outras pessoas escreveram desde a sua última visita |
+| **Tamanho** | `+48 −12 · 4 arq.` — linhas adicionadas e removidas, arquivos tocados |
+| **Revisão** | O veredito de cada revisor — **✓ bruno aprovou**, **✕ ana pediu alterações** — e depois quem ainda tem revisão pedida, **● esperando você** em amarelo. **✓ pronto para mesclar** quando o host diz que as revisões estão feitas e os checks não falharam; **sem revisores** quando ninguém foi chamado nem respondeu |
+| **Checks** | Os checks do head — `✓ 6/6`, `✕ 1 falhando`, `● 2 rodando`; passe o mouse para ver as contagens |
 | **Atualizado** | Há quanto tempo mudou pela última vez; passe o mouse para ver a data |
 
-As linhas são ordenadas pela atividade mais recente. Um clique abre a página do
-próprio pull request ([Hosting e pull requests](hosting.md)). Num host sem essa
-página, a linha abre o pull request no navegador.
+### O que cada host entrega
+
+Tamanho, comentários e vereditos não estão na lista de todo host, e a página
+nunca abre cada pull request para buscá-los: o que a lista não traz fica em
+branco, nunca zero.
+
+| Host | Tamanho | Comentários | Vereditos |
+|---|---|---|---|
+| **GitHub** | ✓ | ✓, e quais são novos | ✓, e *pronto para mesclar* — um pedido GraphQL a mais para a lista inteira |
+| **GitLab** | — | ✓ (só a contagem) | Quem tem revisão pedida; *pronto para mesclar* pelo status de merge do GitLab |
+| **Azure DevOps** | — | — | ✓ pelos votos dos revisores |
+| **Bitbucket Data Center** | — | ✓ (só a contagem) | ✓ |
+| **Bitbucket Cloud** | — | ✓ (só a contagem) | — |
+| **Forgejo** | ✓ quando o servidor preenche | ✓ (só a contagem) | Quem tem revisão pedida |
+
+A contagem é dos comentários da conversa — comentários numa linha do diff não
+entram. Sem token, o pedido ao GitHub não é feito e essas colunas ficam vazias.
+
+Dentro de uma seção, as linhas são ordenadas pela atividade mais recente, e
+**‹ ›** dentro de um pull request as percorrem na ordem em que aparecem. Um
+clique abre a página do próprio pull request ([Hosting e pull
+requests](hosting.md)). Num host sem essa página, a linha abre o pull request
+no navegador.
 
 Num [checkout de fork](hosting.md#your-pull-requests-on-the-parent-of-a-fork),
 os seus pull requests no repositório pai também aparecem, marcados *em
@@ -89,7 +134,7 @@ dono/repo*.
 
 ## Percorrer a lista a partir de um pull request
 
-![Um pull request aberto da lista filtrada: ‹ 1 de 4 › e os filtros de onde veio](../../screenshots/pull-request-nav.webp)
+![Um pull request aberto da lista filtrada: ‹ 1 de 7 › e os filtros de onde veio](../../screenshots/pull-request-nav.webp)
 
 Um pull request aberto pela página mostra uma faixa acima do título:
 

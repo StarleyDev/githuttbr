@@ -15,19 +15,23 @@ the next. The **pull requests page** answers those questions on one screen, and
 once you open a pull request, **‹ ›** take you to the next one of the same list
 without going back.
 
-![The pull requests page searched for "pix": the matches highlighted, your own marked "you", a failing CI and a draft](../screenshots/pull-requests.webp)
+![The pull requests page opened from Mission Control: two awaiting your review, three of your own, the others folded; each row with its size, where every reviewer stands, its checks, and a dot where it changed since your last visit](../screenshots/pull-requests.webp)
 
 ## Opening it
 
 - The **list icon** on the sidebar's **PULL REQUESTS** header (*See all pull
   requests*).
 - *Pull requests…* in the command palette (⌘K), or **Tools → Pull requests…**.
+- The **pull requests chip** on a repository's row in [Mission Control](mission-control.md).
+  Opened from there, the page starts with **← Back to Mission control**.
 
 Like the wiki and [CI runs](ci-runs.md), the page rides on the repository's tab.
 
-## Tabs
+## States
 
-| Tab | What it holds |
+The segmented control left of the search holds the four states, with how many each has.
+
+| State | What it holds |
 |---|---|
 | **Open** | Every open pull request, drafts included |
 | **Drafts** | Only the open ones marked as drafts |
@@ -42,16 +46,21 @@ session; **Refresh** asks again.
 
 | Filter | Keeps |
 |---|---|
-| **Search** | Pull requests whose title, description, branches or number contain every word typed. `#482` or `482` finds that number; matches are highlighted in the title |
+| **Search** | Pull requests whose title, description, author, branches or number contain every word typed. `#482` or `482` finds that number; matches are highlighted in the title |
 | **Author** | One author — each listed with how many it has in this tab. **Me** is first |
 | **Reviewer** | One requested reviewer, or **Review requested from me** |
 | **Target branch** | Pull requests into that branch |
-| **Mine** | A shortcut for *Author: Me* |
 | **Awaiting my review** | A shortcut for *Reviewer: review requested from me* |
+| **Mine** | A shortcut for *Author: Me* |
 | **CI failing** | Pull requests whose head's checks failed |
 
-The line under the filters says how many of the tab's pull requests are shown
-and which filters are on, with **clear filters** to drop them all.
+Search and the three chips share one row; each chip says how many pull requests
+of the current state it would keep. **Author**, **Reviewer** and **Target
+branch** live under **More filters ▾**, which lights up while one of them is set.
+
+While any filter is on, a line above the list says how many of the state's pull
+requests are shown and which filters are on, with **clear filters** to drop
+them all.
 
 Filters are kept per repository **while the app runs** — leave the page, come
 back, they are as you left them. They are not saved across restarts on
@@ -67,16 +76,50 @@ there is no token, **Me**, **Mine** and **Awaiting my review** are not offered.
 
 ## The list
 
-| Column | What it shows |
+Open and Drafts are split into three sections, in the order you work through them:
+
+| Section | Holds |
 |---|---|
-| **#** | The number, with an icon for open, draft, merged or closed |
-| **Title** | The title, a *draft* badge, and who is still asked to review — in the accent colour when it is you |
-| **Author** | The host's picture where it gives one, else the initial, and **you** on your own |
-| **Branches** | Source → target |
-| **Checks** | The head's checks rolled up — `6/6`, `1 failed`, `2 running`; hover for the counts |
+| **Awaiting your review** | Pull requests someone asked you to review — the heading in yellow |
+| **Your pull requests** | The ones you wrote |
+| **Others** | Everything else, folded behind **show** while the two above have something; a search or a filter unfolds it |
+
+When the host cannot say who you are, there is nothing to triage and the list is
+one card. Merged and Closed are history: one card, no sections.
+
+Each row reads left to right:
+
+| Part | What it shows |
+|---|---|
+| **Dot** | The pull request changed since you last left its page. One you never opened has no dot — there is nothing to compare with |
+| **#** | The number — green while open, grey for a draft |
+| **Title** | The title, its [Conventional Commits](committing.md) type as a coloured chip (`feat`, `fix`, `docs`…), a *draft* badge. Under it: the author (left out on your own), source → target, and **N comments** — or **N new comments** when some were written by others since your last visit |
+| **Size** | `+48 −12 · 4 files` — lines added and removed, files touched |
+| **Review** | Each reviewer's standing verdict — **✓ bruno approved**, **✕ ana requested changes** — then who is still asked, **● waiting for you** in yellow. **✓ ready to merge** when the host says the reviews are done and the checks did not fail; **no reviewers** when nobody was asked or answered |
+| **Checks** | The head's checks — `✓ 6/6`, `✕ 1 failing`, `● 2 running`; hover for the counts |
 | **Updated** | How long ago it last changed; hover for the date |
 
-Rows are sorted by the latest activity. A click opens the pull request's own
+### What each host gives
+
+Size, comments and verdicts are not in every host's list, and the page never
+opens each pull request to find them: what the list does not carry stays blank,
+never a zero.
+
+| Host | Size | Comments | Review verdicts |
+|---|---|---|---|
+| **GitHub** | ✓ | ✓, and which are new | ✓, and *ready to merge* — one extra GraphQL request for the whole list |
+| **GitLab** | — | ✓ (count only) | Who is asked; *ready to merge* from GitLab's merge status |
+| **Azure DevOps** | — | — | ✓ from the reviewers' votes |
+| **Bitbucket Data Center** | — | ✓ (count only) | ✓ |
+| **Bitbucket Cloud** | — | ✓ (count only) | — |
+| **Forgejo** | ✓ when the server fills it | ✓ (count only) | Who is asked |
+
+The comment count is the conversation's comments — comments on a line of the diff
+are not in it. Without a token the GitHub request is skipped, and those columns
+stay empty.
+
+Within a section, rows are sorted by the latest activity, and **‹ ›** inside a pull
+request walk them in the order drawn. A click opens the pull request's own
 page ([Hosting & pull requests](hosting.md)). On a host without that page, the
 row opens the pull request in the browser.
 
@@ -85,7 +128,7 @@ too, marked *on owner/repo*.
 
 ## Walking the list from a pull request
 
-![A pull request opened from the filtered list: ‹ 1 of 4 › and the filters it came from](../screenshots/pull-request-nav.webp)
+![A pull request opened from the filtered list: ‹ 1 of 7 › and the filters it came from](../screenshots/pull-request-nav.webp)
 
 A pull request opened from the page shows a strip above its title:
 

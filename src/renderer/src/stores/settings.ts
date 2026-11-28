@@ -1190,7 +1190,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       )
       // Help is one tab, but a link into it names a page: the open tab goes
       // there. A fresh page object is what tells HelpPage the link was followed.
-      if (existing && page.type === 'help' && page.page) {
+      // The PR list also takes the new page: it remembers where it was opened
+      // from, for its "back to Mission control".
+      if (existing && (page.type === 'help' ? !!page.page : page.type === 'pull-requests')) {
         return { ...s, activeTabId: existing.id, tabs: s.tabs.map((t) => (t.id === existing.id ? { ...t, page } : t)) }
       }
       if (existing) return { ...s, activeTabId: existing.id }

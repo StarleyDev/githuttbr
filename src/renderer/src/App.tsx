@@ -258,7 +258,7 @@ function PageBody({ page }: { page: PageContent }): React.JSX.Element | null {
     case 'ci-runs':
       return <CiRunsPage repoPath={page.repoPath} />
     case 'pull-requests':
-      return <PullRequestsPage repoPath={page.repoPath} />
+      return <PullRequestsPage repoPath={page.repoPath} fromMission={page.from === 'mission'} />
     case 'devtools':
       return <DevToolsPage launchId={page.launchId} url={page.url} label={page.label} tool={page.tool} />
     case 'pr':
@@ -298,7 +298,7 @@ function PageView({ tab }: { tab: PageTab }): React.JSX.Element {
     case 'ci-runs':
       return <CiRunsPage repoPath={tab.page.repoPath} />
     case 'pull-requests':
-      return <PullRequestsPage repoPath={tab.page.repoPath} />
+      return <PullRequestsPage repoPath={tab.page.repoPath} fromMission={tab.page.from === 'mission'} />
     case 'vault':
       return <VaultPage />
     case 'repositories':

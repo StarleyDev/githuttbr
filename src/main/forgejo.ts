@@ -126,6 +126,11 @@ interface FjPull {
   updated_at?: string
   body?: string | null
   user?: { login?: string; avatar_url?: string }
+  /** Newer servers fill these in the list too; older ones leave them out. */
+  additions?: number
+  deletions?: number
+  changed_files?: number
+  comments?: number
 }
 
 /** Forgejo marks a draft with a title prefix on older versions, `draft` on newer ones. */
@@ -146,7 +151,12 @@ export function mapForgejoPull(p: FjPull): PullRequest {
     ...(p.state === 'closed' ? { state: p.merged ? 'merged' : 'closed' } : {}),
     ...(p.updated_at ? { updatedAt: p.updated_at } : {}),
     ...(p.body ? { body: p.body } : {}),
-    ...(p.user?.avatar_url && /^https:\/\//i.test(p.user.avatar_url) ? { authorAvatar: p.user.avatar_url } : {})
+    ...(p.user?.avatar_url && /^https:\/\//i.test(p.user.avatar_url) ? { authorAvatar: p.user.avatar_url } : {}),
+    // A size of all zeroes is what a server that does not compute it sends: unknown, not empty.
+    ...(typeof p.additions === 'number' && typeof p.deletions === 'number' && p.changed_files
+      ? { additions: p.additions, deletions: p.deletions, changedFiles: p.changed_files }
+      : {}),
+    ...(typeof p.comments === 'number' ? { commentCount: p.comments } : {})
   }
 }
 

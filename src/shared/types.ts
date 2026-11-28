@@ -752,6 +752,34 @@ export interface PullRequest {
   body?: string
   /** The author's picture, when the host's list names one (https only is drawn). */
   authorAvatar?: string
+  /** Lines added and removed and files touched, when the host's list says
+   *  (GitHub through one GraphQL read, Forgejo in its list). Absent: unknown. */
+  additions?: number
+  deletions?: number
+  changedFiles?: number
+  /** Conversation comments, when the host's list counts them. */
+  commentCount?: number
+  /** When the latest comments were written and by whom — enough to count the
+   *  ones newer than your last visit. Absent where the list has no times. */
+  recentComments?: PrListComment[]
+  /** Each reviewer's standing verdict, when the host's list says. Present and
+   *  empty means "nobody has given one"; absent means the host did not say. */
+  reviews?: PrListReview[]
+  /** The host considers it approved and ready to go in (GitHub's review
+   *  decision, GitLab's merge status). */
+  readyToMerge?: boolean
+}
+
+/** One comment's time and author, as the PR list counts the new ones. */
+export interface PrListComment {
+  at: string
+  author: string
+}
+
+/** A reviewer's verdict on a pull request, as its list row shows it. */
+export interface PrListReview {
+  login: string
+  verdict: 'approved' | 'changes'
 }
 
 /**
@@ -3990,7 +4018,8 @@ export type PageContent =
   // `via: 'list'` — opened from the pull requests page, so its ‹ › walk the
   // filtered list it came from rather than the repository's open PRs.
   | { type: 'pr'; repoPath: string; remoteUrl: string; number: number; title: string; via?: 'list' }
-  | { type: 'pull-requests'; repoPath: string }
+  // `from: 'mission'` — opened from Mission Control, so the page offers the way back.
+  | { type: 'pull-requests'; repoPath: string; from?: 'mission' }
 
 /** One dependency's licence, collected at build time by scripts/gen-licenses.mjs.
  *  `text` is null when the package ships an SPDX id but no licence file. */

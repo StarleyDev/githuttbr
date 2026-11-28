@@ -736,7 +736,7 @@ export function MissionControlPage(): React.JSX.Element {
                               title={interp(t('mission.prChip'), { n: String(host.open) })}
                               onClick={(e) => {
                                 e.stopPropagation()
-                                openRepoPage(p.path, 'pull-requests')
+                                useSettingsStore.getState().openPageTab({ type: 'pull-requests', repoPath: p.path, from: 'mission' })
                               }}
                             >
                               <GitPullRequest size={11} />
