@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronDown, Users } from 'lucide-react'
+import { Check, ChevronDown, Users } from 'lucide-react'
 import type { CommitStyle } from '../../../shared/types'
 import { gitApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
@@ -12,6 +12,8 @@ import {
   subjectLength,
   subjectCounterLevel,
   SUBJECT_IDEAL_LEN,
+  SUBJECT_MAX_LEN,
+  isSubjectLengthHint,
   CC_TYPES,
   parseCcPrefix,
   applyCcType,
@@ -77,9 +79,10 @@ export interface CommitMessageEditorProps {
 }
 
 /**
- * The message half of committing: summary with its length counter, the
- * commit-style row behind the chevron (Conventional type and scope, ticket key,
- * style), the gitmoji picker, co-authors, the description and the lint hints.
+ * The message half of committing: the Conventional type as a "type ▾" button
+ * before the summary, the summary with its length counter, the commit-style row
+ * behind the chevron (scope, ticket key, style), the gitmoji picker, co-authors,
+ * the description and the lint hints.
  * Shared by the composer and the commit editor, so rewording an old commit
  * offers the same tools as writing a new one. It owns no draft: the caller
  * holds the text and decides where it is kept.
@@ -126,9 +129,44 @@ export function CommitMessageEditor({
   const [showAdvanced, setShowAdvanced] = useState(false)
 
   const lintHints = useMemo(() => lintCommit(summary, description), [summary, description])
+  // The length rule reads from the counter's tooltip; the list keeps the rest.
+  const lengthHint = lintHints.find(isSubjectLengthHint)
+  const listedHints = lintHints.filter((h) => !isSubjectLengthHint(h))
   const subjLen = subjectLength(summary)
   const subjLevel = subjectCounterLevel(subjLen)
-  const currentCcType = parseCcPrefix(summary).type
+  const cc = parseCcPrefix(summary)
+  const currentCcType = cc.type
+  // With a Conventional style the prefix lives on the type button, and the
+  // field holds the words after it — the stored summary stays whole, so drafts,
+  // history recall, amend and the AI all read and write it as before. Typing a
+  // prefix by hand, or Backspace at the field's start, shows it as text again
+  // until the field loses focus.
+  const [prefixAsText, setPrefixAsText] = useState(false)
+  const splitPrefix = usesConventional && !!cc.type && !prefixAsText
+  const prefix = splitPrefix ? summary.slice(0, summary.length - cc.rest.length) : ''
+  const prefixLabel = cc.type ? `${cc.type}${cc.scope}${cc.bang}` : ''
+  const inputRef = useRef<HTMLInputElement | null>(null)
+  const setInputRefs = (el: HTMLInputElement | null): void => {
+    inputRef.current = el
+    if (typeof summaryRef === 'function') summaryRef(el)
+    else if (summaryRef) (summaryRef as React.RefObject<HTMLInputElement | null>).current = el
+  }
+  const changeSummaryText = (text: string): void => {
+    const next = prefix + text
+    if (usesConventional && !prefix && !cc.type && parseCcPrefix(next).type) setPrefixAsText(true)
+    setSummary(next)
+  }
+  const handleSummaryKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): void => {
+    const el = e.currentTarget
+    if (e.key === 'Backspace' && splitPrefix && el.selectionStart === 0 && el.selectionEnd === 0) {
+      e.preventDefault()
+      const at = prefix.length
+      setPrefixAsText(true)
+      requestAnimationFrame(() => inputRef.current?.setSelectionRange(at, at))
+      return
+    }
+    onSummaryKeyDown?.(e)
+  }
   const applyCcTypeToSummary = (ty: string): void => {
     // In the combined style the type and its gitmoji move together (feat → ✨).
     setSummary(commitStyle === 'gitmoji-conventional' ? applyCcTypeWithGitmoji(summary, ty) : applyCcType(summary, ty))
@@ -136,6 +174,18 @@ export function CommitMessageEditor({
   // When the repository lists its scopes, the scope is a pick from the real
   // set — which is the difference between `feat(renderer)` and `feat(rendererr)`.
   const applyCcScopeToSummary = (scope: string): void => setSummary(applyCcScope(summary, scope))
+  const openCcTypeMenu = (e: React.MouseEvent): void => {
+    const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    openContextMenu(r.left, r.bottom + 4, [
+      ...CC_TYPES.map((ty) => ({
+        label: ty,
+        icon: ty === currentCcType ? <Check size={13} /> : undefined,
+        onClick: () => applyCcTypeToSummary(ty)
+      })),
+      { separator: true },
+      { label: t('composer.ccTypeNone'), disabled: !currentCcType, onClick: () => applyCcTypeToSummary('') }
+    ])
+  }
   const currentGitmoji = parseGitmojiPrefix(summary).emoji
   const applyGitmojiToSummary = (emoji: string): void => setSummary(applyGitmoji(summary, emoji))
 
@@ -202,23 +252,45 @@ export function CommitMessageEditor({
         {/* Beside the subject, not in the collapsed style row: with a gitmoji
             style the emoji is part of every message, so it must be one click away. */}
         {usesGitmoji && <GitmojiPicker value={currentGitmoji} onPick={applyGitmojiToSummary} disabled={disabled} />}
+        {usesConventional && (
+          <button
+            type="button"
+            className={`commit-cc-type ${cc.type ? 'set' : ''}`}
+            title={t('composer.ccType')}
+            aria-haspopup="menu"
+            disabled={disabled || readOnly}
+            onClick={openCcTypeMenu}
+          >
+            {prefixLabel || t('composer.ccTypePlaceholder')}
+            <ChevronDown size={12} aria-hidden="true" />
+          </button>
+        )}
         <input
-          ref={summaryRef}
+          ref={setInputRefs}
           id={summaryId}
           className="commit-summary"
           placeholder={t('composer.summaryPlaceholder')}
           title={t('composer.summaryTitle')}
-          value={summary}
+          value={splitPrefix ? cc.rest : summary}
           disabled={disabled}
           // While the AI writes, typing here would be overwritten by its answer.
           readOnly={readOnly}
-          maxLength={summaryMaxLength}
-          onChange={(e) => setSummary(e.target.value)}
-          onKeyDown={onSummaryKeyDown}
+          maxLength={Math.max(0, summaryMaxLength - prefix.length)}
+          onChange={(e) => changeSummaryText(e.target.value)}
+          onKeyDown={handleSummaryKeyDown}
+          onBlur={() => setPrefixAsText(false)}
         />
         {summary.trim().length > 0 && (
-          <span className={`commit-counter ${subjLevel}`} title={interp(t('composer.subjectLength'), { ideal: SUBJECT_IDEAL_LEN })}>
-            {subjLen}
+          // Muted against the limit; red only past it. The "aim for 50" rule is the tooltip.
+          <span
+            className={`commit-counter ${subjLevel === 'error' ? 'error' : ''}`}
+            title={
+              lengthHint
+                ? interp(t(lengthHint.key), lengthHint.vars ?? {})
+                : interp(t('composer.subjectLength'), { ideal: SUBJECT_IDEAL_LEN })
+            }
+          >
+            {subjLen}/{SUBJECT_MAX_LEN}
           </span>
         )}
         <button
@@ -239,22 +311,6 @@ export function CommitMessageEditor({
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.16 }}
           >
-            {usesConventional && (
-              <select
-                className="commit-type"
-                title={t('composer.ccType')}
-                value={currentCcType}
-                disabled={disabled}
-                onChange={(e) => applyCcTypeToSummary(e.target.value)}
-              >
-                <option value="">{t('composer.ccTypePlaceholder')}</option>
-                {CC_TYPES.map((ty) => (
-                  <option key={ty} value={ty}>
-                    {ty}
-                  </option>
-                ))}
-              </select>
-            )}
             {usesConventional && scopes.length > 0 && (
               <select
                 className="commit-type"
@@ -307,9 +363,9 @@ export function CommitMessageEditor({
         onChange={(e) => setDescription(e.target.value)}
       />
       {afterDescription}
-      {lintHints.length > 0 && (
+      {listedHints.length > 0 && (
         <ul className="commit-lint">
-          {lintHints.map((h, i) => (
+          {listedHints.map((h, i) => (
             <li key={i} className={`commit-lint-item ${h.level}`}>
               {h.vars ? interp(t(h.key), h.vars) : t(h.key)}
             </li>

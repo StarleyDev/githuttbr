@@ -45,22 +45,26 @@ describe('a commit subject’s Conventional Commit parts', () => {
 })
 
 describe('the Commits summary', () => {
-  it('counts commits, distinct authors and each type in the composer’s order', () => {
+  it('counts commits, distinct authors and each type, the coloured types first', () => {
     const s = getPrCommitSummary([
       commit('a', 'test(search): cover'),
       commit('b', 'feat(search): add', 'Sam Rivera', 'sam'),
       commit('c', 'fix: trim', 'Alex Chen'),
       commit('d', 'feat: more', 'sam rivera', 'SAM'),
-      commit('e', 'Update README', 'alex chen')
+      commit('e', 'Update README', 'alex chen'),
+      commit('f', 'docs: guide', 'alex chen'),
+      commit('g', 'perf: index', 'alex chen')
     ])
-    expect(s.commits).toBe(5)
+    expect(s.commits).toBe(7)
     // "Sam Rivera" without a login is a name; with one, the account — two people
     // here, as the host would tell them apart. "Alex Chen" twice, case aside.
     expect(s.authors).toBe(3)
     expect(s.types).toEqual([
       { type: 'feat', count: 2 },
       { type: 'fix', count: 1 },
-      { type: 'test', count: 1 }
+      { type: 'test', count: 1 },
+      { type: 'perf', count: 1 },
+      { type: 'docs', count: 1 }
     ])
   })
 })

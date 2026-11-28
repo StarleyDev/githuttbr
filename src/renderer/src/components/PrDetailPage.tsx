@@ -1286,6 +1286,17 @@ function ReviewThreadCard({
     setReply(v)
     drafts.current[key] = v
   }
+  const discardReply = (from: HTMLElement): void => {
+    if (!reply.trim()) return from.blur()
+    useUIStore.getState().openModal({
+      kind: 'confirm',
+      title: t('prDetail.replyDiscardTitle'),
+      message: t('prDetail.replyDiscardMessage'),
+      danger: true,
+      confirmLabel: t('prPage.lineCommentDiscard'),
+      onConfirm: () => changeReply('')
+    })
+  }
   const send = (): void => {
     if (!reply.trim()) return
     void onReply(reply).then((ok) => {
@@ -1311,9 +1322,9 @@ function ReviewThreadCard({
             mine={isMyComment(c, pr)}
             headClassName="prp-card-head"
             bodyClassName="prp-card-body"
+            // Name and time only: the thread is one conversation, not a row of cards.
             head={
               <>
-                <Avatar login={c.author} avatars={pr.avatars} />
                 <strong>{c.author}</strong>
                 <TimeAgoLabel iso={c.createdAt} />
               </>
@@ -1339,12 +1350,13 @@ function ReviewThreadCard({
       )}
       {canReply && (
         <div className="prd-thread-reply">
-          {/* A textarea now, so Enter is a new line (or the next list item) and
-              ⌘/Ctrl+Enter sends — the same keys as every other comment box. */}
+          {/* One line, as a chat reply: Enter (or ⌘/Ctrl+Enter, as in every other
+              comment box) sends, Shift+Enter adds a line, Escape drops the text. */}
           <MarkdownEditor
             compact
             inputClassName="prd-reply-input"
             placeholder={t('prDetail.replyPlaceholder')}
+            ariaLabel={t('prDetail.replyLabel')}
             value={reply}
             onChange={changeReply}
             mentions={mentions}
@@ -1352,15 +1364,22 @@ function ReviewThreadCard({
             // Leaving for the guide unmounts the page: every box on it counts.
             hasUnsentText={NEVER_LOST}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+              if (e.key === 'Enter' && !e.shiftKey && !e.altKey && !e.nativeEvent.isComposing) {
                 e.preventDefault()
                 if (!busy) send()
+              } else if (e.key === 'Escape') {
+                e.preventDefault()
+                e.stopPropagation()
+                discardReply(e.currentTarget)
               }
             }}
           />
-          <button className="btn ghost tiny" onClick={send} disabled={busy || !reply.trim()}>
-            {t('prDetail.reply')}
-          </button>
+          {/* Mouse users get the button back once there is something to send. */}
+          {reply.trim() && (
+            <button className="btn ghost tiny" title={t('prDetail.replyKeys')} onClick={send} disabled={busy}>
+              {t('prDetail.reply')}
+            </button>
+          )}
         </div>
       )}
     </article>

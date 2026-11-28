@@ -39,7 +39,7 @@ export function getCommitSubjectParts(subject: string): CommitSubjectParts {
 export interface PrCommitSummary {
   commits: number
   authors: number
-  /** Types present, in the composer's order, with their counts. */
+  /** Types present with their counts: the coloured ones first (as `TONES` lists them), then the rest. */
   types: { type: string; count: number }[]
 }
 
@@ -53,7 +53,12 @@ export function getPrCommitSummary(commits: readonly PrCommit[]): PrCommitSummar
     const { type } = getCommitSubjectParts(c.subject)
     if (type) counts.set(type, (counts.get(type) ?? 0) + 1)
   }
-  const types = CC_TYPES.filter((ty) => counts.has(ty)).map((type) => ({ type, count: counts.get(type) ?? 0 }))
+  // The chips a reviewer scans for lead the line; the quiet ones follow in the composer's order.
+  const toned = Object.keys(TONES)
+  const rank = (ty: string): number => (toned.includes(ty) ? toned.indexOf(ty) : toned.length)
+  const types = CC_TYPES.filter((ty) => counts.has(ty))
+    .sort((a, b) => rank(a) - rank(b))
+    .map((type) => ({ type, count: counts.get(type) ?? 0 }))
   return { commits: commits.length, authors: authors.size, types }
 }
 

@@ -1,4 +1,4 @@
-import { AlertTriangle, Check, CircleSlash, GitMerge, Loader2, Radar, SquarePen } from 'lucide-react'
+import { AlertTriangle, Check, CircleSlash, GitMerge, Loader2 } from 'lucide-react'
 import type { CommitEditInfo, CommitEditPreview } from '../../../shared/types'
 import { useT, interp } from '../i18n'
 import { emojifyGitmoji } from '../../../shared/gitmoji'
@@ -136,11 +136,11 @@ export function CommitEditImpactPanel({
 
       <span className="commitedit-impact-spacer" />
       <button className="btn commitedit-impact-preview" onClick={onPreview} disabled={!canPreview}>
-        {busy ? <Loader2 size={13} className="spin" /> : <Radar size={13} />}{' '}
+        {busy && <Loader2 size={13} className="spin" />}
         {preview ? t('commitEdit.previewAgain') : t('commitEdit.preview')}
       </button>
       <button className="btn primary commitedit-impact-apply" onClick={onApply} disabled={!canApply}>
-        <SquarePen size={13} /> {t('commitEdit.apply')}
+        {t('commitEdit.apply')}
       </button>
       {preview?.newTip === null && (
         <p className="commitedit-impact-hint">

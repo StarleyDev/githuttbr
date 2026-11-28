@@ -1,5 +1,5 @@
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
-import { Copy, DownloadCloud, ExternalLink, GitCompareArrows, Loader2, X } from 'lucide-react'
+import { Copy, ExternalLink, Loader2, X } from 'lucide-react'
 import type { CiStatus, PrCommit, PrCommitList, PrCommitStats, PrDetail, ReferenceQuery } from '../../../shared/types'
 import { autolink, remoteWebUrl, type AutolinkOptions } from '../lib/autolink'
 import { splitByLastVisit } from '../lib/prVisits'
@@ -15,6 +15,7 @@ import { canFetchPrHead, getPrCommitWebUrl, groupCommitsByDay } from '../lib/prC
 import { timeAgo } from '../lib/timeAgo'
 import { readableError } from '../lib/gitErrorHint'
 import { getCommitSubjectParts, getCommitTypeTone, getCompareEnds, getPrCommitSummary } from '../lib/prCommitSummary'
+import { reflowCommitBody } from '../lib/commitBody'
 import { openBranchCompare } from '../lib/branchCompare'
 import { useT, interp, type TranslationKey } from '../i18n'
 
@@ -306,7 +307,7 @@ export function PrCommitsSection({
               title={localCount < 2 ? t('prCommits.compareNeedsLocal') : t('prCommits.compareTitle')}
               onClick={() => setPicking(true)}
             >
-              <GitCompareArrows size={12} aria-hidden="true" /> {t('prCommits.compare')}
+              {t('prCommits.compare')}
             </button>
           ))}
       </div>
@@ -498,7 +499,7 @@ function PrCommitRow({
             disabled={fetching}
             onClick={onFetch}
           >
-            {fetching ? <Loader2 size={12} className="spin" aria-hidden="true" /> : <DownloadCloud size={12} aria-hidden="true" />}{' '}
+            {fetching && <Loader2 size={12} className="spin" aria-hidden="true" />}
             {inFork ? t('prPage.commitFetchPrHead') : t('prCommits.fetchBranch')}
           </button>
         ) : (
@@ -514,7 +515,7 @@ function PrCommitRow({
           )
         )}
       </div>
-      {c.body && <p className="prc-body">{autolink(c.body, repoWeb, undefined, linkOptions)}</p>}
+      {c.body && <p className="prc-body">{autolink(reflowCommitBody(c.body), repoWeb, undefined, linkOptions)}</p>}
     </li>
   )
 }

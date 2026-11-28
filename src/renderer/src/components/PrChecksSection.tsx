@@ -90,21 +90,21 @@ export function PrChecksSection({
   ].filter(Boolean)
 
   return (
-    <div className="prc">
-      <div className={`prc-banner ${summary.state}`} role="status">
+    <div className="pck">
+      <div className={`pck-banner ${summary.state}`} role="status">
         <StateIcon state={summary.state} size={20} circle />
-        <span className="prc-banner-text">
+        <span className="pck-banner-text">
           <b>{say(summary.headline)}</b>
-          {meta.length > 0 && <span className="prc-banner-meta">{meta.join(' · ')}</span>}
+          {meta.length > 0 && <span className="pck-banner-meta">{meta.join(' · ')}</span>}
         </span>
-        <span className="prc-spacer" />
+        <span className="pck-spacer" />
         {reruns.length > 0 && (
-          <button className="prc-btn" title={t('ciRuns.rerunFailed')} disabled={rerunning} onClick={() => void rerunFailed()}>
+          <button className="pck-btn" title={t('ciRuns.rerunFailed')} disabled={rerunning} onClick={() => void rerunFailed()}>
             {rerunning && <Loader2 size={12} className="spin" />} {t('prChecks.rerunFailed')}
           </button>
         )}
         <button
-          className="prc-btn"
+          className="pck-btn"
           onClick={() => useSettingsStore.getState().openPageTab({ type: 'ci-runs', repoPath })}
         >
           {t('prChecks.openCiRuns')}
@@ -128,7 +128,7 @@ export function PrChecksSection({
 }
 
 function StateIcon({ state, size, circle }: { state: CheckState; size: number; circle?: boolean }): React.JSX.Element {
-  const cls = `prc-icon ${state}`
+  const cls = `pck-icon ${state}`
   if (state === 'pending') return <Loader2 size={size} className={`${cls} spin`} aria-hidden="true" />
   if (circle) {
     if (state === 'fail') return <CircleX size={size} className={cls} aria-hidden="true" />
@@ -179,36 +179,36 @@ function CheckCard({
   }
 
   return (
-    <section className={`prc-card ${state} ${expanded ? 'open' : ''}`}>
-      <header className="prc-card-head">
+    <section className={`pck-card ${state} ${expanded ? 'open' : ''}`}>
+      <header className="pck-card-head">
         <StateIcon state={state} size={14} />
-        <b className="prc-card-name">{check.name}</b>
-        <span className="prc-card-state">{stateText}</span>
-        <span className="prc-spacer" />
+        <b className="pck-card-name">{check.name}</b>
+        <span className="pck-card-state">{stateText}</span>
+        <span className="pck-spacer" />
         {state === 'fail' && canLog && (
-          <button className="prc-link" disabled={!log} onClick={copyLog}>
+          <button className="pck-link" disabled={!log} onClick={copyLog}>
             {t('prChecks.copyLog')}
           </button>
         )}
         {state !== 'fail' && canLog && (
-          <button className="prc-link" aria-expanded={open} onClick={() => setOpen(!open)}>
+          <button className="pck-link" aria-expanded={open} onClick={() => setOpen(!open)}>
             {open ? t('prPage.hideLog') : t('prChecks.viewLog')}
           </button>
         )}
         {check.url && (state === 'fail' || !canLog) && (
-          <button className="prc-link" onClick={() => void shellApi.openExternal(check.url)}>
+          <button className="pck-link" onClick={() => void shellApi.openExternal(check.url)}>
             {t('prChecks.viewOnHost')} <ArrowRight size={11} />
           </button>
         )}
       </header>
 
       {expanded && log === undefined && (
-        <div className="prc-pad prp-muted">
+        <div className="pck-pad prp-muted">
           <Loader2 size={13} className="spin" /> {t('prDetail.loading')}
         </div>
       )}
       {expanded && log === null && (
-        <div className="prc-pad prp-muted">
+        <div className="pck-pad prp-muted">
           {t('prPage.logUnavailable')}{' '}
           {check.url && (
             <button className="prp-link" onClick={() => void shellApi.openExternal(check.url)}>
@@ -253,8 +253,8 @@ function FailedTests({
   }
 
   return (
-    <div className="prc-failures">
-      <span className="prc-failures-count">
+    <div className="pck-failures">
+      <span className="pck-failures-count">
         {failures.length === 1 ? t('prChecks.testFailedOne') : interp(t('prChecks.testsFailed'), { count: String(failures.length) })}
       </span>
       {failures.map((f, i) => {
@@ -262,29 +262,29 @@ function FailedTests({
         const file = f.file ? getRepoRelativePath(f.file, prFiles ?? []) : null
         const where = f.file ? (f.line ? `${file ?? f.file}:${f.line}` : (file ?? f.file)) : null
         return (
-          <div key={i} className="prc-failure">
-            <b className="prc-failure-name">{f.name}</b>
-            {f.error && <code className="prc-failure-error">{f.error}</code>}
+          <div key={i} className="pck-failure">
+            <b className="pck-failure-name">{f.name}</b>
+            {f.error && <code className="pck-failure-error">{f.error}</code>}
             {where && (
-              <span className="prc-failure-actions">
+              <span className="pck-failure-actions">
                 {file ? (
                   <button
-                    className="prc-chip"
+                    className="pck-chip"
                     title={interp(t('prChecks.openAtLine'), { path: file, line: String(f.line ?? 1) })}
                     onClick={() => openFile(file, f.line)}
                   >
                     {where}
                   </button>
                 ) : (
-                  <code className="prc-chip">{where}</code>
+                  <code className="pck-chip">{where}</code>
                 )}
                 {file && (
-                  <button className="prc-link" onClick={() => openFile(file, f.line)}>
+                  <button className="pck-link" onClick={() => openFile(file, f.line)}>
                     {t('prChecks.openInEditor')}
                   </button>
                 )}
                 {file && prFiles?.includes(file) && (
-                  <button className="prc-link" onClick={() => onShowFile(file)}>
+                  <button className="pck-link" onClick={() => onShowFile(file)}>
                     {t('prChecks.viewInDiff')}
                   </button>
                 )}
@@ -307,18 +307,18 @@ function CheckLog({ text, defaultOpen }: { text: string; defaultOpen: boolean })
   const total = lines.dropped + lines.list.length
   const width = String(total).length
   return (
-    <details className="prc-log" open={defaultOpen}>
+    <details className="pck-log" open={defaultOpen}>
       <summary>{interp(t('prChecks.fullLog'), { count: String(total) })}</summary>
       {lines.dropped > 0 && (
-        <div className="prp-muted prc-log-note">{interp(t('prPage.logTrimmed'), { count: String(lines.dropped) })}</div>
+        <div className="prp-muted pck-log-note">{interp(t('prPage.logTrimmed'), { count: String(lines.dropped) })}</div>
       )}
       <pre>
         {lines.list.map((l) => (
-          <span key={l.n} className={`prc-log-line ${l.failure ? 'fail' : ''}`}>
-            <span className="prc-log-n" style={{ minWidth: `${width}ch` }}>
+          <span key={l.n} className={`pck-log-line ${l.failure ? 'fail' : ''}`}>
+            <span className="pck-log-n" style={{ minWidth: `${width}ch` }}>
               {l.n}
             </span>
-            <span className="prc-log-text">
+            <span className="pck-log-text">
               {l.spans.map((s, i) => (
                 <span key={i} style={s.style}>
                   {s.text}

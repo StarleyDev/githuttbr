@@ -201,7 +201,11 @@ export interface MarkdownEditorProps {
    * each time would re-render whatever holds the editor.
    */
   getReferences?: () => MarkdownReference[]
-  /** A box in a list of many (thread replies): the tools appear once it is used. */
+  /**
+   * A one-line box in a list of many (thread replies): no tabs or toolbar, and
+   * it grows with its text — Shift+Enter or a paste adds lines. Enter is left to
+   * `onKeyDown`, for the owner to send; the shortcuts and @/# lists still work.
+   */
   compact?: boolean
   /** The cheat sheet links to the full guide — off inside a dialog, which would hide it. */
   helpLink?: boolean
@@ -246,7 +250,6 @@ export function MarkdownEditor({
   const [mode, setMode] = useState<'write' | 'preview'>('write')
   // On a pull request or issue page, Preview shows what the posted comment will look like.
   const remotePreview = useRemotePreviewScope()
-  const [focused, setFocused] = useState(false)
   const [headingOpen, setHeadingOpen] = useState(false)
   const [cheatAnchor, setCheatAnchor] = useState<HTMLElement | null>(null)
   const [toolIndex, setToolIndex] = useState(0)
@@ -270,9 +273,18 @@ export function MarkdownEditor({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // The one-line box grows to fit what was typed or pasted (CSS caps it), and
+  // shrinks back once the text is sent.
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!compact || !el) return
+    el.style.height = 'auto'
+    el.style.height = `${el.scrollHeight + el.offsetHeight - el.clientHeight}px`
+  }, [compact, value])
+
   const listId = `${id}-ac`
   const optionId = (i: number): string => `${id}-ac-${i}`
-  const expanded = !compact || focused || !!value || mode === 'preview' || !!cheatAnchor
+  const expanded = !compact
 
   /** Recomputes the @/# list from the caret — after typing, clicking or moving it. */
   const refreshCompletion = (): void => {
@@ -375,7 +387,8 @@ export function MarkdownEditor({
       runTool(tool)
       return
     }
-    if (e.key === 'Enter' && !e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey && !composing) {
+    // A one-line box sends on Enter: no list continuation there.
+    if (!compact && e.key === 'Enter' && !e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey && !composing) {
       const el = e.currentTarget
       const edit = continueList({ value: el.value, selStart: el.selectionStart, selEnd: el.selectionEnd })
       if (edit) {
@@ -456,10 +469,8 @@ export function MarkdownEditor({
   return (
     <div
       className={`mde ${compact ? 'mde-compact' : ''} ${expanded ? 'mde-open' : ''} ${className}`}
-      onFocus={() => setFocused(true)}
       onBlur={(e) => {
         if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
-          setFocused(false)
           setCompletion(null)
           setHeadingOpen(false)
         }
@@ -575,7 +586,7 @@ export function MarkdownEditor({
           aria-activedescendant={listShown ? optionId(active) : undefined}
           value={value}
           spellCheck={spellCheck}
-          rows={compact ? (expanded ? 3 : 1) : undefined}
+          rows={compact ? 1 : undefined}
           onChange={(e) => {
             onChange(e.target.value)
             refreshCompletion()

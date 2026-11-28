@@ -16,12 +16,20 @@ geral ou a própria do perfil.
 
 | Estilo | Se parece com |
 |---|---|
-| **Conventional** | `feat(api)!: add rate limiting` — com um dropdown de tipo |
+| **Conventional** | `feat(api)!: add rate limiting` — com um botão **tipo ▾** antes do assunto |
 | **Gitmoji** | `✨ add rate limiting` — com um seletor de emoji |
-| **Gitmoji + Convencional** | `✨ feat(api): add rate limiting` — seletor de emoji *e* dropdown de tipo |
+| **Gitmoji + Convencional** | `✨ feat(api): add rate limiting` — seletor de emoji *e* botão **tipo ▾** |
 | **Ticket** | `ABC-123: add rate limiting` — semeado a partir do nome da branch |
 | **Simples** · **Auto** | O que você digitar; o Auto deixa a IA decidir o formato |
 | **Homem das cavernas** · **Haicai** | Exatamente o que o nome sugere |
+
+Com um estilo Conventional, o prefixo fica no botão **tipo ▾** à frente do
+assunto (*feat(api)*, ou *tipo* enquanto não há nenhum) e o campo guarda só as
+palavras depois dele; a mensagem continua recebendo o `feat(api): …` inteiro. O
+botão lista os tipos, e **Sem tipo** tira o prefixo. Digitar o prefixo à mão
+também funciona, e <kbd>Backspace</kbd> no início do campo mostra o prefixo como
+texto de novo, para mudar o escopo; ele volta para o botão quando o campo perde o
+foco.
 
 ![Compositor pré-preenchido a partir de um template de commit](../../screenshots/commit-template.webp)
 
@@ -69,7 +77,7 @@ Limites:
 
 Com a IA ligada, o botão **✦** (*Gerar com IA* no hover) fica abaixo da
 descrição. Ele lê o diff preparado (staged) e escreve o resumo e a descrição no
-estilo acima. Ao lado, a linha diz quem vai responder — *conta · modelo*, o par escolhido para mensagens de
+estilo acima. Ao lado, um seletor separado diz quem vai responder — *conta · modelo*, o par escolhido para mensagens de
 commit em **Configurações → IA → Modelo por tarefa** — para que um modelo local
 lento ou um caro nunca seja surpresa.
 
@@ -122,10 +130,12 @@ Limites:
 
 ## O linter
 
-Uma verificação ao vivo e não bloqueante: comprimento do assunto (com contador de
-caracteres), ponto final sobrando, assunto não imperativo ou em minúsculas, linhas
-do corpo largas demais. São dicas, nunca um portão — ele não vai impedir você de
-commitar.
+Uma verificação ao vivo e não bloqueante: comprimento do assunto, ponto final
+sobrando, assunto não imperativo ou em minúsculas, linhas do corpo largas demais.
+São dicas, nunca um portão — ele não vai impedir você de commitar. O comprimento
+é o contador ao lado do assunto, lido contra o limite de 72 caracteres
+(*56/72*): ele fica vermelho depois do limite, e a dica dele traz o conselho de
+mirar em 50. As outras dicas aparecem abaixo da descrição.
 
 ## Amend
 

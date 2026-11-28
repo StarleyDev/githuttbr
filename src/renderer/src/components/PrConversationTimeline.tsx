@@ -4,7 +4,6 @@ import type { PrComment, PrCommit, PrDetail, PrReview, PrReviewThread } from '..
 import { HostUserAvatar as Avatar } from './HostUserAvatar'
 import { useT, interp, type TranslationKey } from '../i18n'
 import { timeAgo } from '../lib/timeAgo'
-import { isMyComment } from '../lib/commentEdit'
 import { splitByLastVisit } from '../lib/prVisits'
 import type { ReviewerState } from '../lib/prSummary'
 import {
@@ -109,14 +108,13 @@ export function PrConversationTimeline({
   const { seen, fresh } = useMemo(() => splitByLastVisit(shown, lastVisit), [shown, lastVisit])
   const openThreads = countOpenThreads(pr.reviewThreads)
 
-  const name = (login: string, mine = false): ReactNode => {
+  const name = (login: string): ReactNode => {
     const roles = getPrPersonRoles(pr, login)
     return (
       <>
         <strong>{login}</strong>
         {roles.author && <span className="prt-role">{t('prTimeline.roleAuthor')}</span>}
         {roles.reviewer && <span className="prt-role">{t('prTimeline.roleReviewer')}</span>}
-        {mine && <span className="prt-role prt-role-you">{t('prTimeline.roleYou')}</span>}
       </>
     )
   }
@@ -154,7 +152,7 @@ export function PrConversationTimeline({
               {renderComment(
                 c,
                 <>
-                  {name(c.author, isMyComment(c, pr))}
+                  {name(c.author)}
                   <span className="prt-sep">·</span>
                   <TimeAgoLabel iso={c.createdAt} />
                 </>
@@ -212,7 +210,8 @@ export function PrConversationTimeline({
                   </button>
                 )}
                 {interpNodes(t('prTimeline.commentedOn'), {
-                  author: name(first?.author ?? '?', first ? isMyComment(first, pr) : false),
+                  // The card headers carry the roles; a thread names its author plainly.
+                  author: <strong>{first?.author ?? '?'}</strong>,
                   place: (
                     <button
                       type="button"

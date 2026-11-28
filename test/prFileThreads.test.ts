@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { PrReviewThread } from '../src/shared/types'
-import { getThreadCountsByPath, sumThreadCounts } from '../src/renderer/src/lib/prFileThreads'
+import { getThreadCountsByPath } from '../src/renderer/src/lib/prFileThreads'
 
 const thread = (path: string, line: number | null = 1): PrReviewThread => ({
   path,
@@ -25,11 +25,5 @@ describe('review conversations per file', () => {
 
   it('skips a conversation with no path', () => {
     expect(getThreadCountsByPath([thread('')]).size).toBe(0)
-  })
-
-  it('adds up a folder from its files', () => {
-    const counts = getThreadCountsByPath([thread('src/a.ts'), thread('src/a.ts'), thread('src/b.ts')])
-    expect(sumThreadCounts(counts, ['src/a.ts', 'src/b.ts', 'src/c.ts'])).toBe(3)
-    expect(sumThreadCounts(counts, [])).toBe(0)
   })
 })

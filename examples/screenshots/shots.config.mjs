@@ -1364,11 +1364,17 @@ export const shots = [
       await openPrTimelineShot(page, app, repos['octopus-merge'], prTimelineFake({ full: true, comments: [] }))
       await page.locator('.prt-new-divider').waitFor()
       await page.locator('.prt-push').first().waitFor()
-      // From the line thread down: the review round, the new-since line, the approval, the folded thread.
+      await page.locator('.prt-resolved').waitFor()
+      // From the push down: the line thread, the review round, the new-since line,
+      // the approval and the folded thread — that last one must stay in frame.
       await page.locator('.prt-push').first().evaluate((el) => {
+        const body = el.closest('.prp-body')
         el.scrollIntoView({ block: 'start' })
         // Below the sticky filter bar, not under it.
-        el.closest('.prp-body').scrollTop -= 44
+        body.scrollTop -= 44
+        const resolved = body.querySelector('.prt-resolved')
+        const over = resolved.getBoundingClientRect().bottom + 12 - body.getBoundingClientRect().bottom
+        if (over > 0) body.scrollTop += over
       })
       await page.waitForTimeout(300)
     }
@@ -1683,11 +1689,20 @@ export const shots = [
           ]
         }))
       }, local)
-      await page.evaluate((repoPath) => window.__shot.settings.getState().openPageTab({
-        type: 'pr', repoPath, remoteUrl: 'https://github.com/example/workspace.git', number: 42, title: 'Add workspace search'
-      }), repos['octopus-merge'])
+      // Last seen before the 20th: the two commits of that day sit under the
+      // "New since your last visit" divider.
+      await page.evaluate(({ repoPath, remoteUrl, key, at }) => {
+        const settings = window.__shot.settings.getState()
+        settings.update((s) => ({ ...s, prVisits: { ...(s.prVisits ?? {}), [key]: at } }))
+        settings.openPageTab({ type: 'pr', repoPath, remoteUrl, number: 42, title: 'Add workspace search' })
+      }, {
+        repoPath: repos['octopus-merge'], remoteUrl: PR_TIMELINE_REMOTE, key: PR_TIMELINE_VISIT_KEY,
+        at: Date.parse('2026-11-19T18:00:00Z')
+      })
       await page.locator('.prp-head h2').waitFor()
       await page.locator('.prp-tab').nth(1).click()
+      await page.locator('.prc-commit').first().waitFor()
+      await page.locator('.prt-new-divider').waitFor()
       await page.locator('.prc-commit .prc-ci').first().waitFor()
       await page.locator('.prc-commit', { hasText: 'list files across' }).locator('.prc-meta', { hasText: '+' }).waitFor()
       await page.mouse.move(0, 0)
@@ -1937,8 +1952,8 @@ export const shots = [
       await page.locator('.prp-head h2').waitFor()
       await page.locator('.prp-tab').nth(4).click()
       // The failed check opens on its own, log and failed test included.
-      await page.locator('.prc-failures').waitFor()
-      await page.locator('.prc-log pre').waitFor()
+      await page.locator('.pck-failures').waitFor()
+      await page.locator('.pck-log pre').waitFor()
       await page.waitForTimeout(300)
     }
   },
@@ -2546,13 +2561,10 @@ export const shots = [
     themes: ['dark'],
     drive: async (page, repoPaths) => {
       const repo = repoPaths['commit-template']
+      // On the AI the profile reads it from — the general one unless the profile has its own.
       await page.evaluate(() => {
-        window.__shot.settings.getState().update((s) => ({
-          ...s,
-          profiles: s.profiles.map((p) =>
-            p.id === s.activeProfileId ? { ...p, ai: { ...p.ai, commitStyle: 'gitmoji-conventional' } } : p
-          )
-        }))
+        const settings = window.__shot.settings.getState()
+        settings.saveAIFor(settings.activeProfile().id, { commitStyle: 'gitmoji-conventional' })
       })
       await page.evaluate((p) => window.__shot.repo.getState().select(p, { type: 'wip' }), repo)
       await page.waitForTimeout(500)
@@ -2979,6 +2991,12 @@ export const shots = [
         const c = commits.find((x) => x.subject.toLowerCase().includes('readme')) ?? commits[Math.floor(commits.length / 2)]
         window.__shot.ui.getState().setCommitEditView({ repoPath: p, sha: c.hash, subject: c.subject })
       }, repo)
+      // Conventional, as the mockup: the README commit's "docs:" sits on the type button.
+      // On the AI the profile reads it from — the general one unless the profile has its own.
+      await page.evaluate(() => {
+        const settings = window.__shot.settings.getState()
+        settings.saveAIFor(settings.activeProfile().id, { commitStyle: 'conventional' })
+      })
       await page.waitForTimeout(900)
       const summary = page.locator('#commitedit-summary')
       await summary.fill((await summary.inputValue()) + ' and a test command')
@@ -3038,19 +3056,16 @@ export const shots = [
       }, repo)
       await page.waitForTimeout(900)
       // Preview arms only once something changed — a reword is enough. It is
-      // done with the composer's own tools: the style row open, the Conventional
-      // type picked from the list, so the shot shows the editor has them too.
+      // done with the composer's own tools: the Conventional type picked from
+      // the type button, so the shot shows the editor has them too.
+      // On the AI the profile reads it from — the general one unless the profile has its own.
       await page.evaluate(() => {
-        window.__shot.settings.getState().update((s) => ({
-          ...s,
-          profiles: s.profiles.map((p) =>
-            p.id === s.activeProfileId ? { ...p, ai: { ...p.ai, commitStyle: 'conventional' } } : p
-          )
-        }))
+        const settings = window.__shot.settings.getState()
+        settings.saveAIFor(settings.activeProfile().id, { commitStyle: 'conventional' })
       })
-      await page.locator('.commitedit-message .commit-advanced-toggle').click()
+      await page.locator('.commitedit-message .commit-cc-type').click()
+      await page.locator('.context-menu .menu-item', { hasText: /^build$/ }).click()
       await page.waitForTimeout(300)
-      await page.locator('.commitedit-message .commit-style-row select.commit-type').first().selectOption('build')
       await page.locator('.commitedit-impact-preview').click()
       await page.waitForTimeout(1500)
     }

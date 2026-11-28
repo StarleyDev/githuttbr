@@ -4743,6 +4743,8 @@ body.col-resizing .node-ava {
 
 .commit-summary {
   flex: 1;
+  /* The row also holds the type button and the counter: the field gives way, not the row. */
+  min-width: 0;
 }
 
 .commit-type {
@@ -4757,6 +4759,34 @@ body.col-resizing .node-ava {
   cursor: pointer;
 }
 .commit-type:hover { color: var(--text-1); }
+/* The Conventional type before the subject ("docs ▾"): tinted once one is set. */
+.commit-cc-type {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-1);
+  color: var(--text-2);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  max-width: 40%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+.commit-cc-type:hover:not(:disabled) { color: var(--text-1); }
+.commit-cc-type.set {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: color-mix(in srgb, var(--accent) 45%, var(--text-0));
+}
+.commit-cc-type.set:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 28%, transparent); }
+.commit-cc-type:disabled { opacity: 0.55; cursor: default; }
 .commit-gitmoji { display: flex; align-items: center; justify-content: center; min-width: 34px; font-size: 15px; }
 
 /* Searchable gitmoji popover — styled like the context menu it replaces. */
@@ -4804,11 +4834,10 @@ body.col-resizing .node-ava {
 .commit-ticket { width: 88px; flex: 0 0 auto; text-transform: uppercase; }
 .commit-ticket::placeholder { text-transform: none; }
 
-/* Generate with AI: one row — the icon action, who answers (only as wide as
-   its label), and Cancel or Undo / Generate again beside them when they apply. */
+/* Generate with AI: one row — the ✦ action and, as its own control, who
+   answers (only as wide as its label); Cancel or Undo / Generate again beside
+   them when they apply. */
 .commit-ai {
-  --ai-tint: color-mix(in srgb, var(--accent) 10%, var(--bg-1));
-  --ai-edge: color-mix(in srgb, var(--accent) 34%, var(--border));
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -4817,28 +4846,19 @@ body.col-resizing .node-ava {
 .commit-ai-split {
   display: flex;
   flex: 0 1 auto;
+  align-items: center;
+  gap: 8px;
   min-width: 0;
   max-width: 100%;
-  border: 1px solid var(--ai-edge);
-  border-radius: 8px;
-  background: var(--ai-tint);
-  overflow: hidden;
 }
 .commit-ai-split button {
   display: flex;
   align-items: center;
   gap: 6px;
   min-width: 0;
-  padding: 4px 8px;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  color: var(--text-0);
+  border-radius: 6px;
   font-size: 12px;
   cursor: pointer;
-}
-.commit-ai-split button:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--accent) 16%, var(--bg-1));
 }
 .commit-ai-split button:disabled {
   opacity: 0.45;
@@ -4846,14 +4866,21 @@ body.col-resizing .node-ava {
 }
 .commit-ai-main {
   flex: 0 0 auto;
-  color: var(--accent) !important;
+  padding: 5px 8px;
+  border: 0;
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: color-mix(in srgb, var(--accent) 45%, var(--text-0));
 }
+.commit-ai-main:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 28%, transparent); }
 .commit-ai-target {
   flex: 0 1 auto;
   max-width: 240px;
-  border-inline-start: 1px solid var(--ai-edge) !important;
-  color: var(--text-1) !important;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-1);
 }
+.commit-ai-target:hover:not(:disabled) { color: var(--text-0); border-color: var(--text-3); }
 .commit-ai-target-label {
   min-width: 0;
   overflow: hidden;
@@ -15440,10 +15467,11 @@ input[type='range']:focus-visible {
 .prc-ci.is-failure { color: var(--red); }
 .prc-ci.is-pending { color: var(--yellow); }
 .prc-sha { flex: none; font: 12px var(--mono); color: var(--accent); }
-.prc-commit.is-remote .prc-sha { color: var(--text-3); }
-/* Copy and open-on-host stay one hover away: the row shows what the mockup shows. */
-.prc-tools { display: inline-flex; gap: 2px; flex: none; opacity: 0; transition: opacity 0.12s; }
-.prc-row:hover .prc-tools, .prc-tools:focus-within { opacity: 1; }
+/* Copy and open-on-host stay one hover away: the row shows what the mockup shows.
+   Folded to no width (the negative margin cancels the row's gap), so the SHA sits
+   12px from "View diff"; still in the tab order, and focus unfolds them. */
+.prc-tools { display: inline-flex; gap: 2px; flex: none; width: 0; margin-inline-start: -12px; overflow: hidden; }
+.prc-row:hover .prc-tools, .prc-tools:focus-within { width: auto; margin-inline-start: 0; }
 .prc-body {
   margin: 0; padding: 0 14px 12px 48px; font-size: 13px; line-height: 1.55; color: var(--text-1);
   white-space: pre-wrap; overflow-wrap: anywhere;
@@ -15486,6 +15514,10 @@ input[type='range']:focus-visible {
   background: color-mix(in srgb, var(--accent) 20%, transparent);
   color: color-mix(in srgb, var(--accent) 45%, var(--text-0));
 }
+/* The badges follow the file's name; the +/− keeps the right edge. Folders keep
+   the shared rule, their name filling the row up to the viewed count. */
+.prp-file-row:not(.prp-folder-row) .prd-file-name { flex: 0 1 auto; }
+.prp-file-row:not(.prp-folder-row) .prd-file-stat { margin-inline-start: auto; }
 
 /* ── Line comments (a pull request's Files tab) ──
    The "+" sits over the first gutter and shows on hover or keyboard focus. It
@@ -19298,14 +19330,13 @@ button.insights-row:hover { background: var(--bg-2); }
 .commit-counter {
   flex-shrink: 0;
   align-self: center;
-  font-size: 10.5px;
+  font-size: 12px;
   font-variant-numeric: tabular-nums;
   color: var(--text-2);
   padding: 0 4px;
-  min-width: 20px;
   text-align: end;
+  cursor: default;
 }
-.commit-counter.warn { color: #e0a020; }
 .commit-counter.error { color: var(--red, #e5484d); font-weight: 600; }
 .commit-lint {
   list-style: none;
@@ -19405,7 +19436,6 @@ button.insights-row:hover { background: var(--bg-2); }
   padding: 0 6px; border: 1px solid var(--border); border-radius: 999px; font-size: 10.5px; color: var(--text-2);
   line-height: 1.5;
 }
-.prt-role-you { border-color: color-mix(in srgb, var(--accent) 60%, transparent); color: var(--text-1); }
 
 /* A line thread in place: where, its state, the lines it is about, its comments and reply box. */
 .prt-thread {
@@ -19434,6 +19464,8 @@ button.insights-row:hover { background: var(--bg-2); }
 .prt-thread-body .prp-thread-comment + .prp-thread-comment {
   border-top: none; padding-inline-start: 12px; border-inline-start: 2px solid var(--border);
 }
+/* The header above already says when the thread began. */
+.prt-thread-body .prp-thread-comment:not(.prp-thread-comment ~ .prp-thread-comment) .prt-time { display: none; }
 .prt-resolved {
   display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 14px; box-sizing: border-box;
   border: 1px dashed var(--border); border-radius: 10px; background: none; font: inherit; font-size: 12.5px;
@@ -19508,15 +19540,16 @@ button.insights-row:hover { background: var(--bg-2); }
   overflow-x: auto;
   white-space: pre;
 }
-.prd-thread-reply { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
-.prd-thread-reply > .btn { align-self: flex-end; }
+.prd-thread-reply { display: flex; align-items: flex-end; gap: 8px; margin-top: 8px; }
+.prd-thread-reply > .mde { flex: 1; }
+.prd-thread-reply > .btn { flex: none; }
 .prd-reply-input {
   width: 100%;
-  font-size: 12px;
+  font-size: 12.5px;
   font-family: inherit;
   line-height: 1.45;
-  resize: vertical;
-  padding: 5px 8px;
+  resize: none;
+  padding: 7px 10px;
   background: var(--field-bg);
   border: 1px solid var(--border-soft);
   border-radius: 6px;
@@ -20199,74 +20232,74 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .path-filter-bar code { font-size: 11.5px; color: var(--accent); }
 
 /* ── PR Checks tab: summary banner, one card per check, failed tests, numbered log ── */
-.prc { display: flex; flex-direction: column; gap: 14px; padding: 16px 0; }
-.prc-spacer { flex: 1 1 auto; }
-.prc-banner {
+.pck { display: flex; flex-direction: column; gap: 14px; padding: 16px 0; }
+.pck-spacer { flex: 1 1 auto; }
+.pck-banner {
   --tone: var(--text-2);
   display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px 14px;
   border: 1px solid color-mix(in srgb, var(--tone) 35%, transparent); border-radius: 10px;
   background: color-mix(in srgb, var(--tone) 6%, transparent);
 }
-.prc-banner.fail { --tone: var(--red, #e5484d); }
-.prc-banner.pass { --tone: var(--green, #2ea043); }
-.prc-banner.pending { --tone: var(--yellow, #e0a020); }
-.prc-banner-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.prc-banner-text b { color: var(--text-0); font-size: 14px; }
-.prc-banner-meta { font-size: 12px; color: var(--text-2); }
-.prc-btn {
+.pck-banner.fail { --tone: var(--red, #e5484d); }
+.pck-banner.pass { --tone: var(--green, #2ea043); }
+.pck-banner.pending { --tone: var(--yellow, #e0a020); }
+.pck-banner-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pck-banner-text b { color: var(--text-0); font-size: 14px; }
+.pck-banner-meta { font-size: 12px; color: var(--text-2); }
+.pck-btn {
   display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border: none; border-radius: 6px;
   background: var(--bg-3); color: var(--text-1); font: inherit; font-size: 12.5px; cursor: pointer;
 }
-.prc-btn:hover:not(:disabled) { background: var(--bg-4); color: var(--text-0); }
-.prc-btn:disabled { opacity: 0.6; cursor: default; }
-.prc-icon { flex: none; }
-.prc-icon.fail { color: var(--red, #e5484d); }
-.prc-icon.pass { color: var(--green, #2ea043); }
-.prc-icon.pending { color: var(--yellow, #e0a020); }
-.prc-icon.neutral { color: var(--text-2); }
-.prc-card { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
-.prc-card-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 10px 14px; }
-.prc-card.open .prc-card-head { border-bottom: 1px solid var(--border); background: var(--bg-1); }
-.prc-card-name { color: var(--text-0); font-size: 13.5px; min-width: 0; overflow-wrap: anywhere; }
-.prc-card-state { font-size: 12px; color: var(--text-2); }
-.prc-link {
+.pck-btn:hover:not(:disabled) { background: var(--bg-4); color: var(--text-0); }
+.pck-btn:disabled { opacity: 0.6; cursor: default; }
+.pck-icon { flex: none; }
+.pck-icon.fail { color: var(--red, #e5484d); }
+.pck-icon.pass { color: var(--green, #2ea043); }
+.pck-icon.pending { color: var(--yellow, #e0a020); }
+.pck-icon.neutral { color: var(--text-2); }
+.pck-card { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.pck-card-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 10px 14px; }
+.pck-card.open .pck-card-head { border-bottom: 1px solid var(--border); background: var(--bg-1); }
+.pck-card-name { color: var(--text-0); font-size: 13.5px; min-width: 0; overflow-wrap: anywhere; }
+.pck-card-state { font-size: 12px; color: var(--text-2); }
+.pck-link {
   display: inline-flex; align-items: center; gap: 4px; padding: 0; border: none; background: none;
   color: var(--accent); font: inherit; font-size: 12px; cursor: pointer;
 }
-.prc-link:hover:not(:disabled) { color: var(--text-0); }
-.prc-link:disabled { opacity: 0.5; cursor: default; }
-.prc-pad { padding: 10px 14px; font-size: 12px; }
-.prc-failures {
+.pck-link:hover:not(:disabled) { color: var(--text-0); }
+.pck-link:disabled { opacity: 0.5; cursor: default; }
+.pck-pad { padding: 10px 14px; font-size: 12px; }
+.pck-failures {
   display: flex; flex-direction: column; gap: 10px; margin: 12px 14px; padding: 10px 12px; border-radius: 8px;
   background: color-mix(in srgb, var(--red, #e5484d) 8%, transparent);
   border: 1px solid color-mix(in srgb, var(--red, #e5484d) 25%, transparent);
 }
-.prc-failures-count { font-size: 12px; font-weight: 600; color: var(--red, #e5484d); }
-.prc-failure { display: flex; flex-direction: column; gap: 6px; }
-.prc-failure-name { color: var(--text-0); font-size: 13px; overflow-wrap: anywhere; }
-.prc-failure-error { font-family: var(--font-mono, ui-monospace, monospace); font-size: 12px; color: var(--text-1); white-space: pre-wrap; overflow-wrap: anywhere; }
-.prc-failure-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 2px; }
-.prc-chip {
+.pck-failures-count { font-size: 12px; font-weight: 600; color: var(--red, #e5484d); }
+.pck-failure { display: flex; flex-direction: column; gap: 6px; }
+.pck-failure-name { color: var(--text-0); font-size: 13px; overflow-wrap: anywhere; }
+.pck-failure-error { font-family: var(--font-mono, ui-monospace, monospace); font-size: 12px; color: var(--text-1); white-space: pre-wrap; overflow-wrap: anywhere; }
+.pck-failure-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 2px; }
+.pck-chip {
   padding: 2px 8px; border: none; border-radius: 4px; background: var(--bg-3); color: var(--accent);
   font-family: var(--font-mono, ui-monospace, monospace); font-size: 12px; cursor: pointer; overflow-wrap: anywhere;
 }
-code.prc-chip { color: var(--text-1); cursor: text; }
-button.prc-chip:hover { color: var(--text-0); }
-.prc-log { padding: 0 14px 12px; }
-.prc-card:not(:has(.prc-failures)) .prc-log { padding-top: 8px; }
-.prc-log summary { cursor: pointer; font-size: 12px; color: var(--text-2); padding: 4px 0; }
-.prc-log-note { font-size: 12px; margin: 4px 0; }
-.prc-log pre {
+code.pck-chip { color: var(--text-1); cursor: text; }
+button.pck-chip:hover { color: var(--text-0); }
+.pck-log { padding: 0 14px 12px; }
+.pck-card:not(:has(.pck-failures)) .pck-log { padding-top: 8px; }
+.pck-log summary { cursor: pointer; font-size: 12px; color: var(--text-2); padding: 4px 0; }
+.pck-log-note { font-size: 12px; margin: 4px 0; }
+.pck-log pre {
   margin: 6px 0 0; padding: 10px 0; max-height: 480px; overflow: auto; border-radius: 8px;
   background: var(--bg-0, #0d1117); color: var(--text-1);
   font-family: var(--font-mono, ui-monospace, monospace); font-size: 12px; line-height: 1.65;
 }
-.prc-log-line { display: flex; gap: 14px; padding: 0 12px; }
-.prc-log-line.fail { background: color-mix(in srgb, var(--red, #e5484d) 12%, transparent); color: var(--red, #e5484d); }
+.pck-log-line { display: flex; gap: 14px; padding: 0 12px; }
+.pck-log-line.fail { background: color-mix(in srgb, var(--red, #e5484d) 12%, transparent); color: var(--red, #e5484d); }
 /* The log's own dark red would vanish on the marked line: one lighter red, as the mockup has it. */
-.prc-log-line.fail .prc-log-text span { color: color-mix(in srgb, var(--red, #e5484d) 65%, var(--text-0)) !important; }
-.prc-log-n { flex: none; text-align: end; color: var(--text-3); user-select: none; }
-.prc-log-text { min-width: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.pck-log-line.fail .pck-log-text span { color: color-mix(in srgb, var(--red, #e5484d) 65%, var(--text-0)) !important; }
+.pck-log-n { flex: none; text-align: end; color: var(--text-3); user-select: none; }
+.pck-log-text { min-width: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 .prp-tab-count.prp-tab-fail { background: color-mix(in srgb, var(--red, #e5484d) 18%, transparent); color: var(--red, #e5484d); }
 
 /* ─── PR checks ────────────────────────────────────────────────────────── */
@@ -21927,7 +21960,8 @@ button.prc-chip:hover { color: var(--text-0); }
   contain-intrinsic-size: auto 140px;
 }
 .prp-thread { padding: 10px 12px; }
-.prp-thread .prp-card-head { background: none; border: none; padding: 6px 0 2px; }
+.prp-thread .prp-card-head { background: none; border: none; padding: 6px 0 2px; font-size: 12.5px; }
+.prp-thread .prp-card-head .prt-time { font-size: 11.5px; }
 .prp-thread .prp-card-body { padding: 2px 0 8px; }
 .prp-thread-comment + .prp-thread-comment { border-top: 1px solid var(--border); }
 .prp-muted { color: var(--text-3); font-style: italic; }
@@ -23003,7 +23037,7 @@ button.prc-chip:hover { color: var(--text-0); }
 .mde-hint .mde-hint-link { font-size: 11px; color: var(--text-3); }
 .mde-hint .mde-hint-link:hover { color: var(--accent); }
 /* A thread's reply box: just the field until it is used. */
-.mde-compact:not(.mde-open) .mde-input { min-height: 0; }
+.mde-compact .mde-input { min-height: 0; max-height: 240px; resize: none; }
 .mde-ac {
   position: fixed; z-index: 1100; list-style: none; margin: 0; padding: 4px;
   width: 280px; max-height: 220px; overflow-y: auto;
@@ -23114,7 +23148,6 @@ button.prc-chip:hover { color: var(--text-0); }
 }
 .back-btn,
 .commit-note-add,
-.commit-ai-target,
 .repo-row,
 .fv-mode,
 .blame-meta,

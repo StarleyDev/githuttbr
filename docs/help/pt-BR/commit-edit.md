@@ -33,13 +33,14 @@ uma para a mensagem e uma para cada arquivo editado.
 ### O cartão da mensagem
 
 A mensagem tem as mesmas ferramentas do [compositor de commit](committing.md): o
-resumo com o contador de tamanho e a descrição abaixo dele, a linha de estilo
-atrás da seta (tipo e escopo Conventional, chave do ticket, estilo de commit), o
+botão **tipo ▾** antes do resumo, o resumo com o contador de tamanho (*56/72*) e
+a descrição abaixo dele, a linha de estilo atrás da seta (escopo, chave do
+ticket, estilo de commit), o
 seletor de gitmoji, os coautores, a geração por IA a partir do diff do próprio
 commit e as dicas do linter. A mensagem do commit é dividida ao carregar — a
 primeira linha vira o resumo, o resto a descrição — e juntada de volta com uma
 linha em branco quando você reescreve. Transformar um velho `add retry` em
-`fix: add retry` é escolher um item da lista de tipos.
+`fix: add retry` é escolher um item no botão de tipo.
 
 Assim que a mensagem fica diferente da original, o cartão ganha a marca
 **alterada**, o assunto antigo continua visível abaixo da descrição como

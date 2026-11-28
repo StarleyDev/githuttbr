@@ -13,10 +13,3 @@ export function getThreadCountsByPath(threads: readonly PrReviewThread[]): Reado
   }
   return counts
 }
-
-/** The conversations across a set of files — a folder's badge in the tree. */
-export function sumThreadCounts(counts: ReadonlyMap<string, number>, paths: readonly string[]): number {
-  let total = 0
-  for (const p of paths) total += counts.get(p) ?? 0
-  return total
-}

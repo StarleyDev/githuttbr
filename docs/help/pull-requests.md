@@ -421,7 +421,7 @@ on this computer only, never sent to the host. A tick holds the version of the
 file's diff: when a push changes a viewed file, it reads as not viewed again,
 with a **changed** pill (*changed since you viewed it*). A file without a diff
 (binary, too large) is compared by its status and line counts only. A file with review
-conversations shows a speech-bubble count beside it (folders add theirs up), so
+conversations shows a speech-bubble count right after its name, so
 the ones with comments stand out in a long list; outdated conversations count
 too, and so do resolved ones — the hosts' lists the app reads do not say which
 are resolved. Click a folder, or press ←/→ on
@@ -608,7 +608,7 @@ back together in your head. The **Conversation** tab tells it as one
 | On the timeline | What it shows |
 |---|---|
 | **The description** | Always first, with who opened the pull request and when |
-| **Comments** | The conversation, each with its author's role: **Author**, **Reviewer**, and **You** on your own |
+| **Comments** | The conversation, each with its author's role: **Author** or **Reviewer** |
 | **Pushes** | *sam pushed 2 commits*, then one line per commit; a click on a hash opens the Commits tab |
 | **Line threads** | In place, at their first comment: the file and line, the diff lines it is about, the replies and a reply box. The path and **View in Files →** open that file in the Files tab |
 | **Review verdicts** | **approved** in green, **requested changes** in red with what the reviewer wrote, or a review's own comment |
@@ -657,8 +657,8 @@ Every box on the page — the comment at the bottom, a reply inside a thread, a
 comment on a line — is the same Markdown editor: **Write / Preview** tabs, a
 formatting toolbar with GitHub's shortcuts, lists that continue on Enter, and
 **@** / **#** completion from the people and pull requests already on screen.
-A reply box shows its tools once you click into it, and sends with
-⌘/Ctrl+Enter, since Enter now starts a new line. [Writing comments](writing-comments.md)
+A thread reply is the exception: a one-line field with no toolbar, where Enter
+sends and Shift+Enter adds a line. [Writing comments](writing-comments.md)
 has the details and the limits.
 
 ## How comments are shown

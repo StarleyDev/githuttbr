@@ -93,11 +93,12 @@ título e qualquer coisa dentro de código ficam de fora.
 issue, uma resposta de thread, um comentário de linha e a descrição de uma nova
 issue. Funciona também a partir das abas, da barra e da visualização, não só do
 campo. Esc cancela um comentário de linha, dos mesmos lugares. Uma **resposta
-de thread** era um campo de uma linha enviado com Enter; agora é uma caixa de
-texto pequena, então Enter é uma linha nova (ou o próximo item da lista) e
-⌘/Ctrl+Enter envia. A caixa de resposta mostra as abas e as ferramentas quando
-você clica nela, para que uma conversa longa não ganhe uma barra embaixo de
-cada thread.
+de thread** é um campo de uma linha, para que uma conversa longa não ganhe uma
+barra embaixo de cada thread: Enter envia, Shift+Enter quebra a linha (o campo
+cresce junto, e com um bloco colado) e Esc descarta o que foi digitado,
+perguntando antes. Ele não tem abas nem barra, mas os atalhos de formatação e as
+sugestões de **@** / **#** funcionam nele, e um botão **Responder** aparece
+quando há algo para enviar.
 
 ## O guia rápido
 

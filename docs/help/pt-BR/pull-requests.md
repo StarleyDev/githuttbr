@@ -437,8 +437,7 @@ host. Uma marca guarda a versão do diff do arquivo: quando um push muda um
 arquivo visto, ele volta a aparecer como não visto, com o selo **mudou**
 (*mudou desde que você viu*). Um arquivo sem diff (binário, grande demais) é
 comparado só pelo status e pela contagem de linhas. Um arquivo com conversas
-de revisão mostra um balão com a contagem ao lado (as pastas somam as dos seus
-arquivos), para os que têm comentários se destacarem numa lista longa; as
+de revisão mostra um balão com a contagem logo depois do nome, para os que têm comentários se destacarem numa lista longa; as
 conversas desatualizadas também contam, e as resolvidas também — as listas que
 o app lê dos hosts não dizem quais estão resolvidas. Clique numa pasta, ou aperte ←/→ nela, para recolhê-la; ↑/↓ (ou j/k)
 percorrem os arquivos na tela e abrem o diff de cada um. As pastas recolhidas
@@ -635,7 +634,7 @@ na ordem em que aconteceu.
 | Na linha do tempo | O que mostra |
 |---|---|
 | **A descrição** | Sempre primeiro, com quem abriu o pull request e quando |
-| **Comentários** | A conversa, cada um com o papel do autor: **Autor**, **Revisor**, e **Você** nos seus |
+| **Comentários** | A conversa, cada um com o papel do autor: **Autor** ou **Revisor** |
 | **Pushes** | *sam enviou 2 commits*, depois uma linha por commit; um clique no hash abre a aba Commits |
 | **Threads de linha** | No lugar, no horário do primeiro comentário: o arquivo e a linha, as linhas do diff de que ela trata, as respostas e uma caixa de resposta. O caminho e **Ver em Arquivos →** abrem esse arquivo na aba Arquivos |
 | **Vereditos de revisão** | **aprovou** em verde, **pediu alterações** em vermelho com o que o revisor escreveu, ou o comentário de uma revisão |
@@ -687,9 +686,9 @@ Toda caixa da página — o comentário no fim, a resposta dentro de uma thread,
 comentário numa linha — é o mesmo editor de Markdown: abas **Escrever /
 Visualizar**, uma barra de formatação com os atalhos do GitHub, listas que
 continuam no Enter e sugestões de **@** / **#** a partir das pessoas e dos pull
-requests que já estão na tela. A caixa de resposta mostra as ferramentas quando
-você clica nela, e envia com ⌘/Ctrl+Enter, já que o Enter agora começa uma
-linha nova. [Escrever comentários](writing-comments.md) tem os detalhes e os
+requests que já estão na tela. A resposta de thread é a exceção: um campo de uma
+linha, sem barra, em que Enter envia e Shift+Enter quebra a linha.
+[Escrever comentários](writing-comments.md) tem os detalhes e os
 limites.
 
 ## Como os comentários aparecem

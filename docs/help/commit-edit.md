@@ -31,13 +31,13 @@ one for the message, one for each file you edited.
 ### The message card
 
 The message gets the same tools as the [commit composer](committing.md): the
-summary with its length counter and the description below it, the style row
-behind the chevron (Conventional type and scope, ticket key, commit style), the
-gitmoji picker, co-authors, AI generation from the commit's own diff and the
+**type ▾** button before the summary, the summary with its length counter
+(*56/72*) and the description below it, the style row behind the chevron
+(scope, ticket key, commit style), the gitmoji picker, co-authors, AI generation from the commit's own diff and the
 linter's hints. The commit's message is split when it loads — the first line
 becomes the summary, the rest the description — and joined back with one blank
 line when you rewrite. Turning an old `add retry` into `fix: add retry` is one
-pick from the type list.
+pick from the type button.
 
 As soon as the message differs from the original, the card is marked
 **edited**, the old subject stays visible under the description as
