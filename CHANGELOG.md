@@ -1,5 +1,21 @@
 
 
+## [4.64.0](https://github.com/StarleyDev/githuttbr/compare/v4.63.0...v4.64.0) (2026-11-28)
+
+### Features
+
+* wiki in the background, read from the repo's folder; the last AI account deletable ([9513c1d](https://github.com/StarleyDev/githuttbr/commit/9513c1de6788683b1e27b29f3bf6430580d4798d))
+  - the wiki keeps generating when you leave its page; coming back shows its progress, and Cancel stops it without touching the previous wiki
+  - a page that fails stops the rest of the run instead of paying for pages that will not be published
+  - a wiki already exported into the repository is read from its folder when this machine has none, stack and page kinds included
+  - a stored wiki saved under a path with a trailing slash is found again
+  - the wiki folder can be changed beside Export; docs/wiki stays the default, and Export never replaces a file it did not write
+  - deleting a wiki read from the folder asks first and removes only the files the export wrote
+  - the wiki page as wide as the pull requests page
+  - the only AI account can be deleted; a blank one takes its place
+  - a page chip's close button opens beside it on hover, and the repository's own close is hidden while it has pages open
+  - a playground repo and a handbook screenshot for the wiki read from its folder; the handbook passages in every language
+
 ## [4.63.0](https://github.com/StarleyDev/githuttbr/compare/v4.62.0...v4.63.0) (2026-11-28)
 
 ### Features
