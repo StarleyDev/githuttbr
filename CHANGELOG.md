@@ -1,5 +1,29 @@
 
 
+## [4.63.0](https://github.com/StarleyDev/githuttbr/compare/v4.62.0...v4.63.0) (2026-11-28)
+
+### Features
+
+* pull request pages, edit commit, conflict resolver and object explorer ([a27502f](https://github.com/StarleyDev/githuttbr/commit/a27502fa487388f714e73cc0bff5d3af504584cc))
+  - a pull request's conversation as one timeline of comments, threads, reviews and pushes, comments first, with what is new since your last visit
+  - the Commits tab with type chips, stats and CI, marking commits new since your last visit
+  - the Files tab with progress and filters, and Previous / Next unviewed file, optionally marking each file viewed as you move on
+  - the Checks tab with a run summary, the failed tests and a numbered log
+  - the pull requests list: size, each reviewer's name with their verdict under it, checks and last activity per row, sorted into what waits on you
+  - Azure DevOps rows show their changed-file count on the open and draft tabs, read when the page opens and kept until someone pushes
+  - a CI runs page as wide as the pull requests list
+  - Edit commit as a page of cards, with what will happen beside it and the lines an edit changes tinted
+  - a conflict resolver with progress, the base and actions on each block; every resolution can be undone, and says so when it cannot
+  - the Object explorer redesigned: a walked path, colours per object kind, readable dates and fields, trees as a file list and a map of the git model
+  - dialogs sized by group: large ones at the Settings width and as tall as their content, browsing ones at a fixed height, footers pinned
+  - Preview locally, Bundle & archive, Git flow, Subtrees and Remove a file from history at the Settings width
+  - repository settings headings in the Settings pattern, with icons
+  - the changelog generator writes and previews in the Markdown editor
+  - one select style across every screen
+  - branch comparison, the conflict screens, Edit commit and the changelog on the app's surfaces instead of the theme's darkest shade
+  - the centre-pane pages as wide as the pull requests list; the wiki keeps a reading width
+  - the handbook pages of this release in every language
+
 ## [4.62.0](https://github.com/StarleyDev/githuttbr/compare/v4.61.0...v4.62.0) (2026-11-27)
 
 ### Features
