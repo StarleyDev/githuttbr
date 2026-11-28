@@ -17725,12 +17725,12 @@ mark.find-hit.active {
   color: var(--text-0);
   z-index: 0;
 }
-/* Edit commit: the editor on the app theme's surface, as the pull request page
-   is — not the code theme's backdrop, which is near black in most dark themes. */
+/* Edit commit: the editor on its card's surface (--bg-2), as the pull request
+   page's cards are — not the code theme's backdrop, near black in dark themes. */
 .commitedit-editor .code-editor,
 .commitedit-editor .code-editor-pre.hljs,
 .commitedit-editor .code-editor-gutter {
-  background: var(--bg-1);
+  background: var(--bg-2);
 }
 /* A line the edit changed: a full-width band, as the edit-commit mockup draws
    it. The negative margin reaches the backdrop's 12px padding on both sides. */
@@ -19692,7 +19692,7 @@ button.insights-row:hover { background: var(--bg-2); }
 /* Wide: the message and files cards on the left, the impact panel on the right,
    each scrolling on its own. Narrow (container below 900px): the panel stacks
    under the cards and the whole body scrolls instead. */
-.commitedit-view { container-type: inline-size; }
+.commitedit-view { container-type: inline-size; background: var(--bg-1); }
 .commitedit-header { flex-wrap: wrap; gap: 12px; padding: 14px 24px; }
 .commitedit-heading { margin: 0; font-size: 16px; font-weight: 700; color: var(--text-0); white-space: nowrap; }
 .commitedit-header .commitedit-sha { color: var(--accent, #6366f1); background: var(--bg-3); border-radius: 4px; padding: 1px 7px; }
@@ -19720,8 +19720,10 @@ button.insights-row:hover { background: var(--bg-2); }
   overflow-y: auto;
 }
 .commitedit-card { border: 1px solid var(--border); border-radius: 10px; flex-shrink: 0; }
-.commitedit-message-card { background: var(--bg-1); }
-.commitedit-files-card { flex: 1 0 420px; display: flex; flex-direction: column; overflow: hidden; }
+/* Laid out like the pull request page: the page on --bg-1, cards a step up on
+   --bg-2 — never the theme's darkest shade (--bg-0), which reads as black. */
+.commitedit-message-card { background: var(--bg-2); }
+.commitedit-files-card { flex: 1 0 420px; display: flex; flex-direction: column; overflow: hidden; background: var(--bg-2); }
 .commitedit-card-head {
   display: flex;
   flex-wrap: wrap;
