@@ -406,9 +406,12 @@ and after heads are exact, so its **View changes** is too.
 
 A pull request of two hundred files is hard to read as two hundred full paths,
 and hard to finish without losing your place. Above the list and the diff, a
-line keeps count — *4 of 9 files viewed*, with a bar — and **Next unviewed →**
-opens the next file down that you have not ticked, wrapping round to the top;
-it is greyed out once everything listed is viewed. **Show** narrows the list
+line keeps count — *4 of 9 files viewed*, with a bar — and **Previous
+unviewed** / **Next unviewed** step to the nearest file you have not ticked,
+up or down, wrapping round the list; they grey out once everything listed is
+viewed. Tick **Mark as viewed when moving on** and **Next unviewed** ticks the
+open file for you before moving on — reading straight through, you never touch
+the boxes; the choice is remembered. **Show** narrows the list
 to **Unviewed** files or files **With comments** (any review conversation on
 them), and back to **All**.
 

@@ -16072,6 +16072,11 @@ input[type='range']:focus-visible {
 }
 .prf-next:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 30%, transparent); }
 .prf-next:disabled { opacity: 0.5; cursor: default; }
+/* Back and forth through the unviewed files: two buttons with chevrons, side by side. */
+.prf-steps { display: inline-flex; gap: 6px; }
+.prf-next { display: inline-flex; align-items: center; gap: 4px; }
+.prf-mark-on-next { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-1); cursor: pointer; }
+.prf-mark-on-next input { margin: 0; accent-color: var(--accent); }
 .prf-progress-gap { flex: 1; }
 .prf-filter-label { font-size: 12px; color: var(--text-2); }
 .prf-filter { display: inline-flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; font-size: 12px; }

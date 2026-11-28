@@ -26,16 +26,31 @@ export function getPrFileOrder(files: PrFile[], view: 'path' | 'tree'): string[]
   return rows.flatMap((r) => (r.node.file ? [r.node.file.filename] : []))
 }
 
+/**
+ * The nearest file not viewed yet after `current` (direction 1) or before it
+ * (direction -1), wrapping round the list; null when every other file is viewed.
+ */
+export function getUnviewedFile(
+  order: readonly string[],
+  viewed: ReadonlySet<string>,
+  current: string,
+  direction: 1 | -1
+): string | null {
+  const at = order.indexOf(current)
+  // Not in the list (filtered out): start just outside it, so step 1 lands on an end.
+  const from = at === -1 ? (direction === 1 ? -1 : order.length) : at
+  for (let step = 1; step <= order.length; step++) {
+    const name = order[(((from + direction * step) % order.length) + order.length) % order.length]
+    if (name !== current && !viewed.has(name)) return name
+  }
+  return null
+}
+
 /** The first file after `current` not viewed yet, wrapping round to the top; null when every file is viewed. */
 export function getNextUnviewedFile(
   order: readonly string[],
   viewed: ReadonlySet<string>,
   current: string
 ): string | null {
-  const at = order.indexOf(current)
-  for (let step = 1; step <= order.length; step++) {
-    const name = order[(at + step + order.length) % order.length]
-    if (!viewed.has(name)) return name
-  }
-  return null
+  return getUnviewedFile(order, viewed, current, 1)
 }

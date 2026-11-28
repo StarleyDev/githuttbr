@@ -1884,6 +1884,7 @@ function FilesSection({
         filter={filter}
         onFilterChange={setFilter}
         onSelectFile={setSelected}
+        onSetFilesViewed={onSetFilesViewed}
       />
       <div className="prp-files-split">
         <PrFileList

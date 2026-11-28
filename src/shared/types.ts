@@ -4217,6 +4217,8 @@ export interface AppSettings {
   /** How often Mission Control re-reads the repositories while it is on screen,
    *  in seconds; never below 30. It does not run while the page is closed. */
   missionRefreshSeconds?: number
+  /** Pull request Files tab: "Next unviewed" marks the open file viewed before moving on. */
+  prMarkViewedOnNext?: boolean
   /** How Mission Control colours "N commits since the tag", by range. */
   missionReleaseTiers?: ReleaseNoteTiers
   /** Raise an OS notification for new review-requested / CI inbox items. */

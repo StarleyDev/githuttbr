@@ -1,7 +1,8 @@
 import { useMemo } from 'react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { PrFile } from '../../../shared/types'
 import { useSettingsStore } from '../stores/settings'
-import { getNextUnviewedFile, getPrFileOrder, type PrFileFilter } from '../lib/prFilesProgress'
+import { getPrFileOrder, getUnviewedFile, type PrFileFilter } from '../lib/prFilesProgress'
 import { useT, interp, type TranslationKey } from '../i18n'
 
 const FILTERS: { id: PrFileFilter; labelKey: TranslationKey }[] = [
@@ -12,8 +13,9 @@ const FILTERS: { id: PrFileFilter; labelKey: TranslationKey }[] = [
 
 /**
  * The Files tab's header line: how far the review has come (viewed of total,
- * as words and as a bar), a jump to the next file not viewed yet, and which
- * files the list shows.
+ * as words and as a bar), steps back and forth through the files not viewed
+ * yet — the forward one optionally marking the open file viewed on the way —
+ * and which files the list shows.
  */
 export function PrFilesProgress({
   files,
@@ -22,7 +24,8 @@ export function PrFilesProgress({
   selected,
   filter,
   onFilterChange,
-  onSelectFile
+  onSelectFile,
+  onSetFilesViewed
 }: {
   /** Every file of the pull request: what the count is out of. */
   files: PrFile[]
@@ -34,12 +37,22 @@ export function PrFilesProgress({
   filter: PrFileFilter
   onFilterChange: (filter: PrFileFilter) => void
   onSelectFile: (filename: string) => void
+  /** Marks files viewed — "Next" uses it when "Mark as viewed when moving on" is on. */
+  onSetFilesViewed: (paths: string[], viewed: boolean) => void
 }): React.JSX.Element {
   const t = useT()
   const view = useSettingsStore((s) => s.settings.fileListView ?? 'path')
   const viewedCount = useMemo(() => files.reduce((n, f) => n + (viewed.has(f.filename) ? 1 : 0), 0), [files, viewed])
+  const markOnNext = useSettingsStore((s) => s.settings.prMarkViewedOnNext === true)
+  const update = useSettingsStore((s) => s.update)
   const order = useMemo(() => getPrFileOrder(shown, view), [shown, view])
-  const next = getNextUnviewedFile(order, viewed, selected)
+  const prev = getUnviewedFile(order, viewed, selected, -1)
+  const next = getUnviewedFile(order, viewed, selected, 1)
+  const goNext = (): void => {
+    if (!next) return
+    if (markOnNext && selected && !viewed.has(selected)) onSetFilesViewed([selected], true)
+    onSelectFile(next)
+  }
   const pct = files.length ? Math.round((viewedCount / files.length) * 100) : 0
   return (
     <div className="prf-progress">
@@ -56,15 +69,39 @@ export function PrFilesProgress({
       >
         <span style={{ width: `${pct}%` }} />
       </span>
-      <button
-        type="button"
-        className="prf-next"
-        disabled={!next}
-        title={next ? t('prFiles.nextUnviewedTitle') : t('prFiles.allViewed')}
-        onClick={() => next && onSelectFile(next)}
-      >
-        {t('prFiles.nextUnviewed')}
-      </button>
+      <span className="prf-steps">
+        <button
+          type="button"
+          className="prf-next"
+          disabled={!prev}
+          title={prev ? t('prFiles.prevUnviewedTitle') : t('prFiles.allViewed')}
+          onClick={() => prev && onSelectFile(prev)}
+        >
+          <ChevronLeft size={14} aria-hidden="true" />
+          {t('prFiles.prevUnviewed')}
+        </button>
+        <button
+          type="button"
+          className="prf-next"
+          disabled={!next}
+          title={next ? t('prFiles.nextUnviewedTitle') : t('prFiles.allViewed')}
+          onClick={goNext}
+        >
+          {t('prFiles.nextUnviewed')}
+          <ChevronRight size={14} aria-hidden="true" />
+        </button>
+      </span>
+      <label className="prf-mark-on-next" title={t('prFiles.markOnNextTitle')}>
+        <input
+          type="checkbox"
+          checked={markOnNext}
+          onChange={(e) => {
+            const on = e.target.checked
+            update((s) => ({ ...s, prMarkViewedOnNext: on }))
+          }}
+        />
+        {t('prFiles.markOnNext')}
+      </label>
       <span className="prf-progress-gap" />
       <span className="prf-filter-label" id="prf-filter-label">
         {t('prFiles.filterLabel')}

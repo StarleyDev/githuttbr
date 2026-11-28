@@ -140,6 +140,7 @@ const PART_OF_KEY: Record<keyof AppSettings, ImportPart> = {
   todosManualOrder: 'prefs',
   autoFetchMinutes: 'prefs',
   missionRefreshSeconds: 'prefs',
+  prMarkViewedOnNext: 'prefs',
   missionReleaseTiers: 'prefs',
   desktopNotifications: 'prefs',
   confirmForcePush: 'prefs',

@@ -6,7 +6,7 @@ import {
   getCompareEnds,
   getPrCommitSummary
 } from '../src/renderer/src/lib/prCommitSummary'
-import { filterPrFiles, getNextUnviewedFile, getPrFileOrder } from '../src/renderer/src/lib/prFilesProgress'
+import { filterPrFiles, getNextUnviewedFile, getPrFileOrder, getUnviewedFile } from '../src/renderer/src/lib/prFilesProgress'
 
 // The pull request page's Commits summary and Files progress: pure parts.
 
@@ -113,5 +113,15 @@ describe('the Files tab filter and "next unviewed"', () => {
     expect(getNextUnviewedFile(order, new Set(['d']), 'c')).toBe('a')
     expect(getNextUnviewedFile(order, new Set(), '')).toBe('a')
     expect(getNextUnviewedFile(order, new Set(['a', 'b', 'c', 'd']), 'a')).toBeNull()
+  })
+
+  it('walks back too, and never offers the open file itself', () => {
+    const order = ['a', 'b', 'c', 'd']
+    expect(getUnviewedFile(order, new Set(['b']), 'c', -1)).toBe('a')
+    expect(getUnviewedFile(order, new Set(['d']), 'a', -1)).toBe('c')
+    expect(getUnviewedFile(order, new Set(), '', -1)).toBe('d')
+    // The open file is the only one left: there is nowhere to go.
+    expect(getUnviewedFile(order, new Set(['a', 'b', 'd']), 'c', 1)).toBeNull()
+    expect(getUnviewedFile(order, new Set(['a', 'b', 'd']), 'c', -1)).toBeNull()
   })
 })

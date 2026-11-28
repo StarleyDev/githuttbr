@@ -4,7 +4,7 @@ category: Sincronização e vários repositórios
 order: 57
 summary: Todos os pull requests de um repositório numa página — por estado, filtrados por autor, revisor, destino e CI — ‹ › para percorrer a lista filtrada de dentro de um PR, os commits dele, as atualizações (cada push, o que mudou, o que é novo desde a sua última visita), e comentários numa linha do diff. A conversa como uma linha do tempo, com o que é novo desde a sua última visita.
 keywords: título referência cartão item de trabalho AB# número de issue dica pull requests lista página merge requests pr mr filtro autor revisor meus aguardando minha revisão revisão pedida ci falhando branch de destino rascunhos mesclados fechados busca triagem anterior próximo alt seta navegação checkout ir para branch de origem destino copiar nome da branch buscar fetch comentário de linha comentário inline comentário de revisão comentar na linha aba arquivos revisão de código aba commits lista de commits commits do pr histórico abrir commit copiar sha buscar branch do pr commits de pr de fork refs/pull head atualizações iterações pushes force push rebase histórico reescrito versões de diff o que mudou desde a última visita selo nova marcar como visto comparar atualização editor markdown barra formatação visualizar menção árvore de arquivos pastas visão em árvore visão de caminhos arquivos vistos marcar pasta como vista editar excluir apagar editado erro digitação renderizado comentários imagens pixel rastreamento imagem bloqueada clique carregar tarefas tabela bloco conversa linha do tempo threads abertas thread resolvida aprovou pediu alterações enviou commits papel revisor novo desde a última visita comparar dois commits selos de tipo ci por commit ver diff próximo não visto filtro não vistos com comentários progresso mudou
-source: bac83752f115629d207b5c3c2f66d9b873cd28f1
+source: 20e2f33eb7aed2b165b35b1b91a75cb9c8768317
 ---
 
 # Página de pull requests
@@ -421,9 +421,12 @@ de um force push são exatos, então o **Ver as mudanças** dele também é.
 
 Um pull request de duzentos arquivos é difícil de ler como duzentos caminhos
 completos, e difícil de terminar sem perder o ponto. Acima da lista e do diff,
-uma linha faz a conta — *4 de 9 arquivos vistos*, com uma barra — e **Próximo
-não visto →** abre o próximo arquivo abaixo que você ainda não marcou, voltando
-ao topo no fim; fica apagado quando tudo o que está listado já foi visto.
+uma linha faz a conta — *4 de 9 arquivos vistos*, com uma barra — e **Anterior
+não visto** / **Próximo não visto** levam ao arquivo mais perto, para cima ou para
+baixo, que você ainda não marcou, dando a volta na lista; ficam apagados quando
+tudo o que está listado já foi visto. Com **Marcar como visto ao avançar**
+ligado, o **Próximo não visto** marca o arquivo aberto antes de seguir — lendo
+em sequência, você não precisa mexer nas caixinhas; a escolha fica guardada.
 **Mostrar** reduz a lista aos arquivos **Não vistos** ou **Com comentários**
 (qualquer conversa de revisão neles), e volta para **Todos**.
 
