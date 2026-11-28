@@ -6578,6 +6578,14 @@ body.col-resizing .node-ava {
   padding: 22px 0 0;
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.6);
 }
+
+/* Merge with options: 50px wider than a plain dialog and a little taller, so its
+   five fields and their hints fit without the dialog scrolling. */
+.modal.modal-merge-options {
+  width: 470px;
+  max-height: calc(100vh - 40px);
+  padding-bottom: 10px;
+}
 .modal-scroll {
   flex: 1 1 auto;
   min-height: 0;

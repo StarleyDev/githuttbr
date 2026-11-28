@@ -2493,6 +2493,8 @@ export function ModalHost(): React.JSX.Element {
                   ? 'modal-wide'
                   : modal.kind === 'launcher' || modal.kind === 'scanned-repos'
                   ? 'modal-launcher'
+                  : modal.kind === 'merge-options'
+                  ? 'modal-merge-options'
                   : modal.kind === 'interactive-rebase' ||
                       modal.kind === 'conflict-radar' ||
                       modal.kind === 'range-diff' ||
