@@ -90,11 +90,12 @@ işareti ve kod içindeki her şey olduğu gibi bırakılır.
 ⌘/Ctrl+Enter her kutudan gönderir: bir pull request ya da issue yorumu, bir konuşma
 yanıtı, bir satır yorumu ve yeni bir issue’nun açıklaması. Yalnızca alandan değil,
 sekmelerden, araç çubuğundan ve önizlemeden de çalışır. Esc bir satır yorumunu aynı
-yerlerden iptal eder. Bir **konuşma yanıtı** eskiden Enter ile gönderilen tek
-satırlık bir alandı; artık küçük bir metin kutusu, bu yüzden Enter yeni bir satır
-(ya da sonraki liste öğesi) ve ⌘/Ctrl+Enter gönderir. Bir yanıt kutusu, uzun bir
-konuşmada her konuşmanın altında bir araç çubuğu birikmesin diye, sekmelerini ve
-araçlarını ancak içine tıkladığınızda gösterir.
+yerlerden iptal eder. Bir **konuşma yanıtı** tek satırlık bir alandır, böylece uzun
+bir konuşmada her konuşmanın altında bir araç çubuğu birikmez: Enter gönderir,
+Shift+Enter bir satır ekler (alan onunla ve yapıştırılan bir blokla birlikte büyür)
+ve Esc yazılanı önce sorarak atar. Sekmesi ya da araç çubuğu yoktur, ama biçimlendirme
+kısayolları ve **@** / **#** tamamlama içinde çalışır; gönderilecek bir şey olduğunda
+bir **Yanıtla** düğmesi belirir.
 
 ## Kopya kâğıdı
 

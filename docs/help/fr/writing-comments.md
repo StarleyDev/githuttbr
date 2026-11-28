@@ -94,12 +94,13 @@ titre et tout ce qui est dans du code sont laissés tels quels.
 d’issue, une réponse dans un fil, un commentaire de ligne et la description d’une
 nouvelle issue. Cela marche aussi depuis les onglets, la barre d’outils et
 l’aperçu, pas seulement depuis le champ. Échap annule un commentaire de ligne,
-depuis les mêmes endroits. Une **réponse dans un fil** était auparavant un champ
-d’une ligne envoyé avec Entrée ; c’est maintenant une petite zone de texte, donc
-Entrée est une nouvelle ligne (ou l’élément de liste suivant) et ⌘/Ctrl+Entrée
-envoie. Une zone de réponse montre ses onglets et ses outils dès que vous cliquez
-dedans, pour qu’une longue conversation ne fasse pas pousser une barre d’outils
-sous chaque fil.
+depuis les mêmes endroits. Une **réponse dans un fil** est un
+champ d’une ligne, pour qu’une longue conversation ne fasse pas pousser une barre
+d’outils sous chaque fil : Entrée envoie, Maj+Entrée ajoute une ligne (le champ
+grandit avec, et avec un bloc collé), et Échap abandonne ce qui a été tapé, après
+confirmation. Il n’a ni onglets ni barre d’outils, mais les raccourcis de mise en
+forme et la complétion **@** / **#** y fonctionnent, et un bouton **Répondre**
+apparaît dès qu’il y a quelque chose à envoyer.
 
 ## L’aide-mémoire
 

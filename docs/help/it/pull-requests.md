@@ -2,8 +2,8 @@
 title: Pagina delle pull request
 category: Sincronizzazione e più repo
 order: 57
-summary: Tutte le pull request di un repository in una pagina — per stato, filtrate per autore, revisore, destinazione e CI —, ‹ › per scorrere la lista filtrata da dentro una PR, i suoi commit, i suoi aggiornamenti (ogni push, cosa ha cambiato, cosa c’è di nuovo dalla tua ultima visita) e commenti su una riga del suo diff.
-keywords: pull request lista pagina merge request pr mr filtro autore revisore mie in attesa della mia revisione revisione chiesta ci fallita branch di destinazione bozze unite chiuse ricerca triage precedente successiva alt freccia navigazione checkout vai al branch di origine destinazione copia nome del branch fetch commento di riga commento inline commento di revisione commento sul diff commenta riga scheda file revisione del codice line comment scheda commit elenco dei commit commit della pr cronologia dei commit apri commit copia sha scarica il branch della pr editor markdown barra di formattazione anteprima menzione commits tab commit list open commit copy sha markdown editor toolbar preview mention albero dei file albero delle cartelle vista ad albero vista percorso file visti segna cartella come vista modifica elimina rimuovi modificato refuso file tree viewed files edit delete edited typo riferimento titolo scheda al passaggio work item AB# numero della issue tooltip reference title hover card issue number fork commit della pr refs/pull head commenti visualizzati immagini pixel traccianti immagine bloccata clic per caricare attività tabella blocco rendered comments images blocked image aggiornamenti iterazioni push force push rebase cronologia riscritta versioni del diff cosa è cambiato dall’ultima visita badge nuovo segna come visto confronta aggiornamento updates iterations history rewritten diff versions what changed since last visit new badge mark as seen compare update
+summary: Tutte le pull request di un repository in una pagina — per stato, filtrate per autore, revisore, destinazione e CI —, ‹ › per scorrere la lista filtrata da dentro una PR, i suoi commit, i suoi aggiornamenti (ogni push, cosa ha cambiato, cosa c’è di nuovo dalla tua ultima visita) e commenti su una riga del suo diff. La conversazione come un’unica cronologia, con le novità dalla tua ultima visita.
+keywords: pull request lista pagina merge request pr mr filtro autore revisore mie in attesa della mia revisione revisione chiesta ci fallita branch di destinazione bozze unite chiuse ricerca triage precedente successiva alt freccia navigazione checkout vai al branch di origine destinazione copia nome del branch fetch commento di riga commento inline commento di revisione commento sul diff commenta riga scheda file revisione del codice line comment scheda commit elenco dei commit commit della pr cronologia dei commit apri commit copia sha scarica il branch della pr editor markdown barra di formattazione anteprima menzione commits tab commit list open commit copy sha markdown editor toolbar preview mention albero dei file albero delle cartelle vista ad albero vista percorso file visti segna cartella come vista modifica elimina rimuovi modificato refuso file tree viewed files edit delete edited typo riferimento titolo scheda al passaggio work item AB# numero della issue tooltip reference title hover card issue number fork commit della pr refs/pull head commenti visualizzati immagini pixel traccianti immagine bloccata clic per caricare attività tabella blocco rendered comments images blocked image aggiornamenti iterazioni push force push rebase cronologia riscritta versioni del diff cosa è cambiato dall’ultima visita badge nuovo segna come visto confronta aggiornamento updates iterations history rewritten diff versions what changed since last visit new badge mark as seen compare update conversazione cronologia discussioni aperte discussione risolta ha approvato ha chiesto modifiche commit inviati ruolo revisore nuovo dalla tua ultima visita confronta due commit chip del tipo di commit ci per commit vedi diff prossimo non visto filtra non visti con commenti avanzamento della revisione cambiato da quando l’hai visto conversation timeline open threads resolved thread approved requested changes pushed commits reviewer role new since last visit compare two commits commit type chips conventional commits ci per commit view diff next unviewed filter unviewed with comments review progress changed since viewed
 source: d91d96af92225cb74da274f8d168b07f6110b709
 ---
 
@@ -166,30 +166,44 @@ La barra laterale diceva quanti commit ha una pull request, mai quali. Revisiona
 un commit alla volta — come la maggior parte delle pull request è pensata per
 essere letta — ti mandava nel browser. La scheda **Commit**, tra Conversazione e Aggiornamenti, li elenca:
 
+- **Una riga di riepilogo** in alto: quanti commit, di quanti autori, il **+/−**
+  della pull request e un chip colorato per ogni tipo di
+  [Conventional Commit](https://www.conventionalcommits.org/) con il suo conteggio
+  — *feat 2 · fix 1 · test 1* ti dice che tipo di modifica è prima di leggerne una
+  riga. Le feature sono verdi, fix e revert rossi, i test nel colore d’accento, le
+  prestazioni gialle, il resto grigio.
 - **Dal più vecchio**, nell’ordine in cui si applicano, raggruppati sotto il giorno
   in cui sono stati scritti. Un commit portato dentro con un rebase fuori
   dall’ordine delle date apre un giorno tutto suo invece di essere spostato.
-- Ogni riga ha l’immagine dell’autore (dove l’host la fornisce), l’oggetto,
-  l’autore, quanto tempo fa e lo SHA breve. Un badge **merge** segna un commit con
-  due genitori, dove l’host lo dice.
-- **▸** accanto a un commit che ha più dell’oggetto mostra il resto del messaggio.
-- **Copia** mette lo SHA completo negli appunti; **Apri nel browser** apre il commit
-  sull’host — dentro la pull request dove l’host ha una pagina del genere (GitHub,
-  GitLab, Bitbucket Data Center), altrimenti sulla pagina del commit del
-  repository.
+- Ogni riga ha l’immagine dell’autore (dove l’host la fornisce), l’oggetto — il
+  suo tipo come lo stesso chip colorato e l’ambito attenuato, quando segue i
+  Conventional Commits —, l’autore, quanto tempo fa e, per un commit che questo
+  clone ha, il suo **+/−** e quanti file ha toccato. Poi un pallino **CI** (verde
+  superata, rosso fallita, giallo in corso) dove l’host riporta un’esecuzione per
+  quel commit, lo SHA breve e **Vedi diff**. Un badge **merge** segna un commit
+  con due genitori, dove l’host lo dice.
+- Un commit che ha più dell’oggetto mostra il resto del messaggio sotto la riga.
+- Al passaggio del mouse, **Copia** mette lo SHA completo negli appunti e **Apri
+  nel browser** apre il commit sull’host — dentro la pull request dove l’host ha
+  una pagina del genere (GitHub, GitLab, Bitbucket Data Center), altrimenti sulla
+  pagina del commit del repository.
 
 ![La scheda Commit: i commit di una pull request raggruppati per giorno, uno con il messaggio completo aperto](../../screenshots/pr-commits.webp)
 
-**Fai clic su una riga** — o raggiungila con Tab e premi Invio — per aprire il
-commit nell’app, come farebbe un clic nel grafo: la vista del repository, quel
-commit selezionato, i suoi dettagli aperti. Funziona quando questo clone **ha** il
-commit. Quando non ce l’ha, la riga lo dice invece di fallire in silenzio, e
-offre:
+I commit fatti dopo l’ultima volta che hai lasciato la pull request stanno sotto
+una linea **Nuovo dalla tua ultima visita** — lo stesso segno della scheda
+Conversazione, dalla stessa visita.
 
-- **Scarica il branch della PR per vederlo** — lo stesso fetch di un solo branch di
-  [andare al branch](#andare-al-branch-di-una-pull-request), senza il checkout. Se il commit è arrivato con
-  lui, si apre; se no (un force push l’ha riscritto nel frattempo), la notifica lo
-  dice.
+**Vedi diff** — oppure un clic sulla riga, o raggiungerla con Tab e premere Invio
+— apre il commit nell’app, come farebbe un clic nel grafo: la vista del
+repository, quel commit selezionato, i suoi dettagli aperti. Funziona quando
+questo clone **ha** il commit. Quando non ce l’ha, la riga dice *non ancora nel
+tuo repository* e il suo pulsante cambia:
+
+- **Recupera il branch** — lo stesso fetch di un solo branch di
+  [andare al branch](#andare-al-branch-di-una-pull-request), senza il checkout.
+  Ogni commit arrivato con lui si può poi aprire; se questo non è arrivato (un
+  force push l’ha riscritto nel frattempo), la notifica lo dice.
 - **Recupera i commit della pull request**, su una pull request da un **fork**. Il
   suo branch sta in un altro repository, ma la maggior parte degli host rispecchia
   l’head di una pull request nel repository di destinazione sotto un ref proprio —
@@ -201,6 +215,12 @@ offre:
   sull’head com’è in quel momento. Se il force push nel frattempo ha lasciato fuori il
   commit, la notifica lo dice.
 - **Apri nel browser**, per quando scaricare non è un’opzione.
+
+**Confronta due commit** ti chiede di spuntare due righe, poi apre il
+[confronto](merging.md#compare-any-two-refs) tra loro nella vista del repository:
+il più vecchio è la base, così vedi cos’è successo dall’uno all’altro — i commit
+nel mezzo e il loro diff combinato. Entrambi devono essere in questo clone;
+finché non lo sono due, il pulsante è disattivato.
 
 L’elenco viene letto la prima volta che apri la scheda, non con la pagina, e di
 nuovo a ogni **Aggiorna**. Finché non arriva, il conteggio della scheda è quello
@@ -239,6 +259,17 @@ Cosa non fa:
 - **Merge squash.** I commit di una pull request unita con squash non hanno mai
   raggiunto il branch di destinazione, quindi dopo l’eliminazione del suo branch
   stanno solo sull’host.
+- **I numeri per commit vengono dal tuo clone.** Il **+/−** e il conteggio dei file
+  sono letti da git, mai chiesti all’host, quindi un commit non ancora scaricato
+  non ne mostra, e nemmeno un merge (la sua modifica è rispetto a due genitori).
+  Un clone parziale a cui mancano i file di un commit non ne mostra invece di
+  scaricarli.
+- **CI solo per i 40 commit più recenti**, in silenzio: una richiesta per commit
+  si accumulerebbe su una pull request lunga, e la CI di solito è girata comunque
+  sulle teste inviate. Nessuna credenziale per l’host vuol dire nessun pallino,
+  mai una richiesta di accesso.
+- **I chip del tipo leggono l’oggetto.** Un team che non scrive Conventional
+  Commits non ha chip né conteggi per tipo — niente viene indovinato.
 - **Gli autori** sono nominati come li nominano i loro commit. GitLab, Azure DevOps
   e Bitbucket Data Center non danno immagini senza un accesso che un’immagine non
   può inviare, quindi quelle righe mostrano l’iniziale.
@@ -384,15 +415,22 @@ e dopo un force push sono esatti, quindi lo è anche il suo **Vedi le modifiche*
 ## Leggere i file
 
 Una pull request di duecento file è difficile da leggere come duecento percorsi
-completi. La lista della scheda **File** ha lo stesso selettore **Percorso / Albero**
+completi, e difficile da finire senza perdere il segno. Sopra l’elenco e il diff,
+una riga tiene il conto — *4 di 9 file visti*, con una barra — e **Prossimo non
+visto →** apre il file successivo più in basso che non hai spuntato, ripartendo
+dall’alto; è disattivato quando tutto ciò che è elencato è visto. **Mostra:**
+restringe l’elenco ai file **Non visti** o **Con commenti** (qualsiasi
+conversazione di revisione su di essi), e torna a **Tutti**.
+
+La lista della scheda **File** ha lo stesso selettore **Percorso / Albero**
 del pannello di commit, e la scelta vale per tutta l’app. In **Albero** i file stanno
 sotto le loro cartelle (una catena come `src/main/ipc` è una sola riga), e ogni
 cartella mostra il suo **+/−** sommato e quanti dei suoi file sono visti (*3/5*). La
 casella di una cartella segna come visti tutti i file al suo interno, o li toglie
 tutti; i segni restano solo su questo computer, mai inviati all’host. Un segno
 ricorda la versione del diff del file: quando un push cambia un file visto, torna non
-visto, con un punto giallo (*Modificato da quando l’hai visto*). Un file senza diff
-(binario, troppo grande) viene confrontato solo per stato e conteggi di righe. Un file con conversazioni di revisione mostra accanto un numero in un fumetto (le cartelle sommano i loro), così quelli con commenti spiccano in un elenco lungo; contano anche le conversazioni obsolete. Fai
+visto, con una pillola **cambiato** (*Modificato da quando l’hai visto*). Un file senza diff
+(binario, troppo grande) viene confrontato solo per stato e conteggi di righe. Un file con conversazioni di revisione mostra un numero in un fumetto subito dopo il nome, così quelli con commenti spiccano in un elenco lungo; contano anche le conversazioni obsolete, e anche quelle risolte — gli elenchi degli host che l’app legge non dicono quali sono risolte. Fai
 clic su una cartella, o premi ←/→ su di essa, per chiuderla; ↑/↓ (o j/k) scorrono i
 file sullo schermo e aprono ciascun diff. Le cartelle chiuse vengono ricordate per
 pull request finché l’app resta aperta, e un file aperto dentro una di esse apre la
@@ -569,14 +607,74 @@ Cosa non fa:
 - **Un file senza diff** (binario, o troppo grande perché l’host lo includa) non ha
   righe da commentare.
 
+## La conversazione
+
+La storia di una pull request è sparpagliata: la descrizione in alto, i commenti
+in un elenco, le discussioni di riga in un altro, i verdetti solo nella barra
+laterale, i push in una scheda a parte. Rimettersi in pari voleva dire leggere
+tutto e ricostruire l’ordine a mente. La scheda **Conversazione** la racconta come
+un’unica **cronologia**, lungo un binario, nell’ordine in cui è successa.
+
+![La conversazione come cronologia: due push, una discussione di riga ancora aperta con le sue righe, una richiesta di modifiche, la linea che segna cosa c’è di nuovo dall’ultima visita e un’approvazione](../../screenshots/pull-request-page.webp)
+
+| Nella cronologia | Cosa mostra |
+|---|---|
+| **La descrizione** | Sempre per prima, con chi ha aperto la pull request e quando |
+| **Commenti** | La conversazione, ognuno con il ruolo del suo autore: **Autore** o **Revisore** |
+| **Push** | *sam ha inviato 2 commit*, poi una riga per commit; un clic su un hash apre la scheda Commit |
+| **Discussioni di riga** | Al loro posto, al primo commento: il file e la riga, le righe del diff di cui parlano, le risposte e un riquadro di risposta. Il percorso e **Vedi in File →** aprono quel file nella scheda File |
+| **Verdetti di revisione** | **ha approvato** in verde, **ha chiesto modifiche** in rosso con ciò che ha scritto il revisore, oppure il commento proprio di una revisione |
+
+Una discussione che l’host segnala come **aperta** porta una pillola ambra, e la
+barra sopra la cronologia le conta: **1 discussione aperta** mostra solo quelle,
+le ancora in attesa di una risposta. Una discussione **risolta** si ripiega in una
+riga — *Discussione risolta in src/palette.tsx:18 · 2 commenti* — e un clic la
+apre. **Tutto · Commenti · Revisioni · Commit** restringono la cronologia a un
+solo tipo.
+
+I **Revisori** nella barra laterale dicono a parole il verdetto di ognuno —
+**✓ ha approvato** o **ha chiesto modifiche** — e un orologio per chi deve ancora
+rispondere.
+
+### Nuovo dalla tua ultima visita
+
+Quando lasci la pagina di una pull request (un’altra pagina, un’altra scheda, la
+chiusura), l’app annota l’ora. La volta dopo, una linea segna dove ti eri fermato
+— **Nuovo dalla tua ultima visita** — e la barra dice quante voci sono arrivate
+dopo. Il segno si mette all’uscita, non all’apertura, quindi resta fermo mentre
+leggi. La prima volta che apri una pull request niente è segnato come nuovo.
+
+Gli orari si leggono *2 g fa*; passa il mouse per la data completa.
+
+*Limiti:*
+
+- **Quando un commit è stato inviato** gli host non lo dicono. I push vengono
+  ricostruiti dall’elenco dei commit: commit consecutivi dello stesso autore,
+  ognuno entro un’ora dal precedente, contano come un push, collocato alla data
+  dell’ultimo. Un rebase che ha riscritto le date li sposta. La scheda
+  Aggiornamenti è il registro proprio dell’host, dove ce n’è uno.
+- **Aperta o risolta** viene da GitHub (una richiesta GraphQL in più per lettura)
+  e da GitLab. Le discussioni di Azure DevOps, Bitbucket Data Center e Forgejo non
+  mostrano la pillola e non vengono contate.
+- **I verdetti nella cronologia** hanno bisogno di una data: GitHub, GitLab
+  (un’approvazione, datata dalla nota che GitLab scrive per essa) e Forgejo la
+  danno. I voti di Azure DevOps e le approvazioni di Bitbucket Data Center non ce
+  l’hanno, quindi compaiono solo nella barra laterale.
+- Una revisione di GitHub senza testo proprio — la busta sotto cui viene
+  archiviato ogni gruppo di commenti di riga — non ha una riga; le sue discussioni
+  sono già mostrate.
+- Le tue ultime visite sono conservate per le 300 pull request più recenti, solo
+  su questo computer. Chiudere l’app con una pull request aperta non conta come
+  lasciarla.
+
 ## Scrivere commenti
 
 Ogni riquadro della pagina — il commento in fondo, una risposta in un thread, un
 commento su una riga — è lo stesso editor Markdown: schede **Scrivi / Anteprima**,
 una barra di formattazione con le scorciatoie di GitHub, elenchi che continuano con
 Invio e completamento con **@** / **#** dalle persone e dalle pull request già sullo
-schermo. Un riquadro di risposta mostra i suoi strumenti appena ci fai clic dentro,
-e invia con ⌘/Ctrl+Invio, perché ora Invio inizia una nuova riga.
+schermo. La risposta in un thread è l’eccezione: un campo di una riga senza barra,
+dove Invio invia e Maiusc+Invio aggiunge una riga.
 [Scrivere commenti](writing-comments.md) ha i dettagli e i limiti.
 
 ## Come vengono mostrati i commenti

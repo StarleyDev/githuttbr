@@ -16,12 +16,19 @@ kullandığı yapay zekâya aittir — genel olana ya da profilin kendisininkine
 
 | Biçem | Nasıl görünür |
 |---|---|
-| **Conventional** | `feat(api)!: add rate limiting` — tür açılır listesiyle |
+| **Conventional** | `feat(api)!: add rate limiting` — konunun önünde bir **tür ▾** düğmesiyle |
 | **Gitmoji** | `✨ add rate limiting` — emoji seçiciyle |
-| **Gitmoji + Conventional** | `✨ feat(api): add rate limiting` — emoji seçici *ve* tür listesi |
+| **Gitmoji + Conventional** | `✨ feat(api): add rate limiting` — emoji seçici *ve* **tür ▾** düğmesi |
 | **Ticket** | `ABC-123: add rate limiting` — dal adından türetilir |
 | **Düz** · **Otomatik** | Ne yazarsanız o; Otomatik'te biçime yapay zekâ karar verir |
 | **Mağara adamı** · **Haiku** | Tam olarak kulağa geldikleri gibi |
+
+Conventional bir biçemde önek, konunun önündeki **tür ▾** düğmesinde durur
+(*feat(api)*, ya da henüz yoksa *tür*) ve alan yalnızca ondan sonraki sözcükleri
+tutar; mesaj yine de `feat(api): …` ifadesinin tamamını alır. Düğme türleri listeler,
+**Tür yok** öneki kaldırır. Öneki elle yazmak da çalışır; alanın başında
+<kbd>Backspace</kbd> öneki yeniden metin olarak gösterir, böylece kapsamını
+(scope) değiştirebilirsiniz; alan odağı kaybedince düğmeye geri katlanır.
 
 ![Bir commit şablonundan önceden doldurulmuş besteci paneli](../../screenshots/commit-template.webp)
 
@@ -67,7 +74,7 @@ Sınırlar:
 
 Yapay zekâ açıkken **✦** düğmesi (üzerine gelince *Yapay zekâyla oluştur*)
 açıklamanın altında durur. Hazırlanmış (staged) diff’i okur ve özeti ile
-açıklamayı yukarıdaki stilde yazar. Yanındaki satır kimin yanıt vereceğini
+açıklamayı yukarıdaki stilde yazar. Yanındaki ayrı bir seçici kimin yanıt vereceğini
 söyler — *hesap · model*, **Ayarlar → Yapay zekâ → Görev başına model** altında
 commit mesajları için seçilen çift — böylece yavaş bir yerel model ya da pahalı
 bir model hiç sürpriz olmaz.
@@ -119,10 +126,12 @@ Sınırlar:
 
 ## Linter
 
-Canlı, engellemeyen bir denetim: konu satırının uzunluğu (karakter sayacıyla),
-sondaki nokta, emir kipinde olmayan ya da küçük harfle başlayan konu, aşırı
-geniş gövde satırları. Bunlar ipucudur, kapı değil — commit almanızı
-engellemez.
+Canlı, engellemeyen bir denetim: konu satırının uzunluğu, sondaki nokta, emir
+kipinde olmayan ya da küçük harfle başlayan konu, aşırı geniş gövde satırları.
+Bunlar ipucudur, kapı değil — commit almanızı engellemez. Uzunluk, konunun yanındaki
+sayaçtır ve 72 karakterlik sınıra göre okunur (*56/72*): sınır aşılınca kırmızıya
+döner, araç ipucu da 50'yi hedeflemeyi önerir. Diğer ipuçları açıklamanın altında
+listelenir.
 
 ## Amend
 

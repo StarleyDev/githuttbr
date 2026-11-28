@@ -88,7 +88,7 @@ Ana sütunun üç bölümü vardır:
 |---|---|
 | **Konuşma** | Açıklama, yorumlar ve satır içi inceleme dizileri (`dosya:satır`, yanıtlarıyla). Yalnızca konuşma kayar: yorum / onay / değişiklik iste seçenekli yorum kutusu ve birleştirme kutusu (merge, squash veya rebase) altta sabit kalır, böylece uzun bir pull request onları asla erişilemez hâle getirmez |
 | **Dosyalar** | Değişen her dosya ve seçilenin diff’i listenin yanında; sözdizimi vurgulama ve kelime düzeyinde değişikliklerle (o ayar açıkken gizli görünen dosyalar maskelenir). ✓ “görüldü” listesi ilerlemenizi hatırlar. Sunucunun diff göndermediği bir dosya (ikili ya da çok büyük) sunucuya bağlantı verir |
-| **Kontroller** | CI check-run’ları (GitHub) veya pipeline işleri (GitLab); geçti/başarısız/bekliyor durumu ve günlük bağlantılarıyla. Deponun tüm çalıştırmaları — yalnızca bu pull request’inkiler değil — [CI çalıştırmaları](ci-runs.md) sayfasındadır |
+| **Kontroller** | Head commit'in CI'ının nasıl geçtiği ve neden başarısız olduğu — bkz. [Kontroller sekmesi](#kontroller-sekmesi). Deponun tüm çalıştırmaları — yalnızca bu pull request’inkiler değil — [CI çalıştırmaları](ci-runs.md) sayfasındadır |
 
 Kenar çubuğu şunları gösterir:
 
@@ -109,6 +109,54 @@ yüklendiğinde oradan toplanır. Sunucunun bildirmediği satır gösterilmez.
 
 Biri inceleme ortasında force-push yaparsa, [o zamandan beri ne değişti](range-diff.md)
 neyin kaydığını tam olarak gösterir.
+
+### Kontroller sekmesi
+
+Kırmızı bir kontrol tek bir soruyu kötü yanıtlar: *ne* bozuldu. Kontroller sekmesi
+bu soruyu CI'ın web sitesine gitmeden yanıtlar. Sekmenin etiketi başarısız
+kontrollerin sayısını kırmızıyla taşır, böylece açmadan önce bilirsiniz.
+
+![Kontroller sekmesi: çalıştırmanın özeti, günlükten okunan başarısız test ve numaralı günlük](../../screenshots/pr-check-log.webp)
+
+- En üstteki **özet**, kaç kontrolün başarısız olduğunu (ya da hepsinin geçtiğini
+  veya kaçının hâlâ çalıştığını), hangi commit'te, sonuncusunun ne zaman bittiğini
+  ve toplamda ne kadar sürdüklerini söyler. **Başarısızları yeniden çalıştır**
+  başarısız işleri sunucuda yeniden başlatır; **CI çalıştırmalarını aç** deponun
+  [CI çalıştırmaları](ci-runs.md) sayfasını açar.
+- **Her kontrol için bir kart**; nasıl bittiği ve ne kadar sürdüğüyle. Başarısız
+  bir kontrol kendiliğinden açılır; geçen bir kontrol **Logu gör**'e basılana dek
+  tek satır kalır. **Logu kopyala** günlüğü düz metin olarak kopyalar; **Sunucuda
+  gör →** kontrolü sunucunun sitesinde açar.
+- **Başarısız test.** Günlük bir **vitest**, **jest** ya da **pytest** çalıştırması
+  olduğunda kart başarısız testleri, hatayı ve yerini adlandırır: `path:line`
+  çipi ve **Düzenleyicide aç** dosyayı o satırda [düzenleyicinizde](editor.md)
+  açar; **PR diff’inde gör**, pull request o dosyayı değiştiriyorsa Dosyalar
+  sekmesinde o dosyaya geçer.
+- **Tam günlük** kartın altında katlanır; numaralı, renkleri korunmuş ve bir
+  hatayı işaretleyen satırlar vurgulanmış olarak. Çok uzun günlükler son birkaç
+  bin satırlarını gösterir, numaralar gerçek başlangıçtan sayılır.
+
+Her sunucunun durumu:
+
+| Sunucu | Uygulamada günlük | Süreler ve commit | Başarısızları yeniden çalıştır |
+|---|---|---|---|
+| GitHub | GitHub Actions işleri | Evet | Evet — işin workflow çalıştırması |
+| GitLab | Pipeline işleri | Evet | Evet — pipeline'ın başarısız işlerini yeniden dener |
+| Azure DevOps | Derleme doğrulaması ve pipeline durumları | Hayır | Derleme doğrulaması — derlemenin başarısız işlerini yeniden dener |
+| Forgejo | Forgejo Actions işleri | Durumdan, bu yüzden süre kuyrukta beklemeyi de sayar | Hayır — Forgejo'nun bunun için API'si yok |
+| Bitbucket Data Center | Hayır | Hayır | Hayır |
+
+Sınırlar:
+
+- Başarısız test bir test raporundan değil, günlüğün metninden okunur. Başka bir
+  çalıştırıcı, testler çalışmadan önceki bir hata (derleme ya da kurulum hatası)
+  veya hata bölümünden önce kesilmiş bir günlük, eskisi gibi yalnızca günlüğü
+  gösterir. En fazla yirmi hata listelenir.
+- Günlüğün CI makinesinin kendi yolu olarak yazdığı bir yol (`/home/runner/work/…`)
+  mümkün olduğunda depodaki bir yola geri çevrilir; çevrilemeyen gösterilir ama
+  açılmaz.
+- Başka bir uygulamadan gelen bir kontrolün (kapsam ya da güvenlik hizmeti)
+  uygulamada günlüğü yoktur: **Sunucuda gör →** tek giriş yoludur.
 
 ### Kapatma, yeniden açma ve taslaklar
 
@@ -227,9 +275,8 @@ yoktur; bu yüzden uygulama web günlük görüntüleyicisinin indirdiği aynı 
 ister ve token’ı yalnızca bağlantı bu sunucudaki bir iş olduğunda gönderir; harici
 bir CI’dan gelen durum onu asla almaz. Günlükleri yalnızca oturum açmış bir
 tarayıcıya veren sunucu giriş sayfasıyla yanıt verir — satır bunu söyler ve
-tarayıcıyı önerir. Çok uzun günlükler son birkaç bin satırını gösterir.
-
-![Kontrol satırının altında açılmış bir Forgejo Actions iş günlüğü](../../screenshots/pr-check-log.webp)
+tarayıcıyı önerir. Çok uzun günlükler son birkaç bin satırını gösterir;
+[Kontroller sekmesi](#kontroller-sekmesi) onlarla ne yaptığını gösterir.
 
 GitLab’da olduğu gibi, **bir Forgejo token’ı yalnızca onu veren sunucuya gider**.
 Forgejo adresi olmayan bir profilin hiçbir Forgejo kimlik bilgisi yoktur. Geri

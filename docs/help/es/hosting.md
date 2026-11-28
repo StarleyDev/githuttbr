@@ -90,7 +90,7 @@ La columna principal tiene tres secciones:
 |---|---|
 | **Conversación** | La descripción, los comentarios y los hilos de revisión en línea (`archivo:línea`, con respuestas). Solo la conversación se desplaza: el cuadro de comentario con comentar / aprobar / pedir cambios y el cuadro de merge (merge, squash o rebase) quedan fijos abajo, así que un pull request largo nunca los deja fuera de alcance |
 | **Archivos** | Cada archivo cambiado, y el diff del seleccionado junto a la lista, con resaltado de sintaxis y cambios a nivel de palabra (los archivos que parecen secretos se enmascaran si ese ajuste está activo). Una lista ✓ de "visto" recuerda tu avance. Un archivo del que el host no envía diff (binario o demasiado grande) enlaza al host |
-| **Checks** | Check-runs de CI (GitHub) o jobs de pipeline (GitLab), con pasa/falla/en curso y enlaces a los logs. Todas las ejecuciones del repositorio — no solo las de este pull request — están en la página [Ejecuciones de CI](ci-runs.md) |
+| **Checks** | Cómo fue la CI del commit head y por qué falló — mira [la pestaña Checks](#la-pestaña-checks). Todas las ejecuciones del repositorio — no solo las de este pull request — están en la página [Ejecuciones de CI](ci-runs.md) |
 
 La barra lateral muestra:
 
@@ -111,6 +111,54 @@ lista de archivos cuando carga. Una fila que el host no informa se omite.
 
 Si alguien hace force-push en mitad de la revisión, [qué cambió desde entonces](range-diff.md)
 te muestra exactamente qué se movió.
+
+### La pestaña Checks
+
+Un check en rojo responde mal a una pregunta: *qué* se rompió. La pestaña Checks
+la responde sin tener que ir a la web de la CI. La etiqueta de la pestaña lleva
+un número en rojo con los checks que fallan, así que lo sabes antes de abrirla.
+
+![La pestaña Checks: un resumen de la ejecución, el test fallido leído del log y el log numerado](../../screenshots/pr-check-log.webp)
+
+- **El resumen** de arriba dice cuántos checks fallaron (o que pasaron todos, o
+  cuántos siguen en ejecución), en qué commit, cuándo terminó el último y cuánto
+  tardaron en total. **Volver a ejecutar los fallidos** relanza los jobs
+  fallidos en el host; **Abrir ejecuciones de CI** abre la página
+  [Ejecuciones de CI](ci-runs.md) del repositorio.
+- **Una tarjeta por check**, con cómo terminó y cuánto tardó. Un check fallido
+  se abre solo; uno que pasó se queda en una línea hasta **Ver log**. **Copiar
+  log** copia el log como texto plano; **Ver en el host →** abre el check en la
+  web del host.
+- **El test fallido.** Cuando el log es una ejecución de **vitest**, **jest** o
+  **pytest**, la tarjeta nombra los tests que fallaron, el error y dónde: el chip
+  `ruta:línea` y **Abrir en el editor** abren el archivo en esa línea en tu
+  [editor](editor.md), y **Ver en el diff del PR** cambia a la pestaña Archivos
+  en ese archivo cuando el pull request lo modifica.
+- **El log completo** se pliega bajo la tarjeta, numerado, con sus colores, y
+  con las líneas que marcan un fallo resaltadas. Los logs muy largos muestran sus
+  últimas miles de líneas, numeradas desde el inicio real.
+
+Cómo está cada host:
+
+| Host | Log en la app | Tiempos y commit | Volver a ejecutar los fallidos |
+|---|---|---|---|
+| GitHub | Jobs de GitHub Actions | Sí | Sí — la ejecución del workflow del job |
+| GitLab | Jobs de pipeline | Sí | Sí — reintenta los jobs fallidos de la pipeline |
+| Azure DevOps | Validación de build y estados de pipeline | No | Validación de build — reintenta los jobs fallidos del build |
+| Forgejo | Jobs de Forgejo Actions | Del estado, así que el tiempo cuenta la espera en la cola | No — Forgejo no tiene API para ello |
+| Bitbucket Data Center | No | No | No |
+
+Límites:
+
+- El test fallido se lee del texto del log, no de un informe de tests. Otro
+  runner, un fallo antes de que corrieran los tests (un error de build o de
+  instalación) o un log cortado antes de la sección de fallos muestra solo el
+  log, como antes. Se listan como mucho veinte fallos.
+- Una ruta que el log imprime como la de la máquina de CI
+  (`/home/runner/work/…`) se convierte de nuevo en una ruta del repositorio
+  cuando se puede; la que no, se muestra pero no se abre.
+- Un check de otra app (un servicio de cobertura o de seguridad) no tiene log en
+  la app: **Ver en el host →** es su única entrada.
 
 ### Cerrar, reabrir y borradores
 
@@ -232,9 +280,8 @@ de la web, y envía el token solo cuando el enlace es un job de este mismo
 servidor; un estado de una CI externa nunca lo recibe. Un servidor que solo
 entrega logs a un navegador con sesión responde con su página de inicio de
 sesión, y la fila lo dice y ofrece el navegador. Los logs muy largos muestran sus
-últimas miles de líneas.
-
-![El log de un job de Forgejo Actions abierto bajo su fila de check](../../screenshots/pr-check-log.webp)
+últimas miles de líneas; [la pestaña Checks](#la-pestaña-checks) muestra qué hace
+con ellos.
 
 Igual que con GitLab, **un token de Forgejo solo va al servidor que lo emitió**.
 Un perfil sin dirección de Forgejo no tiene ninguna credencial de Forgejo. No hay

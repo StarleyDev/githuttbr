@@ -88,7 +88,7 @@ Kolumna główna ma trzy sekcje:
 |---|---|
 | **Rozmowa** | Opis, komentarze i wątki recenzji w kodzie (`plik:wiersz`, z odpowiedziami). Przewija się tylko rozmowa: pole komentarza z komentuj / zatwierdź / poproś o zmiany oraz pole scalania (merge, squash lub rebase) zostają przypięte na dole, więc długi pull request nigdy nie wypycha ich poza zasięg |
 | **Pliki** | Każdy zmieniony plik i diff wybranego obok listy, z podświetlaniem składni i zmianami na poziomie słów (pliki wyglądające na sekrety zamaskowane, gdy to ustawienie jest włączone). Lista ✓ „obejrzane” pamięta postęp. Plik, dla którego host nie wysyła diffu (binarny lub za duży), linkuje do hosta |
-| **Checki** | Check-runy CI (GitHub) lub joby pipeline’u (GitLab), ze stanem zaliczone/nieudane/w toku i linkami do logów. Wszystkie uruchomienia repozytorium — nie tylko tego pull requesta — są na stronie [Uruchomienia CI](ci-runs.md) |
+| **Checki** | Jak poszło CI commita head i dlaczego się nie powiodło — zobacz [zakładkę Checki](#zakładka-checki). Wszystkie uruchomienia repozytorium — nie tylko tego pull requesta — są na stronie [Uruchomienia CI](ci-runs.md) |
 
 Panel boczny pokazuje:
 
@@ -109,6 +109,54 @@ jej wczytaniu. Wiersz, którego host nie podaje, jest pomijany.
 
 Jeśli ktoś zrobi force-push w trakcie recenzji, [co się od tego czasu zmieniło](range-diff.md)
 pokaże dokładnie, co się przesunęło.
+
+### Zakładka Checki
+
+Czerwony check źle odpowiada na jedno pytanie: *co* się zepsuło. Zakładka Checki
+odpowiada na nie bez wycieczki na stronę CI. Etykieta zakładki niesie czerwoną
+liczbę nieudanych checków, więc wiesz, zanim ją otworzysz.
+
+![Zakładka Checki: podsumowanie uruchomienia, nieudany test odczytany z logu i numerowany log](../../screenshots/pr-check-log.webp)
+
+- **Podsumowanie** na górze mówi, ile checków się nie powiodło (albo że wszystkie
+  przeszły, albo ile jeszcze trwa), na którym commicie, kiedy skończył się
+  ostatni i ile trwały łącznie. **Uruchom ponownie nieudane** uruchamia nieudane
+  joby ponownie na hoście; **Otwórz uruchomienia CI** otwiera stronę
+  [Uruchomienia CI](ci-runs.md) repozytorium.
+- **Jedna karta na check**, z tym, jak się zakończył i ile trwał. Nieudany check
+  otwiera się sam; udany zostaje jednym wierszem do czasu **Zobacz log**.
+  **Kopiuj log** kopiuje log jako zwykły tekst; **Zobacz na hoście →** otwiera
+  check na stronie hosta.
+- **Nieudany test.** Gdy log jest uruchomieniem **vitest**, **jest** lub
+  **pytest**, karta podaje testy, które się nie powiodły, błąd i miejsce: chip
+  `path:line` i **Otwórz w edytorze** otwierają plik w tym wierszu w twoim
+  [edytorze](editor.md), a **Zobacz w diffie PR** przełącza na zakładkę Pliki na
+  tym pliku, gdy pull request go zmienia.
+- **Pełny log** zwija się pod kartą, numerowany, z zachowanymi kolorami i
+  podświetlonymi wierszami oznaczającymi błąd. Bardzo długie logi pokazują
+  ostatnie kilka tysięcy wierszy, numerowanych od prawdziwego początku.
+
+Jak to wygląda na poszczególnych hostach:
+
+| Host | Log w aplikacji | Czasy i commit | Uruchom ponownie nieudane |
+|---|---|---|---|
+| GitHub | Joby GitHub Actions | Tak | Tak — uruchomienie workflow joba |
+| GitLab | Joby pipeline’u | Tak | Tak — ponawia nieudane joby pipeline’u |
+| Azure DevOps | Walidacja buildu i statusy pipeline’ów | Nie | Walidacja buildu — ponawia nieudane joby buildu |
+| Forgejo | Joby Forgejo Actions | Ze statusu, więc czas obejmuje czekanie w kolejce | Nie — Forgejo nie ma do tego API |
+| Bitbucket Data Center | Nie | Nie | Nie |
+
+Ograniczenia:
+
+- Nieudany test jest odczytywany z tekstu logu, nie z raportu testów. Inny
+  runner, błąd przed uruchomieniem testów (błąd buildu lub instalacji) albo log
+  ucięty przed sekcją błędów pokazują sam log, jak dotąd. Wymienianych jest
+  najwyżej dwadzieścia błędów.
+- Ścieżka, którą log wypisuje jako ścieżkę maszyny CI (`/home/runner/work/…`),
+  jest w miarę możliwości zamieniana z powrotem na ścieżkę w repozytorium; taka,
+  której nie da się zamienić, jest pokazywana, ale nie otwierana.
+- Check z innej aplikacji (usługi pokrycia lub bezpieczeństwa) nie ma logu w
+  aplikacji: **Zobacz na hoście →** to jedyna droga.
 
 ### Zamykanie, ponowne otwieranie i szkice
 
@@ -224,9 +272,8 @@ pobiera tę samą stronę, którą ściąga webowa przeglądarka logów, i wysy�
 tylko wtedy, gdy link jest jobem na tym samym serwerze; status z zewnętrznego CI
 nigdy go nie dostaje. Serwer, który daje logi tylko zalogowanej przeglądarce,
 odpowiada stroną logowania — wiersz o tym mówi i proponuje przeglądarkę. Bardzo
-długie logi pokazują ostatnie kilka tysięcy wierszy.
-
-![Log joba Forgejo Actions otwarty pod wierszem jego checka](../../screenshots/pr-check-log.webp)
+długie logi pokazują ostatnie kilka tysięcy wierszy; [zakładka Checki](#zakładka-checki)
+pokazuje, co z nimi robi.
 
 Tak jak przy GitLab, **token Forgejo trafia tylko na serwer, który go wydał**.
 Profil bez adresu Forgejo nie ma żadnych danych logowania do Forgejo. Nie ma

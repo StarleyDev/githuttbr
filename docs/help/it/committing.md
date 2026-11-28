@@ -16,12 +16,20 @@ usa — quella generale o quella propria del profilo.
 
 | Stile | Ha questo aspetto |
 |---|---|
-| **Conventional** | `feat(api)!: add rate limiting` — con un menu dei tipi |
+| **Conventional** | `feat(api)!: add rate limiting` — con un pulsante **tipo ▾** prima dell'oggetto |
 | **Gitmoji** | `✨ add rate limiting` — con un selettore di emoji |
-| **Gitmoji + Convenzionale** | `✨ feat(api): add rate limiting` — selettore di emoji *e* menu del tipo |
+| **Gitmoji + Convenzionale** | `✨ feat(api): add rate limiting` — selettore di emoji *e* pulsante **tipo ▾** |
 | **Ticket** | `ABC-123: add rate limiting` — precompilato dal nome del branch |
 | **Semplice** · **Auto** | Quello che scrivi tu; con Auto è l'AI a decidere la forma |
 | **Cavernicolo** · **Haiku** | Esattamente quello che sembrano |
+
+Con uno stile Conventional, il prefisso sta sul pulsante **tipo ▾** davanti
+all'oggetto (*feat(api)*, oppure *tipo* finché non ce n'è uno) e il campo
+contiene solo le parole che seguono; il messaggio riceve comunque il
+`feat(api): …` completo. Il pulsante elenca i tipi, e **Nessun tipo** toglie il
+prefisso. Anche scrivere il prefisso a mano funziona, e <kbd>Backspace</kbd>
+all'inizio del campo mostra di nuovo il prefisso come testo, per cambiarne
+l'ambito; torna sul pulsante quando il campo perde il focus.
 
 ![Il compositore precompilato da un template di commit](../../screenshots/commit-template.webp)
 
@@ -70,7 +78,7 @@ Limiti:
 
 Con l’IA attiva, il pulsante **✦** (*Genera con l’IA* al passaggio del mouse) si
 trova sotto la descrizione. Legge il diff in stage e scrive il riepilogo e la
-descrizione nello stile scelto sopra. Accanto, la riga dice chi risponderà —
+descrizione nello stile scelto sopra. Accanto, un selettore a parte dice chi risponderà —
 *account · modello*, la coppia scelta per i messaggi di commit in **Impostazioni
 → IA → Modello per attività** — così un modello locale lento o uno costoso non è
 mai una sorpresa.
@@ -125,9 +133,12 @@ Limiti:
 
 ## Il linter
 
-Un controllo dal vivo, non bloccante: lunghezza del soggetto (con contatore di
-caratteri), punto finale, soggetto non imperativo o minuscolo, righe del corpo
-troppo larghe. Suggerimenti, mai un cancello — non ti impedirà di committare.
+Un controllo dal vivo, non bloccante: lunghezza del soggetto, punto finale,
+soggetto non imperativo o minuscolo, righe del corpo troppo larghe.
+Suggerimenti, mai un cancello — non ti impedirà di committare. La lunghezza è il
+contatore accanto al soggetto, letto rispetto al limite di 72 caratteri
+(*56/72*): diventa rosso oltre il limite, e il suo tooltip porta il consiglio di
+puntare a 50. Gli altri suggerimenti sono elencati sotto la descrizione.
 
 ## Amend
 

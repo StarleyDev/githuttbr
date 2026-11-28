@@ -16,12 +16,20 @@ profiel gebruikt — de algemene of de eigen AI van het profiel.
 
 | Stijl | Ziet eruit als |
 |---|---|
-| **Conventional** | `feat(api)!: add rate limiting` — met een typekeuzelijst |
+| **Conventional** | `feat(api)!: add rate limiting` — met een knop **type ▾** vóór het onderwerp |
 | **Gitmoji** | `✨ add rate limiting` — met een emoji-kiezer |
-| **Gitmoji + Conventional** | `✨ feat(api): add rate limiting` — emoji-kiezer *én* type-keuzelijst |
+| **Gitmoji + Conventional** | `✨ feat(api): add rate limiting` — emoji-kiezer *én* knop **type ▾** |
 | **Ticket** | `ABC-123: add rate limiting` — voorgevuld vanuit de branchnaam |
 | **Plain** · **Auto** | Wat je maar typt; bij Auto bepaalt de AI de vorm |
 | **Caveman** · **Haiku** | Precies wat je erbij voorstelt |
+
+Bij een Conventional-stijl staat het voorvoegsel op de knop **type ▾** vóór het
+onderwerp (*feat(api)*, of *type* zolang er geen is) en bevat het veld alleen de
+woorden erna; het bericht krijgt nog steeds de hele `feat(api): …`. De knop toont de
+types, en **Geen type** haalt het voorvoegsel weg. Een voorvoegsel met de hand typen
+werkt ook, en <kbd>Backspace</kbd> aan het begin van het veld toont het voorvoegsel
+weer als tekst, om de scope te wijzigen; het klapt terug op de knop zodra het veld
+de focus verliest.
 
 ![Opsteller voorgevuld vanuit een commitsjabloon](../../screenshots/commit-template.webp)
 
@@ -68,7 +76,7 @@ Grenzen:
 
 Met AI aan staat de knop **✦** (*Genereren met AI* bij aanwijzen) onder de
 beschrijving. Hij leest de gestagede diff en schrijft de samenvatting en de
-beschrijving in de stijl hierboven. Ernaast noemt de rij wie antwoordt —
+beschrijving in de stijl hierboven. Ernaast noemt een aparte kiezer wie antwoordt —
 *account · model*, het paar dat voor commitberichten is gekozen onder
 **Instellingen → AI → Model per taak** — zodat een traag lokaal model of een
 duur model nooit een verrassing is.
@@ -123,10 +131,12 @@ Beperkingen:
 
 ## De linter
 
-Een live, niet-blokkerende controle: lengte van de onderwerpsregel (met een
-tekenteller), een punt aan het eind, een niet-gebiedende of met kleine letter
-beginnende onderwerpsregel, te brede regels in de body. Hints, nooit een hek —
-het houdt je niet tegen bij het committen.
+Een live, niet-blokkerende controle: lengte van de onderwerpsregel, een punt aan
+het eind, een niet-gebiedende of met kleine letter beginnende onderwerpsregel, te
+brede regels in de body. Hints, nooit een hek — het houdt je niet tegen bij het
+committen. De lengte is de teller naast het onderwerp, afgezet tegen de grens van 72
+tekens (*56/72*): hij wordt rood voorbij de grens, en zijn tooltip geeft het advies
+om op 50 te mikken. De andere hints staan onder de beschrijving.
 
 ## Amend
 

@@ -16,12 +16,20 @@ qu'utilise le profil — la générale, ou celle du profil.
 
 | Style | Ce que ça donne |
 |---|---|
-| **Conventional** | `feat(api)!: add rate limiting` — avec une liste déroulante de types |
+| **Conventional** | `feat(api)!: add rate limiting` — avec un bouton **type ▾** avant le sujet |
 | **Gitmoji** | `✨ add rate limiting` — avec un sélecteur d'emoji |
-| **Gitmoji + Conventionnel** | `✨ feat(api): add rate limiting` — sélecteur d'emoji *et* liste de types |
+| **Gitmoji + Conventionnel** | `✨ feat(api): add rate limiting` — sélecteur d'emoji *et* bouton **type ▾** |
 | **Ticket** | `ABC-123: add rate limiting` — amorcé depuis le nom de la branche |
 | **Simple** · **Auto** | Ce que vous tapez ; Auto laisse l'IA décider de la forme |
 | **Homme des cavernes** · **Haïku** | Exactement ce que le nom laisse entendre |
+
+Avec un style Conventional, le préfixe vit sur le bouton **type ▾** devant le
+sujet (*feat(api)*, ou *type* tant qu'il n'y en a pas) et le champ ne contient
+que les mots qui suivent ; le message reçoit quand même le `feat(api): …`
+complet. Le bouton liste les types, et **Aucun type** retire le préfixe. Taper un
+préfixe à la main fonctionne aussi, et <kbd>Backspace</kbd> au début du
+champ réaffiche le préfixe en texte, pour changer sa portée ; il revient sur le
+bouton quand le champ perd le focus.
 
 ![Compositeur prérempli depuis un modèle de commit](../../screenshots/commit-template.webp)
 
@@ -69,7 +77,7 @@ Limites :
 
 Quand l’IA est active, le bouton **✦** (*Générer avec l’IA* au survol) se trouve
 sous la description. Il lit le diff indexé (staged) et écrit le résumé et la
-description dans le style ci-dessus. À côté, la ligne nomme qui répondra —
+description dans le style ci-dessus. À côté, un sélecteur distinct nomme qui répondra —
 *compte · modèle*, la paire choisie pour les messages de commit dans **Réglages
 → IA → Modèle par tâche** — pour qu’un modèle local lent ou un modèle coûteux ne
 soit jamais une surprise.
@@ -123,10 +131,13 @@ Limites :
 
 ## Le linter
 
-Une vérification vivante et non bloquante : longueur du sujet (avec un compteur
-de caractères), point final, sujet non impératif ou en minuscule, lignes de corps
-trop larges. Des indications, jamais une barrière — il ne vous empêchera pas de
-faire votre commit.
+Une vérification vivante et non bloquante : longueur du sujet, point final,
+sujet non impératif ou en minuscule, lignes de corps trop larges. Des
+indications, jamais une barrière — il ne vous empêchera pas de faire votre
+commit. La longueur, c'est le compteur à côté du sujet, lu par rapport à la
+limite de 72 caractères (*56/72*) : il passe au rouge au-delà de la limite, et
+son infobulle conseille de viser 50. Les autres indications sont listées sous la
+description.
 
 ## Amender
 

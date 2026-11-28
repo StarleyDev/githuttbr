@@ -90,7 +90,7 @@ La colonne principale a trois sections :
 |---|---|
 | **Conversation** | La description, les commentaires et les fils de relecture en ligne (`fichier:ligne`, avec réponses). Seule la conversation défile : la zone de commentaire avec commenter / approuver / demander des changements, et la zone de merge (merge, squash ou rebase), restent fixées en bas, si bien qu’une longue pull request ne les met jamais hors de portée |
 | **Fichiers** | Chaque fichier modifié, et le diff du fichier choisi à côté de la liste, avec coloration syntaxique et changements au niveau du mot (fichiers d’allure secrète masqués si ce réglage est actif). Une liste ✓ « vu » retient votre avancée. Un fichier dont l’hôte n’envoie pas de diff (binaire, ou trop gros) renvoie vers l’hôte |
-| **Checks** | Check-runs CI (GitHub) ou jobs de pipeline (GitLab), avec réussi/échoué/en cours et des liens vers les journaux. Toutes les exécutions du dépôt — pas seulement celles de cette pull request — sont sur la page [Exécutions CI](ci-runs.md) |
+| **Checks** | Comment s’est passée la CI du commit de tête, et pourquoi elle a échoué — voir [l’onglet Checks](#onglet-checks). Toutes les exécutions du dépôt — pas seulement celles de cette pull request — sont sur la page [Exécutions CI](ci-runs.md) |
 
 La barre latérale montre :
 
@@ -112,6 +112,55 @@ donne pas est omise.
 
 Si quelqu’un force-push en pleine relecture, [ce qui a changé depuis](range-diff.md)
 vous montre exactement ce qui a bougé.
+
+### Onglet Checks
+
+Un check rouge répond mal à une question : *qu’est-ce qui* a cassé. L’onglet
+Checks y répond sans passer par le site de la CI. Le libellé de l’onglet porte un
+compteur rouge des checks en échec, vous le savez donc avant de l’ouvrir.
+
+![L’onglet Checks : un résumé de l’exécution, le test en échec lu dans le journal, et le journal numéroté](../../screenshots/pr-check-log.webp)
+
+- **Le résumé** en haut dit combien de checks ont échoué (ou qu’ils ont tous
+  réussi, ou combien sont encore en cours), sur quel commit, quand le dernier
+  s’est terminé et combien de temps ils ont pris en tout. **Relancer les
+  échecs** relance les jobs en échec sur l’hébergeur ; **Ouvrir les exécutions
+  CI** ouvre la page [Exécutions CI](ci-runs.md) du dépôt.
+- **Une carte par check**, avec son issue et sa durée. Un check en échec s’ouvre
+  tout seul ; un check réussi reste sur une ligne jusqu’à **Voir le log**.
+  **Copier le log** copie le journal en texte brut ; **Voir sur l’hébergeur →**
+  ouvre le check sur le site de l’hébergeur.
+- **Le test en échec.** Quand le journal est une exécution **vitest**, **jest**
+  ou **pytest**, la carte nomme les tests en échec, l’erreur, et l’endroit : la
+  pastille `chemin:ligne` et **Ouvrir dans l’éditeur** ouvrent le fichier à
+  cette ligne dans votre [éditeur](editor.md), et **Voir dans le diff de la PR**
+  bascule sur l’onglet Fichiers sur ce fichier quand la pull request le modifie.
+- **Le journal complet** se replie sous la carte, numéroté, couleurs conservées,
+  avec les lignes qui signalent un échec surlignées. Les très longs journaux
+  montrent leurs quelques milliers de dernières lignes, numérotées depuis le vrai
+  début.
+
+Où en est chaque hébergeur :
+
+| Hébergeur | Journal dans l’app | Durées et commit | Relancer les échecs |
+|---|---|---|---|
+| GitHub | Jobs GitHub Actions | Oui | Oui — l’exécution de workflow du job |
+| GitLab | Jobs de pipeline | Oui | Oui — relance les jobs en échec de la pipeline |
+| Azure DevOps | Validation de build et statuts de pipeline | Non | Validation de build — relance les jobs en échec du build |
+| Forgejo | Jobs Forgejo Actions | D’après le statut, donc la durée compte l’attente dans la file | Non — Forgejo n’a pas d’API pour cela |
+| Bitbucket Data Center | Non | Non | Non |
+
+Limites :
+
+- Le test en échec est lu dans le texte du journal, pas dans un rapport de
+  tests. Un autre runner, un échec avant que les tests ne tournent (une erreur de
+  build ou d’installation), ou un journal coupé avant la section des échecs
+  montre le journal seul, comme avant. Vingt échecs au plus sont listés.
+- Un chemin que le journal affiche comme celui de la machine de CI
+  (`/home/runner/work/…`) est retransformé en chemin du dépôt quand c’est
+  possible ; un chemin qui ne peut pas l’être est affiché, mais pas ouvert.
+- Un check venant d’une autre app (un service de couverture ou de sécurité) n’a
+  pas de journal dans l’app : **Voir sur l’hébergeur →** est son seul accès.
 
 ### Fermer, rouvrir et brouillons
 
@@ -237,9 +286,8 @@ visionneuse web, et n’envoie le jeton que si le lien est un job de ce serveur
 même ; un statut venant d’une CI externe ne le reçoit jamais. Un serveur qui ne
 sert les journaux qu’à un navigateur connecté répond par sa page de connexion, et
 la ligne le dit et propose le navigateur. Les très longs journaux montrent leurs
-quelques milliers de dernières lignes.
-
-![Le journal d’un job Forgejo Actions ouvert sous sa ligne de check](../../screenshots/pr-check-log.webp)
+quelques milliers de dernières lignes ; [l’onglet Checks](#onglet-checks) montre
+ce qu’il en fait.
 
 Comme pour GitLab, **un jeton Forgejo ne va qu’au serveur qui l’a émis**. Un
 profil sans adresse Forgejo n’a aucune identité Forgejo. Il n’y a pas de serveur

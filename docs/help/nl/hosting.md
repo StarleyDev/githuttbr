@@ -91,7 +91,7 @@ De hoofdkolom heeft drie onderdelen:
 |---|---|
 | **Gesprek** | De beschrijving, opmerkingen en inline reviewdraden (`bestand:regel`, met antwoorden). Alleen het gesprek scrolt: het opmerkingenveld met reageren / goedkeuren / wijzigingen vragen en het mergevak (merge, squash of rebase) blijven vast onderaan staan, zodat een lange pull request ze nooit buiten bereik duwt |
 | **Bestanden** | Elk gewijzigd bestand, en de diff van het gekozen bestand naast de lijst, met syntaxkleuring en wijzigingen op woordniveau (geheim ogende bestanden gemaskeerd als die instelling aan staat). Een ✓-„bekeken”-lijst onthoudt je voortgang. Een bestand waarvoor de host geen diff stuurt (binair of te groot) linkt naar de host |
-| **Checks** | CI-check-runs (GitHub) of pipelinejobs (GitLab), met geslaagd/mislukt/bezig en links naar de logs. Elke run van de repository — niet alleen die van deze pull request — staat op de pagina [CI-runs](ci-runs.md) |
+| **Checks** | Hoe de CI van de headcommit verliep, en waarom die mislukte — zie [het tabblad Checks](#het-tabblad-checks). Elke run van de repository — niet alleen die van deze pull request — staat op de pagina [CI-runs](ci-runs.md) |
 
 De zijbalk toont:
 
@@ -113,6 +113,55 @@ weg.
 
 Als iemand halverwege de review force-pusht, laat [wat er sindsdien veranderde](range-diff.md)
 precies zien wat er verschoof.
+
+### Het tabblad Checks
+
+Een rode check beantwoordt één vraag slecht: *wat* er brak. Het tabblad Checks
+beantwoordt hem zonder een uitstapje naar de website van de CI. Het label van het
+tabblad draagt een rood aantal mislukte checks, zodat je het weet voordat je het
+opent.
+
+![Het tabblad Checks: een samenvatting van de run, de mislukte test uit het log en het genummerde log](../../screenshots/pr-check-log.webp)
+
+- **De samenvatting** bovenaan zegt hoeveel checks mislukten (of dat ze allemaal
+  slaagden, of hoeveel er nog lopen), op welke commit, wanneer de laatste klaar
+  was en hoe lang ze samen duurden. **Mislukte opnieuw uitvoeren** start de
+  mislukte jobs opnieuw op de host; **CI-runs openen** opent de pagina
+  [CI-runs](ci-runs.md) van de repository.
+- **Eén kaart per check**, met hoe hij eindigde en hoe lang hij duurde. Een
+  mislukte check klapt vanzelf open; een geslaagde blijft één regel tot **Log
+  bekijken**. **Log kopiëren** kopieert het log als platte tekst; **Bekijken op de
+  host →** opent de check op de site van de host.
+- **De mislukte test.** Als het log een run van **vitest**, **jest** of **pytest**
+  is, noemt de kaart de tests die mislukten, de fout en waar: de chip `path:line`
+  en **Openen in editor** openen het bestand op die regel in je
+  [editor](editor.md), en **Bekijken in de PR-diff** schakelt naar het tabblad
+  Bestanden op dat bestand als de pull request het wijzigt.
+- **Het volledige log** klapt in onder de kaart, genummerd, met behoud van
+  kleuren, en de regels die een fout markeren gemarkeerd. Heel lange logs tonen
+  hun laatste paar duizend regels, genummerd vanaf het echte begin.
+
+Hoe elke host ervoor staat:
+
+| Host | Log in de app | Tijden en commit | Mislukte opnieuw uitvoeren |
+|---|---|---|---|
+| GitHub | GitHub Actions-jobs | Ja | Ja — de workflowrun van de job |
+| GitLab | Pipelinejobs | Ja | Ja — probeert de mislukte jobs van de pipeline opnieuw |
+| Azure DevOps | Buildvalidatie en pipelinestatussen | Nee | Buildvalidatie — probeert de mislukte jobs van de build opnieuw |
+| Forgejo | Forgejo Actions-jobs | Uit de status, dus de tijd telt het wachten in de wachtrij mee | Nee — Forgejo heeft er geen API voor |
+| Bitbucket Data Center | Nee | Nee | Nee |
+
+Beperkingen:
+
+- De mislukte test wordt uit de tekst van het log gelezen, niet uit een
+  testrapport. Een andere runner, een fout voordat de tests draaiden (een build-
+  of installatiefout), of een log dat vóór het foutgedeelte is afgekapt, toont
+  alleen het log, zoals voorheen. Er worden hoogstens twintig fouten getoond.
+- Een pad dat het log afdrukt als dat van de CI-machine zelf
+  (`/home/runner/work/…`) wordt waar mogelijk teruggezet naar een pad in de
+  repository; een pad waarbij dat niet lukt, wordt getoond maar niet geopend.
+- Een check van een andere app (een coverage- of beveiligingsdienst) heeft geen
+  log in de app: **Bekijken op de host →** is de enige ingang.
 
 ### Sluiten, heropenen en concepten
 
@@ -234,9 +283,7 @@ downloadt, en stuurt het token alleen mee als de link een job op precies deze
 server is; een status van een externe CI krijgt het nooit. Een server die logs
 alleen aan een aangemelde browser geeft, antwoordt met zijn aanmeldpagina — de rij
 zegt dat en biedt de browser aan. Heel lange logs tonen hun laatste paar duizend
-regels.
-
-![Het log van een Forgejo Actions-job, geopend onder de rij van zijn check](../../screenshots/pr-check-log.webp)
+regels; [het tabblad Checks](#het-tabblad-checks) laat zien wat het ermee doet.
 
 Net als bij GitLab gaat **een Forgejo-token alleen naar de server die het
 uitgaf**. Een profiel zonder Forgejo-adres heeft helemaal geen
