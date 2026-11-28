@@ -4800,6 +4800,8 @@ export const de: Dict = {
   'conflictWs.result': 'Ergebnis',
   'conflictWs.showBase': 'Basis zeigen',
   'conflictWs.resetChoices': 'Auswahl zurücksetzen',
+  'conflictWs.wrap': 'Umbruch',
+  'conflictWs.linkScroll': 'Scrollen koppeln',
   'conflictWs.editText': 'Als Text bearbeiten',
   'conflictWs.editTextHint': 'Das ganze Ergebnis als Text bearbeiten. Zurück zu den Blöcken geht, solange nichts getippt wurde.',
   'conflictWs.handEdited': 'Von Hand bearbeitet. Auswahl zurücksetzen bringt die Blöcke zurück.',

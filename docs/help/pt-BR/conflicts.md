@@ -27,6 +27,9 @@ Logo abaixo da barra, um chip por arquivo em que este passo parou:
 | Um número vermelho | Quantos blocos em conflito o arquivo ainda tem |
 | Um rótulo | Um conflito sem texto para mesclar: *apagado de um lado*, *renomeado dos dois lados*, *adicionado de um lado* |
 
+Os chips resolvidos vêm primeiro e os abertos depois, cada grupo por nome, então
+a faixa mostra o que está feito à esquerda e o que falta à direita.
+
 **Próximo arquivo →** pula para o próximo ainda aberto, e marcar um arquivo como
 resolvido já leva você até lá. **Continuar** na barra fica desabilitado até todos
 os chips ficarem verdes; **Abortar** pergunta antes e diz o que se perde.
@@ -71,10 +74,10 @@ alternâncias de visão:
 
 | Alternância | O que faz |
 |---|---|
-| **Quebrar linha** | Quebra linhas longas dentro dos painéis laterais em vez de rolá-las. A visão em texto do resultado mantém uma fileira por linha — os marcadores laterais dela dependem disso — então ela sempre rola |
-| **Vinculado** | Rola os painéis e o resultado juntos, na vertical e na horizontal. As contagens de linhas diferem, então a posição vertical é alinhada por proporção |
+| **Quebrar** | Quebra linhas longas dentro dos painéis laterais em vez de rolá-las. A visão em texto do resultado mantém uma fileira por linha — os marcadores laterais dela dependem disso — então ela sempre rola |
+| **Vincular rolagem** | Rola os painéis e o resultado juntos, na vertical e na horizontal. As contagens de linhas diferem, então a posição vertical é alinhada por proporção |
 
-Quebrar linha começa desligado, Vinculado começa ligado, e os dois lembram o
+Quebrar começa desligado, Vincular rolagem começa ligado, e os dois lembram o
 próprio estado.
 
 ## O resultado
@@ -90,11 +93,13 @@ como um cartão com quatro respostas:
 | **Editar** | Os dois, abertos no editor de texto com o conflito selecionado, para quando a resposta é "os dois, mas ajustados" |
 
 Um cartão ainda sem resposta mostra os dois lados, cada linha marcada *← seu* ou
-*← deles*, para você decidir sem olhar para cima. **Arquivo todo: o seu | o
+*← deles* e numerada com a linha em que vai cair se for a escolhida, para você
+decidir sem olhar para cima. Num arquivo com linhas muito longas, as respostas
+ficam à vista enquanto o código rola de lado por baixo delas. **Arquivo todo: o seu | o
 deles**, no cabeçalho do arquivo, responde todos os conflitos de uma vez.
 
 **Editar como texto** troca o resultado por um editor simples, para digitar à
-vontade. Depois que você digita, os cartões já não descrevem o que está ali, então
+vontade, com a contagem de linhas do arquivo no cabeçalho. Depois que você digita, os cartões já não descrevem o que está ali, então
 o texto fica até **Desfazer escolhas** voltar tudo ao começo.
 
 O rodapé conta o que falta neste arquivo; **Marcar *arquivo* como resolvido**

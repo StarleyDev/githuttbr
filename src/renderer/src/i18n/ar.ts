@@ -4795,6 +4795,8 @@ export const ar: Dict = {
   'conflictWs.result': 'النتيجة',
   'conflictWs.showBase': 'إظهار الأساس',
   'conflictWs.resetChoices': 'إعادة تعيين الاختيارات',
+  'conflictWs.wrap': 'التفاف',
+  'conflictWs.linkScroll': 'ربط التمرير',
   'conflictWs.editText': 'تحرير كنص',
   'conflictWs.editTextHint': 'حرّر النتيجة كلها كنص. يمكنك العودة إلى الكتل ما دمت لم تكتب شيئًا.',
   'conflictWs.handEdited': 'تم التحرير يدويًا. إعادة تعيين الاختيارات تعيد الكتل.',

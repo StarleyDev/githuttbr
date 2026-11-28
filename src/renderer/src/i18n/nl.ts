@@ -4800,6 +4800,8 @@ export const nl: Dict = {
   'conflictWs.result': 'Resultaat',
   'conflictWs.showBase': 'Basis tonen',
   'conflictWs.resetChoices': 'Keuzes herstellen',
+  'conflictWs.wrap': 'Terugloop',
+  'conflictWs.linkScroll': 'Scrollen koppelen',
   'conflictWs.editText': 'Als tekst bewerken',
   'conflictWs.editTextHint': 'Bewerk het hele resultaat als tekst. Terug naar de blokken kan zolang er niets is getypt.',
   'conflictWs.handEdited': 'Met de hand bewerkt. Keuzes herstellen brengt de blokken terug.',

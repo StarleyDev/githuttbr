@@ -117,9 +117,10 @@ describe('the conflict workspace bookkeeping', () => {
       { key: 'k', files: ['a', 'b', 'c'], folded: [], choices: {} },
       [file('a', 'both-modified', 1), file('c', 'both-modified', 1)]
     )
+    expect(entries.map((e) => e.path)).toEqual(['b', 'a', 'c'])
     expect(nextOpenFile(entries, 'a')).toBe('c')
     expect(nextOpenFile(entries, 'c')).toBe('a')
-    expect(nextOpenFile(entries, 'b')).toBe('c')
+    expect(nextOpenFile(entries, 'b')).toBe('a')
     expect(nextOpenFile(stripEntries({ key: 'k', files: ['a'], folded: [], choices: {} }, []), 'a')).toBeNull()
   })
 

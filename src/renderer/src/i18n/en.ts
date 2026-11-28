@@ -4799,6 +4799,8 @@ export const en = {
   'conflictWs.result': 'Result',
   'conflictWs.showBase': 'Show base',
   'conflictWs.resetChoices': 'Reset choices',
+  'conflictWs.wrap': 'Wrap',
+  'conflictWs.linkScroll': 'Link scrolling',
   'conflictWs.editText': 'Edit as text',
   'conflictWs.editTextHint': 'Edit the whole result as plain text. You can go back to the blocks as long as nothing was typed.',
   'conflictWs.handEdited': 'Edited by hand. Reset choices brings the blocks back.',

@@ -4794,6 +4794,8 @@ export const he: Dict = {
   'conflictWs.result': 'תוצאה',
   'conflictWs.showBase': 'הצג בסיס',
   'conflictWs.resetChoices': 'אפס בחירות',
+  'conflictWs.wrap': 'גלישת שורות',
+  'conflictWs.linkScroll': 'קישור גלילה',
   'conflictWs.editText': 'ערוך כטקסט',
   'conflictWs.editTextHint': 'ערוך את כל התוצאה כטקסט. אפשר לחזור לבלוקים כל עוד לא הוקלד דבר.',
   'conflictWs.handEdited': 'נערך ידנית. איפוס הבחירות מחזיר את הבלוקים.',

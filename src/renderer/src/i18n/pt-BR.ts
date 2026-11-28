@@ -1356,7 +1356,7 @@ export const ptBR: Dict = {
   'mergeOpt.strategyHint':
     'Subtree serve para fazer merge de um projeto que vive num subdiretório deste; o git descobre o deslocamento de caminho em vez de tratar cada arquivo como adicionado e apagado.',
   'mergeOpt.merge': 'Merge',
-  'conflict.why': 'Por que isto conflita',
+  'conflict.why': 'Por que isso conflita',
   'conflict.whyHint': 'Os commits de cada lado que mexeram neste arquivo desde que eles se separaram (git log --merge)',
   'conflict.whyNone': 'Nenhum dos lados tem commit mexendo neste arquivo — a briga vem de mais acima na árvore.',
   'conflict.resolvedFile': '{file} resolvido',
@@ -4800,6 +4800,8 @@ export const ptBR: Dict = {
   'conflictWs.result': 'Resultado',
   'conflictWs.showBase': 'Mostrar a base',
   'conflictWs.resetChoices': 'Desfazer escolhas',
+  'conflictWs.wrap': 'Quebrar',
+  'conflictWs.linkScroll': 'Vincular rolagem',
   'conflictWs.editText': 'Editar como texto',
   'conflictWs.editTextHint': 'Edita o resultado inteiro como texto. Dá para voltar aos blocos enquanto nada for digitado.',
   'conflictWs.handEdited': 'Editado à mão. Desfazer escolhas traz os blocos de volta.',

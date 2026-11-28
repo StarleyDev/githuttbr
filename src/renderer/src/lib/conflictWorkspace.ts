@@ -55,12 +55,13 @@ export interface StripEntry {
   info?: ConflictFileInfo
 }
 
-/** The strip: every file of the step, in a stable order, each marked settled or not. */
+/** The strip: every file of the step, each marked settled or not — the settled ones first, so
+ *  what is done reads as a run on the left and what is left as one on the right; by name within each. */
 export function stripEntries(session: ConflictSession | undefined, files: ConflictFileInfo[]): StripEntry[] {
   const open = new Map(files.filter((f) => !f.renameOf).map((f) => [f.path, f]))
   const all = new Set([...(session?.files ?? []), ...open.keys()])
   return [...all]
-    .sort((a, b) => a.localeCompare(b))
+    .sort((a, b) => Number(open.has(a)) - Number(open.has(b)) || a.localeCompare(b))
     .map((path) => {
       const info = open.get(path)
       return info ? { path, state: 'open' as const, info } : { path, state: 'resolved' as const }

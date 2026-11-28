@@ -27,6 +27,9 @@ Under the bar, one chip per file this step stopped on:
 | A red number | How many conflict blocks the file still holds |
 | A label | A conflict with no text to merge: *deleted on one side*, *renamed on both sides*, *added on one side* |
 
+Resolved chips come first and open ones after, each run in name order, so the
+strip reads as done on the left and what is left on the right.
+
 **Next file →** jumps to the next one still open, and marking a file resolved
 moves you there on its own. **Continue** in the bar stays disabled until every
 chip is green; **Abort** asks first and says what you lose.
@@ -68,9 +71,9 @@ All panes resize, and the result header carries two view toggles:
 | Toggle | What it does |
 |---|---|
 | **Wrap** | Folds long lines inside the side panes instead of scrolling them. The text view of the result keeps one row per line — its side markers depend on that — so it always scrolls |
-| **Linked** | Scrolls the panes and the result together, vertically and sideways. Their line counts differ, so the vertical position is matched by proportion |
+| **Link scrolling** | Scrolls the panes and the result together, vertically and sideways. Their line counts differ, so the vertical position is matched by proportion |
 
-Wrap starts off, Linked starts on, and both remember their state.
+Wrap starts off, Link scrolling starts on, and both remember their state.
 
 ## The result
 
@@ -85,10 +88,13 @@ card with four answers on it:
 | **Edit** | Both, opened in the text editor with the conflict selected, for when the answer is "both, but adjusted" |
 
 An unanswered card previews both sides, each line tagged *← yours* or *←
-theirs*, so you can decide without looking up. **Whole file: yours | theirs** in
+theirs* and numbered with the line it lands on if picked, so you can decide
+without looking up. On a file with very long lines the answers stay in view
+while the code scrolls sideways under them. **Whole file: yours | theirs** in
 the file header answers every conflict at once.
 
-**Edit as text** switches the result to a plain editor for free typing. Once you
+**Edit as text** switches the result to a plain editor for free typing, with
+the file's line count in the header. Once you
 have typed, the cards no longer describe what is there, so the text stays until
 **Reset choices** puts everything back.
 

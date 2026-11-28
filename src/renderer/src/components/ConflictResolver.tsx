@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Boxes, Check, ChevronDown, ChevronUp, ExternalLink, GitMerge, History, LayoutList, Link2, Lock, Minus, Pencil, Plus, RotateCcw, Sparkles, Loader2, Unlink2, WrapText } from 'lucide-react'
+import { Boxes, Check, ChevronDown, ChevronUp, ExternalLink, GitMerge, LayoutList, Link2, Lock, Minus, Pencil, Plus, RotateCcw, Sparkles, Loader2, Unlink2, WrapText } from 'lucide-react'
 import { gitApi, aiApi, diffToolApi } from '../infrastructure/api'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore, type ConflictViewState } from '../stores/ui'
@@ -594,7 +594,7 @@ export function ConflictResolver({
             aria-expanded={showHistory}
             onClick={() => setWhyFile(showHistory ? null : file)}
           >
-            <History size={12} /> {t('conflict.why')}
+            {t('conflict.why')}
           </button>
           {mergeTool && (
             <button
@@ -830,14 +830,14 @@ export function ConflictResolver({
                 title={t('conflict.wrapTitle')}
                 onClick={() => setWrapOn((v) => !v)}
               >
-                <WrapText size={12} /> {t('diff.wrap')}
+                <WrapText size={12} /> {t('conflictWs.wrap')}
               </button>
               <button
                 className={`diff-word-toggle ${syncOn ? 'on' : ''}`}
                 title={t('conflict.syncTitle')}
                 onClick={() => setSyncOn((v) => !v)}
               >
-                {syncOn ? <Link2 size={12} /> : <Unlink2 size={12} />} {t('diff.linkScroll')}
+                {syncOn ? <Link2 size={12} /> : <Unlink2 size={12} />} {t('conflictWs.linkScroll')}
               </button>
               <button
                 className={`diff-word-toggle ${!showCards ? 'on' : ''}`}
@@ -852,9 +852,12 @@ export function ConflictResolver({
               <input type="checkbox" checked={showBase} disabled={!hasBase} onChange={(e) => setBaseOn(e.target.checked)} />
               {t('conflictWs.showBase')}
             </label>
-            <span className="text-2 conflict-output-count">
-              {outputLineCount} {t('conflict.lines')}
-            </span>
+            {/* The count only helps while typing the text; the cards already show every line. */}
+            {!showCards && (
+              <span className="text-2 conflict-output-count">
+                {outputLineCount} {t('conflict.lines')}
+              </span>
+            )}
             <button className="btn ghost tiny" title={t('conflict.resetHint')} onClick={reset}>
               <RotateCcw size={12} /> {t('conflictWs.resetChoices')}
             </button>

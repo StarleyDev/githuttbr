@@ -12295,7 +12295,7 @@ input.is-invalid {
   background: transparent;
   color: var(--text-1);
   font: inherit;
-  padding: 4px 10px;
+  padding: 5px 10px;
   cursor: pointer;
 }
 .cw-seg button + button {
@@ -12400,6 +12400,8 @@ input.is-invalid {
   min-height: 0;
   overflow: auto;
   background: var(--bg-0);
+  /* Lets a card's header size itself to the visible width (cqi) rather than to the longest line. */
+  container-type: inline-size;
 }
 .crb-code {
   padding: 8px 0;
@@ -12437,7 +12439,8 @@ input.is-invalid {
   margin: 4px 14px;
   border: 1px solid color-mix(in srgb, var(--red) 45%, transparent);
   border-radius: 8px;
-  overflow: hidden;
+  /* clip, not hidden: hidden would make the card the sticky header's scroller. */
+  overflow: clip;
 }
 .crb-card.answered {
   border-color: var(--border);
@@ -12449,6 +12452,12 @@ input.is-invalid {
   padding: 0 12px;
 }
 .crb-head {
+  /* A long line (a pbxproj entry) widens the card past the view; the answers stay on screen while
+   * the code scrolls sideways under them. 30px = the card's margins and borders. */
+  position: sticky;
+  inset-inline-start: 15px;
+  width: calc(100cqi - 30px);
+  box-sizing: border-box;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -12680,7 +12689,8 @@ input.is-invalid {
   color: var(--text-0);
   font: inherit;
   font-size: 13.5px;
-  resize: vertical;
+  /* It grows with its rows, so it reads as the one-line field of the mockup until it needs more. */
+  resize: none;
 }
 .cdc-rerere {
   display: flex;

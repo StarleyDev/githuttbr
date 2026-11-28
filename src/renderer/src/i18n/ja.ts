@@ -4729,6 +4729,8 @@ export const ja: Dict = {
   'conflictWs.result': '結果',
   'conflictWs.showBase': 'ベースを表示',
   'conflictWs.resetChoices': '選択をリセット',
+  'conflictWs.wrap': '折り返し',
+  'conflictWs.linkScroll': 'スクロールを連動',
   'conflictWs.editText': 'テキストとして編集',
   'conflictWs.editTextHint': '結果全体をテキストとして編集します。何も入力していなければブロック表示に戻せます。',
   'conflictWs.handEdited': '手で編集されています。「選択をリセット」でブロック表示に戻ります。',

@@ -4789,6 +4789,8 @@ export const ko: Dict = {
   'conflictWs.result': '결과',
   'conflictWs.showBase': '베이스 표시',
   'conflictWs.resetChoices': '선택 초기화',
+  'conflictWs.wrap': '줄 바꿈',
+  'conflictWs.linkScroll': '스크롤 연동',
   'conflictWs.editText': '텍스트로 편집',
   'conflictWs.editTextHint': '결과 전체를 텍스트로 편집합니다. 아무것도 입력하지 않았다면 블록으로 돌아갈 수 있습니다.',
   'conflictWs.handEdited': '직접 편집됨. 선택 초기화로 블록을 되돌릴 수 있습니다.',

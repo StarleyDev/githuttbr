@@ -4789,6 +4789,8 @@ export const zhCN: Dict = {
   'conflictWs.result': '结果',
   'conflictWs.showBase': '显示基础',
   'conflictWs.resetChoices': '重置选择',
+  'conflictWs.wrap': '换行',
+  'conflictWs.linkScroll': '联动滚动',
   'conflictWs.editText': '以文本编辑',
   'conflictWs.editTextHint': '以纯文本编辑整个结果。只要没有输入内容,就能回到分块视图。',
   'conflictWs.handEdited': '已手动编辑。重置选择可恢复分块视图。',

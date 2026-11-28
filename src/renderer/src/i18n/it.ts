@@ -4740,6 +4740,8 @@ export const it: Dict = {
   'conflictWs.result': 'Risultato',
   'conflictWs.showBase': 'Mostra la base',
   'conflictWs.resetChoices': 'Azzera le scelte',
+  'conflictWs.wrap': 'A capo',
+  'conflictWs.linkScroll': 'Collega lo scorrimento',
   'conflictWs.editText': 'Modifica come testo',
   'conflictWs.editTextHint': 'Modifica tutto il risultato come testo. Puoi tornare ai blocchi finché non scrivi nulla.',
   'conflictWs.handEdited': 'Modificato a mano. Azzera le scelte riporta i blocchi.',

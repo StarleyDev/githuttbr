@@ -4794,6 +4794,8 @@ export const es: Dict = {
   'conflictWs.result': 'Resultado',
   'conflictWs.showBase': 'Mostrar la base',
   'conflictWs.resetChoices': 'Restablecer elecciones',
+  'conflictWs.wrap': 'Ajustar',
+  'conflictWs.linkScroll': 'Vincular desplazamiento',
   'conflictWs.editText': 'Editar como texto',
   'conflictWs.editTextHint': 'Edita todo el resultado como texto. Puedes volver a los bloques mientras no escribas nada.',
   'conflictWs.handEdited': 'Editado a mano. Restablecer elecciones recupera los bloques.',

@@ -63,13 +63,17 @@ export function ConflictResultBlocks({
     const body: React.JSX.Element[] = []
     for (const side of ['ours', 'theirs'] as const) {
       const arr = side === 'ours' ? h.ours : h.theirs
+      let kept = outNo
       arr.forEach((text, i) => {
-        // Answered: only what is kept, numbered as it lands. Open: both sides.
+        // Answered: only what is kept, numbered as it lands. Open: both sides, each numbered with
+        // the line it would land on if picked.
         if (isTouched && !selected.has(lineKey(h.index, side, i))) return
-        if (isTouched) outNo++
-        body.push(line(text, `${side}${i}`, side, isTouched ? outNo : undefined))
+        body.push(line(text, `${side}${i}`, side, isTouched ? ++kept : outNo + 1 + i))
       })
+      if (isTouched) outNo = kept
     }
+    // Open: the lines after it count on as if your side were kept, the side the context comes from.
+    if (!isTouched) outNo += h.ours.length
     const pressed = (p: Pick): boolean => choice === p
     parts.push(
       <div

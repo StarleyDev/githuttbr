@@ -4793,6 +4793,8 @@ export const ru: Dict = {
   'conflictWs.result': 'Результат',
   'conflictWs.showBase': 'Показать базу',
   'conflictWs.resetChoices': 'Сбросить выбор',
+  'conflictWs.wrap': 'Перенос',
+  'conflictWs.linkScroll': 'Связать прокрутку',
   'conflictWs.editText': 'Править как текст',
   'conflictWs.editTextHint': 'Редактировать весь результат как текст. Вернуться к блокам можно, пока ничего не набрано.',
   'conflictWs.handEdited': 'Изменено вручную. «Сбросить выбор» вернёт блоки.',

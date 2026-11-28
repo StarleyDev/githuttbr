@@ -4736,6 +4736,8 @@ export const tr: Dict = {
   'conflictWs.result': 'Sonuç',
   'conflictWs.showBase': 'Tabanı göster',
   'conflictWs.resetChoices': 'Seçimleri sıfırla',
+  'conflictWs.wrap': 'Satır kaydır',
+  'conflictWs.linkScroll': 'Kaydırmayı bağla',
   'conflictWs.editText': 'Metin olarak düzenle',
   'conflictWs.editTextHint': 'Sonucun tamamını metin olarak düzenle. Hiçbir şey yazılmadıkça bloklara dönebilirsin.',
   'conflictWs.handEdited': 'Elle düzenlendi. Seçimleri sıfırla blokları geri getirir.',

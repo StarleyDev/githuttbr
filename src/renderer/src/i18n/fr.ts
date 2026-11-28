@@ -4740,6 +4740,8 @@ export const fr: Dict = {
   'conflictWs.result': 'Résultat',
   'conflictWs.showBase': 'Afficher la base',
   'conflictWs.resetChoices': 'Réinitialiser les choix',
+  'conflictWs.wrap': 'Retour à la ligne',
+  'conflictWs.linkScroll': 'Lier le défilement',
   'conflictWs.editText': 'Modifier en texte',
   'conflictWs.editTextHint': 'Modifie tout le résultat en texte brut. Retour aux blocs possible tant que rien n’a été saisi.',
   'conflictWs.handEdited': 'Modifié à la main. Réinitialiser les choix ramène les blocs.',
