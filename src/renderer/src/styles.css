@@ -11531,7 +11531,7 @@ input.is-invalid {
   border: 1px solid rgba(231, 89, 108, 0.45);
   border-radius: 8px;
   overflow: hidden;
-  background: var(--bg-0);
+  background: var(--bg-1);
 }
 .conflict-block.resolved {
   border-color: rgba(63, 208, 164, 0.45);
@@ -11689,7 +11689,7 @@ input.is-invalid {
   flex-direction: column;
   min-height: 0;
   min-width: 0;
-  background: var(--bg-0);
+  background: var(--bg-1);
   overflow: hidden;
 }
 
@@ -11933,7 +11933,7 @@ input.is-invalid {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  background: var(--bg-0);
+  background: var(--bg-1);
   overflow: hidden;
 }
 
@@ -11995,7 +11995,7 @@ input.is-invalid {
   flex: 1;
   min-height: 0;
   overflow: hidden;
-  background: var(--bg-0);
+  background: var(--bg-1);
 }
 
 .conflict-output-code .conflict-output-highlight,
@@ -12050,7 +12050,7 @@ input.is-invalid {
   font-family: var(--mono, ui-monospace, monospace);
   font-size: 10px;
   line-height: 1.55;
-  background: var(--bg-0);
+  background: var(--bg-1);
   pointer-events: none;
   user-select: none;
 }
@@ -12431,7 +12431,7 @@ input.is-invalid {
   flex: 1;
   min-height: 0;
   overflow: auto;
-  background: var(--bg-0);
+  background: var(--bg-1);
   /* Lets a card's header size itself to the visible width (cqi) rather than to the longest line. */
   container-type: inline-size;
 }
@@ -12672,7 +12672,7 @@ input.is-invalid {
   padding: 6px 0;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: var(--bg-0);
+  background: var(--bg-1);
   font-family: var(--mono, ui-monospace, monospace);
   font-size: 12px;
   line-height: 1.6;
@@ -14717,9 +14717,12 @@ input[type='range']:focus-visible {
 /* Every list scrolls on its own and the diff shows one file at a time: a big
    comparison as one block of diff is what could not be scrolled. */
 .compare-body { display: flex; flex: 1; min-height: 0; }
-/* On the pull request page's surface (--bg-1), like its Files tab: the file
-   viewer's own --bg-0 is the theme's darkest shade and reads as black. */
-.file-viewer.compare-view { background: var(--bg-1); }
+/* Work screens built on the file viewer sit on the pull request page's surface
+   (--bg-1), like its Files tab: the viewer's own --bg-0 is the theme's darkest
+   shade and reads as black. */
+.file-viewer.compare-view,
+.file-viewer.conflict-workspace,
+.file-viewer.conflict-resolver { background: var(--bg-1); }
 .compare-side {
   width: clamp(260px, 28%, 400px);
   flex-shrink: 0;
