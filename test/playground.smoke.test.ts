@@ -78,7 +78,8 @@ const EXPECTED = [
   'worktree-care',
   'test-suite',
   'multi-branch-push',
-  'branch-cleanup'
+  'branch-cleanup',
+  'object-model'
 ]
 
 describe('playground fixtures', () => {

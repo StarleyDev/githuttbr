@@ -6645,12 +6645,13 @@ body.col-resizing .node-ava {
 /* Dialogs built for a fixed header — a root that fills the height, with a
    list that scrolls on its own — get the body's height, so only that list
    moves. Settings is one, and so are the radar, time machine, range-diff,
-   local CI and repository settings. A new dialog of that shape adds its root here. */
-.modal-scroll:has(> :is(.settings, .tm-root, .rd-root, .radar-root, .localci, .scanned-root, .repo-settings)) {
+   local CI, repository settings and the object explorer. A new dialog of that
+   shape adds its root here. */
+.modal-scroll:has(> :is(.settings, .tm-root, .rd-root, .radar-root, .localci, .scanned-root, .repo-settings, .obj-root)) {
   display: flex;
   flex-direction: column;
 }
-.modal-scroll > :is(.settings, .tm-root, .rd-root, .radar-root, .localci, .scanned-root, .repo-settings) {
+.modal-scroll > :is(.settings, .tm-root, .rd-root, .radar-root, .localci, .scanned-root, .repo-settings, .obj-root) {
   min-height: 0;
 }
 /* Everything else scrolls as a whole, with its title pinned on top. The gap
@@ -18737,91 +18738,451 @@ html:has(.repo-switcher) .titlebar {
 .attrs-driver-cmd { flex: 1; min-width: 0; font-family: var(--mono); font-size: 11px; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .attrs-missing { display: flex; align-items: center; gap: 4px; font-size: 10.5px; color: var(--warn, #d97706); }
 
-.obj-modal { display: flex; flex-direction: column; min-height: 0; }
-.obj-bar { display: flex; gap: 6px; align-items: center; margin: 12px 0 10px; }
-.obj-bar .modal-input { flex: 1; font-family: var(--mono); font-size: 12px; }
-/* Refs on the left as starting points, the object itself on the right. */
-.obj-body { display: flex; gap: 12px; flex: 1; min-height: 0; }
-.obj-refs {
-  flex: 0 0 190px;
-  overflow-y: auto;
-  padding-inline-end: 6px;
-  border-inline-end: 1px solid var(--border-soft);
+/* ── Object explorer ── */
+/* One root that fills the dialog edge to edge: header, toolbar, the trail as a
+   band across the full width, then the refs rail beside the object pane. The
+   body holds a floor height, so a dialog sized to its content still opens at a
+   working size, and in a fixed-height dialog it simply takes the rest. */
+.obj-root {
+  --obj-card: color-mix(in srgb, var(--bg-2) 45%, var(--bg-3));
+  --obj-band: color-mix(in srgb, var(--bg-2) 75%, var(--bg-3));
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: -4px -22px -22px;
 }
-.obj-ref-group { margin-bottom: 10px; }
-.obj-ref-head {
-  font-size: 10px;
-  text-transform: uppercase;
+:root[data-mode='light'] .obj-root {
+  --obj-card: var(--bg-1);
+  --obj-band: color-mix(in srgb, var(--bg-2) 60%, var(--bg-1));
+}
+/* Each kind keeps one colour everywhere it appears: badge, chip, card, row, strip. */
+.obj-root .kind-commit { --k: var(--accent); }
+.obj-root .kind-tree { --k: var(--yellow); }
+.obj-root .kind-blob { --k: var(--blue, #4da3ff); }
+.obj-root :is(.kind-tag, .kind-ref) { --k: var(--green); }
+.obj-root [class*='kind-'] { --k-text: color-mix(in srgb, var(--k) 70%, var(--text-0)); }
+.obj-flip { transform: scaleX(var(--dir)); }
+.obj-mono { font-family: var(--mono); }
+.obj-dim { color: var(--text-2); }
+.obj-light { font-weight: 400; }
+.obj-spacer { flex: 1 0 0; }
+.obj-section-label {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
   letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: var(--text-2);
-  margin-bottom: 3px;
-  font-family: var(--mono);
 }
-.obj-ref {
-  display: block;
-  width: 100%;
-  text-align: start;
-  padding: 2px 6px;
-  border: 0;
-  border-radius: 5px;
-  background: transparent;
+
+.obj-header { display: flex; align-items: center; gap: 10px; padding: 0 56px 6px 22px; }
+.obj-header-icon { color: var(--accent); flex-shrink: 0; }
+.obj-header h3 { margin: 0; font-size: 17px; font-weight: 700; color: var(--text-0); }
+.obj-pill {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--bg-3);
   color: var(--text-1);
-  font-size: 12px;
+  font-size: 11px;
+}
+
+.obj-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 22px 10px; }
+.obj-nav {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: var(--bg-3);
+  color: var(--text-1);
   cursor: pointer;
 }
-.obj-ref:hover { background: var(--bg-2); }
-.obj-ref.active { background: var(--bg-2); color: var(--text-0); }
-.obj-pane { flex: 1; min-width: 0; overflow-y: auto; }
-.obj-head { display: flex; align-items: center; gap: 8px; font-size: 12.5px; margin-bottom: 10px; }
-.obj-kind {
-  padding: 0 7px;
-  border-radius: 999px;
-  background: var(--bg-2);
-  font-family: var(--mono);
-  font-size: 11px;
+.obj-nav:hover:not(:disabled) { background: var(--bg-4); color: var(--text-0); }
+.obj-nav:disabled { background: var(--obj-band); color: var(--text-3); opacity: 0.6; cursor: default; }
+.obj-rev {
+  flex: 1;
+  min-width: 280px;
+  height: 32px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--field-bg);
 }
-.obj-sha { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; font-family: var(--mono); font-size: 11px; color: var(--text-2); }
-.obj-size { flex-shrink: 0; font-family: var(--mono); font-size: 11px; color: var(--text-2); }
-.obj-fields { display: flex; flex-direction: column; gap: 3px; font-size: 12.5px; }
-.obj-field { display: flex; gap: 10px; align-items: baseline; }
-.obj-field > span:first-child {
-  flex: 0 0 74px;
+.obj-rev:focus-within { border-color: var(--accent); }
+.obj-rev > span { font-size: 11.5px; color: var(--text-2); flex-shrink: 0; }
+.obj-rev input {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text-0);
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 12.5px;
+}
+.obj-open { height: 32px; padding: 0 14px; font-size: 12.5px; font-weight: 600; }
+.obj-examples { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 11.5px; color: var(--text-2); }
+.obj-example {
+  padding: 3px 7px;
+  border: 0;
+  border-radius: 4px;
+  background: var(--bg-3);
+  color: var(--text-1);
+  font-family: var(--mono);
+  font-size: 11.5px;
+  cursor: pointer;
+}
+.obj-example:hover { background: var(--bg-4); color: var(--text-0); }
+
+.obj-trail {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 22px;
+  border-block: 1px solid var(--border-soft);
+  background: var(--obj-band);
+}
+.obj-trail .obj-section-label { margin-inline-end: 4px; }
+.obj-trail-item { display: contents; }
+.obj-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px;
+  border: 0;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--k) 12%, transparent);
+  color: var(--k-text);
+  font-size: 12.5px;
+  cursor: pointer;
+}
+button.obj-chip:hover { background: color-mix(in srgb, var(--k) 22%, transparent); }
+.obj-chip b { font-weight: 700; }
+.obj-chip.current {
+  background: color-mix(in srgb, var(--k) 20%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--k) 60%, transparent);
+  cursor: default;
+}
+.obj-trail-sep { color: var(--text-3); flex-shrink: 0; }
+.obj-trail-hint { margin-inline-start: 6px; font-size: 11.5px; color: var(--text-2); }
+
+.obj-body { display: flex; flex: 1 1 auto; min-height: min(560px, calc(100vh - 320px)); }
+
+.obj-rail {
+  width: 250px;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px 10px;
+  border-inline-end: 1px solid var(--border-soft);
+  overflow-y: auto;
+}
+.obj-filter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  padding: 0 9px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--field-bg);
   color: var(--text-2);
 }
-.obj-field em { font-style: normal; color: var(--text-1); }
-/* Every sha is a door: click it and you are looking at that object. */
+.obj-filter:focus-within { border-color: var(--accent); }
+.obj-filter input {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text-0);
+  font-size: 12px;
+}
+.obj-group { display: flex; flex-direction: column; gap: 2px; }
+.obj-group-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 6px 4px;
+  border: 0;
+  background: transparent;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-2);
+  text-align: start;
+  cursor: pointer;
+}
+.obj-group-head.static { cursor: default; }
+.obj-count {
+  margin-inline-start: auto;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--border-soft);
+  color: var(--text-1);
+  font-size: 10.5px;
+  letter-spacing: 0;
+}
+.obj-ref {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-1);
+  font-size: 12.5px;
+  text-align: start;
+  cursor: pointer;
+}
+.obj-ref:hover { background: var(--bg-3); }
+.obj-ref:is(.active, .same) { background: var(--accent-soft); color: var(--text-0); }
+.obj-ref.active { box-shadow: inset calc(2px * var(--dir)) 0 0 var(--accent); }
+.obj-ref.active .obj-ref-name { font-weight: 700; }
+.obj-ref-mark { width: 8px; height: 8px; flex-shrink: 0; border-radius: 2px; background: var(--accent); }
+.obj-ref-mark.annotated { border-radius: 50%; background: var(--green); }
+.obj-ref-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.obj-ref-aside { color: var(--text-2); font-weight: 400; }
+.obj-ref-annotated {
+  margin-inline-start: 6px;
+  font-size: 10.5px;
+  font-weight: 400;
+  color: color-mix(in srgb, var(--green) 70%, var(--text-0));
+}
+.obj-ref code { font-family: var(--mono); font-size: 11px; color: var(--text-2); flex-shrink: 0; }
+.obj-ref:is(.active, .same) code { color: var(--text-1); }
+.obj-rail-empty,
+.obj-rail-more { margin: 0; padding: 0 8px; font-size: 11.5px; color: var(--text-2); }
+
+.obj-pane {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px 22px;
+  overflow-y: auto;
+}
+.obj-pane > * { flex-shrink: 0; }
+.obj-error { margin: 0; font-size: 12.5px; color: var(--danger); font-family: var(--mono); }
+
+.obj-head { display: flex; flex-direction: column; gap: 6px; }
+.obj-head-line { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.obj-head h4 { margin: 0; min-width: 0; font-size: 17px; font-weight: 700; color: var(--text-0); overflow-wrap: anywhere; }
+.obj-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--k) 18%, transparent);
+  color: var(--k-text);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.obj-head-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; font-size: 12px; color: var(--text-1); }
+.obj-head-meta code { font-family: var(--mono); color: var(--text-1); overflow-wrap: anywhere; }
+.obj-copy,
 .obj-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   padding: 0;
   border: 0;
   background: transparent;
   color: var(--accent);
-  font-family: var(--mono);
-  font-size: 11.5px;
+  font-size: 12px;
   cursor: pointer;
-  text-align: start;
 }
+.obj-copy:hover,
 .obj-link:hover { text-decoration: underline; }
-.obj-message,
-.obj-blob pre {
-  margin: 10px 0 0;
-  padding: 8px 10px;
-  background: var(--bg-2);
-  border: 1px solid var(--border-soft);
+.obj-explain { margin: 2px 0 0; font-size: 12.5px; color: var(--text-1); line-height: 1.5; }
+.obj-word { color: var(--text-0); }
+.obj-word[class*='kind-'] { color: var(--k-text); }
+
+.obj-section { display: flex; flex-direction: column; gap: 8px; }
+.obj-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.obj-card {
+  box-sizing: border-box;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--obj-card);
+}
+.obj-pointer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  color: var(--text-1);
+  text-align: start;
+  font: inherit;
+  cursor: pointer;
+}
+button.obj-pointer:hover { border-color: color-mix(in srgb, var(--accent) 50%, var(--border)); }
+.obj-pointer-none { cursor: default; }
+.obj-pointer-icon {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
   border-radius: 8px;
+  background: color-mix(in srgb, var(--k) 15%, transparent);
+  color: var(--k-text);
+}
+.obj-pointer-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.obj-pointer-title { font-size: 13px; font-weight: 700; color: var(--text-0); }
+.obj-pointer-hint { font-size: 12px; color: var(--text-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.obj-pointer code { font-family: var(--mono); font-size: 11px; color: var(--k-text); }
+.obj-pointer-go { color: var(--text-2); flex-shrink: 0; }
+.obj-ident { display: flex; flex-direction: column; gap: 3px; padding: 10px 14px; }
+.obj-ident-who { font-size: 13px; color: var(--text-0); overflow-wrap: anywhere; }
+.obj-ident-when { font-size: 12px; color: var(--text-1); }
+.obj-message {
+  margin: 0;
+  padding: 12px 14px;
   font-family: var(--mono);
-  font-size: 11.5px;
+  font-size: 12.5px;
+  color: var(--text-0);
   white-space: pre-wrap;
   word-break: break-word;
 }
-.obj-tree { display: flex; flex-direction: column; gap: 2px; }
-.obj-tree-row { display: flex; align-items: baseline; gap: 10px; font-size: 12.5px; padding: 1px 0; }
-.obj-mode { font-family: var(--mono); font-size: 10.5px; color: var(--text-2); flex-shrink: 0; }
-.obj-child-kind { font-family: var(--mono); font-size: 10.5px; color: var(--text-2); flex: 0 0 42px; }
-.obj-tree-row .obj-link { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: inherit; font-size: 12.5px; }
-.obj-child-sha { font-family: var(--mono); font-size: 10.5px; color: var(--text-2); flex-shrink: 0; }
-.obj-error { font-size: 12.5px; color: var(--danger, #dc2626); font-family: var(--mono); }
+
+.obj-table { overflow: hidden; }
+.obj-row {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) 150px 110px 150px;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 12px;
+  border: 0;
+  border-top: 1px solid var(--border-soft);
+  background: transparent;
+  color: var(--text-1);
+  font: inherit;
+  font-size: 12.5px;
+  text-align: start;
+}
+button.obj-row { cursor: pointer; }
+button.obj-row:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.obj-row-head {
+  padding-block: 7px;
+  border-top: 0;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+.obj-end { text-align: end; }
+.obj-row-icon { display: grid; place-items: center; color: var(--text-1); }
+.obj-row-name { color: var(--text-0); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.obj-row-mode { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.obj-row-mode code,
+.obj-row-sha { font-family: var(--mono); font-size: 11px; color: var(--text-2); white-space: nowrap; }
+.obj-row-size { font-size: 12px; color: var(--text-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.obj-mode-chip {
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--border-soft);
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* A mode reads as the kind it makes: a folder is a tree, a file a blob. */
+.obj-root .mode-folder { color: var(--yellow); }
+.obj-root .mode-file { color: var(--blue, #4da3ff); }
+.obj-root .mode-executable { color: var(--green); }
+.obj-root .mode-symlink,
+.obj-root .mode-unknown { color: var(--text-1); }
+.obj-root .mode-submodule { color: color-mix(in srgb, var(--accent) 70%, var(--text-0)); }
+.obj-caption { margin: 0; font-size: 12px; color: var(--text-2); }
+
+.obj-named {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  background: var(--obj-band);
+  font-size: 12px;
+  color: var(--text-1);
+}
+.obj-named .kind-tree { color: var(--yellow); flex-shrink: 0; }
+.obj-named b { color: var(--text-0); }
+.obj-named code { font-family: var(--mono); }
+.obj-named code.kind-commit { color: var(--k-text); }
+.obj-pane > .obj-code { flex: 1 1 auto; }
+.obj-code {
+  min-height: 160px;
+  padding: 12px 0;
+  overflow: auto;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--text-0);
+  white-space: pre;
+}
+.obj-code-line { display: flex; }
+.obj-code-no {
+  width: 36px;
+  flex-shrink: 0;
+  padding-inline-end: 12px;
+  text-align: end;
+  color: var(--text-3);
+  user-select: none;
+}
+
+.obj-model {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  background: var(--obj-band);
+}
+/* One row, always: the arrows are the point, and a wrapped row would start on
+   one. A narrow pane wraps the words inside each cell instead. */
+.obj-model-row { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+.obj-model-item { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 0 1 auto; }
+.obj-model-arrow { flex-shrink: 0; }
+.obj-model-arrow { color: var(--text-3); }
+.obj-model-cell {
+  min-width: 0;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--k) 10%, transparent);
+  color: var(--k-text);
+}
+.obj-model-cell b { font-weight: 600; }
+.obj-model-cell.here {
+  background: color-mix(in srgb, var(--k) 22%, transparent);
+  box-shadow: inset 0 0 0 1px var(--k);
+  color: var(--text-0);
+}
+.obj-model-cell.here b { font-weight: 700; }
+.obj-model-here { margin-inline-start: 6px; font-size: 10.5px; color: var(--k-text); white-space: nowrap; }
 
 .mergeopt-modal { display: flex; flex-direction: column; min-height: 0; overflow-y: auto; }
 /* A native select ignores the app's theme entirely, so give it the same shell

@@ -8,6 +8,7 @@ import { cloneFixture, cleanupFixtures } from './fixtures'
 import { mergePbxproj, parsePbxproj } from '../src/shared/pbxproj'
 import { convertFile } from '../src/main/textconv'
 import { execFileSync } from 'node:child_process'
+import type { TreeChild } from '../src/shared/types'
 
 // Mutation/integration tests: exercise the WRITE paths of gitService (the same
 // code GitHuttBr runs for merge / cherry-pick / rebase / conflict-resolve / stash
@@ -1711,6 +1712,40 @@ describe('object explorer', () => {
   it('reports an unknown revision as an error rather than an empty object', async () => {
     const R = cloneFixture('tags-and-releases')
     await expect(gitService.gitObject(R, 'no-such-ref')).rejects.toThrow()
+  })
+
+  it('says where HEAD points, and what a commit points to without opening it', async () => {
+    const R = cloneFixture('object-model')
+    const refs = await gitService.objectRefs(R)
+    expect(refs[0]).toMatchObject({ name: 'HEAD', symbolic: 'main' })
+    expect(refs.find((r) => r.name === 'refs/tags/v2.0.0')?.kind).toBe('tag')
+
+    const commit = await gitService.gitObject(R, 'main')
+    // .gitmodules, README.md, config.json, src/
+    expect(commit.commit?.treeCount).toBe(4)
+    expect(commit.commit?.parentSubjects).toEqual(['chore: release v2.0.0'])
+
+    const tag = await gitService.gitObject(R, 'v2.0.0')
+    expect(tag.tag?.targetSubject).toBe('chore: release v2.0.0')
+  })
+
+  it('counts each subtree and reads each symlink of a tree listing', async () => {
+    const R = cloneFixture('object-model')
+    const src = await gitService.gitObject(R, 'HEAD:src')
+    const by = (name: string): TreeChild => src.tree!.find((c) => c.name === name)!
+    expect(by('components')).toMatchObject({ kind: 'tree', mode: '040000', count: 4 })
+    expect(by('plugins').count).toBe(2)
+    expect(by('config.json')).toMatchObject({ mode: '120000', target: '../config.json' })
+    expect(by('build.sh').mode).toBe('100755')
+    expect(by('ui-kit')).toMatchObject({ kind: 'commit', mode: '160000', size: null })
+    expect(by('app.ts').count).toBeUndefined()
+  })
+
+  it('a root commit has no parents to describe', async () => {
+    const R = cloneFixture('object-model')
+    const first = await gitService.gitObject(R, 'v1.0.0^{commit}')
+    expect(first.commit?.parents).toEqual([])
+    expect(first.commit?.parentSubjects).toEqual([])
   })
 })
 
