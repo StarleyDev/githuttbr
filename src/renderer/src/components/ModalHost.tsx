@@ -2485,6 +2485,8 @@ export function ModalHost(): React.JSX.Element {
                   ? 'modal-branch-cleanup'
                   : modal.kind === 'create-pr'
                   ? 'modal-create-pr'
+                  : modal.kind === 'pr-preview'
+                  ? 'modal-std modal-pr-preview'
                   : modal.kind === 'settings'
                   ? 'modal-wide modal-settings'
                   : modal.kind === 'settings-import' || modal.kind === 'settings-export'

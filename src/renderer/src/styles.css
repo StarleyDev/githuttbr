@@ -6632,6 +6632,9 @@ body.col-resizing .node-ava {
   max-height: calc(100vh - 40px);
   padding-bottom: 10px;
 }
+/* Preview locally: 50px over the standard width, so the pr ref, the remote
+   and the worktree path read on one line. */
+.modal.modal-std.modal-pr-preview { width: calc(var(--modal-w) + 50px); }
 .modal-scroll {
   flex: 1 1 auto;
   min-height: 0;
