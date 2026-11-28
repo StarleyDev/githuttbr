@@ -56,6 +56,8 @@ import type {
   ConflictOpKind,
   ConflictSide,
   ConflictVersions,
+  ConflictOverview,
+  ConflictSnapshot,
   FileEntry,
   FileHistoryEntry,
   FsDropMode,
@@ -705,8 +707,15 @@ export const gitApi = {
   conflictVersions: (path: string, file: string) => call<ConflictVersions>('conflictVersions', path, file),
   resolveConflict: (path: string, file: string, content: string) => call<void>('resolveConflict', path, file, content),
   conflictTakeSide: (path: string, file: string, side: ConflictSide) => call<void>('conflictTakeSide', path, file, side),
-  conflictOpContinue: (path: string, kind: ConflictOpKind) => call<void>('conflictOpContinue', path, kind),
+  conflictOpContinue: (path: string, kind: ConflictOpKind, message?: string) =>
+    call<void>('conflictOpContinue', path, kind, message),
   conflictOpAbort: (path: string, kind: ConflictOpKind) => call<void>('conflictOpAbort', path, kind),
+  /** Every unmerged path with its kind of conflict and block count, for the file strip. */
+  conflictOverview: (path: string) => call<ConflictOverview>('conflictOverview', path),
+  conflictSnapshot: (path: string, files: string[]) => call<ConflictSnapshot>('conflictSnapshot', path, files),
+  conflictRestore: (path: string, snapshot: ConflictSnapshot) => call<void>('conflictRestore', path, snapshot),
+  conflictResolvePaths: (path: string, keep: string[], drop: string[]) =>
+    call<void>('conflictResolvePaths', path, keep, drop),
 
   interactiveRebaseSteps: (path: string, base: string) =>
     call<{ hash: string; subject: string }[]>('interactiveRebaseSteps', path, base),

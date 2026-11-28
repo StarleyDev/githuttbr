@@ -22,6 +22,8 @@ export default {
     include: [
       'test/prFileThreads.test.ts',
       'test/pureLogic.test.ts',
+      // The conflict workspace: unmerged codes, the file strip, picks from the result cards.
+      'test/conflictWorkspace.test.ts',
       'test/sidebarFilter.test.ts',
       // Provider drafts, status badges and the masking of provider errors.
       'test/aiAccountDraft.test.ts',

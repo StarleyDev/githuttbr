@@ -472,6 +472,33 @@ export const shots = [
     themes: ['light'],
     // The scenario leaves the repo on main; start the merge so conflicts exist.
     // Reset first so re-runs (which leave the repo mid-merge) stay idempotent.
+    // greeting.txt is settled before the shot, so the strip shows a resolved
+    // chip and the progress bar has moved.
+    prepare: async ({ repoPaths, run }) => {
+      const repo = repoPaths['merge-conflict']
+      await run('git', ['-C', repo, 'merge', '--abort'], { allowFail: true })
+      await run('git', ['-C', repo, 'checkout', '-f', 'main'], { allowFail: true })
+      await run('git', ['-C', repo, 'merge', 'feature'], { allowFail: true })
+      await run('git', ['-C', repo, 'checkout', '--theirs', '--', 'greeting.txt'])
+      await run('git', ['-C', repo, 'add', '--', 'greeting.txt'])
+    },
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['merge-conflict']
+      await page.evaluate(async (repoPath) => {
+        const s = window.__shot
+        s.repo.getState().select(repoPath, { type: 'wip' })
+        s.ui.getState().setConflictView({ repoPath, file: 'app.js' })
+      }, repo)
+      await page.waitForSelector('.crb-card', { timeout: 5000 }).catch(() => {})
+      await page.waitForTimeout(800)
+    }
+  },
+  {
+    // A file one side deleted and the other changed: no text to merge, so a
+    // card says who did what instead of three panes with one of them empty.
+    out: 'conflict-deleted',
+    repos: ['merge-conflict'],
+    themes: ['light'],
     prepare: async ({ repoPaths, run }) => {
       const repo = repoPaths['merge-conflict']
       await run('git', ['-C', repo, 'merge', '--abort'], { allowFail: true })
@@ -482,12 +509,60 @@ export const shots = [
       const repo = repoPaths['merge-conflict']
       await page.evaluate(async (repoPath) => {
         const s = window.__shot
-        // Pick the first conflicted file and open the resolver on it.
-        const data = s.repo.getState().repos[repoPath]
-        const file = data?.status?.conflicted?.[0]?.path
         s.repo.getState().select(repoPath, { type: 'wip' })
-        if (file) s.ui.getState().setConflictView({ repoPath, file })
+        s.ui.getState().setConflictView({ repoPath, file: 'units_service.dart' })
       }, repo)
+      await page.waitForSelector('.cpc-card', { timeout: 5000 }).catch(() => {})
+      await page.waitForTimeout(600)
+      await page.locator('.cpc-actions .cpc-btn').nth(2).click().catch(() => {})
+      await page.waitForTimeout(400)
+    }
+  },
+  {
+    // The finish line, reached through the real UI: every file answered with
+    // the cards, the segmented whole-file switch and the modify/delete card,
+    // so the summary counts what was actually chosen.
+    out: 'conflict-done',
+    repos: ['merge-conflict'],
+    themes: ['light'],
+    prepare: async ({ repoPaths, run }) => {
+      const repo = repoPaths['merge-conflict']
+      await run('git', ['-C', repo, 'merge', '--abort'], { allowFail: true })
+      await run('git', ['-C', repo, 'checkout', '-f', 'main'], { allowFail: true })
+      await run('git', ['-C', repo, 'merge', 'feature'], { allowFail: true })
+    },
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['merge-conflict']
+      await page.evaluate(async (repoPath) => {
+        const s = window.__shot
+        s.repo.getState().select(repoPath, { type: 'wip' })
+        s.ui.getState().setConflictView({ repoPath, file: 'app.js' })
+      }, repo)
+      // The workspace moves to the next file on its own after each one.
+      const answers = [
+        async () => page.locator('.crb-act.ours').first().click(),
+        async () => page.locator('.cw-seg button').nth(1).click(),
+        async () => {
+          const cards = page.locator('.crb-card .crb-act:not(.ours):not(.theirs)')
+          await cards.nth(0).click()
+          await page.locator('.crb-card.open .crb-act.theirs').first().click().catch(() => {})
+        },
+        async () => page.locator('.cw-seg button').nth(0).click()
+      ]
+      for (let i = 0; i < 5; i++) {
+        await page.waitForSelector('.crb-card, .cpc-card', { timeout: 8000 }).catch(() => {})
+        await page.waitForTimeout(900)
+        if (await page.locator('.cpc-card.done').count()) break
+        if (await page.locator('.cpc-card.warn').count()) {
+          await page.locator('.cpc-btn.ours').first().click()
+          continue
+        }
+        await answers[Math.min(i, answers.length - 1)]().catch(() => {})
+        await page.waitForTimeout(300)
+        await page.locator('.cw-result-foot .btn.primary').click().catch(() => {})
+      }
+      await page.waitForSelector('.cpc-card.done', { timeout: 8000 }).catch(() => {})
+      await page.waitForTimeout(800)
     }
   },
   {

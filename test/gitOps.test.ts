@@ -86,6 +86,83 @@ describe('merge → conflict → abort', () => {
   })
 })
 
+describe('conflict workspace: overview, path resolutions and undo', () => {
+  it('lists each conflicted file with its kind and block count, and names the base', async () => {
+    const R = cloneFixture('merge-conflict')
+    await expect(gitService.merge(R, 'feature')).rejects.toThrow()
+    const { files, listed } = await gitService.conflictOverview(R)
+    const byPath = new Map(files.map((f) => [f.path, f]))
+    expect(byPath.get('release-notes.md')).toMatchObject({ code: 'UU', kind: 'both-modified', conflicts: 4 })
+    // main deleted it, feature changed it.
+    expect(byPath.get('units_service.dart')).toMatchObject({ code: 'DU', kind: 'deleted-by-us', conflicts: 0 })
+    expect(listed).toEqual(expect.arrayContaining(['release-notes.md', 'units_service.dart']))
+    expect((await gitService.conflictContext(R))?.baseSha).toMatch(/^[0-9a-f]{7}$/)
+    expect(gitMethodIsRead('conflictOverview')).toBe(true)
+    expect(gitMethodIsRead('conflictResolvePaths')).toBe(false)
+    expect(gitMethodIsRead('conflictRestore')).toBe(false)
+  })
+
+  it('keeps or deletes a modify/delete file, and restores the conflict on undo', async () => {
+    const R = cloneFixture('merge-conflict')
+    await expect(gitService.merge(R, 'feature')).rejects.toThrow()
+    const before = await gitService.conflictSnapshot(R, ['units_service.dart'])
+
+    await gitService.conflictResolvePaths(R, ['units_service.dart'], [])
+    expect((await gitService.status(R)).conflicted.map((f) => f.path)).not.toContain('units_service.dart')
+    expect(readFileSync(join(R, 'units_service.dart'), 'utf8')).toContain('feature units')
+
+    await gitService.conflictRestore(R, before)
+    const again = await gitService.conflictOverview(R)
+    expect(again.files.find((f) => f.path === 'units_service.dart')?.code).toBe('DU')
+
+    await gitService.conflictResolvePaths(R, [], ['units_service.dart'])
+    expect(existsSync(join(R, 'units_service.dart'))).toBe(false)
+    expect((await gitService.status(R)).conflicted.map((f) => f.path)).not.toContain('units_service.dart')
+
+    await gitService.conflictRestore(R, before)
+    expect(existsSync(join(R, 'units_service.dart'))).toBe(true)
+    expect((await gitService.conflictOverview(R)).files.some((f) => f.path === 'units_service.dart')).toBe(true)
+  })
+
+  it('brings the markers back when a content resolution is undone', async () => {
+    const R = cloneFixture('merge-conflict')
+    await expect(gitService.merge(R, 'feature')).rejects.toThrow()
+    const original = readFileSync(join(R, 'app.js'), 'utf8')
+    const before = await gitService.conflictSnapshot(R, ['app.js'])
+    await gitService.resolveConflict(R, 'app.js', 'resolved\n')
+    expect((await gitService.status(R)).conflicted.map((f) => f.path)).not.toContain('app.js')
+    await gitService.conflictRestore(R, before)
+    expect(readFileSync(join(R, 'app.js'), 'utf8')).toBe(original)
+    const info = (await gitService.conflictOverview(R)).files.find((f) => f.path === 'app.js')
+    expect(info).toMatchObject({ code: 'UU', conflicts: 1 })
+  })
+
+  it('pairs a rename/rename conflict and settles it on one name', async () => {
+    const R = cloneFixture('merge-conflict')
+    await raw(R, ['checkout', '-q', '-b', 'side-rename', 'main~1'])
+    await raw(R, ['mv', 'greeting.txt', 'greeting-side.txt'])
+    await raw(R, ['commit', '-qm', 'side: rename greeting'])
+    await raw(R, ['checkout', '-q', '-b', 'main-rename', 'main~1'])
+    await raw(R, ['mv', 'greeting.txt', 'greeting-main.txt'])
+    await raw(R, ['commit', '-qm', 'main: rename greeting'])
+    await expect(gitService.merge(R, 'side-rename')).rejects.toThrow()
+    const { files } = await gitService.conflictOverview(R)
+    const orig = files.find((f) => f.path === 'greeting.txt')
+    expect(orig).toMatchObject({
+      kind: 'renamed-both',
+      renamedTo: { ours: 'greeting-main.txt', theirs: 'greeting-side.txt' }
+    })
+    expect(files.find((f) => f.path === 'greeting-side.txt')?.renameOf).toBe('greeting.txt')
+
+    await gitService.conflictResolvePaths(R, ['greeting-main.txt'], ['greeting.txt', 'greeting-side.txt'])
+    expect((await gitService.status(R)).conflicted).toEqual([])
+    expect(existsSync(join(R, 'greeting-side.txt'))).toBe(false)
+    await gitService.conflictOpContinue(R, 'merge', 'Merge the two renames')
+    expect(await gitService.mergeState(R)).toBeNull()
+    expect((await raw(R, ['log', '-1', '--format=%s'])).trim()).toBe('Merge the two renames')
+  })
+})
+
 describe('cherry-pick → clean then conflict → resolve', () => {
   it('applies a clean commit, then resolves a conflicting one', async () => {
     const R = cloneFixture('cherry-pick')

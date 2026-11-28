@@ -2,23 +2,45 @@
 title: Resolving conflicts
 category: Working with changes
 order: 32
-summary: A three-pane resolver that tells you which side is which.
-keywords: conflict resolver merge conflicts ours theirs resolve markers three-way rerere reuse recorded resolution remember replay
+summary: One screen for the whole conflicted step — every file, the common ancestor, an answer per conflict, and the finish line.
+keywords: conflict resolver merge conflicts ours theirs base common ancestor resolve markers three-way modify delete rename rerere reuse recorded resolution remember replay finish continue abort
 ---
 
 # Resolving conflicts
 
-When a merge, rebase, cherry-pick or revert stops, a banner tells you **what**
-stopped and **between what** — "merging `feature/x` into `main`", not just
-"conflict".
+When a merge, rebase, cherry-pick or revert stops, the resolver turns the whole
+step into one screen. The bar at the top says **what** stopped and **between
+what** — "Merging `feature` into `main`", not just "conflict" — and how far
+along you are: *2 of 5 files resolved*, with the conflicts still left across
+every file.
 
 ![The conflict resolver](../screenshots/conflict-resolver.webp)
 
+## The file strip
+
+Under the bar, one chip per file this step stopped on:
+
+| Chip | Means |
+|---|---|
+| Green with ✓ | Resolved — staged, nothing left to decide |
+| Outlined | The file you are on |
+| A red number | How many conflict blocks the file still holds |
+| A label | A conflict with no text to merge: *deleted on one side*, *renamed on both sides*, *added on one side* |
+
+**Next file →** jumps to the next one still open, and marking a file resolved
+moves you there on its own. **Continue** in the bar stays disabled until every
+chip is green; **Abort** asks first and says what you lose.
+
+git forgets a file the moment it is staged, so "resolved" is what GitHuttBr saw
+during this step, plus the files git listed in its merge message. A file you
+staged in a terminal before opening the resolver still counts; after a restart
+mid-rebase, the resolved half of that one step may not.
+
 ## Why this conflicts
 
-**Why this conflicts** in the header lists, per side, the commits that touched
-this file since the branches parted — `git log --merge`, which git has shipped
-forever and nobody finds.
+**Why this conflicts** in the file header lists, per side, the commits that
+touched this file since the branches parted — `git log --merge`, which git has
+shipped forever and nobody finds.
 
 ![The commits from each side that touched the conflicted file](../screenshots/conflict-why.webp)
 
@@ -26,41 +48,112 @@ Markers say what clashes. This says who changed it and why, which is usually
 what actually decides the resolution. Nothing there means neither side committed
 a change to this exact path — the clash came from a rename or a move.
 
+The header also says which conflict you are on and what kind of conflict the file
+is in, read from git's own status: *both sides changed the same lines*, *added on
+both sides*.
+
 ## The three panes
 
 | Pane | Is |
 |---|---|
-| Left | **Ours** — the side you were on, labelled with its commit |
-| Right | **Theirs** — the side coming in, labelled with its commit |
-| Middle | The **output**: editable, with line numbers, and what actually gets staged |
+| **Yours** | The side you were on, headed by the newest commit on that side that touched the file: sha, subject, author, how long ago |
+| **Base** | The version both sides started from — the common ancestor, or for a pick or a rebase step, the parent of the commit being applied. The lines each conflict replaced are shaded |
+| **Incoming** | The side coming in, headed the same way as Yours |
 
-All three panes resize, and the output header carries two view toggles:
+**Show base** in the result header hides or shows the Base pane, and remembers
+your choice. It is greyed out when there is no base — both sides added the file.
+
+All panes resize, and the result header carries two view toggles:
 
 | Toggle | What it does |
 |---|---|
-| **Wrap** | Folds long lines inside the A and B panes instead of scrolling them. The output pane keeps one row per line — its side markers depend on that — so it always scrolls |
-| **Linked** | Scrolls A, B and the output together, vertically and sideways. Their line counts differ, so the vertical position is matched by proportion |
+| **Wrap** | Folds long lines inside the side panes instead of scrolling them. The text view of the result keeps one row per line — its side markers depend on that — so it always scrolls |
+| **Linked** | Scrolls the panes and the result together, vertically and sideways. Their line counts differ, so the vertical position is matched by proportion |
 
 Wrap starts off, Linked starts on, and both remember their state.
+
+## The result
+
+The result is the file as it will be written. Each conflict sits in place as a
+card with four answers on it:
+
+| Answer | What lands in the file |
+|---|---|
+| **Use yours** | Your lines, and only yours |
+| **Use theirs** | Their lines, and only theirs |
+| **Both** | Your lines, then theirs |
+| **Edit** | Both, opened in the text editor with the conflict selected, for when the answer is "both, but adjusted" |
+
+An unanswered card previews both sides, each line tagged *← yours* or *←
+theirs*, so you can decide without looking up. **Whole file: yours | theirs** in
+the file header answers every conflict at once.
+
+**Edit as text** switches the result to a plain editor for free typing. Once you
+have typed, the cards no longer describe what is there, so the text stays until
+**Reset choices** puts everything back.
+
+The footer counts what is left in this file; **Mark *file* as resolved** writes
+the result and stages it, and is disabled until every conflict has an answer.
 
 ## Getting around
 
 Opening a file lands you on its **first conflict**, not at the top of the file.
-The ⌃ / ⌄ arrows in the output header — or <kbd>Alt+↑</kbd> /
-<kbd>Alt+↓</kbd> — step through the rest, scrolling all three panes to each
-one.
+The ⌃ / ⌄ arrows in the result header — or <kbd>Alt+↑</kbd> /
+<kbd>Alt+↓</kbd> — step through the rest, scrolling every pane to each one.
 
-## Picking
+## Picking by line
 
-Per **line**, per **chunk**, or the **whole side** at once — and you can take
-both sides of a chunk when the answer is "keep both". A conflict-by-conflict
-navigator walks you through what is left, so you cannot accidentally leave a
-marker behind.
+The side panes still pick per **line** and per **chunk**, and their header
+checkbox takes the **whole side** — for the answer no card offers, such as two
+lines of yours and one of theirs. Line-level picks show up in the cards as they
+happen.
+
+## Files with nothing to merge
+
+Some conflicts have no lines to compare: one side **deleted** a file the other
+changed, or both sides **renamed** it to different names. Three panes with one
+of them empty would explain nothing, so these get a card instead — who did what,
+with the commit, author and age of each side.
+
+![A file deleted on one side and changed on the other](../screenshots/conflict-deleted.webp)
+
+| Case | Choices |
+|---|---|
+| Deleted on one side | **Keep the file** (with the changes the other side made), **Delete the file** (asks first), and **See what you changed** — the diff from the base, so you know what deleting throws away |
+| Renamed on both sides | **Keep** one name, the other, or **both names** |
+
+git records no link between a renamed original and its two new names, so the
+card pairs them by content. When it cannot tell — several renames at once, and
+the files changed too — it says so, and the new names appear as their own chips.
+
+## Finishing
+
+When the last file is resolved, the workspace does not send you looking for
+**Continue**: a card sums up how the conflicts were answered, lets you edit the
+merge message (prefilled from git's own), and finishes from there.
+
+![Every conflict resolved, with the merge message and the rerere switch](../screenshots/conflict-done.webp)
+
+- The summary counts what it saw you choose: yours, theirs, both, edited by hand.
+  A file resolved outside the resolver counts as a file, not as an answer.
+- A **rebase** step keeps the replayed commit's own message, so there is no
+  message box for it.
+- **Remember these resolutions (rerere)** is git's `rerere.enabled`, the same
+  switch as in Settings. git only remembers conflicts it saw happen, so turning
+  it on here takes effect from the next one.
+- **Review again** closes the resolver on the staged result.
+
+## Undo
+
+Every resolution — a file marked resolved, a side taken, a file kept or deleted,
+a rename settled — has an undo entry. Undo puts the conflict back exactly as git
+left it: the markers, both sides and the base in the index, the file on disk.
+**Abort** is the one thing that cannot be undone, which is why it asks.
 
 ## AI assist
 
-With AI enabled, **Resolve with AI** proposes a merge into the output pane. It
-never applies anything on its own: you read it, edit it, and stage it. See
+With AI enabled, **Resolve with AI** proposes a merge into the result, as text.
+It never applies anything on its own: you read it, edit it, and stage it. See
 [AI features](ai.md).
 
 ## Xcode project files
@@ -79,7 +172,7 @@ match objects by id, take every addition from both sides, union the `children`
 and `files` arrays, and stop at whatever genuinely diverged. The band above the
 panes says what each side added and what — if anything — is left for you.
 
-Like the AI proposal, it lands in the output pane and stages nothing. You read
+Like the AI proposal, it lands in the result and stages nothing. You read
 it before you save.
 
 ![The structural-merge band above the conflict panes, on an Xcode project file](../screenshots/conflict-pbxproj.webp)

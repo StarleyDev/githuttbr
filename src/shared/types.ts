@@ -614,6 +614,54 @@ export interface ConflictContext {
   ours: ConflictRefInfo | null
   /** Stage 3 (`--theirs`) commit: MERGE_HEAD / REBASE_HEAD / CHERRY_PICK_HEAD. */
   theirs: ConflictRefInfo | null
+  /** Short sha of the version both sides started from: the merge base, or the
+   *  picked/replayed commit's parent. '' when there is none to name. */
+  baseSha?: string
+}
+
+/**
+ * What kind of conflict a file is in, read from git's two-letter unmerged
+ * status (`UU`, `AA`, `DU`, `UD`, `AU`, `UA`, `DD`).
+ */
+export type ConflictFileKind =
+  | 'both-modified'
+  | 'both-added'
+  | 'deleted-by-us'
+  | 'deleted-by-them'
+  | 'added-by-us'
+  | 'added-by-them'
+  | 'renamed-both'
+
+/** One unmerged path, as the conflict workspace's file strip shows it. */
+export interface ConflictFileInfo {
+  path: string
+  /** git's `XY` code, verbatim. */
+  code: string
+  kind: ConflictFileKind
+  /** Conflict blocks (`<<<<<<<` markers) in the working-tree file. */
+  conflicts: number
+  /** On a `renamed-both` original: the name each side gave it. */
+  renamedTo?: { ours: string; theirs: string }
+  /** On one half of a rename/rename pair: the original it belongs to. The strip
+   *  folds it into that original's card instead of listing it twice. */
+  renameOf?: string
+}
+
+export interface ConflictOverview {
+  files: ConflictFileInfo[]
+  /** Paths git listed under `# Conflicts:` in MERGE_MSG — every file this step
+   *  stopped on, resolved or not. Empty for a rebase, which does not write it. */
+  listed: string[]
+}
+
+/**
+ * The unmerged state of some paths, captured before resolving them so the
+ * resolution can be undone: the index stages plus the working-tree bytes.
+ */
+export interface ConflictSnapshot {
+  /** `git ls-files -u -s -z` output for the paths. */
+  stages: string
+  files: { path: string; base64: string | null }[]
 }
 
 export interface StashInfo {
