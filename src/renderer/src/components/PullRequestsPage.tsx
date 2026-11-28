@@ -187,7 +187,9 @@ export function PullRequestsPage({
   const filtered = useMemo(() => filterPrList(items, tab, filters, me), [items, tab, filters, me])
   // Azure DevOps lists no size: the drawn rows' file counts are read from here
   // alone (never with the sidebar's refresh) and joined in as they arrive.
-  const azure = provider === 'azure' || finishedHere?.data?.provider === 'azure'
+  // Open and draft rows only: size is what a reviewer weighs, and a full merged or
+  // closed list would cost hundreds of host calls the first time it opens.
+  const azure = provider === 'azure' && !finishedTab
   const fileCounts = usePrFileCounts(repoPath, origin?.url, azure, filtered)
   const rows = useMemo(() => withPrFileCounts(filtered, fileCounts), [filtered, fileCounts])
   const counts = useMemo(

@@ -118,8 +118,9 @@ list does not carry stays blank, never a zero.
 
 **Azure DevOps: files only.** Its API has no line counts for a pull request —
 they would take every file's diff — so the cell reads `4 files`, with no +/−.
-Its list has no file count either, so this page reads it, for the rows it
-draws: two requests per pull request (its iterations, then the last one's
+Its list has no file count either, so this page reads it, for the open and
+draft rows it draws — merged and closed ones stay blank, as a full list of them
+would cost hundreds of requests for a number nobody reviews by: two requests per pull request (its iterations, then the last one's
 changes — the same count as its Files tab), four at a time. They are kept until
 someone pushes to that pull request, so a refresh or coming back to the page
 asks only for the ones that moved. The sidebar's periodic refresh never reads

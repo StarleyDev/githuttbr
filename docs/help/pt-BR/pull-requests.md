@@ -123,7 +123,9 @@ lista não traz fica em branco, nunca zero.
 **Azure DevOps: só arquivos.** A API dele não tem contagem de linhas por pull
 request — exigiria o diff de cada arquivo —, então a célula mostra `4 arq.`, sem
 +/−. A lista também não traz a contagem de arquivos, então esta página a lê,
-para as linhas que mostra: dois pedidos por pull request (as iterações, depois
+para as linhas abertas e de rascunho que mostra — as mescladas e fechadas ficam
+em branco, porque uma lista cheia delas custaria centenas de pedidos por um
+número que ninguém usa para revisar: dois pedidos por pull request (as iterações, depois
 as mudanças da última — a mesma contagem da aba Arquivos), quatro por vez. Elas
 ficam guardadas até alguém fazer push naquele pull request, então atualizar ou
 voltar à página só pergunta pelos que mudaram. A atualização periódica da
