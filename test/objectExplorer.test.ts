@@ -51,6 +51,13 @@ describe('git identity lines', () => {
     expect(formatIdentDate(parseGitIdent('A <a@example.com> 0 +0545')!, 'en').zone).toBe('+05:45')
   })
 
+  it('keeps the date short: no "de" connectors, no dot after the month', () => {
+    const ident = parseGitIdent('A <a@example.com> 1795800060 -0300')!
+    expect(formatIdentDate(ident, 'pt-BR').date).toBe('27 nov 2026, 14:21')
+    // Connectors in other scripts carry the meaning and stay.
+    expect(formatIdentDate(ident, 'ja').date).toContain('年')
+  })
+
   it('treats the same person at the same moment as the same identity', () => {
     const a = parseGitIdent('A <a@example.com> 10 +0000')
     expect(isSameIdent(a, parseGitIdent('A <a@example.com> 10 +0000'))).toBe(true)
@@ -87,13 +94,17 @@ describe('object explorer refs and revisions', () => {
       'submodule',
       'unknown'
     ])
+    // By kind — folders, files, executables, symlinks, submodules — each group in tree order.
     const sorted = sortTreeEntries([
-      { kind: 'blob' as const, name: 'a' },
-      { kind: 'tree' as const, name: 'b' },
-      { kind: 'commit' as const, name: 'c' },
-      { kind: 'tree' as const, name: 'd' }
+      { mode: '160000', name: 'a-sub' },
+      { mode: '120000', name: 'b-link' },
+      { mode: '100755', name: 'c-run' },
+      { mode: '100644', name: 'd-file' },
+      { mode: '040000', name: 'e-dir' },
+      { mode: '100644', name: 'f-file' },
+      { mode: '040000', name: 'g-dir' }
     ])
-    expect(sorted.map((e) => e.name)).toEqual(['b', 'd', 'a', 'c'])
+    expect(sorted.map((e) => e.name)).toEqual(['e-dir', 'g-dir', 'd-file', 'f-file', 'c-run', 'b-link', 'a-sub'])
   })
 })
 

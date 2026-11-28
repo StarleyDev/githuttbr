@@ -364,7 +364,8 @@ function TreeView({ object, onFollow }: { object: GitObject; onFollow: (sha: str
           return openable ? (
             <button
               key={`${child.sha}:${child.name}`}
-              className="obj-row"
+              // Hover tints the row in its own kind's colour, as the kind badges.
+              className={`obj-row kind-${child.kind}`}
              
               onClick={() => onFollow(child.sha, { via: 'entry', name: child.name, mode: child.mode })}
             >

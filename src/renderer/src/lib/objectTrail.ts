@@ -233,7 +233,14 @@ export function getModeMeaning(mode: string): ModeMeaning {
   }
 }
 
-/** Folders first, then everything else — each group in the tree's own (byte) order. */
-export function sortTreeEntries<T extends { kind: GitObjectKind }>(entries: readonly T[]): T[] {
-  return [...entries.filter((e) => e.kind === 'tree'), ...entries.filter((e) => e.kind !== 'tree')]
+/** The order a tree lists its entries in: what kind of thing each one is. */
+const MODE_ORDER: ModeMeaning[] = ['folder', 'file', 'executable', 'symlink', 'submodule', 'unknown']
+
+/**
+ * Folders, then files, executables, symlinks and submodules — each group in the
+ * tree's own (byte) order, which a stable sort keeps.
+ */
+export function sortTreeEntries<T extends { mode: string }>(entries: readonly T[]): T[] {
+  const rank = (e: T): number => MODE_ORDER.indexOf(getModeMeaning(e.mode))
+  return [...entries].sort((a, b) => rank(a) - rank(b))
 }

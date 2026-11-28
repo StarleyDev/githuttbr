@@ -44,14 +44,19 @@ export function formatIdentDate(ident: GitIdent, locale: string): { date: string
   const shifted = new Date((ident.epoch + ident.offsetMinutes * 60) * 1000)
   let date: string
   try {
-    date = new Intl.DateTimeFormat(locale, {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      timeZone: 'UTC'
-    }).format(shifted)
+    // Short and compact — "27 nov 2026, 14:21": the locale orders the parts, but
+    // Latin connector words ("de") and the dot of an abbreviated month are dropped.
+    // Connectors in other scripts (年, 月) carry the meaning and stay.
+    const day = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })
+      .formatToParts(shifted)
+      .map((p) =>
+        p.type === 'month' ? p.value.replace(/\.$/, '') : p.type === 'literal' && /[a-z]/i.test(p.value) ? ' ' : p.value
+      )
+      .join('')
+      .replace(/\s+/g, ' ')
+      .trim()
+    const time = new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' }).format(shifted)
+    date = `${day}, ${time}`
   } catch {
     date = shifted.toISOString().slice(0, 16).replace('T', ' ')
   }

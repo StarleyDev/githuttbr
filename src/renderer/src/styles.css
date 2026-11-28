@@ -18777,13 +18777,13 @@ html:has(.repo-switcher) .titlebar {
 .obj-root [class*='kind-'] { --k-text: color-mix(in srgb, var(--k) 70%, var(--text-0)); }
 .obj-flip { transform: scaleX(var(--dir)); }
 .obj-mono { font-family: var(--mono); }
-.obj-dim { color: var(--text-2); }
+.obj-dim { color: var(--text-1); }
 .obj-light { font-weight: 400; }
 .obj-spacer { flex: 1 0 0; }
 .obj-section-label {
   margin: 0;
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 400;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text-2);
@@ -18865,6 +18865,8 @@ html:has(.repo-switcher) .titlebar {
   background: var(--obj-band);
 }
 .obj-trail .obj-section-label { margin-inline-end: 4px; }
+/* Section titles of the object pane read heavier than the small field labels. */
+h5.obj-section-label { font-weight: 700; }
 .obj-trail-item { display: contents; }
 .obj-chip {
   display: inline-flex;
@@ -19026,7 +19028,7 @@ button.obj-chip:hover { background: color-mix(in srgb, var(--k) 22%, transparent
 }
 .obj-copy:hover,
 .obj-link:hover { text-decoration: underline; }
-.obj-explain { margin: 2px 0 0; font-size: 12.5px; color: var(--text-1); line-height: 1.5; }
+.obj-explain { margin: 2px 0 0; font-size: 12.5px; color: var(--text-1); }
 .obj-word { color: var(--text-0); }
 .obj-word[class*='kind-'] { color: var(--k-text); }
 
@@ -19081,7 +19083,7 @@ button.obj-pointer:hover { border-color: color-mix(in srgb, var(--accent) 50%, v
 .obj-table { overflow: hidden; }
 .obj-row {
   display: grid;
-  grid-template-columns: 22px minmax(0, 1fr) 150px 110px 150px;
+  grid-template-columns: 22px minmax(0, 1fr) 150px 90px 120px;
   align-items: center;
   gap: 10px;
   width: 100%;
@@ -19095,7 +19097,7 @@ button.obj-pointer:hover { border-color: color-mix(in srgb, var(--accent) 50%, v
   text-align: start;
 }
 button.obj-row { cursor: pointer; }
-button.obj-row:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+button.obj-row:hover { background: color-mix(in srgb, var(--k, var(--accent)) 10%, transparent); }
 .obj-row-head {
   padding-block: 7px;
   border-top: 0;
@@ -19109,7 +19111,7 @@ button.obj-row:hover { background: color-mix(in srgb, var(--accent) 8%, transpar
 .obj-row-name { color: var(--text-0); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .obj-row-mode { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .obj-row-mode code,
-.obj-row-sha { font-family: var(--mono); font-size: 11px; color: var(--text-2); white-space: nowrap; }
+.obj-row-sha { font-family: var(--mono); font-size: 11px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .obj-row-size { font-size: 12px; color: var(--text-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .obj-mode-chip {
   padding: 1px 6px;
@@ -19188,7 +19190,7 @@ button.obj-row:hover { background: color-mix(in srgb, var(--accent) 8%, transpar
   background: color-mix(in srgb, var(--k) 10%, transparent);
   color: var(--k-text);
 }
-.obj-model-cell b { font-weight: 600; }
+.obj-model-cell b { font-weight: 400; }
 .obj-model-cell.here {
   background: color-mix(in srgb, var(--k) 22%, transparent);
   box-shadow: inset 0 0 0 1px var(--k);
