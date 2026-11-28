@@ -7912,10 +7912,11 @@ body.col-resizing .node-ava {
 /* The footer of a scrolling dialog stays at the bottom, so its buttons never
    scroll away; only the body moves. The footer is the last child (an inline
    row of actions mid-dialog is not), and dialogs that lay out their own fixed
-   regions are left alone. Opaque, and the padding it adds below is taken back
-   by the margin, so a short dialog looks exactly as before. */
+   regions are left alone — and so is Replace & graft's Graft row, the last of
+   its section with the dialog's note still under it. Opaque, and the padding it
+   adds below is taken back by the margin, so a short dialog looks exactly as before. */
 .modal-scroll
-  .modal-actions:last-child:not(:is(.settings, .tm-root, .rd-root, .radar-root, .localci, .scanned-root) *) {
+  .modal-actions:last-child:not(:is(.settings, .tm-root, .rd-root, .radar-root, .localci, .scanned-root, .replace-section) *) {
   position: sticky;
   /* Chromium pins a sticky box inside the scroller's padding, so the 22px under
      .modal-scroll would leave a strip where rows show through: reach into it. A
@@ -7929,7 +7930,7 @@ body.col-resizing .node-ava {
 /* A fade above the pinned footer, so rows sliding under it do not end in a
    hard cut. It paints over the footer's own top margin, empty when not scrolled. */
 .modal-scroll
-  .modal-actions:last-child:not(:is(.settings, .tm-root, .rd-root, .radar-root, .localci, .scanned-root) *)::before {
+  .modal-actions:last-child:not(:is(.settings, .tm-root, .rd-root, .radar-root, .localci, .scanned-root, .replace-section) *)::before {
   content: '';
   position: absolute;
   inset-inline: 0;
@@ -14614,6 +14615,46 @@ input[type='range']:focus-visible {
   width: var(--modal-w-lg);
   height: var(--modal-h-lg);
   max-width: calc(100vw - 48px);
+}
+/* Their height is fixed, so a short body left the footer mid-dialog. The box
+   that holds the footer — the scroller, or the dialog's one root — becomes a
+   column, and an empty item ordered between the body and the footer takes the
+   free space, so the buttons sit at the bottom and keep their 18px above. The
+   items do not shrink: a long body still scrolls as a whole, footer pinned by
+   the sticky rule on .modal-actions. */
+:is(.modal-tall, .modal-clone, .modal-branch-cleanup) > .modal-scroll:has(> .modal-actions:last-child),
+:is(.modal-tall, .modal-clone, .modal-branch-cleanup) > .modal-scroll > :only-child:has(> .modal-actions:last-child) {
+  display: flex;
+  flex-direction: column;
+}
+:is(.modal-tall, .modal-clone, .modal-branch-cleanup) > .modal-scroll:has(> :only-child > .modal-actions:last-child) {
+  display: flex;
+  flex-direction: column;
+}
+:is(.modal-tall, .modal-clone, .modal-branch-cleanup) > .modal-scroll > :only-child:has(> .modal-actions:last-child) {
+  flex: 1 0 auto;
+}
+:is(.modal-tall, .modal-clone, .modal-branch-cleanup) > .modal-scroll:has(> .modal-actions:last-child) > *,
+:is(.modal-tall, .modal-clone, .modal-branch-cleanup) > .modal-scroll > :only-child:has(> .modal-actions:last-child) > * {
+  flex-shrink: 0;
+}
+:is(.modal-tall, .modal-clone, .modal-branch-cleanup) > .modal-scroll:has(> .modal-actions:last-child)::after,
+:is(.modal-tall, .modal-clone, .modal-branch-cleanup) > .modal-scroll > :only-child:has(> .modal-actions:last-child)::after {
+  content: '';
+  flex: 1 0 0;
+  order: 1;
+}
+:is(.modal-tall, .modal-clone, .modal-branch-cleanup) > .modal-scroll .modal-actions:last-child {
+  order: 2;
+}
+/* The CLI editor's footer is its own row under a textarea that already takes
+   the free space: the root only has to fill the body for it to reach the bottom. */
+.modal-tall > .modal-scroll:has(> .cliedit-root) {
+  display: flex;
+  flex-direction: column;
+}
+.modal-tall > .modal-scroll > .cliedit-root {
+  flex: 1 0 auto;
 }
 .compare-header { flex-wrap: wrap; row-gap: 6px; }
 .compare-title { display: flex; align-items: center; gap: 8px; font-size: 13px; flex-shrink: 0; }
