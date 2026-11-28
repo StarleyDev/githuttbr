@@ -19,6 +19,11 @@ commits entre elas num changelog, agrupado por tipo de Conventional Commit.
   descartados — um changelog que perde commits em silêncio é pior do que um
   changelog bagunçado.
 
+O resultado abre no mesmo editor **Escrever / Visualizar** da descrição de um
+pull request, com a barra de formatação: reescreva uma entrada, tire uma linha
+que ninguém precisa e veja como fica renderizado antes de mandar para qualquer
+lugar. Gerar de novo substitui as suas edições.
+
 Copie o resultado, ou **acrescente-o direto no topo do `CHANGELOG.md`**.
 
 > Escrever suas mensagens no [estilo Conventional](committing.md) é o que torna
