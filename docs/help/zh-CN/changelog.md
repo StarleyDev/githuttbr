@@ -4,6 +4,7 @@ category: 处理变更
 order: 34
 summary: 把两个引用之间的 conventional 提交变成一份分好组的变更日志。
 keywords: changelog 变更日志 release notes 发布说明 conventional commits 提交 generate 生成 CHANGELOG
+source: 82fe9093441415a9cd578fe981f73d1082852b29
 ---
 
 # 变更日志生成器
@@ -15,6 +16,8 @@ keywords: changelog 变更日志 release notes 发布说明 conventional commits
 - **破坏性变更**排在最前面，不管它们原本属于哪个类型。
 - 然后是 Features、Fixes、Performance 等等。
 - 不遵循任何约定的提交会落到 **Other** 里，而不是被丢掉——一份会悄悄弄丢提交的变更日志，比一份乱糟糟的更糟。
+
+结果会在与拉取请求描述相同的 **编写 / 预览** 编辑器中打开，工具栏也一样：改写某个条目，删掉没人需要的行，在发出去之前先看看渲染效果。重新生成会覆盖你的编辑。
 
 把结果复制走，或者**直接前置写入 `CHANGELOG.md`**。
 

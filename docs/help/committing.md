@@ -16,12 +16,20 @@ general one, or the profile's own.
 
 | Style | Looks like |
 |---|---|
-| **Conventional** | `feat(api)!: add rate limiting` — with a type dropdown |
+| **Conventional** | `feat(api)!: add rate limiting` — with a **type ▾** button before the subject |
 | **Gitmoji** | `✨ add rate limiting` — with an emoji picker |
-| **Gitmoji + Conventional** | `✨ feat(api): add rate limiting` — emoji picker *and* type dropdown |
+| **Gitmoji + Conventional** | `✨ feat(api): add rate limiting` — emoji picker *and* **type ▾** button |
 | **Ticket** | `ABC-123: add rate limiting` — seeded from the branch name |
 | **Plain** · **Auto** | Whatever you type; Auto lets the AI decide the shape |
 | **Caveman** · **Haiku** | Exactly what they sound like |
+
+With a Conventional style, the prefix lives on the **type ▾** button in front
+of the subject (*feat(api)*, or *type* while there is none) and the field holds
+only the words after it; the message still gets the whole `feat(api): …`. The
+button lists the types, and **No type** takes the prefix off. Typing a prefix by
+hand works too, and <kbd>Backspace</kbd> at the start of the field shows the
+prefix as text again, to change its scope; it folds back onto the button when
+the field loses focus.
 
 ![Composer prefilled from a commit template](../screenshots/commit-template.webp)
 
@@ -68,7 +76,7 @@ Limits:
 
 With AI on, the **✦** button (*Generate with AI* on hover) sits under the
 description. It reads the staged diff and writes the summary and the
-description in the style above. Beside it, the row names who will answer — *account · model*, the pair chosen for
+description in the style above. Beside it, a separate picker names who will answer — *account · model*, the pair chosen for
 commit messages under **Settings → AI → Model per task** — so a slow local
 model or a costly one is never a surprise.
 
@@ -119,9 +127,12 @@ Limits:
 
 ## The linter
 
-A live, non-blocking check: subject length (with a character counter), a
-trailing period, a non-imperative or lowercase subject, over-wide body lines.
-Hints, never a gate — it will not stop you committing.
+A live, non-blocking check: subject length, a trailing period, a
+non-imperative or lowercase subject, over-wide body lines. Hints, never a gate —
+it will not stop you committing. The length is the counter beside the subject,
+read against the 72-character limit (*56/72*): it turns red past the limit, and
+its tooltip carries the advice to aim for 50. The other hints are listed under
+the description.
 
 ## Amend
 

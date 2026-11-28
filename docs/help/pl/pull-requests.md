@@ -2,9 +2,9 @@
 title: Strona pull requestów
 category: Synchronizacja i wiele repozytoriów
 order: 57
-summary: Wszystkie pull requesty repozytorium na jednej stronie — według stanu, filtrowane po autorze, recenzencie, celu i CI —, ‹ ›, by przechodzić przefiltrowaną listę z wnętrza PR, jego commity, jego aktualizacje (każdy push, co zmienił, co nowego od ostatniej wizyty) oraz komentarze do wiersza jego diffa.
-keywords: pull requesty lista strona merge requesty pr mr filtr autor recenzent moje czekają na moją recenzję proszą mnie o recenzję ci nie przechodzi gałąź docelowa szkice scalone zamknięte szukaj triage poprzedni następny alt strzałka nawigacja checkout przejdź do gałęzi źródłowej docelowej kopiuj nazwę gałęzi fetch komentarz do wiersza komentarz inline komentarz recenzji komentarz w diffie skomentuj wiersz zakładka pliki code review line comment zakładka commity lista commitów commity pr historia commitów otwórz commit kopiuj sha pobierz gałąź pr edytor markdown pasek narzędzi podgląd wzmianka commits tab commit list open commit copy sha markdown editor toolbar preview mention drzewo plików drzewo folderów widok drzewa widok ścieżek przejrzane pliki oznacz folder jako przejrzany edytuj usuń edytowany literówka file tree viewed files edit delete edited typo odwołanie tytuł karta po najechaniu work item AB# numer issue podpowiedź reference title hover card issue number fork commity pr refs/pull head renderowane komentarze obrazy piksel śledzący zablokowany obraz kliknij aby wczytać zadanie tabela blok rendered comments images blocked image aktualizacje iteracje pushe force push rebase historia przepisana wersje diffa co się zmieniło od ostatniej wizyty plakietka nowa oznacz jako przejrzane porównaj aktualizację updates iterations history rewritten diff versions what changed since last visit new badge mark as seen compare update
-source: d91d96af92225cb74da274f8d168b07f6110b709
+summary: Wszystkie pull requesty repozytorium na jednej stronie — według stanu, filtrowane po autorze, recenzencie, celu i CI —, ‹ ›, by przechodzić przefiltrowaną listę z wnętrza PR, jego commity, jego aktualizacje (każdy push, co zmienił, co nowego od ostatniej wizyty) oraz komentarze do wiersza jego diffa. Rozmowa jako jedna oś czasu, z tym, co nowego od ostatniej wizyty.
+keywords: pull requesty lista strona merge requesty pr mr filtr autor recenzent moje czekają na moją recenzję proszą mnie o recenzję ci nie przechodzi gałąź docelowa szkice scalone zamknięte szukaj triage poprzedni następny alt strzałka nawigacja checkout przejdź do gałęzi źródłowej docelowej kopiuj nazwę gałęzi fetch komentarz do wiersza komentarz inline komentarz recenzji komentarz w diffie skomentuj wiersz zakładka pliki code review line comment zakładka commity lista commitów commity pr historia commitów otwórz commit kopiuj sha pobierz gałąź pr edytor markdown pasek narzędzi podgląd wzmianka commits tab commit list open commit copy sha markdown editor toolbar preview mention drzewo plików drzewo folderów widok drzewa widok ścieżek przejrzane pliki oznacz folder jako przejrzany edytuj usuń edytowany literówka file tree viewed files edit delete edited typo odwołanie tytuł karta po najechaniu work item AB# numer issue podpowiedź reference title hover card issue number fork commity pr refs/pull head renderowane komentarze obrazy piksel śledzący zablokowany obraz kliknij aby wczytać zadanie tabela blok rendered comments images blocked image aktualizacje iteracje pushe force push rebase historia przepisana wersje diffa co się zmieniło od ostatniej wizyty plakietka nowa oznacz jako przejrzane porównaj aktualizację updates iterations history rewritten diff versions what changed since last visit new badge mark as seen compare update rozmowa oś czasu otwarte wątki rozwiązany wątek zatwierdził poprosił o zmiany wypchnięte commity rola recenzenta nowe od ostatniej wizyty porównaj dwa commity chipy typów commitów ci dla commita pokaż diff następny nieobejrzany filtr nieobejrzane z komentarzami postęp recenzji zmieniony od przejrzenia conversation timeline open threads resolved thread approved requested changes pushed commits reviewer role new since last visit compare two commits commit type chips conventional commits ci per commit view diff next unviewed filter unviewed with comments review progress changed since viewed
+source: 6c1d5afb9bb0a33fa35b74bcc119ac137da2bf22
 ---
 
 # Strona pull requestów
@@ -16,20 +16,27 @@ otwierać każdy, czytać, wracać, otwierać następny. **Strona pull requestó
 odpowiada na te pytania na jednym ekranie, a gdy otworzysz pull request,
 **‹ ›** przeniosą cię do następnego z tej samej listy bez wracania.
 
-![Strona pull requestów z wyszukiwaniem „pix”: dopasowania podświetlone, twoje oznaczone „ty”, nieprzechodzące CI i szkic](../../screenshots/pull-requests.webp)
+![Strona pull requestów otwarta z Centrum dowodzenia: dwa czekają na twoją recenzję, trzy twoje, pozostałe zwinięte; każdy wiersz z rozmiarem, stanowiskiem każdego recenzenta, testami i kropką tam, gdzie coś się zmieniło od twojej ostatniej wizyty](../../screenshots/pull-requests.webp)
 
 ## Jak ją otworzyć
 
 - **Ikona listy** w nagłówku **PULL REQUESTY** panelu bocznego (*Zobacz wszystkie
   pull requesty*).
 - *Pull requesty…* w palecie poleceń (⌘K) albo **Narzędzia → Pull requesty…**.
+- **Chip pull requestów** w wierszu repozytorium w [Centrum
+  dowodzenia](mission-control.md). Otwarta stamtąd strona zaczyna się od **← Wróć
+  do Centrum dowodzenia** i zachowuje ten przycisk, gdy otworzysz jeden z jej pull
+  requestów i wrócisz przez **← Pull requesty**.
 
 Podobnie jak wiki i [przebiegi CI](ci-runs.md), strona otwiera się w karcie
 repozytorium.
 
-## Zakładki
+## Stany
 
-| Zakładka | Co zawiera |
+Przełącznik segmentowy na lewo od wyszukiwania zawiera cztery stany, każdy z
+liczbą pull requestów.
+
+| Stan | Co zawiera |
 |---|---|
 | **Otwarte** | Wszystkie otwarte pull requesty, łącznie ze szkicami |
 | **Szkice** | Tylko otwarte oznaczone jako szkic |
@@ -44,16 +51,21 @@ na sesję; **Odśwież** pyta ponownie.
 
 | Filtr | Zostawia |
 |---|---|
-| **Szukaj** | Pull requesty, których tytuł, opis, gałęzie lub numer zawierają każde wpisane słowo. `#482` albo `482` znajduje ten numer; dopasowania są podświetlone w tytule |
+| **Szukaj** | Pull requesty, których tytuł, opis, autor, gałęzie lub numer zawierają każde wpisane słowo. `#482` albo `482` znajduje ten numer; dopasowania są podświetlone w tytule |
 | **Autor** | Jednego autora — każdy z liczbą swoich PR w tej zakładce. **Ja** jest na początku |
 | **Recenzent** | Jednego poproszonego recenzenta albo **Proszą mnie o recenzję** |
 | **Gałąź docelowa** | Pull requesty do tej gałęzi |
-| **Moje** | Skrót dla *Autor: Ja* |
 | **Czekają na moją recenzję** | Skrót dla *Recenzent: proszą mnie o recenzję* |
+| **Moje** | Skrót dla *Autor: Ja* |
 | **CI nie przechodzi** | Pull requesty, których testy na headzie nie przeszły |
 
-Linijka pod filtrami mówi, ile pull requestów z zakładki jest widocznych i które
-filtry są włączone, z **wyczyść filtry**, by usunąć wszystkie.
+Wyszukiwanie i trzy chipy dzielą jeden wiersz; każdy chip mówi, ile pull requestów
+bieżącego stanu by zostawił. **Autor**, **Recenzent** i **Gałąź docelowa** są pod
+**Więcej filtrów ▾**, które się podświetla, gdy któryś z nich jest ustawiony.
+
+Gdy włączony jest jakikolwiek filtr, linijka nad listą mówi, ile pull requestów
+danego stanu jest widocznych i które filtry są włączone, z **wyczyść filtry**, by
+usunąć wszystkie.
 
 Filtry są pamiętane dla każdego repozytorium **dopóki aplikacja działa** — wyjdź
 ze strony, wróć, są takie, jak je zostawiłeś. Celowo nie są zapisywane między
@@ -70,16 +82,52 @@ na moją recenzję** nie są oferowane.
 
 ## Lista
 
-| Kolumna | Co pokazuje |
+Otwarte i Szkice są podzielone na trzy sekcje, w kolejności, w jakiej się nimi
+zajmujesz:
+
+| Sekcja | Zawiera |
 |---|---|
-| **#** | Numer z ikoną: otwarty, szkic, scalony lub zamknięty |
-| **Tytuł** | Tytuł, plakietkę *szkic* i kogo nadal poproszono o recenzję — w kolorze akcentu, gdy chodzi o ciebie |
-| **Autor** | Obrazek z hostingu, jeśli go podaje, w przeciwnym razie inicjał, oraz **ty** przy twoich |
-| **Gałęzie** | Źródło → cel |
-| **Testy** | Zbiorczy stan testów heada — `6/6`, `1 błędnych`, `2 w toku`; najedź, by zobaczyć liczby |
+| **Czekają na Twoją recenzję** | Pull requesty, o których recenzję ktoś cię poprosił — nagłówek na żółto |
+| **Twoje pull requesty** | Te, które napisałeś |
+| **Pozostałe** | Wszystko inne, zwinięte za **pokaż**, dopóki dwie sekcje wyżej coś zawierają; wyszukiwanie lub filtr je rozwija |
+
+Gdy hosting nie potrafi powiedzieć, kim jesteś, nie ma czego segregować i lista
+jest jedną kartą. Scalone i Zamknięte to historia: jedna karta, bez sekcji.
+
+Każdy wiersz czyta się od lewej do prawej:
+
+| Część | Co pokazuje |
+|---|---|
+| **Kropka** | Pull request zmienił się, odkąd ostatnio opuściłeś jego stronę. Ten, którego nigdy nie otworzyłeś, nie ma kropki — nie ma z czym porównać |
+| **#** | Numer — zielony, gdy otwarty, szary dla szkicu |
+| **Tytuł** | Tytuł, jego typ [Conventional Commits](committing.md) jako kolorowy chip (`feat`, `fix`, `docs`…), plakietka *szkic*. Pod nim: autor (pominięty przy twoich), źródło → cel oraz **Komentarze: N** — albo **Nowe komentarze: N**, gdy od twojej ostatniej wizyty inni napisali jakieś |
+| **Rozmiar** | `+48 −12 · Pliki: 4` — dodane i usunięte linie, zmienione pliki; samo `Pliki: 4` tam, gdzie hosting nie liczy linii |
+| **Recenzja** | Obowiązujący werdykt każdego recenzenta — **✓ bruno zatwierdza**, **✕ ana prosi o zmiany** — a potem kogo jeszcze poproszono, **● czeka na Ciebie** na żółto. **✓ gotowy do scalenia**, gdy hosting mówi, że recenzje są zakończone, a testy nie zawiodły; **brak recenzentów**, gdy nikogo nie poproszono albo nikt nie odpowiedział |
+| **Testy** | Testy heada — `✓ 6/6`, `✕ 1 błędnych`, `● 2 w toku`; najedź, by zobaczyć liczby |
 | **Zmieniono** | Jak dawno ostatnio się zmienił; najedź, by zobaczyć datę |
 
-Wiersze są posortowane według ostatniej aktywności. Kliknięcie otwiera własną
+### Co daje każdy hosting
+
+Rozmiar, komentarze i werdykty nie są na liście każdego hostingu, a strona nie
+otwiera każdego pull requesta z osobna, by je znaleźć — z jednym wyjątkiem,
+opisanym niżej: czego lista nie niesie, zostaje puste, nigdy zero.
+
+| Hosting | Rozmiar | Komentarze | Werdykty recenzji |
+|---|---|---|---|
+| **GitHub** | ✓ | ✓, wraz z tym, które są nowe | ✓, oraz *gotowy do scalenia* — jedno dodatkowe zapytanie GraphQL na całą listę |
+| **GitLab** | — | ✓ (tylko liczba) | Kogo poproszono; *gotowy do scalenia* ze statusu scalenia GitLaba |
+| **Azure DevOps** | Tylko pliki, czytane po otwarciu strony | — | ✓ z głosów recenzentów |
+| **Bitbucket Data Center** | — | ✓ (tylko liczba) | ✓ |
+| **Bitbucket Cloud** | — | ✓ (tylko liczba) | — |
+| **Forgejo** | ✓ gdy serwer to wypełnia | ✓ (tylko liczba) | Kogo poproszono |
+
+**Azure DevOps: tylko pliki.** Jego API nie podaje liczby wierszy dla pull requesta — wymagałoby to diffu każdego pliku — więc komórka pokazuje `Pliki: 4`, bez +/−. Jego lista nie ma też liczby plików, więc ta strona odczytuje ją sama, dla otwartych i szkicowych wierszy, które rysuje — scalone i zamknięte zostają puste, bo pełna ich lista kosztowałaby setki żądań za liczbę, według której nikt nie recenzuje: dwa żądania na pull request (jego iteracje, potem zmiany ostatniej — ta sama liczba co w jego karcie Pliki), cztery naraz. Liczby są trzymane, dopóki ktoś nie wypchnie zmian do tego pull requesta, więc odświeżenie albo powrót na stronę pyta tylko o te, które się zmieniły. Okresowe odświeżanie paska bocznego nigdy ich nie czyta. Liczba, której nie da się odczytać — brak uprawnień, serwer ograniczający żądania — zostawia pustą komórkę, bez błędu; pull request z ponad 20 000 zmian nie jest liczony.
+
+Liczba komentarzy to komentarze rozmowy — komentarze do linii diffu się do niej nie
+wliczają. Bez tokenu zapytanie GitHuba jest pomijane i te kolumny zostają puste.
+
+W obrębie sekcji wiersze są posortowane według ostatniej aktywności, a **‹ ›** w
+pull requeście przechodzą je w narysowanej kolejności. Kliknięcie otwiera własną
 stronę pull requesta ([Hosting i pull requesty](hosting.md)). Na hostingu bez
 takiej strony wiersz otwiera pull request w przeglądarce.
 
@@ -88,7 +136,7 @@ repozytorium nadrzędnym, oznaczone *w owner/repo*.
 
 ## Przechodzenie listy z poziomu pull requesta
 
-![Pull request otwarty z przefiltrowanej listy: ‹ 1 z 4 › i filtry, z których pochodzi](../../screenshots/pull-request-nav.webp)
+![Pull request otwarty z przefiltrowanej listy: ‹ 1 z 7 › i filtry, z których pochodzi](../../screenshots/pull-request-nav.webp)
 
 Pull request otwarty ze strony pokazuje pasek nad swoim tytułem:
 
@@ -163,29 +211,44 @@ jednym commicie — tak, jak większość pull requestów powinna być czytana �
 odsyłało cię do przeglądarki. Zakładka **Commity**, między Rozmową a Aktualizacjami, je
 wymienia:
 
+- **Wiersz podsumowania** na górze: ile commitów, od ilu autorów, **+/−** pull
+  requesta i po jednym kolorowym chipie na każdy typ
+  [Conventional Commit](https://www.conventionalcommits.org/) z jego liczbą —
+  *feat 2 · fix 1 · test 1* mówi, jakiego rodzaju to zmiana, zanim przeczytasz z
+  niej choć wiersz. Funkcje są zielone, poprawki i reverty czerwone, testy w
+  kolorze akcentu, wydajność żółta, reszta szara.
 - **Najstarsze najpierw**, w kolejności, w jakiej się nakładają, pogrupowane pod
   dniem, w którym je napisano. Commit wciągnięty rebase’em poza kolejnością dat
   zaczyna własny dzień, zamiast zostać przesunięty.
-- Każdy wiersz ma obrazek autora (jeśli hosting go podaje), temat, autora, jak
-  dawno temu i krótki SHA. Plakietka **merge** oznacza commit z dwoma rodzicami,
-  jeśli hosting to podaje.
-- **▸** obok commita, który ma coś więcej niż temat, pokazuje resztę jego opisu.
-- **Kopiuj** umieszcza pełny SHA w schowku; **Otwórz w przeglądarce** otwiera
-  commit na hostingu — w pull requeście, jeśli hosting ma taką stronę (GitHub,
-  GitLab, Bitbucket Data Center), a w przeciwnym razie na stronie commita w
-  repozytorium.
+- Każdy wiersz ma zdjęcie autora (gdzie hosting je daje), temat — jego typ jako
+  ten sam kolorowy chip i przygaszony zakres, gdy temat stosuje Conventional
+  Commits — autora, jak dawno temu i, dla commita, który ma ten klon, jego
+  **+/−** oraz liczbę zmienionych plików. Dalej kropka **CI** (zielona zaliczone,
+  czerwona nieudane, żółta w toku), gdzie hosting zgłasza uruchomienie dla tego
+  commita, krótki SHA i **Pokaż diff**. Plakietka **merge** oznacza commit z
+  dwoma rodzicami, gdzie hosting to podaje.
+- Commit, który ma coś więcej niż temat, pokazuje resztę opisu pod wierszem.
+- Po najechaniu **Kopiuj** umieszcza pełny SHA w schowku, a **Otwórz w
+  przeglądarce** otwiera commit na hostingu — wewnątrz pull requesta, gdzie
+  hosting ma taką stronę (GitHub, GitLab, Bitbucket Data Center), w przeciwnym
+  razie na stronie commita w repozytorium.
 
 ![Zakładka Commity: commity pull requesta pogrupowane według dni, jeden z otwartym pełnym opisem](../../screenshots/pr-commits.webp)
 
-**Kliknij wiersz** — albo dojdź do niego Tabem i naciśnij Enter — żeby otworzyć
-commit w aplikacji, jak zrobiłoby to kliknięcie w grafie: widok repozytorium, ten
-commit zaznaczony, jego szczegóły otwarte. To działa, gdy ten klon **ma** commit.
-Gdy go nie ma, wiersz to mówi, zamiast po cichu zawieść, i proponuje:
+Commity zrobione po twoim ostatnim wyjściu z pull requesta są pod linią **Nowe
+od ostatniej wizyty** — tym samym znacznikiem co w zakładce Rozmowa, z tej samej
+wizyty.
 
-- **Pobierz gałąź PR, aby go zobaczyć** — ten sam fetch jednej gałęzi co przy
-  [przejściu do gałęzi](#przejście-do-gałęzi-pull-requesta), bez checkoutu. Jeśli commit przyszedł razem z
-  nią, otwiera się; jeśli nie (force push go od tego czasu przepisał), mówi to
-  powiadomienie.
+**Pokaż diff** — albo kliknięcie wiersza, albo dojście do niego Tabem i Enter —
+otwiera commit w aplikacji, tak jak kliknięcie w grafie: widok repozytorium, ten
+commit zaznaczony, jego szczegóły otwarte. Działa to, gdy ten klon **ma** commit.
+Gdy nie ma, wiersz mówi *jeszcze nie ma go w twoim repozytorium*, a jego przycisk
+się zmienia:
+
+- **Pobierz gałąź** — ten sam fetch jednej gałęzi co przy
+  [przejściu do gałęzi](#przejście-do-gałęzi-pull-requesta), bez checkoutu. Każdy commit, który z nią
+  przyszedł, można potem otworzyć; jeśli ten nie przyszedł (force push go od tego
+  czasu przepisał), mówi to powiadomienie.
 - **Pobierz commity pull requesta**, przy pull requeście z **forka**. Jego gałąź jest
   w innym repozytorium, ale większość hostingów odzwierciedla head pull requesta w
   repozytorium docelowym pod osobnym refem — `refs/pull/N/head` (GitHub, GitHub
@@ -196,6 +259,12 @@ Gdy go nie ma, wiersz to mówi, zamiast po cichu zawieść, i proponuje:
   przesuwa ref na head w jego ówczesnym stanie. Jeśli force push od tego czasu
   pominął commit, mówi to powiadomienie.
 - **Otwórz w przeglądarce**, gdy pobieranie nie wchodzi w grę.
+
+**Porównaj dwa commity** prosi o zaznaczenie dwóch wierszy, a potem otwiera
+[porównanie](merging.md#porównanie-dowolnych-dwóch-referencji) między nimi w widoku
+repozytorium: starszy jest bazą, więc widzisz, co się stało od jednego do drugiego —
+commity pomiędzy i ich łączny diff. Oba muszą być w tym klonie; dopóki nie są,
+przycisk jest wyszarzony.
 
 Lista jest wczytywana przy pierwszym otwarciu zakładki, nie razem ze stroną, i
 ponownie przy każdym **Odśwież**. Dopóki nie dotrze, licznik zakładki to ten, który
@@ -234,6 +303,16 @@ Czego to nie robi:
 - **Scalenia squash.** Commity pull requesta scalonego przez squash nigdy nie
   trafiły do gałęzi docelowej, więc po usunięciu jego gałęzi są już tylko na
   hostingu.
+- **Liczby dla commitów pochodzą z twojego klonu.** **+/−** i liczba plików są
+  odczytywane z gita, nigdy z hostingu, więc commit jeszcze niepobrany ich nie
+  pokazuje, podobnie jak merge (jego zmiana odnosi się do dwóch rodziców). Częściowy
+  klon bez plików commita nie pokazuje ich, zamiast je pobierać.
+- **CI tylko dla 40 najnowszych commitów**, po cichu: jedno żądanie na commit
+  sumowałoby się przy długim pull requeście, a CI i tak zwykle działało na
+  wypchniętych headach. Brak poświadczeń do hostingu oznacza brak kropek, nigdy
+  logowanie.
+- **Chipy typów czytają temat.** Zespół, który nie pisze Conventional Commits, nie
+  dostaje chipów ani liczników typów — nic nie jest zgadywane.
 - **Autorzy** są nazywani tak, jak nazywają ich commity. GitLab, Azure DevOps i
   Bitbucket Data Center nie dają obrazka bez logowania, którego obrazek nie może
   wysłać, więc te wiersze pokazują inicjał.
@@ -374,16 +453,26 @@ przed i po force pushu są dokładne, więc jego **Pokaż zmiany** też.
 
 ## Czytanie plików
 
-Pull request z dwustoma plikami trudno czytać jako dwieście pełnych ścieżek. Lista w
-zakładce **Pliki** ma ten sam przełącznik **Ścieżki / Drzewo** co panel commita, a
+Pull request z dwustoma plikami trudno czytać jako dwieście pełnych ścieżek i trudno
+skończyć, nie gubiąc miejsca. Nad listą i diffem wiersz prowadzi licznik —
+*Obejrzane pliki: 4 z 9*, z paskiem — a **Poprzedni nieobejrzany** / **Następny
+nieobejrzany** przechodzą do najbliższego pliku, którego jeszcze nie zaznaczyłeś, w
+górę lub w dół, zawijając na końcach listy; są wyszarzone, gdy wszystko na liście
+jest obejrzane. Zaznacz **Oznacz jako obejrzany przy przejściu dalej**, a **Następny
+nieobejrzany** sam zaznaczy otwarty plik, zanim przejdzie dalej — czytając po kolei,
+nigdy nie dotykasz pól wyboru; wybór jest zapamiętywany. **Pokaż** zawęża listę do
+plików **Nieobejrzane** albo **Z komentarzami** (z jakąkolwiek rozmową recenzji) i z
+powrotem do **Wszystkie**.
+
+Lista w zakładce **Pliki** ma ten sam przełącznik **Ścieżki / Drzewo** co panel commita, a
 wybór obowiązuje w całej aplikacji. W widoku **Drzewo** pliki leżą pod swoimi
 folderami (łańcuch taki jak `src/main/ipc` to jeden wiersz), a każdy folder pokazuje
 zsumowane **+/−** i ile jego plików jest przejrzanych (*3/5*). Pole wyboru folderu
 oznacza jako przejrzany każdy plik w środku albo czyści wszystkie; zaznaczenia są
 trzymane tylko na tym komputerze i nigdy nie trafiają na hosting. Zaznaczenie
 pamięta wersję diffa pliku: gdy push zmieni przejrzany plik, znów jest on
-nieprzejrzany, z żółtą kropką (*Zmieniony od czasu przejrzenia*). Plik bez diffa
-(binarny, zbyt duży) jest porównywany tylko po stanie i liczbie wierszy. Plik z rozmowami recenzji pokazuje obok liczbę w dymku (foldery sumują swoje), więc pliki z komentarzami wyróżniają się na długiej liście; nieaktualne rozmowy też się liczą. Kliknij
+nieprzejrzany, z plakietką **zmieniony** (*zmieniony od czasu przejrzenia*). Plik bez diffa
+(binarny, zbyt duży) jest porównywany tylko po stanie i liczbie wierszy. Plik z rozmowami recenzji pokazuje liczbę w dymku tuż po swojej nazwie, więc pliki z komentarzami wyróżniają się na długiej liście; nieaktualne rozmowy też się liczą, podobnie jak rozwiązane — listy hostingów, które czyta aplikacja, nie mówią, które są rozwiązane. Kliknij
 folder albo naciśnij na nim ←/→, żeby go zwinąć; ↑/↓ (lub j/k) przechodzą przez pliki
 na ekranie i otwierają każdy diff. Zwinięte foldery są pamiętane dla każdego pull
 requesta do zamknięcia aplikacji, a plik otwarty w jednym z nich rozwija drogę do
@@ -558,14 +647,81 @@ Czego to nie robi:
 - **Plik bez diffa** (binarny albo zbyt duży, by hosting go dołączył) nie ma
   wierszy do skomentowania.
 
+## Rozmowa
+
+Historia pull requesta jest rozproszona: opis na górze, komentarze na jednej liście,
+wątki do wierszy na drugiej, werdykty tylko w panelu bocznym, pushe w osobnej
+zakładce. Nadrobienie zaległości oznaczało przeczytanie tego wszystkiego i złożenie
+kolejności z powrotem w głowie. Zakładka **Rozmowa** opowiada to jako jedną **oś
+czasu**, wzdłuż szyny, w kolejności, w jakiej się działo.
+
+![Rozmowa jako oś czasu: dwa pushe, wątek do wiersza wciąż otwarty z jego wierszami, prośba o zmiany, linia oznaczająca, co nowego od ostatniej wizyty, i zatwierdzenie](../../screenshots/pull-request-page.webp)
+
+| Na osi czasu | Co pokazuje |
+|---|---|
+| **Opis** | Zawsze pierwszy, z tym, kto otworzył pull request i kiedy |
+| **Komentarze** | Rozmowa, każdy z rolą autora: **Autor** albo **Recenzent** |
+| **Pushe** | *sam wypchnął(-ęła) commity: 2*, potem jeden wiersz na commit; kliknięcie hasha otwiera zakładkę Commity |
+| **Wątki do wierszy** | Na swoim miejscu, przy pierwszym komentarzu: plik i wiersz, wiersze diffa, których dotyczy, odpowiedzi i pole odpowiedzi. Ścieżka i **Zobacz w Plikach →** otwierają ten plik w zakładce Pliki |
+| **Werdykty recenzji** | **zatwierdził(a)** na zielono, **poprosił(a) o zmiany** na czerwono z tym, co napisał recenzent, albo własny komentarz recenzji |
+
+Wątek, który hosting zgłasza jako **otwarty**, ma bursztynową plakietkę, a pasek
+nad osią czasu je liczy: **1 otwarty wątek** pokazuje tylko te, które wciąż
+czekają na odpowiedź. **Rozwiązany** wątek zwija się do jednego wiersza —
+*Rozwiązany wątek w src/palette.tsx:18 · komentarze: 2* — a kliknięcie go rozwija.
+**Komentarze · Review · Commity · Wszystko** zawężają oś czasu do jednego rodzaju;
+otwiera się na **Komentarze**, a **Wszystko** przywraca całość.
+
+**Recenzenci** w panelu bocznym podają werdykt każdej osoby słowami — **✓
+zatwierdził(a)** albo **poprosił(a) o zmiany** — i zegar przy kimś, kto jeszcze nie
+odpowiedział.
+
+### Nowe od ostatniej wizyty
+
+Gdy opuszczasz stronę pull requesta (inna strona, inna karta, zamknięcie, wyjście
+z aplikacji lub jej przeładowanie), aplikacja zapisuje czas. Następnym razem linia
+oznacza, gdzie skończyłeś — **Nowe od ostatniej wizyty** — a pasek mówi, ile
+wpisów pojawiło się po niej. Znacznik powstaje przy wyjściu, nie przy otwarciu,
+więc zostaje na miejscu, gdy czytasz. Przy pierwszym otwarciu pull requesta nic
+nie jest oznaczone jako nowe.
+
+To, co napisałeś sam, nigdy nie jest dla ciebie nowe: twoje komentarze, odpowiedzi
+i recenzje ani się nie liczą, ani nie przesuwają linii. Wątek, który zaczął się
+przed twoją wizytą i od tego czasu dostał odpowiedź od kogoś innego, też liczy się
+jako nowy — zostaje na osi czasu tam, gdzie się zaczął, więc szukaj go nad linią.
+
+Czasy wyglądają jak *2 dni temu*; najedź, żeby zobaczyć pełną datę.
+
+*Ograniczenia:*
+
+- **Kiedy commit został wypchnięty** — tego hostingi nie mówią. Pushe są odtwarzane z
+  listy commitów: kolejne commity tego samego autora, każdy w ciągu godziny od
+  poprzedniego, liczą się jako jeden push, umieszczony w dacie ostatniego. Rebase,
+  który przepisał daty, je przesuwa. Zakładka Aktualizacje jest własnym zapisem
+  hostingu tam, gdzie taki istnieje.
+- **Otwarty czy rozwiązany** pochodzi z GitHuba (jedno dodatkowe żądanie GraphQL na
+  odczyt) i GitLaba. Wątki z Azure DevOps, Bitbucket Data Center i Forgejo nie mają
+  plakietki i nie są liczone.
+- **Werdykty na osi czasu** potrzebują daty: GitHub, GitLab (zatwierdzenie, datowane
+  notatką, którą GitLab dla niego zapisuje) i Forgejo ją podają. Głosy w Azure DevOps
+  i zatwierdzenia w Bitbucket Data Center jej nie mają, więc pojawiają się tylko w
+  panelu bocznym.
+- Recenzja GitHuba bez własnego tekstu — koperta, pod którą trafia każda paczka
+  komentarzy do wierszy — nie dostaje wiersza; jej wątki są już widoczne.
+- Twoje ostatnie wizyty są przechowywane dla 300 najnowszych pull requestów, tylko
+  na tym komputerze. Awaria albo ubicie aplikacji nie zapisuje wizyty.
+- **Twoje** rozpoznaje się po twoim koncie na hostingu. Tam, gdzie hosting podaje
+  autorów tylko z nazwy wyświetlanej i nie daje identyfikatora do porównania,
+  twoje wpisy liczą się jak każde inne.
+
 ## Pisanie komentarzy
 
 Każde pole na stronie — komentarz na dole, odpowiedź w wątku, komentarz do wiersza
 — to ten sam edytor Markdown: zakładki **Pisz / Podgląd**, pasek formatowania ze
 skrótami GitHuba, listy, które ciągną się po Enterze, i podpowiadanie po **@** /
-**#** spośród osób i pull requestów, które są już na ekranie. Pole odpowiedzi
-pokazuje swoje narzędzia, gdy w nie klikniesz, i wysyła przez ⌘/Ctrl+Enter, bo
-Enter zaczyna teraz nowy wiersz. [Pisanie komentarzy](writing-comments.md) opisuje
+**#** spośród osób i pull requestów, które są już na ekranie. Odpowiedź w
+wątku jest wyjątkiem: to jednowierszowe pole bez paska narzędzi, w którym Enter
+wysyła, a Shift+Enter dodaje wiersz. [Pisanie komentarzy](writing-comments.md) opisuje
 szczegóły i ograniczenia.
 
 ## Jak pokazywane są komentarze

@@ -5,7 +5,6 @@ import {
   FilePen,
   GitPullRequestArrow,
   GitPullRequestClosed,
-  GitPullRequestDraft,
   GitMerge,
   GitBranch,
   GitCommitHorizontal,
@@ -16,19 +15,12 @@ import {
   X,
   MessageSquare,
   Clock,
-  User,
   Users,
-  UserCheck,
-  Tag,
-  Milestone,
   FileDiff,
   CircleDot,
-  CalendarDays,
   Sparkles,
-  ClipboardList,
   Copy,
   MoreHorizontal,
-  ScrollText,
   Target,
   History
 } from 'lucide-react'
@@ -46,15 +38,17 @@ import type {
   PrReviewThread
 } from '../../../shared/types'
 import { hostingApi, shellApi } from '../infrastructure/api'
-import { CheckLogPanel } from './CheckLogPanel'
+import { PrChecksSection } from './PrChecksSection'
 import { HostUserAvatar as Avatar } from './HostUserAvatar'
 import { PrNavBar } from './PrNavBar'
 import { PrCommitsSection, usePrCommits } from './PrCommitsSection'
+import { PrConversationTimeline, PrReviewerVerdict, TimeAgoLabel } from './PrConversationTimeline'
+import { getLastVisit, getPrVisitKey, recordVisit } from '../lib/prVisits'
 import { PrUpdatesSection, usePrUpdates, usePrUpdatesSeen } from './PrUpdatesSection'
 import { PrUpdateDiffBanner, usePrUpdateDiff, type UpdateDiffView } from './PrUpdateDiff'
 import { forgetFinished } from '../stores/prList'
 import { useUIStore } from '../stores/ui'
-import { useSettingsStore } from '../stores/settings'
+import { sendPendingSettingsSave, useSettingsStore } from '../stores/settings'
 import { repoActions, useRepoStore } from '../stores/repo'
 import { remoteForPrUrl } from '../lib/prBranchGo'
 import { remoteWebUrl, type AutolinkOptions } from '../lib/autolink'
@@ -63,7 +57,6 @@ import type { IconTone } from '../lib/iconTone'
 import { getReferenceAutolinkOptions, ReferenceScope } from './ReferenceLink'
 import {
   checkCounts,
-  checkState,
   labelColor,
   labelTextColor,
   participants,
@@ -73,6 +66,8 @@ import {
 } from '../lib/prSummary'
 import { DiffViewer } from './DiffViewer'
 import { PrFileList } from './PrFileList'
+import { PrFilesProgress } from './PrFilesProgress'
+import { filterPrFiles, type PrFileFilter } from '../lib/prFilesProgress'
 import { PrNoPatchNotice } from './PrNoPatchNotice'
 import { getPrFilesUrl, PrImagePreview, type PrImageSource } from './PrImagePreview'
 import { createPrImageCache } from '../lib/prImageCache'
@@ -158,9 +153,6 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
 
   const [pr, setPr] = useState<PrDetail | null>(null)
   const [checks, setChecks] = useState<PrCheck[] | null>(null)
-  // The check whose log is open under its row.
-  // The check whose log is open, by its link: a refresh may reorder the list.
-  const [openLog, setOpenLog] = useState<string | null>(null)
   const [files, setFiles] = useState<PrFile[] | null>(null)
   // The revision those files' diff was read at: a line comment carries it.
   const [filesRevision, setFilesRevision] = useState<PrDiffRevision | null>(null)
@@ -610,10 +602,44 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
   const refused = !!pr?.mergeRefused
   const mergeBlocked = pr?.mergeable === false || blockers.length > 0 || refused
   const counts = checks ? checkCounts(checks) : null
+  // The Checks tab (PrChecksSection.tsx): a failed test's file opens in the Files tab, whole-PR diff.
+  const prFileNames = useMemo(() => files?.map((f) => f.filename) ?? null, [files])
+  const showPrFile = (file: string): void => {
+    view.selectedFile = file
+    setUpdateView(null)
+    setSection('files')
+  }
+  const reloadChecks = (): Promise<void> =>
+    hostingApi.prChecks(repoPath, remoteUrl, tokens, number).then(setChecks, () => undefined)
   const reviewers = pr ? reviewerStates(pr) : []
   const people = pr ? participants(pr) : []
   const conversationCount = pr ? pr.comments.length + pr.reviewThreads.length : 0
-  const commits = usePrCommits(repoPath, remoteUrl, tokens, number, section === 'commits', reloads)
+  // "New since your last visit" (lib/prVisits.ts): read once when the page opens,
+  // so the marker stays put while reading; recorded when the page is left or closed.
+  const visitKey = getPrVisitKey(remoteUrl, number)
+  const lastVisit = useMemo(() => getLastVisit(visitKey), [visitKey])
+  const visited = useRef(false)
+  useEffect(() => {
+    visited.current = false
+    // Quitting or reloading with the page open unmounts nothing: the visit is
+    // recorded as the window goes too, and sent at once (stores/settings.ts).
+    const leave = (): void => {
+      if (!visited.current) return
+      visited.current = false
+      recordVisit(visitKey, Date.now())
+      sendPendingSettingsSave()
+    }
+    window.addEventListener('beforeunload', leave)
+    return () => {
+      window.removeEventListener('beforeunload', leave)
+      if (visited.current) recordVisit(visitKey, Date.now())
+    }
+  }, [visitKey])
+  useEffect(() => {
+    if (pr) visited.current = true
+  }, [pr])
+  // The conversation's timeline places the pushes, so the commits are read with it too.
+  const commits = usePrCommits(repoPath, remoteUrl, tokens, number, section === 'commits' || section === 'conversation', reloads)
   // A truncated list is not the whole count: the detail's own number, when it says more.
   const commitCount = commits.list?.truncated
     ? Math.max(commits.list.commits.length, pr?.commits ?? 0)
@@ -676,7 +702,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
             <header className="prp-head">
               {status && (
                 <span className={`prp-state prp-${status}`}>
-                  <StatusIcon status={status} /> {t(STATUS_KEY[status])}
+                  {t(STATUS_KEY[status])}
                 </span>
               )}
               <h2>
@@ -745,7 +771,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                 newCount={updatesSeen.unseen.size}
               />
               <SectionTab id="files" active={section} onPick={setSection} icon={<FileDiff size={13} />} label={t('prPage.tabFiles')} count={files?.length ?? pr?.changedFiles} />
-              <SectionTab id="checks" active={section} onPick={setSection} icon={<CircleDot size={13} />} label={t('prPage.tabChecks')} count={checks?.length} />
+              <SectionTab id="checks" active={section} onPick={setSection} icon={<CircleDot size={13} />} label={t('prPage.tabChecks')} count={checks?.length} failCount={counts?.fail} />
             </nav>
           </div>
 
@@ -773,60 +799,51 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
             ) : error ? (
               <div className="prd-error">{readableError(error, t, interp)}</div>
             ) : !pr ? null : section === 'conversation' ? (
-              <>
-                <article className="prp-card">
-                  <div className="prp-card-head">
-                    <Avatar login={pr.author} avatars={pr.avatars} />
-                    <strong>{pr.author}</strong>
-                    <span>{fmtDate(pr.createdAt)}</span>
-                  </div>
-                  <div className={`prp-card-body ${pr.body.trim() ? '' : 'prp-muted'}`}>
-                    {pr.body.trim() ? (
-                      <RemoteMarkdown body={pr.body} bodyHtml={pr.bodyHtml} repoWebUrl={web} linkOptions={linkOptions} />
-                    ) : (
-                      t('prPage.noDescription')
-                    )}
-                  </div>
-                </article>
-
-                {pr.comments.map((c, i) => (
-                  <article key={c.handle ? `${c.handle.threadId ?? ''}:${c.handle.id}` : i} className="prp-card">
-                    <EditableComment
-                      handle={c.handle}
-                      body={c.body}
-                      edited={c.edited}
-                      mine={isMyComment(c, pr)}
-                      headClassName="prp-card-head"
-                      bodyClassName="prp-card-body"
-                      head={
-                        <>
-                          <Avatar login={c.author} avatars={pr.avatars} />
-                          <strong>{c.author}</strong>
-                          <span>{fmtDate(c.createdAt)}</span>
-                        </>
-                      }
-                      rendered={<RemoteMarkdown body={c.body} bodyHtml={c.bodyHtml} repoWebUrl={web} linkOptions={linkOptions} />}
-                      drafts={editDrafts}
-                      busy={busy}
-                      mentions={mentions}
-                      getReferences={getReferences}
-                      hasUnsentText={NEVER_LOST}
-                      onSave={saveCommentEdit}
-                      onDelete={(handle) => askDeleteComment(handle, !!c.hasReplies)}
-                    />
-                  </article>
-                ))}
-
-                {pr.reviewThreads.length > 0 && (
-                  <div className="prd-section-title">
-                    {t('prDetail.reviewThreads')} <span className="prd-count">{pr.reviewThreads.length}</span>
-                  </div>
+              <PrConversationTimeline
+                pr={pr}
+                commits={commits.list?.commits ?? null}
+                lastVisit={lastVisit}
+                renderMarkdown={(body, bodyHtml) => (
+                  <RemoteMarkdown body={body} bodyHtml={bodyHtml} repoWebUrl={web} linkOptions={linkOptions} />
                 )}
-                {pr.reviewThreads.map((th) => threadCard(th, true))}
-                {conversationCount === 0 && <p className="prp-muted prp-pad">{t('prDetail.noComments')}</p>}
-              </>
+                renderComment={(c, head) => (
+                  <EditableComment
+                    handle={c.handle}
+                    body={c.body}
+                    edited={c.edited}
+                    mine={isMyComment(c, pr)}
+                    headClassName="prp-card-head prt-head"
+                    bodyClassName="prp-card-body"
+                    head={head}
+                    rendered={<RemoteMarkdown body={c.body} bodyHtml={c.bodyHtml} repoWebUrl={web} linkOptions={linkOptions} />}
+                    drafts={editDrafts}
+                    busy={busy}
+                    mentions={mentions}
+                    getReferences={getReferences}
+                    hasUnsentText={NEVER_LOST}
+                    onSave={saveCommentEdit}
+                    onDelete={(handle) => askDeleteComment(handle, !!c.hasReplies)}
+                  />
+                )}
+                renderThread={(th) => threadCard(th, false)}
+                onViewInFiles={(path) => {
+                  // The Files tab opens on the file it remembers: this one, from its top.
+                  view.selectedFile = path
+                  view.diffScroll = null
+                  setUpdateView(null)
+                  setSection('files')
+                }}
+                onOpenCommits={() => setSection('commits')}
+              />
             ) : section === 'commits' ? (
-              <PrCommitsSection repoPath={repoPath} remoteUrl={remoteUrl} pr={pr} list={commits.list} error={commits.error} />
+              <PrCommitsSection
+                repoPath={repoPath}
+                remoteUrl={remoteUrl}
+                pr={pr}
+                list={commits.list}
+                error={commits.error}
+                lastVisit={lastVisit}
+              />
             ) : section === 'updates' ? (
               <PrUpdatesSection
                 list={updates.list}
@@ -924,33 +941,15 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
             ) : checks.length === 0 ? (
               <p className="prp-muted prp-pad">{t('prPage.noChecks')}</p>
             ) : (
-              <div className="prd-checks prp-checks">
-                {checks.map((c, i) => (
-                  <div key={i} className="prp-check-item">
-                    <div className="prd-check">
-                      <span className={`prd-check-dot ${checkState(c)}`} />
-                      <span className="prd-check-name">{c.name}</span>
-                      <span className="prd-check-state">{c.status === 'completed' ? c.conclusion : c.status}</span>
-                      {c.hasLog && (
-                        <button
-                          className="prd-check-logs"
-                          title={openLog === c.url ? t('prPage.hideLog') : t('prPage.showLog')}
-                          aria-expanded={openLog === c.url}
-                          onClick={() => setOpenLog(openLog === c.url ? null : c.url)}
-                        >
-                          <ScrollText size={12} />
-                        </button>
-                      )}
-                      {c.url && (
-                        <button className="prd-check-logs" title={t('prDetail.viewLogs')} onClick={() => void shellApi.openExternal(c.url)}>
-                          <ExternalLink size={12} />
-                        </button>
-                      )}
-                    </div>
-                    {openLog === c.url && <CheckLogPanel repoPath={repoPath} remoteUrl={remoteUrl} tokens={tokens} url={c.url} />}
-                  </div>
-                ))}
-              </div>
+              <PrChecksSection
+                checks={checks}
+                repoPath={repoPath}
+                remoteUrl={remoteUrl}
+                tokens={tokens}
+                prFiles={prFileNames}
+                onShowFile={showPrFile}
+                onReloadChecks={reloadChecks}
+              />
             )}
           </div>
 
@@ -975,14 +974,14 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                   }}
                 />
                 <div className="prp-composer-actions">
-                  <button className="btn ghost small prd-reject" onClick={() => review('REQUEST_CHANGES')} disabled={busy}>
-                    <X size={13} /> {t('prDetail.requestChanges')}
+                  <button className="btn ghost small danger prd-reject" onClick={() => review('REQUEST_CHANGES')} disabled={busy}>
+                    {t('prDetail.requestChanges')}
                   </button>
                   <button className="btn ghost small prd-approve" onClick={() => review('APPROVE')} disabled={busy}>
-                    <Check size={13} /> {t('prDetail.approve')}
+                    {t('prDetail.approve')}
                   </button>
                   <button className="btn ghost small" onClick={submitComment} disabled={busy || !comment.trim()}>
-                    <MessageSquare size={13} /> {t('prDetail.comment')}
+                    {t('prDetail.comment')}
                   </button>
                 </div>
               </section>
@@ -1040,7 +1039,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
         <aside className="prp-side">
           {pr && (
             <>
-              <Field icon={<User size={12} />} label={t('prPage.author')}>
+              <Field label={t('prPage.author')}>
                 <span className="prp-person">
                   <Avatar login={pr.author} avatars={pr.avatars} />
                   {pr.author}
@@ -1048,7 +1047,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                 {pr.createdAt && <div className="prp-side-note">{interp(t('prPage.openedOn'), { date: fmtDate(pr.createdAt) })}</div>}
               </Field>
 
-              <Field icon={<GitPullRequest size={12} />} label={t('prPage.status')}>
+              <Field label={t('prPage.status')}>
                 <div>{status && t(STATUS_KEY[status])}</div>
                 {pr.merged && pr.mergedAt && (
                   <div className="prp-side-note">
@@ -1076,7 +1075,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                 {canMerge && refused && <div className="prp-side-note prp-warn">{t('prPage.mergeRefused')}</div>}
               </Field>
 
-              <Field icon={<UserCheck size={12} />} label={t('prPage.reviewers')}>
+              <Field label={t('prPage.reviewers')}>
                 {reviewers.length === 0 ? (
                   <span className="issue-none">{t('prPage.noReviewers')}</span>
                 ) : (
@@ -1085,7 +1084,11 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                       <li key={r.login} className="prp-person" title={t(REVIEW_KEY[r.state])}>
                         {r.team ? <Users size={14} className="prp-team" /> : <Avatar login={r.login} avatars={pr.avatars} />}
                         <span className="prp-person-name">{r.login}</span>
-                        <ReviewIcon state={r.state} />
+                        {r.state === 'APPROVED' || r.state === 'CHANGES_REQUESTED' ? (
+                          <PrReviewerVerdict state={r.state} />
+                        ) : (
+                          <ReviewIcon state={r.state} />
+                        )}
                       </li>
                     ))}
                   </ul>
@@ -1093,7 +1096,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
               </Field>
 
               {pr.assignees !== undefined && (
-                <Field icon={<User size={12} />} label={t('prPage.assignees')}>
+                <Field label={t('prPage.assignees')}>
                   {pr.assignees.length === 0 ? (
                     <span className="issue-none">{t('common.none')}</span>
                   ) : (
@@ -1110,7 +1113,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
               )}
 
               {pr.labels !== undefined && (
-                <Field icon={<Tag size={12} />} label={t('prPage.labels')}>
+                <Field label={t('prPage.labels')}>
                   {pr.labels.length === 0 ? (
                     <span className="issue-none">{t('common.none')}</span>
                   ) : (
@@ -1133,12 +1136,12 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
               )}
 
               {pr.milestone !== undefined && (
-                <Field icon={<Milestone size={12} />} label={t('prPage.milestone')}>
+                <Field label={t('prPage.milestone')}>
                   {pr.milestone ?? <span className="issue-none">{t('common.none')}</span>}
                 </Field>
               )}
 
-              <Field icon={<GitBranch size={12} />} label={t('prPage.branches')}>
+              <Field label={t('prPage.branches')}>
                 <div className="prp-branches">
                   <PrBranchName
                     name={pr.source}
@@ -1173,7 +1176,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
               </Field>
 
               {pr.workItems && pr.workItems.length > 0 && (
-                <Field icon={<ClipboardList size={12} />} label={t('prPage.workItems')}>
+                <Field label={t('prPage.workItems')}>
                   <ul className="prp-work-items">
                     {pr.workItems.map((w) => (
                       <li key={w.id}>
@@ -1190,12 +1193,12 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                 </Field>
               )}
 
-              <Field icon={<FileDiff size={12} />} label={t('prPage.changes')}>
+              <Field label={t('prPage.changes')}>
                 <ChangeSummary pr={pr} files={files} />
               </Field>
 
               {counts && checks && checks.length > 0 && (
-                <Field icon={<CircleDot size={12} />} label={t('prDetail.checks')}>
+                <Field label={t('prDetail.checks')}>
                   <button className="prp-link" onClick={() => setSection('checks')}>
                     {interp(t('prPage.checksSummary'), {
                       pass: String(counts.pass),
@@ -1206,7 +1209,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                 </Field>
               )}
 
-              <Field icon={<Users size={12} />} label={t('prPage.participants')}>
+              <Field label={t('prPage.participants')}>
                 <div className="prp-faces">
                   {people.map((p) => (
                     <Avatar key={p} login={p} avatars={pr.avatars} size={22} title={p} />
@@ -1215,7 +1218,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
               </Field>
 
               {pr.updatedAt && (
-                <Field icon={<CalendarDays size={12} />} label={t('prPage.activity')}>
+                <Field label={t('prPage.activity')}>
                   <div className="prp-side-note">{interp(t('prPage.openedOn'), { date: fmtDate(pr.createdAt) })}</div>
                   <div className="prp-side-note">{interp(t('prPage.updatedOn'), { date: fmtDate(pr.updatedAt) })}</div>
                 </Field>
@@ -1286,6 +1289,17 @@ function ReviewThreadCard({
     setReply(v)
     drafts.current[key] = v
   }
+  const discardReply = (from: HTMLElement): void => {
+    if (!reply.trim()) return from.blur()
+    useUIStore.getState().openModal({
+      kind: 'confirm',
+      title: t('prDetail.replyDiscardTitle'),
+      message: t('prDetail.replyDiscardMessage'),
+      danger: true,
+      confirmLabel: t('prPage.lineCommentDiscard'),
+      onConfirm: () => changeReply('')
+    })
+  }
   const send = (): void => {
     if (!reply.trim()) return
     void onReply(reply).then((ok) => {
@@ -1311,11 +1325,11 @@ function ReviewThreadCard({
             mine={isMyComment(c, pr)}
             headClassName="prp-card-head"
             bodyClassName="prp-card-body"
+            // Name and time only: the thread is one conversation, not a row of cards.
             head={
               <>
-                <Avatar login={c.author} avatars={pr.avatars} />
                 <strong>{c.author}</strong>
-                <span>{fmtDate(c.createdAt)}</span>
+                <TimeAgoLabel iso={c.createdAt} />
               </>
             }
             rendered={<RemoteMarkdown body={c.body} bodyHtml={c.bodyHtml} repoWebUrl={web} linkOptions={linkOptions} />}
@@ -1339,12 +1353,13 @@ function ReviewThreadCard({
       )}
       {canReply && (
         <div className="prd-thread-reply">
-          {/* A textarea now, so Enter is a new line (or the next list item) and
-              ⌘/Ctrl+Enter sends — the same keys as every other comment box. */}
+          {/* One line, as a chat reply: Enter (or ⌘/Ctrl+Enter, as in every other
+              comment box) sends, Shift+Enter adds a line, Escape drops the text. */}
           <MarkdownEditor
             compact
             inputClassName="prd-reply-input"
             placeholder={t('prDetail.replyPlaceholder')}
+            ariaLabel={t('prDetail.replyLabel')}
             value={reply}
             onChange={changeReply}
             mentions={mentions}
@@ -1352,15 +1367,22 @@ function ReviewThreadCard({
             // Leaving for the guide unmounts the page: every box on it counts.
             hasUnsentText={NEVER_LOST}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+              if (e.key === 'Enter' && !e.shiftKey && !e.altKey && !e.nativeEvent.isComposing) {
                 e.preventDefault()
                 if (!busy) send()
+              } else if (e.key === 'Escape') {
+                e.preventDefault()
+                e.stopPropagation()
+                discardReply(e.currentTarget)
               }
             }}
           />
-          <button className="btn ghost tiny" onClick={send} disabled={busy || !reply.trim()}>
-            {t('prDetail.reply')}
-          </button>
+          {/* Mouse users get the button back once there is something to send. */}
+          {reply.trim() && (
+            <button className="btn ghost tiny" title={t('prDetail.replyKeys')} onClick={send} disabled={busy}>
+              {t('prDetail.reply')}
+            </button>
+          )}
         </div>
       )}
     </article>
@@ -1466,7 +1488,8 @@ function SectionTab({
   icon,
   label,
   count,
-  newCount
+  newCount,
+  failCount
 }: {
   id: Section
   active: Section
@@ -1476,13 +1499,21 @@ function SectionTab({
   count?: number
   /** Items new since the last visit (the Updates tab). */
   newCount?: number
+  /** Failing items (the Checks tab): shown in red instead of the plain count. */
+  failCount?: number
 }): React.JSX.Element {
   const t = useT()
   const fresh = newCount !== undefined && newCount > 0 ? interp(t('prUpdates.tabNew'), { n: String(newCount) }) : null
+  const failing = failCount !== undefined && failCount > 0
   return (
     <button role="tab" aria-selected={active === id} className={`prp-tab ${active === id ? 'active' : ''}`} onClick={() => onPick(id)}>
       {icon} {label}
-      {count !== undefined && count > 0 && <span className="prp-tab-count">{count}</span>}
+      {failing && (
+        <span className="prp-tab-count prp-tab-fail" aria-label={interp(t('prChecks.tabFailing'), { n: String(failCount) })}>
+          {failCount}
+        </span>
+      )}
+      {!failing && count !== undefined && count > 0 && <span className="prp-tab-count">{count}</span>}
       {fresh && (
         <span className="prp-tab-count prp-tab-new" aria-label={interp(t('prUpdates.newCount'), { n: String(newCount) })}>
           {fresh}
@@ -1590,22 +1621,15 @@ function BranchGoButton({
   )
 }
 
-function Field({ icon, label, children }: { icon: React.ReactNode; label: string; children: React.ReactNode }): React.JSX.Element {
+function Field({ label, children }: { label: string; children: React.ReactNode }): React.JSX.Element {
   return (
     <div className="issue-field prp-field">
       <div className="issue-field-label">
-        {icon} {label}
+        {label}
       </div>
       <div className="issue-field-val">{children}</div>
     </div>
   )
-}
-
-function StatusIcon({ status }: { status: ReturnType<typeof prStatus> }): React.JSX.Element {
-  if (status === 'merged') return <GitMerge size={13} />
-  if (status === 'closed') return <GitPullRequestClosed size={13} />
-  if (status === 'draft') return <GitPullRequestDraft size={13} />
-  return <GitPullRequest size={13} />
 }
 
 function ReviewIcon({ state }: { state: ReviewerState }): React.JSX.Element {
@@ -1725,6 +1749,8 @@ function FilesSection({
   )
   const file = files.find((f) => f.filename === selected) ?? files[0]
   const diffRef = useRef<HTMLDivElement>(null)
+  const [filter, setFilter] = useState<PrFileFilter>('all')
+  const shownFiles = useMemo(() => filterPrFiles(files, filter, viewed, threadCounts), [files, filter, viewed, threadCounts])
   useEffect(() => {
     if (file) view.selectedFile = file.filename
   }, [view, file])
@@ -1845,105 +1871,120 @@ function FilesSection({
   )
 
   return (
-    <div className="prp-files-split">
-      <PrFileList
+    <div className="prf-files">
+      <PrFilesProgress
         files={files}
+        shown={shownFiles}
         viewed={viewed}
-        changedSinceViewed={changedSinceViewed}
-        threadCounts={threadCounts}
         selected={file?.filename ?? ''}
-        prKey={prUrl}
+        filter={filter}
+        onFilterChange={setFilter}
         onSelectFile={setSelected}
         onSetFilesViewed={onSetFilesViewed}
-        onRowContextMenu={(x, y, row) => {
-          const f = row.isDir ? undefined : files.find((it) => it.filename === row.path)
-          openPrPathMenu(x, y, repoPath, { ...row, oldPath: f?.previousFilename, status: f?.status }, prSource)
-        }}
-        initialScroll={view.fileListScroll}
-        onListScroll={(top) => {
-          view.fileListScroll = top
-        }}
       />
+      <div className="prp-files-split">
+        <PrFileList
+          files={shownFiles}
+          viewed={viewed}
+          changedSinceViewed={changedSinceViewed}
+          threadCounts={threadCounts}
+          selected={file?.filename ?? ''}
+          prKey={prUrl}
+          onSelectFile={setSelected}
+          onSetFilesViewed={onSetFilesViewed}
+          onRowContextMenu={(x, y, row) => {
+            const f = row.isDir ? undefined : files.find((it) => it.filename === row.path)
+            openPrPathMenu(x, y, repoPath, { ...row, oldPath: f?.previousFilename, status: f?.status }, prSource)
+          }}
+          initialScroll={view.fileListScroll}
+          onListScroll={(top) => {
+            view.fileListScroll = top
+          }}
+        />
 
-      <div className="prp-file-diff" ref={diffRef}>
-        {file && (
-          <>
-            <div className="prp-file-diff-head">
-              <code title={file.filename}>{file.filename}</code>
-              {file.previousFilename && (
-                <span className="prp-side-note">{interp(t('prPage.renamedFrom'), { path: file.previousFilename })}</span>
-              )}
-              <button
-                type="button"
-                className="icon-btn prp-branch-copy"
-                title={t('fileTree.copyPath')}
-                aria-label={interp(t('prFiles.copyPathOf'), { path: file.filename })}
-                onClick={() => copyPrPath(file.filename)}
-              >
-                <Copy size={12} />
-              </button>
-              <button
-                type="button"
-                className="icon-btn"
-                title={t('prFiles.moreActions')}
-                aria-label={t('prFiles.moreActions')}
-                aria-haspopup="menu"
-                onClick={(e) => {
-                  const r = e.currentTarget.getBoundingClientRect()
-                  openPrPathMenu(r.left, r.bottom + 2, repoPath, {
-                    path: file.filename,
-                    isDir: false,
-                    oldPath: file.previousFilename,
-                    status: file.status
-                  }, prSource)
-                }}
-              >
-                <MoreHorizontal size={13} />
-              </button>
-              <label className="prp-viewed-toggle">
-                <input type="checkbox" checked={viewed.has(file.filename)} onChange={() => onToggleViewed(file.filename)} />
-                {t('prPage.markViewed')}
-              </label>
-            </div>
-            {/* A draft whose line is gone from a refreshed diff stays, above it. */}
-            {draftHere && draftIdx < 0 && file.patch && <div className="diff-line-extra">{composer}</div>}
-            {imageFile && imageSource && (
-              // A fresh preview per file, like the viewer below.
-              <PrImagePreview key={`image:${file.filename}`} source={imageSource} file={file} />
-            )}
-            {/* An image's patch is "Binary files differ", or nothing; an SVG's is
-                real text, so its diff (and its line comments) stays under the picture. */}
-            {imageFile && imageSource && !isSvg ? null : file.patch ? (
-              <DiffViewer
-                // A fresh viewer per file: its scroll and selection belong to one diff.
-                key={file.filename}
-                diff={file.patch}
-                file={file.filename}
-                lang={guessLanguage(file.filename)}
-                // Same rule as every other diff in the app: secret-looking files
-                // show KEY=•••• while the setting is on.
-                maskValues={maskSecrets && isSecretFile(file.filename)}
-                repoPath={repoPath}
-                onCommentLine={lineCommentsOff ? undefined : commentOnLine}
-                lineExtras={lineExtras}
-              />
-            ) : isSvg && imageSource ? null : (
-              <div className="prp-no-patch">
-                <PrNoPatchNotice
-                  // One notice per file version: another push is another read.
-                  key={`${file.filename}:${file.diffSource?.headSha ?? ''}:${file.diffSource?.baseSha ?? ''}`}
-                  file={file}
-                  repoPath={repoPath}
-                  onFileDiffRead={onFileDiffRead}
-                  onFetched={onReloadFiles}
-                />
-                <button className="btn ghost small" onClick={() => void shellApi.openExternal(getPrFilesUrl(prUrl))}>
-                  <ExternalLink size={13} /> {t('common.openInBrowser')}
+        <div className="prp-file-diff" ref={diffRef}>
+          {file && (
+            <>
+              <div className="prp-file-diff-head">
+                <code title={file.filename}>{file.filename}</code>
+                <span className="prp-file-diff-stat">
+                  <span className="ins-add">+{file.additions}</span> <span className="ins-del">−{file.deletions}</span>
+                </span>
+                {file.previousFilename && (
+                  <span className="prp-side-note">{interp(t('prPage.renamedFrom'), { path: file.previousFilename })}</span>
+                )}
+                <button
+                  type="button"
+                  className="icon-btn prp-branch-copy"
+                  title={t('fileTree.copyPath')}
+                  aria-label={interp(t('prFiles.copyPathOf'), { path: file.filename })}
+                  onClick={() => copyPrPath(file.filename)}
+                >
+                  <Copy size={12} />
                 </button>
+                <button
+                  type="button"
+                  className="icon-btn"
+                  title={t('prFiles.moreActions')}
+                  aria-label={t('prFiles.moreActions')}
+                  aria-haspopup="menu"
+                  onClick={(e) => {
+                    const r = e.currentTarget.getBoundingClientRect()
+                    openPrPathMenu(r.left, r.bottom + 2, repoPath, {
+                      path: file.filename,
+                      isDir: false,
+                      oldPath: file.previousFilename,
+                      status: file.status
+                    }, prSource)
+                  }}
+                >
+                  <MoreHorizontal size={13} />
+                </button>
+                <label className="prp-viewed-toggle">
+                  <input type="checkbox" checked={viewed.has(file.filename)} onChange={() => onToggleViewed(file.filename)} />
+                  {t('prPage.markViewed')}
+                </label>
               </div>
-            )}
-          </>
-        )}
+              {/* A draft whose line is gone from a refreshed diff stays, above it. */}
+              {draftHere && draftIdx < 0 && file.patch && <div className="diff-line-extra">{composer}</div>}
+              {imageFile && imageSource && (
+                // A fresh preview per file, like the viewer below.
+                <PrImagePreview key={`image:${file.filename}`} source={imageSource} file={file} />
+              )}
+              {/* An image's patch is "Binary files differ", or nothing; an SVG's is
+                  real text, so its diff (and its line comments) stays under the picture. */}
+              {imageFile && imageSource && !isSvg ? null : file.patch ? (
+                <DiffViewer
+                  // A fresh viewer per file: its scroll and selection belong to one diff.
+                  key={file.filename}
+                  diff={file.patch}
+                  file={file.filename}
+                  lang={guessLanguage(file.filename)}
+                  // Same rule as every other diff in the app: secret-looking files
+                  // show KEY=•••• while the setting is on.
+                  maskValues={maskSecrets && isSecretFile(file.filename)}
+                  repoPath={repoPath}
+                  onCommentLine={lineCommentsOff ? undefined : commentOnLine}
+                  lineExtras={lineExtras}
+                />
+              ) : isSvg && imageSource ? null : (
+                <div className="prp-no-patch">
+                  <PrNoPatchNotice
+                    // One notice per file version: another push is another read.
+                    key={`${file.filename}:${file.diffSource?.headSha ?? ''}:${file.diffSource?.baseSha ?? ''}`}
+                    file={file}
+                    repoPath={repoPath}
+                    onFileDiffRead={onFileDiffRead}
+                    onFetched={onReloadFiles}
+                  />
+                  <button className="btn ghost small" onClick={() => void shellApi.openExternal(getPrFilesUrl(prUrl))}>
+                    <ExternalLink size={13} /> {t('common.openInBrowser')}
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </div>
   )

@@ -1,6 +1,6 @@
 import { describe, it, expect, afterAll } from 'vitest'
-import { readFileSync, writeFileSync, existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs'
-import { join } from 'node:path'
+import { readFileSync, writeFileSync, existsSync, mkdirSync, mkdtempSync, rmSync, readdirSync, symlinkSync } from 'node:fs'
+import { dirname, join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { gitMethodIsRead, gitService } from '../src/main/git'
 import { prepareRepoFileActions } from '../src/main/repoFileActions'
@@ -8,6 +8,7 @@ import { cloneFixture, cleanupFixtures } from './fixtures'
 import { mergePbxproj, parsePbxproj } from '../src/shared/pbxproj'
 import { convertFile } from '../src/main/textconv'
 import { execFileSync } from 'node:child_process'
+import type { TreeChild } from '../src/shared/types'
 
 // Mutation/integration tests: exercise the WRITE paths of gitService (the same
 // code GitHuttBr runs for merge / cherry-pick / rebase / conflict-resolve / stash
@@ -83,6 +84,160 @@ describe('merge → conflict → abort', () => {
     const after = await gitService.status(R)
     expect(after.conflicted.length).toBe(0)
     expect((await gitService.open(R)).current).toBe('main')
+  })
+})
+
+describe('conflict workspace: overview, path resolutions and undo', () => {
+  it('lists each conflicted file with its kind and block count, and names the base', async () => {
+    const R = cloneFixture('merge-conflict')
+    await expect(gitService.merge(R, 'feature')).rejects.toThrow()
+    const { files, listed } = await gitService.conflictOverview(R)
+    const byPath = new Map(files.map((f) => [f.path, f]))
+    expect(byPath.get('release-notes.md')).toMatchObject({ code: 'UU', kind: 'both-modified', conflicts: 4 })
+    // main deleted it, feature changed it.
+    expect(byPath.get('units_service.dart')).toMatchObject({ code: 'DU', kind: 'deleted-by-us', conflicts: 0 })
+    expect(listed).toEqual(expect.arrayContaining(['release-notes.md', 'units_service.dart']))
+    expect((await gitService.conflictContext(R))?.baseSha).toMatch(/^[0-9a-f]{7}$/)
+    expect(gitMethodIsRead('conflictOverview')).toBe(true)
+    expect(gitMethodIsRead('conflictResolvePaths')).toBe(false)
+    expect(gitMethodIsRead('conflictRestore')).toBe(false)
+  })
+
+  it('keeps or deletes a modify/delete file, and restores the conflict on undo', async () => {
+    const R = cloneFixture('merge-conflict')
+    await expect(gitService.merge(R, 'feature')).rejects.toThrow()
+    const before = await gitService.conflictSnapshot(R, ['units_service.dart'])
+
+    await gitService.conflictResolvePaths(R, ['units_service.dart'], [])
+    expect((await gitService.status(R)).conflicted.map((f) => f.path)).not.toContain('units_service.dart')
+    expect(readFileSync(join(R, 'units_service.dart'), 'utf8')).toContain('feature units')
+
+    await gitService.conflictRestore(R, before)
+    const again = await gitService.conflictOverview(R)
+    expect(again.files.find((f) => f.path === 'units_service.dart')?.code).toBe('DU')
+
+    await gitService.conflictResolvePaths(R, [], ['units_service.dart'])
+    expect(existsSync(join(R, 'units_service.dart'))).toBe(false)
+    expect((await gitService.status(R)).conflicted.map((f) => f.path)).not.toContain('units_service.dart')
+
+    await gitService.conflictRestore(R, before)
+    expect(existsSync(join(R, 'units_service.dart'))).toBe(true)
+    expect((await gitService.conflictOverview(R)).files.some((f) => f.path === 'units_service.dart')).toBe(true)
+  })
+
+  it('brings the markers back when a content resolution is undone', async () => {
+    const R = cloneFixture('merge-conflict')
+    await expect(gitService.merge(R, 'feature')).rejects.toThrow()
+    const original = readFileSync(join(R, 'app.js'), 'utf8')
+    const before = await gitService.conflictSnapshot(R, ['app.js'])
+    await gitService.resolveConflict(R, 'app.js', 'resolved\n')
+    expect((await gitService.status(R)).conflicted.map((f) => f.path)).not.toContain('app.js')
+    await gitService.conflictRestore(R, before)
+    expect(readFileSync(join(R, 'app.js'), 'utf8')).toBe(original)
+    const info = (await gitService.conflictOverview(R)).files.find((f) => f.path === 'app.js')
+    expect(info).toMatchObject({ code: 'UU', conflicts: 1 })
+  })
+
+  it('keeps only a blob sha in the snapshot, and restores a large file byte for byte', async () => {
+    const R = cloneFixture('merge-conflict')
+    await expect(gitService.merge(R, 'feature')).rejects.toThrow()
+    // 6 MB of non-text bytes, CR LF included, standing in for a big lockfile.
+    const big = Buffer.alloc(6 * 1024 * 1024)
+    for (let i = 0; i < big.length; i++) big[i] = (i * 31 + (i >> 9)) & 0xff
+    writeFileSync(join(R, 'app.js'), big)
+    const before = await gitService.conflictSnapshot(R, ['app.js'])
+    expect(JSON.stringify(before).length).toBeLessThan(2048)
+    expect(before.files[0].blob).toMatch(/^[0-9a-f]{40}$/)
+    await gitService.resolveConflict(R, 'app.js', 'resolved\n')
+    await gitService.conflictRestore(R, before)
+    expect(readFileSync(join(R, 'app.js')).equals(big)).toBe(true)
+    expect((await gitService.conflictOverview(R)).files.find((f) => f.path === 'app.js')?.code).toBe('UU')
+  })
+
+  it('refuses a snapshot or a resolution that reaches outside the repository', async () => {
+    const R = cloneFixture('merge-conflict')
+    await expect(gitService.merge(R, 'feature')).rejects.toThrow()
+    const outside = mkdtempSync(join(tmpdir(), 'githuttbr-outside-'))
+    const victim = join(outside, 'victim.txt')
+    writeFileSync(victim, 'keep me\n')
+    // A sibling whose name starts with the repo's: a bare prefix test lets it through.
+    const sibling = `${R}-evil`
+    mkdirSync(sibling, { recursive: true })
+    const sha = execFileSync('git', ['-C', R, 'hash-object', '-w', '--stdin'], { input: 'pwned\n' })
+      .toString()
+      .trim()
+    const valid = await gitService.conflictSnapshot(R, ['app.js'])
+    const escapes = [
+      '../escape.txt',
+      'a/../../escape.txt',
+      victim,
+      `${sibling}/owned.txt`,
+      '.git/hooks/pre-commit',
+      'ok\nname.txt'
+    ]
+    for (const path of escapes) {
+      await expect(
+        gitService.conflictRestore(R, { stages: valid.stages, files: [{ path, blob: sha }] })
+      ).rejects.toThrow(/outside the repository/)
+      await expect(
+        gitService.conflictRestore(R, { stages: '', files: [{ path, blob: null }] })
+      ).rejects.toThrow(/outside the repository/)
+      await expect(gitService.conflictResolvePaths(R, [path], [])).rejects.toThrow(/outside the repository/)
+      await expect(gitService.conflictResolvePaths(R, [], [path])).rejects.toThrow(/outside the repository/)
+      await expect(gitService.conflictSnapshot(R, [path])).rejects.toThrow(/outside the repository/)
+    }
+    // An index line with an escaping path is refused before any file is written.
+    const evilStages = `100644 ${sha} 1\t../escape.txt\0`
+    await expect(
+      gitService.conflictRestore(R, { stages: evilStages, files: [{ path: 'app.js', blob: sha }] })
+    ).rejects.toThrow(/outside the repository/)
+    // A blob id that is not one is refused too.
+    await expect(
+      gitService.conflictRestore(R, { stages: '', files: [{ path: 'app.js', blob: 'HEAD:app.js' }] })
+    ).rejects.toThrow(/Not a blob id/)
+    // A directory in the repo that is a symlink out of it.
+    symlinkSync(outside, join(R, 'linked'))
+    await expect(
+      gitService.conflictRestore(R, { stages: '', files: [{ path: 'linked/victim.txt', blob: sha }] })
+    ).rejects.toThrow(/outside the repository/)
+    await expect(
+      gitService.conflictRestore(R, { stages: '', files: [{ path: 'linked/victim.txt', blob: null }] })
+    ).rejects.toThrow(/outside the repository/)
+
+    expect(readFileSync(victim, 'utf8')).toBe('keep me\n')
+    expect(readdirSync(outside)).toEqual(['victim.txt'])
+    expect(readdirSync(sibling)).toEqual([])
+    expect(existsSync(join(dirname(R), 'escape.txt'))).toBe(false)
+    expect(readFileSync(join(R, 'app.js'), 'utf8')).not.toContain('pwned')
+    // The conflict itself is untouched.
+    expect((await gitService.conflictOverview(R)).files.find((f) => f.path === 'app.js')?.code).toBe('UU')
+    rmSync(outside, { recursive: true, force: true })
+    rmSync(sibling, { recursive: true, force: true })
+  })
+
+  it('pairs a rename/rename conflict and settles it on one name', async () => {
+    const R = cloneFixture('merge-conflict')
+    await raw(R, ['checkout', '-q', '-b', 'side-rename', 'main~1'])
+    await raw(R, ['mv', 'greeting.txt', 'greeting-side.txt'])
+    await raw(R, ['commit', '-qm', 'side: rename greeting'])
+    await raw(R, ['checkout', '-q', '-b', 'main-rename', 'main~1'])
+    await raw(R, ['mv', 'greeting.txt', 'greeting-main.txt'])
+    await raw(R, ['commit', '-qm', 'main: rename greeting'])
+    await expect(gitService.merge(R, 'side-rename')).rejects.toThrow()
+    const { files } = await gitService.conflictOverview(R)
+    const orig = files.find((f) => f.path === 'greeting.txt')
+    expect(orig).toMatchObject({
+      kind: 'renamed-both',
+      renamedTo: { ours: 'greeting-main.txt', theirs: 'greeting-side.txt' }
+    })
+    expect(files.find((f) => f.path === 'greeting-side.txt')?.renameOf).toBe('greeting.txt')
+
+    await gitService.conflictResolvePaths(R, ['greeting-main.txt'], ['greeting.txt', 'greeting-side.txt'])
+    expect((await gitService.status(R)).conflicted).toEqual([])
+    expect(existsSync(join(R, 'greeting-side.txt'))).toBe(false)
+    await gitService.conflictOpContinue(R, 'merge', 'Merge the two renames')
+    expect(await gitService.mergeState(R)).toBeNull()
+    expect((await raw(R, ['log', '-1', '--format=%s'])).trim()).toBe('Merge the two renames')
   })
 })
 
@@ -1557,6 +1712,40 @@ describe('object explorer', () => {
   it('reports an unknown revision as an error rather than an empty object', async () => {
     const R = cloneFixture('tags-and-releases')
     await expect(gitService.gitObject(R, 'no-such-ref')).rejects.toThrow()
+  })
+
+  it('says where HEAD points, and what a commit points to without opening it', async () => {
+    const R = cloneFixture('object-model')
+    const refs = await gitService.objectRefs(R)
+    expect(refs[0]).toMatchObject({ name: 'HEAD', symbolic: 'main' })
+    expect(refs.find((r) => r.name === 'refs/tags/v2.0.0')?.kind).toBe('tag')
+
+    const commit = await gitService.gitObject(R, 'main')
+    // .gitmodules, README.md, config.json, src/
+    expect(commit.commit?.treeCount).toBe(4)
+    expect(commit.commit?.parentSubjects).toEqual(['chore: release v2.0.0'])
+
+    const tag = await gitService.gitObject(R, 'v2.0.0')
+    expect(tag.tag?.targetSubject).toBe('chore: release v2.0.0')
+  })
+
+  it('counts each subtree and reads each symlink of a tree listing', async () => {
+    const R = cloneFixture('object-model')
+    const src = await gitService.gitObject(R, 'HEAD:src')
+    const by = (name: string): TreeChild => src.tree!.find((c) => c.name === name)!
+    expect(by('components')).toMatchObject({ kind: 'tree', mode: '040000', count: 4 })
+    expect(by('plugins').count).toBe(2)
+    expect(by('config.json')).toMatchObject({ mode: '120000', target: '../config.json' })
+    expect(by('build.sh').mode).toBe('100755')
+    expect(by('ui-kit')).toMatchObject({ kind: 'commit', mode: '160000', size: null })
+    expect(by('app.ts').count).toBeUndefined()
+  })
+
+  it('a root commit has no parents to describe', async () => {
+    const R = cloneFixture('object-model')
+    const first = await gitService.gitObject(R, 'v1.0.0^{commit}')
+    expect(first.commit?.parents).toEqual([])
+    expect(first.commit?.parentSubjects).toEqual([])
   })
 })
 

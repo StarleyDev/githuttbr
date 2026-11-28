@@ -1,4 +1,4 @@
-import type { CiRun, CiRunJob, CiRunOutcome, CiRunPhase, CiRunStep, CiWorkflow } from '../shared/types'
+import type { CiRun, CiRunJob, CiRunOutcome, CiRunPhase, CiRunStep, CiWorkflow, PrCheck } from '../shared/types'
 import { CI_LOG_TAIL_BYTES, CI_RUNS_PAGE, isoToMs, type CiRunsAdapter } from './ciRuns'
 
 // GitHub Actions: runs → jobs → steps. Everything the page offers exists here,
@@ -31,6 +31,8 @@ interface GhRun {
   updated_at?: string | null
   html_url: string
   workflow_id?: number
+  /** Empty for a run from a fork: GitHub only lists pull requests of the same repository. */
+  pull_requests?: { number: number }[] | null
 }
 
 interface GhStep {
@@ -99,7 +101,8 @@ export function githubRun(r: GhRun): CiRun {
     // `updated_at` is the last change; on a finished run that is when it ended.
     finishedAt: phase === 'completed' ? isoToMs(r.updated_at) : undefined,
     url: r.html_url,
-    workflowId: r.workflow_id != null ? String(r.workflow_id) : undefined
+    workflowId: r.workflow_id != null ? String(r.workflow_id) : undefined,
+    pullRequest: r.pull_requests?.[0]?.number
   }
 }
 
@@ -123,6 +126,47 @@ export function githubJob(j: GhJob): CiRunJob {
     steps,
     // The log exists once the job has finished; before that the endpoint 404s.
     hasLog: phase === 'completed'
+  }
+}
+
+/** A check-run as `GET /commits/<sha>/check-runs` lists it. */
+export interface GhCheckRun {
+  name: string
+  status: string
+  conclusion: string | null
+  html_url: string | null
+  details_url: string | null
+  head_sha?: string
+  started_at?: string | null
+  completed_at?: string | null
+}
+
+/**
+ * The Actions run and job a check-run's link names — `…/actions/runs/<run>/job/<job>`.
+ * An Actions check-run's id is its job's id, so the CI runs adapter can read its
+ * log and re-run its run. Null for a check from any other app (no such link).
+ */
+export function getGithubActionsJob(url: string | null | undefined): { runId: string; jobId: string } | null {
+  const m = /\/actions\/runs\/(\d+)\/job\/(\d+)(?:[/?#]|$)/.exec(url ?? '')
+  return m ? { runId: m[1], jobId: m[2] } : null
+}
+
+export function githubCheckRun(c: GhCheckRun): PrCheck {
+  const url = c.html_url || c.details_url || ''
+  const job = getGithubActionsJob(url)
+  const startedAt = isoToMs(c.started_at)
+  const finishedAt = c.status === 'completed' ? isoToMs(c.completed_at) : undefined
+  return {
+    name: c.name,
+    status: c.status,
+    conclusion: c.conclusion,
+    url,
+    // The log endpoint 404s until the job has finished, as on the CI runs page.
+    ...(job && c.status === 'completed' ? { hasLog: true } : {}),
+    ...(startedAt ? { startedAt } : {}),
+    ...(finishedAt ? { finishedAt } : {}),
+    ...(c.head_sha ? { sha: c.head_sha } : {}),
+    ...(job ? { runId: job.runId } : {})
   }
 }
 

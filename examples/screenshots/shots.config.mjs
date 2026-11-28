@@ -253,6 +253,104 @@ async function fakeRollbackData(app) {
 
 /** @type {Shot[]} */
 /** The pr-updates shots' fictional Azure DevOps pull request. */
+/**
+ * The conversation timeline's fake pull request (#42 on a fictional GitHub
+ * repository): pushes, a line thread still open, a change request, an approval,
+ * a resolved thread, and a last visit between them. Dates count back from now,
+ * so "2d ago" reads the same on every run. `full` adds the review round;
+ * without it the detail keeps to the rendered-comment shot's comments.
+ */
+const PR_TIMELINE_REMOTE = 'https://github.com/example/workspace.git'
+const PR_TIMELINE_VISIT_KEY = 'https://github.com/example/workspace#42'
+function prTimelineFake({ full, comments }) {
+  const now = Date.now()
+  const ago = (h) => new Date(now - h * 3600e3).toISOString()
+  const commit = (sha, subject, h) => ({
+    sha: sha.padEnd(40, '0'), shortSha: sha, subject, authorName: 'Sam', authorLogin: 'sam', authoredAt: ago(h)
+  })
+  const commits = [
+    commit('3f9a2c1', 'feat: index filenames per repository', 72),
+    commit('b71e08d', 'feat: cap results at 50', 71.6),
+    commit('e04c7aa', 'feat: a setting for the search cap', 5)
+  ]
+  const at = (list) => list.map((c, i) => ({ ...c, createdAt: ago(c.h ?? 30 - i) }))
+  const detail = {
+    number: 42, title: 'Add workspace search', author: 'sam', source: 'workspace-search', target: 'main',
+    body: [
+      'Adds **workspace search** to the command palette. Closes #41.',
+      '',
+      '- [x] A filename index per open repository',
+      '- [x] Results capped at 50',
+      '- [ ] A setting for the cap'
+    ].join('\n'),
+    createdAt: ago(73),
+    state: 'open', draft: false, merged: false, mergeable: true, url: 'https://github.com/example/workspace/pull/42',
+    viewer: 'sam',
+    comments: at(comments),
+    reviews: [
+      ...(full
+        ? [{ author: 'kalani', state: 'CHANGES_REQUESTED', submittedAt: ago(47.5), body: 'The cap needs to be configurable before this goes in.' }]
+        : []),
+      { author: 'alex', state: 'APPROVED', submittedAt: ago(3) }
+    ],
+    reviewThreads: full
+      ? [
+          {
+            path: 'src/search/index.ts', line: 42, side: 'new', rootId: 601, resolved: false,
+            diffHunk: [
+              '@@ -40,2 +41,2 @@ import { index } from \'./index\'',
+              ' export function search(query: string) {',
+              '-  return index.all().filter(match(query))',
+              '+  return index.search(query, { limit: 50 })'
+            ].join('\n'),
+            comments: [
+              { id: 601, author: 'kalani', createdAt: ago(48), handle: { id: 601, kind: 'review' },
+                body: 'Should 50 come from the setting the description promises, rather than a literal here?' },
+              { id: 602, author: 'sam', createdAt: ago(26), handle: { id: 602, kind: 'review' }, body: 'Yes — next commit.' }
+            ]
+          },
+          {
+            path: 'src/palette.tsx', line: 18, side: 'new', rootId: 611, resolved: true, diffHunk: '',
+            comments: [
+              { id: 611, author: 'alex', createdAt: ago(1.5), handle: { id: 611, kind: 'review' }, body: 'Debounce this?' },
+              { id: 612, author: 'sam', createdAt: ago(1), handle: { id: 612, kind: 'review' }, body: 'Done.' }
+            ]
+          }
+        ]
+      : [],
+    requestedReviewers: [],
+    ...(full ? { labels: [{ name: 'enhancement', color: '84c5dd' }] } : {}),
+    commits: 3, changedFiles: 2, additions: 84, deletions: 12
+  }
+  return { detail, commits: { commits, truncated: false, kept: 'oldest' }, lastVisit: now - 12 * 3600e3 }
+}
+
+/** alex's comment with a table, shared by both conversation shots. */
+const PR_TIMELINE_TIMINGS = {
+  author: 'alex', h: 24, handle: { id: 501, kind: 'conversation' },
+  body: ['Timings on the large fixture:', '', '| Repositories | Files | First query |', '|---:|---:|---:|',
+    '| 3 | 92k | 41 ms |', '| 8 | 240k | 118 ms |'].join('\n')
+}
+
+/** Answers the PR page's reads with `fake` in main, and sets the last visit before the page opens. */
+async function openPrTimelineShot(page, app, repoPath, fake) {
+  await app.evaluate(({ ipcMain }, f) => {
+    for (const method of ['prDetail', 'prChecks', 'prFiles', 'prListCommits', 'prListUpdates']) {
+      ipcMain.removeHandler('hosting:' + method)
+    }
+    ipcMain.handle('hosting:prDetail', () => f.detail)
+    ipcMain.handle('hosting:prChecks', () => [])
+    ipcMain.handle('hosting:prFiles', () => ({ files: [], revision: null }))
+    ipcMain.handle('hosting:prListCommits', () => f.commits)
+    ipcMain.handle('hosting:prListUpdates', () => ({ updates: [], truncated: false, grouping: 'approximate' }))
+  }, fake)
+  await page.evaluate(({ repoPath, remoteUrl, key, at }) => {
+    const settings = window.__shot.settings.getState()
+    settings.update((s) => ({ ...s, prVisits: { ...(s.prVisits ?? {}), [key]: at } }))
+    settings.openPageTab({ type: 'pr', repoPath, remoteUrl, number: 42, title: 'Add workspace search' })
+  }, { repoPath, remoteUrl: PR_TIMELINE_REMOTE, key: PR_TIMELINE_VISIT_KEY, at: fake.lastVisit })
+}
+
 const PR_UPDATES_REMOTE = 'https://dev.azure.com/example/studio/_git/catalog'
 const PR_UPDATES_FAKE = (() => {
   const sha = (tag) => tag.padEnd(40, '0')
@@ -374,6 +472,33 @@ export const shots = [
     themes: ['light'],
     // The scenario leaves the repo on main; start the merge so conflicts exist.
     // Reset first so re-runs (which leave the repo mid-merge) stay idempotent.
+    // greeting.txt is settled before the shot, so the strip shows a resolved
+    // chip and the progress bar has moved.
+    prepare: async ({ repoPaths, run }) => {
+      const repo = repoPaths['merge-conflict']
+      await run('git', ['-C', repo, 'merge', '--abort'], { allowFail: true })
+      await run('git', ['-C', repo, 'checkout', '-f', 'main'], { allowFail: true })
+      await run('git', ['-C', repo, 'merge', 'feature'], { allowFail: true })
+      await run('git', ['-C', repo, 'checkout', '--theirs', '--', 'greeting.txt'])
+      await run('git', ['-C', repo, 'add', '--', 'greeting.txt'])
+    },
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['merge-conflict']
+      await page.evaluate(async (repoPath) => {
+        const s = window.__shot
+        s.repo.getState().select(repoPath, { type: 'wip' })
+        s.ui.getState().setConflictView({ repoPath, file: 'app.js' })
+      }, repo)
+      await page.waitForSelector('.crb-card', { timeout: 5000 }).catch(() => {})
+      await page.waitForTimeout(800)
+    }
+  },
+  {
+    // A file one side deleted and the other changed: no text to merge, so a
+    // card says who did what instead of three panes with one of them empty.
+    out: 'conflict-deleted',
+    repos: ['merge-conflict'],
+    themes: ['light'],
     prepare: async ({ repoPaths, run }) => {
       const repo = repoPaths['merge-conflict']
       await run('git', ['-C', repo, 'merge', '--abort'], { allowFail: true })
@@ -384,12 +509,60 @@ export const shots = [
       const repo = repoPaths['merge-conflict']
       await page.evaluate(async (repoPath) => {
         const s = window.__shot
-        // Pick the first conflicted file and open the resolver on it.
-        const data = s.repo.getState().repos[repoPath]
-        const file = data?.status?.conflicted?.[0]?.path
         s.repo.getState().select(repoPath, { type: 'wip' })
-        if (file) s.ui.getState().setConflictView({ repoPath, file })
+        s.ui.getState().setConflictView({ repoPath, file: 'units_service.dart' })
       }, repo)
+      await page.waitForSelector('.cpc-card', { timeout: 5000 }).catch(() => {})
+      await page.waitForTimeout(600)
+      await page.locator('.cpc-actions .cpc-btn').nth(2).click().catch(() => {})
+      await page.waitForTimeout(400)
+    }
+  },
+  {
+    // The finish line, reached through the real UI: every file answered with
+    // the cards, the segmented whole-file switch and the modify/delete card,
+    // so the summary counts what was actually chosen.
+    out: 'conflict-done',
+    repos: ['merge-conflict'],
+    themes: ['light'],
+    prepare: async ({ repoPaths, run }) => {
+      const repo = repoPaths['merge-conflict']
+      await run('git', ['-C', repo, 'merge', '--abort'], { allowFail: true })
+      await run('git', ['-C', repo, 'checkout', '-f', 'main'], { allowFail: true })
+      await run('git', ['-C', repo, 'merge', 'feature'], { allowFail: true })
+    },
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['merge-conflict']
+      await page.evaluate(async (repoPath) => {
+        const s = window.__shot
+        s.repo.getState().select(repoPath, { type: 'wip' })
+        s.ui.getState().setConflictView({ repoPath, file: 'app.js' })
+      }, repo)
+      // The workspace moves to the next file on its own after each one.
+      const answers = [
+        async () => page.locator('.crb-act.ours').first().click(),
+        async () => page.locator('.cw-seg button').nth(1).click(),
+        async () => {
+          const cards = page.locator('.crb-card .crb-act:not(.ours):not(.theirs)')
+          await cards.nth(0).click()
+          await page.locator('.crb-card.open .crb-act.theirs').first().click().catch(() => {})
+        },
+        async () => page.locator('.cw-seg button').nth(0).click()
+      ]
+      for (let i = 0; i < 5; i++) {
+        await page.waitForSelector('.crb-card, .cpc-card', { timeout: 8000 }).catch(() => {})
+        await page.waitForTimeout(900)
+        if (await page.locator('.cpc-card.done').count()) break
+        if (await page.locator('.cpc-card.warn').count()) {
+          await page.locator('.cpc-btn.ours').first().click()
+          continue
+        }
+        await answers[Math.min(i, answers.length - 1)]().catch(() => {})
+        await page.waitForTimeout(300)
+        await page.locator('.cw-result-foot .btn.primary').click().catch(() => {})
+      }
+      await page.waitForSelector('.cpc-card.done', { timeout: 8000 }).catch(() => {})
+      await page.waitForTimeout(800)
     }
   },
   {
@@ -1183,8 +1356,9 @@ export const shots = [
     }
   },
   {
-    // The CI runs page with a failed run opened on its jobs: the failing job's
-    // steps and the end of its log. Every host answer is faked in main — no
+    // The CI runs page: a card per workflow with its last runs, the quick
+    // filters, the failed run opened on the test its log names and its jobs,
+    // and a running run's progress. Every host answer is faked in main — no
     // network, no account.
     out: 'ci-runs',
     repos: ['pr-ready-branch'],
@@ -1199,32 +1373,51 @@ export const shots = [
           event: 'push', actor: 'sam', phase: 'completed', outcome: 'success', url: 'https://github.com/example/pr-ready-branch/actions',
           workflowId: '7', ...over
         })
+        // A finished run `ago` minutes back that took `took` minutes.
+        const done = (ago, took) => ({ createdAt: now - ago * min, startedAt: now - ago * min, finishedAt: now - (ago - took) * min })
+        const older = [
+          ['Tidy the session store', 'success', 'pull_request'], ['Fix a typo in the README', 'failure', 'pull_request'],
+          ['Cache the avatar lookups', 'success', 'push'], ['Extract the mailer', 'success', 'pull_request'],
+          ['Upgrade the router', 'success', 'push'], ['Log slow queries', 'success', 'pull_request'],
+          ['Rename the config keys', 'success', 'push']
+        ].map(([title, outcome, event], i) =>
+          run(145 - i, { title, outcome, event, actor: i % 2 ? 'alex' : 'sam', sha: `${'0123456'.slice(i)}abcdef9876`.slice(0, 12), ...done(3 * 60 + i * 90, 3.8 + (i % 3) * 0.3) }))
         const runs = [
-          run(148, { title: 'Add password reset form', branch: 'feature/password-reset', event: 'pull_request', phase: 'running', outcome: null,
-            createdAt: now - 3 * min, startedAt: now - 2.6 * min, sha: 'f00dbabe1234' }),
+          run(148, { title: 'Add password reset form', branch: 'feature/password-reset', event: null, phase: 'running', outcome: null,
+            createdAt: now - 3 * min, startedAt: now - 2.62 * min, sha: 'f00dbabe1234' }),
           run(147, { title: 'Validate email before sign-up', branch: 'feature/signup-email', event: 'pull_request', outcome: 'failure',
-            createdAt: now - 26 * min, startedAt: now - 25.8 * min, finishedAt: now - 21.4 * min, sha: 'c0ffee98a7b6' }),
-          run(146, { title: 'Bump test runner', actor: 'alex', createdAt: now - 2 * 60 * min, startedAt: now - 119 * min, finishedAt: now - 114 * min, sha: 'beadfeed4321' }),
-          run(31, { name: 'Release', title: 'Release 2.4.0', branch: 'v2.4.0', event: 'release', number: 31, createdAt: now - 5 * 60 * min,
-            startedAt: now - 299 * min, finishedAt: now - 291 * min, sha: 'deadc0de5678' }),
-          run(145, { title: 'Nightly', name: 'Nightly', event: 'schedule', actor: null, outcome: 'cancelled', createdAt: now - 14 * 60 * min,
-            startedAt: now - 839 * min, finishedAt: now - 836 * min, sha: '0ddba11cafe0' })
+            pullRequest: 52, sha: 'c0ffee98a7b6', createdAt: now - 26 * min, startedAt: now - 25.8 * min, finishedAt: now - 21.4 * min }),
+          run(146, { title: 'Bump test runner', actor: 'alex', sha: 'beadfeed4321', ...done(120, 5) }),
+          ...older,
+          ...[0, 1, 2, 3].map((i) => run(31 - i, { name: 'Release', title: `Release 2.${4 - i}.0`, branch: `v2.${4 - i}.0`, event: 'release',
+            workflowId: '9', sha: `deadc0de${i}678`, ...done(5 * 60 + 8 + i * 2 * 24 * 60, 8) })),
+          ...['cancelled', 'success', 'failure', 'success'].map((outcome, i) => run(90 - i, { name: 'Nightly', title: 'Nightly', event: 'schedule',
+            actor: null, outcome, workflowId: '11', sha: `0ddba11${i}afe0`, ...done(14 * 60 + i * 24 * 60, 3) }))
         ]
         ipcMain.handle('hosting:ciRuns', () => ({
           supported: true, runs, capabilities: { rerun: true, rerunFailed: true, cancel: true, dispatch: true }
         }))
         const step = (name, outcome, from, to) => ({ name, phase: 'completed', outcome, startedAt: now - from * 1000, finishedAt: now - to * 1000 })
-        ipcMain.handle('hosting:ciRunJobs', () => [
-          { id: '9001', name: 'lint', phase: 'completed', outcome: 'success', startedAt: now - 1548e3, finishedAt: now - 1490e3, url: '', hasLog: true,
-            steps: [step('Set up job', 'success', 1548, 1546), step('Run npm run lint', 'success', 1546, 1490)] },
-          { id: '9002', name: 'test (node 20)', phase: 'completed', outcome: 'failure', startedAt: now - 1548e3, finishedAt: now - 1284e3, url: '', hasLog: true,
-            steps: [
-              step('Set up job', 'success', 1548, 1545), step('Checkout', 'success', 1545, 1541),
-              step('Install dependencies', 'success', 1541, 1470), step('Run tests', 'failure', 1470, 1286),
-              { name: 'Upload coverage', phase: 'completed', outcome: 'skipped' }
-            ] },
-          { id: '9003', name: 'build', phase: 'completed', outcome: 'skipped', url: '', hasLog: false, steps: [] }
-        ])
+        ipcMain.handle('hosting:ciRunJobs', (_e, _repo, _remote, _tokens, runId) => runId === '148'
+          ? [
+              { id: '9101', name: 'test (node 20)', phase: 'running', outcome: null, startedAt: now - 157e3, url: '', hasLog: false,
+                steps: [
+                  step('Set up job', 'success', 157, 155), step('Install dependencies', 'success', 155, 90),
+                  { name: 'Run tests', phase: 'running', outcome: null, startedAt: now - 90e3 },
+                  { name: 'Upload coverage', phase: 'queued', outcome: null }, { name: 'Complete job', phase: 'queued', outcome: null }
+                ] }
+            ]
+          : [
+              { id: '9001', name: 'lint', phase: 'completed', outcome: 'success', startedAt: now - 1548e3, finishedAt: now - 1490e3, url: '', hasLog: true,
+                steps: [step('Set up job', 'success', 1548, 1546), step('Run npm run lint', 'success', 1546, 1490)] },
+              { id: '9002', name: 'test (node 20)', phase: 'completed', outcome: 'failure', startedAt: now - 1548e3, finishedAt: now - 1284e3, url: '', hasLog: true,
+                steps: [
+                  step('Set up job', 'success', 1548, 1545), step('Checkout', 'success', 1545, 1541),
+                  step('Install dependencies', 'success', 1541, 1470), step('Run tests', 'failure', 1470, 1286),
+                  { name: 'Upload coverage', phase: 'completed', outcome: 'skipped' }
+                ] },
+              { id: '9003', name: 'build', phase: 'completed', outcome: 'skipped', url: '', hasLog: false, steps: [] }
+            ])
         ipcMain.handle('hosting:ciJobLog', () => [
           '\u001b[36m> app@1.0.0 test\u001b[0m',
           '\u001b[36m> vitest run\u001b[0m',
@@ -1234,6 +1427,9 @@ export const shots = [
           ' \u001b[31m✗\u001b[0m test/signup.test.ts (6 tests | 1 failed) 35ms',
           '   \u001b[31m× rejects an address without a domain\u001b[0m',
           '',
+          '⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯',
+          '',
+          ' FAIL  test/signup.test.ts > rejects an address without a domain',
           '\u001b[31mAssertionError: expected true to be false\u001b[0m',
           ' ❯ test/signup.test.ts:48:31',
           '     46|   it(\'rejects an address without a domain\', () => {',
@@ -1246,45 +1442,48 @@ export const shots = [
         ].join('\n'))
       })
       await page.evaluate((repoPath) => window.__shot.settings.getState().openPageTab({ type: 'ci-runs', repoPath }), repos['pr-ready-branch'])
-      const failed = page.locator('.ci-run', { hasText: 'Validate email before sign-up' })
-      await failed.waitFor()
-      await failed.locator('.ci-run-toggle').click()
-      const job = page.locator('.ci-job', { hasText: 'test (node 20)' })
-      await job.waitFor()
-      await job.locator('.prd-check-logs').first().click()
-      await page.locator('.prp-check-log pre').waitFor()
+      // The newest failed run opens by itself, on the test its log names.
+      await page.locator('.ci-run.open .pck-failure').waitFor()
+      await page.locator('.ci-run-progress').waitFor()
+      await page.locator('.ci-wf-foot', { hasText: 'test (node 20)' }).waitFor()
       await page.waitForTimeout(500)
     }
   },
   {
     out: 'pull-request-page',
+    // The conversation as a timeline: pushes, a line thread still open with its
+    // lines, a change request, what is new since the last visit, an approval and
+    // a resolved thread folded to one line. Faked in main — fictional people.
     repos: ['octopus-merge'],
     drive: async (page, repos, app) => {
-      await app.evaluate(({ ipcMain }) => {
-        for (const method of ['prDetail', 'prChecks', 'prFiles']) ipcMain.removeHandler('hosting:' + method)
-        ipcMain.handle('hosting:prDetail', () => ({
-          number: 42, title: 'Add workspace search', author: 'sam', source: 'workspace-search', target: 'main',
-          body: 'Search filenames across open repositories from the command palette.',
-          state: 'open', draft: false, merged: false, mergeable: true, url: 'https://github.com/example/workspace/pull/42',
-          comments: [], reviews: [], reviewThreads: [], requestedReviewers: [{ login: 'alex' }],
-          labels: [{ name: 'enhancement', color: '84c5dd' }], commits: 3, changedFiles: 2, additions: 84, deletions: 12
-        }))
-        ipcMain.handle('hosting:prChecks', () => [])
-        ipcMain.handle('hosting:prFiles', () => ({ files: [], revision: null }))
+      await openPrTimelineShot(page, app, repos['octopus-merge'], prTimelineFake({ full: true, comments: [] }))
+      // The timeline opens on Comments, which hides the pushes — the shot shows everything.
+      await page.locator('.prt-seg button').last().click()
+      await page.locator('.prt-new-divider').waitFor()
+      await page.locator('.prt-push').first().waitFor()
+      await page.locator('.prt-resolved').waitFor()
+      // From the push down: the line thread, the review round, the new-since line,
+      // the approval and the folded thread — that last one must stay in frame.
+      await page.locator('.prt-push').first().evaluate((el) => {
+        const body = el.closest('.prp-body')
+        el.scrollIntoView({ block: 'start' })
+        // Below the sticky filter bar, not under it.
+        body.scrollTop -= 44
+        const resolved = body.querySelector('.prt-resolved')
+        const over = resolved.getBoundingClientRect().bottom + 12 - body.getBoundingClientRect().bottom
+        if (over > 0) body.scrollTop += over
       })
-      await page.evaluate((repoPath) => window.__shot.settings.getState().openPageTab({
-        type: 'pr', repoPath, remoteUrl: 'https://github.com/example/workspace.git', number: 42, title: 'Add workspace search'
-      }), repos['octopus-merge'])
-      await page.locator('.prp-head h2').waitFor()
+      await page.waitForTimeout(300)
     }
   },
   {
-    // The pull requests page, searched for "pix": the matches highlighted, an
-    // author marked "you", a red CI and a draft. Every host answer is faked in
-    // main — a fictional GitHub repository, no network, no account.
+    // The pull requests page as Mission Control opens it: triaged into what waits
+    // on your review, yours and the others, each row with its size, where every
+    // reviewer stands, its checks, and a dot where it moved since your last
+    // visit. Every host answer is faked in main — a fictional GitHub repository,
+    // no network, no account.
     out: 'pull-requests',
     repos: ['octopus-merge'],
-    themes: ['light'],
     prepare: async ({ repoPaths, run }) => {
       const repo = repoPaths['octopus-merge']
       await run('git', ['-C', repo, 'remote', 'remove', 'origin'], { allowFail: true })
@@ -1294,11 +1493,17 @@ export const shots = [
       await fakePullRequestHost(app)
       const repo = repos['octopus-merge']
       await page.evaluate(async (p) => {
+        const h = 3600_000
+        const now = Date.now()
+        // The last visits: #479 and #482 changed since, the rest did not.
+        const web = 'https://github.com/example/payments#'
+        const seen = { 479: 20, 482: 12, 475: 1, 477: 1, 469: 1, 468: 1, 466: 1, 458: 1 }
+        const prVisits = Object.fromEntries(Object.entries(seen).map(([n, ago]) => [web + n, now - ago * h]))
+        window.__shot.settings.getState().update((s) => ({ ...s, prVisits }))
         await window.__shot.repo.getState().refreshPRs(p, { silent: true })
-        window.__shot.settings.getState().openPageTab({ type: 'pull-requests', repoPath: p })
+        window.__shot.settings.getState().openPageTab({ type: 'pull-requests', repoPath: p, from: 'mission' })
       }, repo)
-      await page.locator('.prl-row', { hasText: 'Pix' }).first().waitFor()
-      await page.fill('.prl-field-search input', 'pix')
+      await page.locator('.prl-row', { hasText: 'Retry confirmations' }).first().waitFor()
       await page.waitForTimeout(400)
     }
   },
@@ -1320,10 +1525,10 @@ export const shots = [
         await window.__shot.repo.getState().refreshPRs(p, { silent: true })
         window.__shot.settings.getState().openPageTab({ type: 'pull-requests', repoPath: p })
       }, repo)
-      await page.locator('.prl-row', { hasText: 'Pix' }).first().waitFor()
-      await page.fill('.prl-field-search input', 'pix')
+      await page.locator('.prl-row', { hasText: 'Retry confirmations' }).first().waitFor()
+      await page.fill('.prl-search input', 'main')
       await page.waitForTimeout(300)
-      await page.locator('.prl-list .prl-row').first().click()
+      await page.locator('.prl-card .prl-row').first().click()
       await page.locator('.prn-pos').waitFor()
       await page.locator('.prp-head h2').waitFor()
       await page.waitForTimeout(400)
@@ -1417,7 +1622,9 @@ export const shots = [
   {
     // The Files tab in Tree view: a PR's files under their folders, each folder
     // with its summed +/- and viewed count, one folder folded and fully viewed,
-    // another partly viewed. Faked detail and files — a fictional GitHub
+    // another partly viewed; above them the viewed progress, "next unviewed"
+    // and the filter; a file with a review conversation and one a push changed
+    // since it was viewed. Faked detail and files — a fictional GitHub
     // repository, no network.
     out: 'pr-files-tree',
     repos: ['octopus-merge'],
@@ -1454,7 +1661,15 @@ export const shots = [
           number: 42, title: 'Add workspace search', author: 'sam', source: 'workspace-search', target: 'main',
           body: 'Search filenames across open repositories from the command palette.',
           state: 'open', draft: false, merged: false, mergeable: true, url: 'https://github.com/example/workspace/pull/42',
-          comments: [], reviews: [], reviewThreads: [],
+          comments: [], reviews: [],
+          // One conversation on index.ts: its speech-bubble count in the tree, and the card under its line.
+          reviewThreads: [{
+            path: 'src/search/index.ts', line: 4, side: 'new', diffHunk: '', rootId: 902,
+            comments: [{
+              id: 902, author: 'kalani', createdAt: '2026-11-25T10:00:00Z',
+              body: 'Should 50 come from the setting the description promises, rather than a literal here?'
+            }]
+          }],
           commits: 3, changedFiles: files.length, additions: 144, deletions: 40
         }))
         ipcMain.handle('hosting:prChecks', () => [])
@@ -1531,16 +1746,19 @@ export const shots = [
     }
   },
   {
-    // The Commits tab: a pull request's commits grouped by day, one with its
-    // full message open, and one this clone does not have — its notice
-    // offering the branch fetch. Faked detail and commits — a fictional GitHub
-    // repository, no network; the shas exist nowhere, so none is local.
+    // The Commits tab: the summary line with its type chips, the commits grouped
+    // by day with their type chip, +/− and files, CI dot and "View diff", and
+    // one this clone does not have — its row offering the branch fetch. Faked
+    // detail, commits and CI — a fictional GitHub repository, no network.
     out: 'pr-commits',
     repos: ['octopus-merge'],
     themes: ['dark'],
     drive: async (page, repos, app) => {
-      await app.evaluate(({ ipcMain }) => {
-        for (const method of ['prDetail', 'prChecks', 'prFiles', 'prListCommits']) ipcMain.removeHandler('hosting:' + method)
+      const local = execFileSync('git', ['-C', repos['octopus-merge'], 'rev-list', '--no-merges', '-n', '4', '--all'], {
+        encoding: 'utf8'
+      }).trim().split('\n')
+      await app.evaluate(({ ipcMain }, local) => {
+        for (const method of ['prDetail', 'prChecks', 'prFiles', 'prListCommits', 'ciStatuses']) ipcMain.removeHandler('hosting:' + method)
         ipcMain.handle('hosting:prDetail', () => ({
           number: 42, title: 'Add workspace search', author: 'sam', source: 'workspace-search', target: 'main',
           body: 'Search filenames across open repositories from the command palette.',
@@ -1550,32 +1768,47 @@ export const shots = [
         }))
         ipcMain.handle('hosting:prChecks', () => [])
         ipcMain.handle('hosting:prFiles', () => ({ files: [], revision: null }))
+        // Four real commits of the playground repo, so their +/− and file counts come
+        // from git; the fourth listed is a sha this clone does not have — its row
+        // offers the branch fetch.
+        const [a, b, c3, e] = local
         const c = (sha, subject, authorName, authorLogin, authoredAt, body) => ({
           sha: sha.padEnd(40, '0'), shortSha: sha.slice(0, 7), subject, authorName, authorLogin, authoredAt,
           parents: 1, ...(body ? { body } : {})
         })
+        const ci = (state) => ({ state, jobs: [] })
+        ipcMain.handle('hosting:ciStatuses', () => ({
+          [a]: ci('success'), [b]: ci('success'), [c3]: ci('failure'), ['d2a7f63'.padEnd(40, '0')]: ci('pending')
+        }))
         ipcMain.handle('hosting:prListCommits', () => ({
           truncated: false, kept: 'oldest',
           commits: [
-            c('3f9a1c2', 'feat(search): list files across open repositories', 'Sam Rivera', 'sam', '2026-11-18T09:12:00Z',
+            c(a, 'feat(search): list files across open repositories', 'Sam Rivera', 'sam', '2026-11-18T09:12:00Z',
               'The palette asks every open repository for its tracked files once,\nthen filters in memory as you type.'),
-            c('8b04d7e', 'test(search): cover an empty query', 'Sam Rivera', 'sam', '2026-11-18T15:40:00Z'),
-            c('c51e0aa', 'fix(search): trim the query before matching', 'Alex Chen', 'alex', '2026-11-19T10:05:00Z',
+            c(b, 'test(search): cover an empty query', 'Sam Rivera', 'sam', '2026-11-18T15:40:00Z'),
+            c(c3, 'fix(search): trim the query before matching', 'Alex Chen', 'alex', '2026-11-19T10:05:00Z',
               'A trailing space from the palette matched nothing.\n\nTrim once, up front, so every repository sees the same query.'),
             c('d2a7f63', 'perf(search): stop at one screen of results', 'Sam Rivera', 'sam', '2026-11-20T08:30:00Z'),
-            c('e90b4c1', 'docs(search): mention the result limit', 'Alex Chen', 'alex', '2026-11-20T11:47:00Z')
+            c(e, 'docs(search): mention the result limit', 'Alex Chen', 'alex', '2026-11-20T11:47:00Z')
           ]
         }))
+      }, local)
+      // Last seen before the 20th: the two commits of that day sit under the
+      // "New since your last visit" divider.
+      await page.evaluate(({ repoPath, remoteUrl, key, at }) => {
+        const settings = window.__shot.settings.getState()
+        settings.update((s) => ({ ...s, prVisits: { ...(s.prVisits ?? {}), [key]: at } }))
+        settings.openPageTab({ type: 'pr', repoPath, remoteUrl, number: 42, title: 'Add workspace search' })
+      }, {
+        repoPath: repos['octopus-merge'], remoteUrl: PR_TIMELINE_REMOTE, key: PR_TIMELINE_VISIT_KEY,
+        at: Date.parse('2026-11-19T18:00:00Z')
       })
-      await page.evaluate((repoPath) => window.__shot.settings.getState().openPageTab({
-        type: 'pr', repoPath, remoteUrl: 'https://github.com/example/workspace.git', number: 42, title: 'Add workspace search'
-      }), repos['octopus-merge'])
       await page.locator('.prp-head h2').waitFor()
       await page.locator('.prp-tab').nth(1).click()
-      await page.locator('.prp-commit').first().waitFor()
-      await page.locator('.prp-commit', { hasText: 'trim the query' }).locator('.prp-commit-more').click()
-      await page.locator('.prp-commit', { hasText: 'one screen of results' }).locator('.prp-commit-open').click()
-      await page.locator('.prp-commit-missing').waitFor()
+      await page.locator('.prc-commit').first().waitFor()
+      await page.locator('.prt-new-divider').waitFor()
+      await page.locator('.prc-commit .prc-ci').first().waitFor()
+      await page.locator('.prc-commit', { hasText: 'list files across' }).locator('.prc-meta', { hasText: '+' }).waitFor()
       await page.mouse.move(0, 0)
       await page.waitForTimeout(300)
     }
@@ -1695,52 +1928,26 @@ export const shots = [
     repos: ['octopus-merge'],
     themes: ['dark'],
     drive: async (page, repos, app) => {
-      await app.evaluate(({ ipcMain }) => {
-        for (const method of ['prDetail', 'prChecks', 'prFiles']) ipcMain.removeHandler('hosting:' + method)
-        const fence = '`'.repeat(3)
-        ipcMain.handle('hosting:prDetail', () => ({
-          number: 42, title: 'Add workspace search', author: 'sam', source: 'workspace-search', target: 'main',
+      const fence = '`'.repeat(3)
+      const comments = [
+        {
+          ...PR_TIMELINE_TIMINGS,
           body: [
-            'Adds **workspace search** to the command palette. Closes #41.',
+            PR_TIMELINE_TIMINGS.body,
             '',
-            '- [x] A filename index per open repository',
-            '- [x] Results capped at 50',
-            '- [ ] A setting for the cap'
-          ].join('\n'),
-          state: 'open', draft: false, merged: false, mergeable: true, url: 'https://github.com/example/workspace/pull/42',
-          viewer: 'sam',
-          comments: [
-            {
-              author: 'alex', createdAt: '2026-11-20T10:00:00Z', handle: { id: 501, kind: 'conversation' },
-              body: [
-                'Timings on the large fixture:',
-                '',
-                '| Repositories | Files | First query |',
-                '|---:|---:|---:|',
-                '| 3 | 92k | 41 ms |',
-                '| 8 | 240k | 118 ms |',
-                '',
-                '![Flame graph of the first query](https://perf.example.net/flame/search-42.png)',
-                '',
-                `${fence}ts`,
-                'const results = index.search(query, { limit: 50 })',
-                fence
-              ].join('\n')
-            },
-            {
-              author: 'sam', createdAt: '2026-11-20T10:40:00Z', handle: { id: 502, kind: 'conversation' },
-              body: 'Thanks — `limit` becomes a setting in the next commit. @alex the follow-up is #43.'
-            }
-          ],
-          reviews: [], reviewThreads: [], requestedReviewers: [{ login: 'kalani' }],
-          commits: 3, changedFiles: 2, additions: 84, deletions: 12
-        }))
-        ipcMain.handle('hosting:prChecks', () => [])
-        ipcMain.handle('hosting:prFiles', () => ({ files: [], revision: null }))
-      })
-      await page.evaluate((repoPath) => window.__shot.settings.getState().openPageTab({
-        type: 'pr', repoPath, remoteUrl: 'https://github.com/example/workspace.git', number: 42, title: 'Add workspace search'
-      }), repos['octopus-merge'])
+            '![Flame graph of the first query](https://perf.example.net/flame/search-42.png)',
+            '',
+            `${fence}ts`,
+            'const results = index.search(query, { limit: 50 })',
+            fence
+          ].join('\n')
+        },
+        {
+          author: 'sam', h: 23, handle: { id: 502, kind: 'conversation' },
+          body: 'Thanks — `limit` becomes a setting in the next commit. @alex the follow-up is #43.'
+        }
+      ]
+      await openPrTimelineShot(page, app, repos['octopus-merge'], prTimelineFake({ full: false, comments }))
       await page.locator('.md-remote-img-blocked').waitFor()
       await page.locator('.md-remote pre code.hljs').waitFor()
       await page.waitForTimeout(300)
@@ -1798,7 +2005,7 @@ export const shots = [
     }
   },
   {
-    // The Checks tab with a Forgejo Actions job's log open under its row.
+    // The Checks tab: the summary, a failed Forgejo Actions job with the test its log names, and the log.
     out: 'pr-check-log',
     repos: ['octopus-merge'],
     themes: ['dark'],
@@ -1811,11 +2018,20 @@ export const shots = [
           url: 'https://forge.example.org/studio/catalog/pulls/7', comments: [], reviews: [], reviewThreads: []
         }))
         const job = (n) => `https://forge.example.org/studio/catalog/actions/runs/12/jobs/${n}`
+        // Finished twelve minutes ago: 36 s of lint, 1 min 12 s of tests.
+        const end = Date.now() - 12 * 60_000
+        const sha = 'a41c9e2b7d0f5c3e8a1b6d4f2c9e7a5b3d1f0e8c'
         ipcMain.handle('hosting:prChecks', () => [
-          { name: 'ci / lint', status: 'completed', conclusion: 'success', url: job(0), hasLog: true },
-          { name: 'ci / test', status: 'completed', conclusion: 'failure', url: job(1), hasLog: true }
+          { name: 'ci / lint', status: 'completed', conclusion: 'success', url: job(0), hasLog: true, startedAt: end - 36_000 - 40_000, finishedAt: end - 40_000, sha },
+          { name: 'ci / test', status: 'completed', conclusion: 'failure', url: job(1), hasLog: true, startedAt: end - 72_000, finishedAt: end, sha }
         ])
-        ipcMain.handle('hosting:prFiles', () => ({ files: [], revision: null }))
+        ipcMain.handle('hosting:prFiles', () => ({
+          files: [
+            { filename: 'src/cache.ts', status: 'modified', additions: 14, deletions: 3, patch: '@@ -1,3 +1,4 @@\n+export const index = new Map()\n' },
+            { filename: 'src/cache.test.ts', status: 'modified', additions: 9, deletions: 0, patch: '@@ -20,3 +20,4 @@\n+  expect(calls).toBe(1)\n' }
+          ],
+          revision: null
+        }))
         const R = '\u001b[31m', G = '\u001b[32m', D = '\u001b[2m', X = '\u001b[0m'
         ipcMain.handle('hosting:prCheckLog', () => [
           `${D}Run npm test${X}`,
@@ -1839,8 +2055,9 @@ export const shots = [
       }), repos['octopus-merge'])
       await page.locator('.prp-head h2').waitFor()
       await page.locator('.prp-tab').nth(4).click()
-      await page.locator('.prd-check-logs[aria-expanded]').nth(1).click()
-      await page.locator('.prp-check-log pre').waitFor()
+      // The failed check opens on its own, log and failed test included.
+      await page.locator('.pck-failures').waitFor()
+      await page.locator('.pck-log pre').waitFor()
       await page.waitForTimeout(300)
     }
   },
@@ -2448,13 +2665,10 @@ export const shots = [
     themes: ['dark'],
     drive: async (page, repoPaths) => {
       const repo = repoPaths['commit-template']
+      // On the AI the profile reads it from — the general one unless the profile has its own.
       await page.evaluate(() => {
-        window.__shot.settings.getState().update((s) => ({
-          ...s,
-          profiles: s.profiles.map((p) =>
-            p.id === s.activeProfileId ? { ...p, ai: { ...p.ai, commitStyle: 'gitmoji-conventional' } } : p
-          )
-        }))
+        const settings = window.__shot.settings.getState()
+        settings.saveAIFor(settings.activeProfile().id, { commitStyle: 'gitmoji-conventional' })
       })
       await page.evaluate((p) => window.__shot.repo.getState().select(p, { type: 'wip' }), repo)
       await page.waitForTimeout(500)
@@ -2856,9 +3070,56 @@ export const shots = [
     }
   },
   {
-    // Edit any commit — pick the README commit mid-history, edit its file,
-    // and run the cascade preview so the shot shows the whole promise.
+    // Edit any commit — pick the README commit mid-history, reword it, edit its
+    // file and run the cascade preview, so the shot shows the whole promise:
+    // the "edited" message card, the changed file, the "What will happen"
+    // panel with a verdict per commit and the force-push warning (the branch
+    // is pushed to a throwaway bare remote first).
     out: 'commit-edit',
+    repos: ['bisect-bug'],
+    themes: ['light'],
+    prepare: async ({ repoPaths, run }) => {
+      const repo = repoPaths['bisect-bug']
+      const origin = join(tmpdir(), 'githuttbr-demo-remotes', 'bisect-bug.git')
+      await run('rm', ['-rf', origin])
+      await run('git', ['init', '-q', '--bare', origin])
+      await run('git', ['-C', repo, 'remote', 'remove', 'origin'], { allowFail: true })
+      await run('git', ['-C', repo, 'remote', 'add', 'origin', origin])
+      await run('git', ['-C', repo, 'push', '-q', '-u', 'origin', 'main'])
+    },
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['bisect-bug']
+      await page.waitForFunction((p) => (window.__shot.repo.getState().repos[p]?.commits ?? []).length > 0, repo)
+      await page.evaluate((p) => {
+        const commits = window.__shot.repo.getState().repos[p].commits
+        const c = commits.find((x) => x.subject.toLowerCase().includes('readme')) ?? commits[Math.floor(commits.length / 2)]
+        window.__shot.ui.getState().setCommitEditView({ repoPath: p, sha: c.hash, subject: c.subject })
+      }, repo)
+      // Conventional, as the mockup: the README commit's "docs:" sits on the type button.
+      // On the AI the profile reads it from — the general one unless the profile has its own.
+      await page.evaluate(() => {
+        const settings = window.__shot.settings.getState()
+        settings.saveAIFor(settings.activeProfile().id, { commitStyle: 'conventional' })
+      })
+      await page.waitForTimeout(900)
+      const summary = page.locator('#commitedit-summary')
+      await summary.fill((await summary.inputValue()) + ' and a test command')
+      await page.locator('.commitedit-message textarea').first().fill(
+        'Steps for git bisect, and the node command that tests each step.'
+      )
+      await page.locator('.commitedit-files .snapshot-file-row').first().click()
+      await page.waitForTimeout(500)
+      await page.locator('.commitedit-editor .code-editor-area').fill(
+        (await page.locator('.commitedit-editor .code-editor-area').inputValue()) + '\nEdited three weeks later.\n'
+      )
+      await page.locator('.commitedit-impact-preview').click()
+      await page.waitForTimeout(1500)
+    }
+  },
+  {
+    // The same edit, with the files card switched to "Compare with original":
+    // the file's diff between what the commit holds and the edited buffer.
+    out: 'commit-edit-compare',
     repos: ['bisect-bug'],
     themes: ['light'],
     drive: async (page, repoPaths) => {
@@ -2872,11 +3133,13 @@ export const shots = [
       await page.waitForTimeout(900)
       await page.locator('.commitedit-files .snapshot-file-row').first().click()
       await page.waitForTimeout(500)
-      await page.locator('.commitedit-editor .code-editor-area').fill(
-        (await page.locator('.commitedit-editor .code-editor-area').inputValue()) + '\nEdited three weeks later.\n'
+      const area = page.locator('.commitedit-editor .code-editor-area')
+      const text = await area.inputValue()
+      await area.fill(
+        text.replace('git bisect start', 'git bisect start main~6') + '\nRun the test command at every step.\n'
       )
-      await page.locator('.commitedit-cascade-head button').first().click()
-      await page.waitForTimeout(1500)
+      await page.locator('.commitedit-seg button').nth(1).click()
+      await page.waitForTimeout(800)
     }
   },
   {
@@ -2897,20 +3160,17 @@ export const shots = [
       }, repo)
       await page.waitForTimeout(900)
       // Preview arms only once something changed — a reword is enough. It is
-      // done with the composer's own tools: the style row open, the Conventional
-      // type picked from the list, so the shot shows the editor has them too.
+      // done with the composer's own tools: the Conventional type picked from
+      // the type button, so the shot shows the editor has them too.
+      // On the AI the profile reads it from — the general one unless the profile has its own.
       await page.evaluate(() => {
-        window.__shot.settings.getState().update((s) => ({
-          ...s,
-          profiles: s.profiles.map((p) =>
-            p.id === s.activeProfileId ? { ...p, ai: { ...p.ai, commitStyle: 'conventional' } } : p
-          )
-        }))
+        const settings = window.__shot.settings.getState()
+        settings.saveAIFor(settings.activeProfile().id, { commitStyle: 'conventional' })
       })
-      await page.locator('.commitedit-message .commit-advanced-toggle').click()
+      await page.locator('.commitedit-message .commit-cc-type').click()
+      await page.locator('.context-menu .menu-item', { hasText: /^build$/ }).click()
       await page.waitForTimeout(300)
-      await page.locator('.commitedit-message .commit-style-row select.commit-type').first().selectOption('build')
-      await page.locator('.commitedit-cascade-head button').first().click()
+      await page.locator('.commitedit-impact-preview').click()
       await page.waitForTimeout(1500)
     }
   },
@@ -3119,6 +3379,10 @@ export const shots = [
     drive: async (page, repoPaths) => {
       const repo = repoPaths['insights']
       await page.evaluate((p) => window.__shot.settings.getState().openPageTab({ type: 'insights', repoPath: p }), repo)
+      await page.waitForTimeout(1200)
+      // The playground's commits carry fixed dates that age out of the default
+      // 90 days: the whole history shows what the page is for.
+      await page.locator('.insights .codesearch-tab').last().click()
       await page.waitForTimeout(1800)
     }
   },
@@ -4541,14 +4805,49 @@ export const shots = [
     }
   },
   {
-    // Object explorer: a commit, its fields linked, beside the ref list.
+    // Object explorer: main's commit — the trail from the branch, what it points
+    // to, who made it, and where a commit sits in the model.
     out: 'objects',
-    repos: ['tags-and-releases'],
+    repos: ['object-model'],
     themes: ['light'],
     drive: async (page, repoPaths) => {
-      const repo = repoPaths['tags-and-releases']
+      const repo = repoPaths['object-model']
       await page.evaluate((r) => window.__shot.ui.getState().openModal({ kind: 'objects', repoPath: r }), repo)
-      await page.waitForTimeout(1200)
+      await page.locator('.obj-pointer').first().waitFor()
+      await page.waitForTimeout(800)
+    }
+  },
+  {
+    // Object explorer: walked from the commit into src/ — every kind of tree
+    // entry, its mode spelled out.
+    out: 'objects-tree',
+    repos: ['object-model'],
+    themes: ['light'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['object-model']
+      await page.evaluate((r) => window.__shot.ui.getState().openModal({ kind: 'objects', repoPath: r }), repo)
+      await page.locator('.obj-pointer').first().click()
+      await page.locator('.obj-row', { hasText: 'src/' }).click()
+      await page.locator('.obj-row', { hasText: 'ui-kit' }).waitFor()
+      // The pointer would leave the first row in its hover tint.
+      await page.mouse.move(5, 5)
+      await page.waitForTimeout(800)
+    }
+  },
+  {
+    // Object explorer: one step further, the blob — and the tree that named it.
+    out: 'objects-blob',
+    repos: ['object-model'],
+    themes: ['light'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['object-model']
+      await page.evaluate((r) => window.__shot.ui.getState().openModal({ kind: 'objects', repoPath: r }), repo)
+      await page.locator('.obj-pointer').first().click()
+      await page.locator('.obj-row', { hasText: 'src/' }).click()
+      await page.locator('.obj-row', { hasText: 'app.ts' }).click()
+      await page.locator('.obj-named').waitFor()
+      await page.mouse.move(5, 5)
+      await page.waitForTimeout(800)
     }
   },
   {
@@ -5261,27 +5560,45 @@ async function fakePullRequestHost(app) {
       url: `https://github.com/example/payments/pull/${id}`, headSha: `c0ffee${id}`,
       updatedAt: new Date(now - ago).toISOString(), requestedReviewers: [], ...extra
     })
+    // Comments written `hoursAgo` ago, for the "N new comments" since the visit the shot records.
+    const said = (author, ...hoursAgo) => hoursAgo.map((x) => ({ at: new Date(now - x * h).toISOString(), author }))
+    const size = (additions, deletions, changedFiles) => ({ additions, deletions, changedFiles })
     const prs = [
-      pr(482, 'you', 'feat/pix-qr', 'main', 'Pix payments with a dynamic QR code', 2 * h,
-        { ci: 'success', ciCounts: counts(6), requestedReviewers: ['ana'] }),
-      pr(479, 'ana', 'fix/pix-timeout', 'main', 'Retry Pix confirmations that time out', 5 * h,
-        { ci: 'failure', ciCounts: counts(4, 1), requestedReviewers: ['you', 'bruno'], awaitingYou: true }),
-      pr(477, 'bruno', 'chore/deps', 'main', 'Bump the HTTP client to 5.2', 9 * h, { ci: 'success', ciCounts: counts(6) }),
-      pr(474, 'carla', 'feat/boleto-pdf', 'release/2.4', 'Boleto PDF with the new layout', 26 * h,
-        { ci: 'pending', ciCounts: counts(3, 0, 2), requestedReviewers: ['you'], awaitingYou: true }),
-      pr(469, 'you', 'fix/pix-refund', 'release/2.4', 'Partial refunds for Pix', 3 * 24 * h,
-        { isDraft: true, ci: 'failure', ciCounts: counts(5, 1) }),
-      pr(466, 'ana', 'feat/webhooks', 'main', 'Sign outgoing webhooks', 4 * 24 * h, { ci: 'success', ciCounts: counts(6) }),
-      pr(461, 'dev-bot', 'docs/pix-faq', 'main', 'Document the Pix error codes', 6 * 24 * h,
-        { ci: 'success', ciCounts: counts(2) }),
-      pr(458, 'bruno', 'feat/card-tokens', 'main', 'Store card tokens per merchant', 8 * 24 * h,
-        { isDraft: true, ci: 'success', ciCounts: counts(6) })
+      pr(479, 'ana', 'fix/timeout', 'main', 'fix: Retry confirmations that time out', 5 * h, {
+        ci: 'failure', ciCounts: counts(5, 1), requestedReviewers: ['you'], awaitingYou: true,
+        reviews: [{ login: 'bruno', verdict: 'approved' }], ...size(48, 12, 4),
+        commentCount: 3, recentComments: said('bruno', 30, 28, 27)
+      }),
+      pr(475, 'bruno', 'feat/ledger-csv', 'main', 'feat: Export the ledger as CSV', 26 * h, {
+        ci: 'success', ciCounts: counts(6), requestedReviewers: ['you'], awaitingYou: true, reviews: [], ...size(120, 3, 6),
+        commentCount: 0, recentComments: []
+      }),
+      pr(482, 'you', 'feat/qr', 'main', 'feat: Payments with a dynamic QR code', 2 * h, {
+        ci: 'success', ciCounts: counts(6), reviews: [{ login: 'ana', verdict: 'changes' }], ...size(210, 40, 9),
+        commentCount: 5, recentComments: [...said('bruno', 40, 39, 38), ...said('ana', 3, 2)]
+      }),
+      pr(477, 'carla', 'chore/http-client', 'main', 'chore(deps): Bump the HTTP client to 5.2', 9 * h, {
+        ci: 'success', ciCounts: counts(6), reviews: [], ...size(14, 14, 2)
+      }),
+      pr(469, 'you', 'fix/refund', 'release/2.4', 'fix: Partial refunds', 3 * 24 * h, {
+        isDraft: true, ci: 'failure', ciCounts: counts(5, 1), reviews: [], ...size(18, 7, 2)
+      }),
+      pr(468, 'carla', 'feat/webhooks', 'main', 'feat: Sign outgoing webhooks', 4 * 24 * h, {
+        ci: 'success', ciCounts: counts(6), reviews: [{ login: 'bruno', verdict: 'approved' }], ...size(96, 11, 5)
+      }),
+      pr(466, 'you', 'docs/errors', 'main', 'docs: Document the error codes', 6 * 24 * h, {
+        ci: 'success', ciCounts: counts(2), reviews: [{ login: 'ana', verdict: 'approved' }], readyToMerge: true,
+        ...size(64, 0, 1)
+      }),
+      pr(458, 'bruno', 'feat/card-tokens', 'main', 'feat: Store card tokens per merchant', 8 * 24 * h, {
+        isDraft: true, ci: 'success', ciCounts: counts(6), reviews: [], ...size(230, 18, 11)
+      })
     ]
     ipcMain.handle('hosting:listPRs', () => ({ provider: 'github', prs, me: 'you' }))
     ipcMain.handle('hosting:listFinishedPRs', () => ({
       provider: 'github', truncated: false,
       prs: [
-        pr(455, 'ana', 'feat/pix-keys', 'main', 'Register Pix keys', 10 * 24 * h, { state: 'merged' }),
+        pr(455, 'ana', 'feat/ledger', 'main', 'feat: Keep a ledger of every charge', 10 * 24 * h, { state: 'merged' }),
         pr(451, 'carla', 'spike/crypto', 'main', 'Spike: crypto payouts', 12 * 24 * h, { state: 'closed' })
       ]
     }))

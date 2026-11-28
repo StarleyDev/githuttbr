@@ -15,7 +15,15 @@ import {
 } from './credentials'
 import { atServer, HttpStatusError } from './httpStatusError'
 import { titleForDraft } from './prDraftTitle'
-import { addReviewThreadReply, createGithubGraphqlPost, createGithubGraphqlRawPost, findReviewThread } from './githubGraphql'
+import {
+  addReviewThreadReply,
+  createGithubGraphqlPost,
+  createGithubGraphqlRawPost,
+  findReviewThread,
+  getPullRequestListExtras,
+  getReviewThreadResolution,
+  type PrListExtras
+} from './githubGraphql'
 import {
   getAnchorLine,
   getAnchorSide,
@@ -29,8 +37,8 @@ import { finishPrCommits, PR_COMMITS_MAX, type RawPrCommit } from '../shared/prC
 import { finishPrUpdates, groupGithubTimeline, groupUpdatesByHeads, type GithubTimelineItem } from '../shared/prUpdates'
 import { isEditedAfter, isValidCommentHandle, stripOuterNewlines } from '../shared/prCommentHandle'
 import { countChecks } from './ciSummary'
-import { NO_CI_CAPABILITIES, type CiRunsAdapter } from './ciRuns'
-import { githubCiRuns } from './ciRunsGithub'
+import { NO_CI_CAPABILITIES, isoToMs, type CiRunsAdapter } from './ciRuns'
+import { getGithubActionsJob, githubCheckRun, githubCiRuns, type GhCheckRun } from './ciRunsGithub'
 import { gitlabCiRuns, gitlabCommitCiLookup } from './ciRunsGitlab'
 import { azureCiLookupBatch, azureCiRuns } from './ciRunsAzure'
 import { forgejoCiRuns, forgejoCommitCiLookup } from './ciRunsForgejo'
@@ -197,6 +205,7 @@ import type {
   HostingAccess,
   HostingProvider,
   PullRequest,
+  PrListReview,
   PrComment,
   PrCommentHandle,
   PrDetail,
@@ -242,7 +251,9 @@ import {
   azurePrDetail,
   azureFileDiff,
   azurePrFiles,
+  azurePrFileCount,
   azurePrIterationFiles,
+  AzureThrottle,
   azurePrUpdates,
   parseRetryAfter,
   azureReply,
@@ -261,6 +272,7 @@ import {
 } from './azurePr'
 import { ensurePrCommits, getLocalMergeBase, readPrFileFromClone, readPrFilesFromClone, type PrFetchMode } from './prLocalFiles'
 import { withNoPatchReasons } from '../shared/prFileDiff'
+import { PrFileCountCache, getPrFileCounts, parsePrFileCountRequests } from './prFileCounts'
 import {
   azureReferenceSummaries,
   forgejoReferenceSummaries,
@@ -1075,6 +1087,8 @@ async function listPullRequestsOf(
       draft?: boolean
       work_in_progress?: boolean
       reviewers?: Array<{ username: string }>
+      user_notes_count?: number
+      detailed_merge_status?: string
     } & GlListFields>
     return {
       provider: 'gitlab',
@@ -1087,7 +1101,10 @@ async function listPullRequestsOf(
         url: p.web_url,
         isDraft: !!(p.draft || p.work_in_progress),
         requestedReviewers: (p.reviewers ?? []).map((r) => r.username),
-        ...glListExtras(p)
+        ...glListExtras(p),
+        ...(typeof p.user_notes_count === 'number' ? { commentCount: p.user_notes_count } : {}),
+        // Every merge check passed — approvals included: GitLab's "ready to merge".
+        ...(p.detailed_merge_status === 'mergeable' ? { readyToMerge: true } : {})
       }))
     }
   }
@@ -1196,6 +1213,20 @@ async function listPullRequestsOf(
       pr.ci = status.state
       pr.ciCounts = countChecks(status)
     }
+
+    // Size, comments and each reviewer's verdict — not in the REST list. One
+    // GraphQL request for every open row; a refusal leaves the columns empty.
+    const open = prs.filter((p) => p.state === 'open').map((p) => p.id)
+    const extras = await getPullRequestListExtras(
+      createGithubGraphqlRawPost(ep.graphqlUrl, auth.token),
+      parsed.owner,
+      parsed.repo,
+      open
+    ).catch(() => new Map<number, PrListExtras>())
+    for (const pr of prs) {
+      const extra = extras.get(pr.id)
+      if (extra) Object.assign(pr, extra)
+    }
     return { provider: 'github', prs }
   }
 
@@ -1250,6 +1281,7 @@ interface BbCloudPull {
   description?: string
   updated_on?: string
   author: { display_name: string; links?: { avatar?: { href?: string } } }
+  comment_count?: number
   source: { branch: { name: string } }
   destination: { branch: { name: string } }
   links: { html: { href: string } }
@@ -1267,7 +1299,8 @@ export function mapBbCloudPull(p: BbCloudPull): PullRequest {
     ...(p.state === 'MERGED' ? { state: 'merged' } : p.state === 'DECLINED' || p.state === 'SUPERSEDED' ? { state: 'closed' } : {}),
     ...(p.updated_on ? { updatedAt: p.updated_on } : {}),
     ...(p.description ? { body: p.description } : {}),
-    ...(httpsOnly(p.author?.links?.avatar?.href) ? { authorAvatar: httpsOnly(p.author.links?.avatar?.href) } : {})
+    ...(httpsOnly(p.author?.links?.avatar?.href) ? { authorAvatar: httpsOnly(p.author.links?.avatar?.href) } : {}),
+    ...(typeof p.comment_count === 'number' ? { commentCount: p.comment_count } : {})
   }
 }
 
@@ -1303,8 +1336,17 @@ export function mapAzListPull(p: AzListPull, base: string, repo: string): PullRe
     ...(p.lastMergeSourceCommit?.commitId ? { headSha: p.lastMergeSourceCommit.commitId } : {}),
     ...(at ? { updatedAt: at } : {}),
     ...(p.description ? { body: p.description } : {}),
-    ...(pending.length ? { requestedReviewers: pending.map((r) => r.displayName as string) } : {})
+    ...(pending.length ? { requestedReviewers: pending.map((r) => r.displayName as string) } : {}),
+    ...(p.reviewers ? { reviews: azureVerdicts(p.reviewers) } : {})
   }
+}
+
+/** The votes already cast, as verdicts: 10 and 5 approve, -5 and -10 hold it back. */
+function azureVerdicts(reviewers: NonNullable<AzListPull['reviewers']>): PrListReview[] {
+  return reviewers.flatMap((r): PrListReview[] => {
+    if (r.isContainer || !r.displayName || !r.vote) return []
+    return [{ login: r.displayName, verdict: r.vote > 0 ? 'approved' : 'changes' }]
+  })
 }
 
 /** How many merged/closed PRs the list page reads — per state where the host splits them. */
@@ -1833,6 +1875,9 @@ interface GlNote {
   author: GlUser | null
   body: string
   created_at: string
+  /** A note that can be resolved (a review thread's), and whether it is. */
+  resolvable?: boolean
+  resolved?: boolean
   position?: {
     new_path?: string | null
     old_path?: string | null
@@ -1917,6 +1962,15 @@ async function glMergeRequestDetail(remoteUrl: string, token: string | undefined
   for (const d of discussions) d.notes.forEach((n) => seen(n.author))
   ;(approvals.approved_by ?? []).forEach((a) => seen(a.user))
   const approvedBy = new Set((approvals.approved_by ?? []).map((a) => a.user?.username).filter(Boolean))
+  // The approvals endpoint gives no date; the system note GitLab writes for an
+  // approval does. The latest one per person is when that approval was given.
+  const approvedAt = new Map<string, string>()
+  for (const d of discussions)
+    for (const n of d.notes)
+      if (n.system && n.author?.username && /^approved this merge request\b/i.test(n.body)) {
+        const prev = approvedAt.get(n.author.username)
+        if (!prev || prev < n.created_at) approvedAt.set(n.author.username, n.created_at)
+      }
 
   // Discussions hold both kinds of comment: a note with a position is an inline
   // review thread, one without is plain conversation. System notes are noise.
@@ -1943,6 +1997,8 @@ async function glMergeRequestDetail(remoteUrl: string, token: string | undefined
               ? { side: 'old' as const }
               : {}
           : {}),
+        // Resolution is per note; the thread is resolved once every resolvable note is.
+        ...(notes.some((n) => n.resolvable) ? { resolved: notes.every((n) => !n.resolvable || !!n.resolved) } : {}),
         // One notes endpoint edits and deletes both kinds. No "edited" mark: a
         // note's updated_at also moves when its thread is resolved.
         comments: notes.map((n) => ({
@@ -2012,16 +2068,27 @@ async function glMergeRequestDetail(remoteUrl: string, token: string | undefined
     mergeable: mr.merge_status === 'can_be_merged' ? true : mr.merge_status === 'cannot_be_merged' ? false : null,
     url: mr.web_url,
     comments,
-    reviews: (approvals.approved_by ?? []).map((a) => ({
-      author: a.user?.username ?? 'unknown',
-      state: 'APPROVED' as const
-    })),
+    reviews: (approvals.approved_by ?? []).map((a) => {
+      const at = a.user?.username ? approvedAt.get(a.user.username) : undefined
+      return { author: a.user?.username ?? 'unknown', state: 'APPROVED' as const, ...(at ? { submittedAt: at } : {}) }
+    }),
     reviewThreads
   }
 }
 
 /** GitLab job status → the check-run vocabulary the renderer already renders. */
-export function glJobToCheck(job: { name: string; status: string; web_url?: string | null }): PrCheck {
+/** A GitLab job's id from its page link, `…/-/jobs/<id>`. */
+export function getGitlabJobId(url: string | null | undefined): string | null {
+  return /\/-\/jobs\/(\d+)(?:[/?#]|$)/.exec(url ?? '')?.[1] ?? null
+}
+
+/** Statuses whose job never ran, so there is no trace to read (as ciRunsGitlab's). */
+const GL_NO_TRACE = new Set(['created', 'pending', 'manual', 'skipped', 'scheduled', 'waiting_for_resource', 'preparing', 'running'])
+
+export function glJobToCheck(
+  job: { name: string; status: string; web_url?: string | null; started_at?: string | null; finished_at?: string | null },
+  pipeline?: { id: number; sha?: string }
+): PrCheck {
   const map: Record<string, { status: string; conclusion: string | null }> = {
     created: { status: 'queued', conclusion: null },
     pending: { status: 'queued', conclusion: null },
@@ -2037,22 +2104,35 @@ export function glJobToCheck(job: { name: string; status: string; web_url?: stri
     manual: { status: 'completed', conclusion: 'action_required' }
   }
   const m = map[job.status] ?? { status: 'completed', conclusion: 'neutral' }
-  return { name: job.name, status: m.status, conclusion: m.conclusion, url: job.web_url || '' }
+  const startedAt = isoToMs(job.started_at)
+  const finishedAt = m.status === 'completed' ? isoToMs(job.finished_at) : undefined
+  return {
+    name: job.name,
+    status: m.status,
+    conclusion: m.conclusion,
+    url: job.web_url || '',
+    ...(getGitlabJobId(job.web_url) && !GL_NO_TRACE.has(job.status) ? { hasLog: true } : {}),
+    ...(startedAt ? { startedAt } : {}),
+    ...(finishedAt ? { finishedAt } : {}),
+    ...(pipeline?.sha ? { sha: pipeline.sha } : {}),
+    // GitLab retries a pipeline's failed jobs (the CI runs page's "re-run failed").
+    ...(pipeline ? { runId: String(pipeline.id) } : {})
+  }
 }
 
 async function glMergeRequestChecks(remoteUrl: string, token: string | undefined, number: number): Promise<PrCheck[]> {
   const { base, auth } = await glProjectOf(remoteUrl, token)
   // Pipelines come newest-first; the head pipeline's jobs are the checks.
-  const pipelines = await glJson<Array<{ id: number }>>(
+  const pipelines = await glJson<Array<{ id: number; sha?: string }>>(
     `${base}/merge_requests/${number}/pipelines?per_page=1`,
     auth
-  ).catch(() => [] as Array<{ id: number }>)
+  ).catch(() => [] as Array<{ id: number; sha?: string }>)
   if (pipelines.length === 0) return []
-  const jobs = await glJson<Array<{ name: string; status: string; web_url?: string | null }>>(
-    `${base}/pipelines/${pipelines[0].id}/jobs?per_page=100`,
-    auth
-  ).catch(() => [] as Array<{ name: string; status: string; web_url?: string | null }>)
-  return jobs.map(glJobToCheck)
+  type GlCheckJob = Parameters<typeof glJobToCheck>[0]
+  const jobs = await glJson<GlCheckJob[]>(`${base}/pipelines/${pipelines[0].id}/jobs?per_page=100`, auth).catch(
+    () => [] as GlCheckJob[]
+  )
+  return jobs.map((j) => glJobToCheck(j, pipelines[0]))
 }
 
 /** Count added/removed lines in a unified diff body (file headers excluded). */
@@ -2333,8 +2413,8 @@ async function pullRequestDetail(
     const a = await azRepoOf(remoteUrl, tokens.azure)
     return azurePrDetail(a.ado, a.repo, number, a.optional)
   }
-  const { owner, repo, token, api } = await ghRepoOf(remoteUrl, tokens.github)
-  const [pr, comments, reviews, reviewComments] = await Promise.all([
+  const { owner, repo, token, api, ep } = await ghRepoOf(remoteUrl, tokens.github)
+  const [pr, comments, reviews, reviewComments, resolution] = await Promise.all([
     ghJson<{
       number: number
       title: string
@@ -2372,11 +2452,19 @@ async function pullRequestDetail(
       )
     ),
     allPages((page) =>
-      ghJson<Array<{ user: GhUser | null; state: string }>>(`${api}/pulls/${number}/reviews?per_page=100&page=${page}`, token)
+      ghJson<Array<{ user: GhUser | null; state: string; body?: string | null; submitted_at?: string | null }>>(
+        `${api}/pulls/${number}/reviews?per_page=100&page=${page}`,
+        token
+      )
     ),
     allPages((page) =>
       ghJson<GhReviewComment[]>(`${api}/pulls/${number}/comments?per_page=100&page=${page}`, token, GH_FULL_BODY)
-    ).catch(() => [] as GhReviewComment[])
+    ).catch(() => [] as GhReviewComment[]),
+    // Resolved or not is GraphQL only. A failure (a token without GraphQL, a
+    // limit) leaves every thread unknown: the page shows no pill, nothing breaks.
+    getReviewThreadResolution(createGithubGraphqlPost(ep.graphqlUrl, token), owner, repo, number).catch(
+      () => new Map<number, boolean>()
+    )
   ])
 
   // Group inline review comments into threads. Replies (in_reply_to_id) attach to
@@ -2408,7 +2496,10 @@ async function pullRequestDetail(
         ...(rc.line != null && rc.side ? { side: rc.side === 'LEFT' ? ('old' as const) : ('new' as const) } : {})
       })
   }
-  const reviewThreads = [...threadById.values()]
+  const reviewThreads = [...threadById.values()].map((th) => {
+    const resolved = resolution.get(Number(th.rootId)) ?? resolution.get(th.comments[0]?.id ?? -1)
+    return resolved === undefined ? th : { ...th, resolved }
+  })
 
   // Every user object the API handed back carries its avatar: collect them once
   // so the page can draw a face next to any login without asking again.
@@ -2456,7 +2547,12 @@ async function pullRequestDetail(
     comments: comments.map(mapGhIssueComment),
     reviews: reviews
       .filter((r) => r.state !== 'PENDING')
-      .map((r) => ({ author: r.user?.login ?? 'unknown', state: r.state as PrReview['state'] })),
+      .map((r) => ({
+        author: r.user?.login ?? 'unknown',
+        state: r.state as PrReview['state'],
+        ...(r.submitted_at ? { submittedAt: r.submitted_at } : {}),
+        ...(r.body?.trim() ? { body: r.body } : {})
+      })),
     reviewThreads
   }
 }
@@ -2471,7 +2567,20 @@ async function pullRequestCheckLog(remoteUrl: string, tokens: HostTokens, url: s
     const a = await azRepoOf(remoteUrl, tokens.azure)
     return azureBuildLog(a.optional, a.text, a.repo, url)
   }
-  if (parseRemoteUrl(remoteUrl)?.provider !== 'forgejo') return null
+  // GitHub Actions and GitLab jobs: the link names the job, and the CI runs page's
+  // adapter reads its log — only the numeric id travels, never the link itself.
+  const provider = parseRemoteUrl(remoteUrl)?.provider
+  if (provider === 'github') {
+    const job = getGithubActionsJob(url)
+    const adapter = job ? await ciRunsAdapterFor(remoteUrl, tokens) : null
+    return job && adapter ? adapter.getJobLog(job.runId, job.jobId) : null
+  }
+  if (provider === 'gitlab') {
+    const jobId = getGitlabJobId(url)
+    const adapter = jobId ? await ciRunsAdapterFor(remoteUrl, tokens) : null
+    return jobId && adapter ? adapter.getJobLog('', jobId) : null
+  }
+  if (provider !== 'forgejo') return null
   const f = await fjRepoOf(remoteUrl, tokens.forgejo)
   return forgejoJobLog(f.base, f.token, url)
 }
@@ -2495,17 +2604,12 @@ async function pullRequestChecks(
     const a = await azRepoOf(remoteUrl, tokens.azure)
     return azurePrChecks(a.ado, a.repo, number, a.optional)
   }
-  const { owner, repo, token, api } = await ghRepoOf(remoteUrl, tokens.github)
+  const { token, api } = await ghRepoOf(remoteUrl, tokens.github)
   const pr = await ghJson<{ head: { sha: string } }>(`${api}/pulls/${number}`, token)
-  const data = await ghJson<{
-    check_runs: Array<{ name: string; status: string; conclusion: string | null; html_url: string | null; details_url: string | null }>
-  }>(`${api}/commits/${pr.head.sha}/check-runs?per_page=100`, token).catch(() => ({ check_runs: [] }))
-  return data.check_runs.map((c) => ({
-    name: c.name,
-    status: c.status,
-    conclusion: c.conclusion,
-    url: c.html_url || c.details_url || ''
-  }))
+  const data = await ghJson<{ check_runs: GhCheckRun[] }>(`${api}/commits/${pr.head.sha}/check-runs?per_page=100`, token).catch(
+    () => ({ check_runs: [] as GhCheckRun[] })
+  )
+  return data.check_runs.map((c) => githubCheckRun({ ...c, head_sha: c.head_sha ?? pr.head.sha }))
 }
 
 /**
@@ -2776,6 +2880,39 @@ async function pullRequestFileDiff(remoteUrl: string, tokens: HostTokens, reques
 
 /** GitHub's `pulls/{n}/files` lists at most this many (30 pages of 100). */
 const GITHUB_PR_FILES_MAX = 3000
+
+const prFileCountCache = new PrFileCountCache()
+
+/**
+ * The changed-file count of each PR the list page shows, for Azure DevOps —
+ * whose list has no size (GitHub's and Forgejo's carry theirs). Only that page
+ * asks, never the sidebar's periodic refresh: each count is two host calls
+ * (the iterations, then the last one's changes), so they are cached by head
+ * commit (prFileCounts.ts). Silent by design: no credential, a refusal or a
+ * failed read leaves that row's cell blank. The plain token, without the
+ * credential retry: a background read must never evict a working login.
+ */
+async function pullRequestFileCounts(
+  remoteUrl: string,
+  tokens: HostTokens,
+  requests: unknown
+): Promise<Record<number, number>> {
+  const parsed = parseRemoteUrl(remoteUrl)
+  const asked = parsePrFileCountRequests(requests)
+  if (!parsed || parsed.provider !== 'azure' || !asked.length) return {}
+  const repo = { org: parsed.owner, project: parsed.project, repo: parsed.repo }
+  const key = `${repo.org}/${repo.project}/${repo.repo}`.toLowerCase()
+  // The token is looked up once per call — shared by the workers — and only when the cache missed.
+  let auth: Promise<ApiAuth | null> | null = null
+  const throttle = new AzureThrottle()
+  return getPrFileCounts(prFileCountCache, key, asked, async (id) => {
+    auth ??= remoteApiToken(remoteUrl, 'azure', tokens.azure).catch(() => null)
+    const found = await auth
+    if (!found) throw Object.assign(new Error('no credential'), { status: 401 })
+    const ado: Ado = (url, init) => adoJson(url, found.token, init)
+    return azurePrFileCount(ado, repo, id, throttle)
+  })
+}
 
 /**
  * Changed files in a PR from the host's API (for the file-by-file review
@@ -5413,6 +5550,10 @@ export function registerHostingHandlers(): void {
   )
   handleForRepo('hosting:prFileDiff', (remoteUrl: string, tokens: HostTokens, request: unknown) =>
     pullRequestFileDiff(remoteUrl, tokens, request)
+  )
+  // The list page's size column on Azure DevOps: a batch of {id, headSha} → count by id.
+  handleForRepo('hosting:getPrFileCounts', (remoteUrl: string, tokens: HostTokens, requests: unknown) =>
+    pullRequestFileCounts(remoteUrl, tokens, requests)
   )
   handleForRepo('hosting:prListCommits', (remoteUrl: string, tokens: HostTokens, number: number) =>
     pullRequestCommitList(remoteUrl, tokens, number)

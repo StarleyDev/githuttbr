@@ -16,12 +16,19 @@ profil — ogólnej albo własnej AI profilu.
 
 | Styl | Wygląda tak |
 |---|---|
-| **Conventional** | `feat(api)!: add rate limiting` — z listą typów |
+| **Conventional** | `feat(api)!: add rate limiting` — z przyciskiem **typ ▾** przed tematem |
 | **Gitmoji** | `✨ add rate limiting` — z wyborem emoji |
-| **Gitmoji + Conventional** | `✨ feat(api): add rate limiting` — wybór emoji *i* lista typów |
+| **Gitmoji + Conventional** | `✨ feat(api): add rate limiting` — wybór emoji *i* przycisk **typ ▾** |
 | **Ticket** | `ABC-123: add rate limiting` — zasiane z nazwy gałęzi |
 | **Zwykły** · **Auto** | Cokolwiek napiszesz; Auto pozwala AI zdecydować o kształcie |
 | **Jaskiniowiec** · **Haiku** | Dokładnie to, na co wyglądają |
+
+W stylu Conventional prefiks siedzi na przycisku **typ ▾** przed tematem
+(*feat(api)*, albo *typ*, dopóki go nie ma), a pole zawiera tylko słowa po nim;
+wiadomość i tak dostaje całe `feat(api): …`. Przycisk wyświetla listę typów, a
+**Bez typu** usuwa prefiks. Wpisanie prefiksu ręcznie też działa, a
+<kbd>Backspace</kbd> na początku pola znów pokazuje prefiks jako tekst, żeby zmienić
+jego zakres (scope); wraca na przycisk, gdy pole traci fokus.
 
 ![Kompozytor wypełniony z szablonu commita](../../screenshots/commit-template.webp)
 
@@ -69,7 +76,7 @@ Ograniczenia:
 
 Gdy AI jest włączone, przycisk **✦** (*Wygeneruj z AI* po najechaniu) znajduje
 się pod opisem. Czyta diff zmian w stage i pisze podsumowanie oraz opis w stylu
-wybranym wyżej. Obok wiersz mówi, kto odpowie — *konto · model*, para wybrana
+wybranym wyżej. Obok osobny selektor mówi, kto odpowie — *konto · model*, para wybrana
 dla wiadomości commitów w **Ustawienia → AI → Model dla zadania** — więc wolny
 model lokalny czy drogi model nigdy nie zaskakuje.
 
@@ -122,10 +129,12 @@ Ograniczenia:
 
 ## Linter
 
-Sprawdzenie na żywo, które niczego nie blokuje: długość tematu (z licznikiem
-znaków), kropka na końcu, temat nie w trybie rozkazującym albo z małej litery,
-zbyt szerokie linie w treści. Podpowiedzi, nigdy bramka — nie powstrzyma cię
-przed zacommitowaniem.
+Sprawdzenie na żywo, które niczego nie blokuje: długość tematu, kropka na końcu,
+temat nie w trybie rozkazującym albo z małej litery, zbyt szerokie linie w treści.
+Podpowiedzi, nigdy bramka — nie powstrzyma cię przed zacommitowaniem. Długość to
+licznik obok tematu, liczony względem limitu 72 znaków (*56/72*): po przekroczeniu
+limitu robi się czerwony, a jego podpowiedź radzi celować w 50. Pozostałe
+podpowiedzi są wypisane pod opisem.
 
 ## Amend
 

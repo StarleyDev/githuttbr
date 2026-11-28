@@ -93,11 +93,13 @@ encabezado y todo lo que está dentro de código se dejan como están.
 issue, una respuesta en un hilo, un comentario de línea y la descripción de una
 issue nueva. Funciona también desde las pestañas, la barra y la vista previa, no
 solo desde el campo. Esc cancela un comentario de línea, desde los mismos sitios.
-Una **respuesta en un hilo** era antes un campo de una línea que se enviaba con
-Enter; ahora es un cuadro de texto pequeño, así que Enter es una línea nueva (o el
-siguiente elemento de lista) y ⌘/Ctrl+Enter envía. Un cuadro de respuesta muestra
-sus pestañas y herramientas en cuanto haces clic en él, para que una conversación
-larga no acumule una barra bajo cada hilo.
+Una **respuesta en un hilo** es un
+campo de una línea, para que una conversación larga no acumule una barra bajo
+cada hilo: Enter envía, Shift+Enter añade una línea (el campo crece con ella, y
+con un bloque pegado) y Esc descarta lo escrito, preguntando antes. No tiene
+pestañas ni barra, pero los atajos de formato y el autocompletado de **@** /
+**#** funcionan en él, y aparece un botón **Responder** en cuanto hay algo que
+enviar.
 
 ## La chuleta
 

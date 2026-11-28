@@ -2,21 +2,49 @@
 title: Konflikte lösen
 category: Mit Änderungen arbeiten
 order: 32
-summary: Ein Drei-Fenster-Resolver, der dir sagt, welche Seite welche ist.
-keywords: konflikt konflikte lösen resolver merge conflicts ours theirs marker three-way rerere reuse recorded resolution merken wiederholen
+summary: Ein Bildschirm für den ganzen Schritt mit Konflikten — jede Datei, der gemeinsame Vorfahr, eine Antwort pro Konflikt und der Abschluss.
+keywords: konflikt konflikte lösen resolver merge conflicts ours theirs base basis gemeinsamer vorfahr marker three-way gelöscht umbenannt modify delete rename rerere reuse recorded resolution merken wiederholen abschließen fortsetzen abbrechen
 ---
 
 # Konflikte lösen
 
-Wenn ein Merge, Rebase, Cherry-Pick oder Revert stehen bleibt, sagt dir ein
-Banner, **was** stehen geblieben ist und **zwischen was** — „`feature/x` wird in
-`main` gemergt“, nicht nur „Konflikt“.
+Wenn ein Merge, Rebase, Cherry-Pick oder Revert stehen bleibt, macht der
+Resolver aus dem ganzen Schritt einen einzigen Bildschirm. Die Leiste oben sagt,
+**was** stehen geblieben ist und **zwischen was** — „`feature` wird in `main`
+gemergt“, nicht nur „Konflikt“ — und wie weit du bist: *2 von 5 Dateien* gelöst,
+dazu die Konflikte, die über alle Dateien hinweg noch übrig sind.
 
 ![Der Konflikt-Resolver](../../screenshots/conflict-resolver.webp)
 
+## Die Dateileiste
+
+Unter der Leiste steht ein Chip für jede Datei, bei der dieser Schritt stehen
+geblieben ist:
+
+| Chip | Bedeutet |
+|---|---|
+| Grün mit ✓ | Gelöst — gestaged, nichts mehr zu entscheiden |
+| Umrandet | Die Datei, in der du gerade bist |
+| Eine rote Zahl | Wie viele Konfliktblöcke die Datei noch enthält |
+| Ein Etikett | Ein Konflikt ohne Text zum Zusammenführen: *auf einer Seite gelöscht*, *auf beiden Seiten umbenannt*, *auf einer Seite hinzugefügt* |
+
+Gelöste Chips stehen vorn, offene danach, jede Gruppe nach Namen sortiert — so
+liest sich die Leiste links als erledigt und rechts als das, was noch bleibt.
+
+**Nächste Datei →** springt zur nächsten noch offenen Datei, und wenn du eine
+Datei als gelöst markierst, landest du von selbst dort. **Fortsetzen** in der
+Leiste bleibt deaktiviert, bis jeder Chip grün ist; **Abbrechen** fragt vorher
+und sagt, was du verlierst.
+
+git vergisst eine Datei in dem Moment, in dem sie gestaged wird. „Gelöst“ ist
+deshalb das, was GitHuttBr während dieses Schritts gesehen hat, plus die Dateien,
+die git in seiner Merge-Nachricht aufführt. Eine Datei, die du vor dem Öffnen des
+Resolvers im Terminal gestaged hast, zählt trotzdem; nach einem Neustart mitten
+in einem Rebase zählt die gelöste Hälfte dieses einen Schritts womöglich nicht.
+
 ## Warum das hier kollidiert
 
-**Warum das hier kollidiert** listet im Kopfbereich pro Seite die Commits auf,
+**Warum das kollidiert** listet im Kopf der Datei pro Seite die Commits auf,
 die diese Datei angefasst haben, seit die Branches sich getrennt haben — also
 `git log --merge`, das git seit jeher mitbringt und das niemand findet.
 
@@ -27,42 +55,128 @@ und genau das entscheidet meist tatsächlich über die Lösung. Steht dort nicht
 hat keine der beiden Seiten eine Änderung an genau diesem Pfad committet: Die
 Kollision kam von einer Umbenennung oder einer Verschiebung.
 
+Der Kopf sagt außerdem, bei welchem Konflikt du bist und welche Art von Konflikt
+die Datei hat, gelesen aus gits eigenem Status: *beide Seiten haben dieselben
+Zeilen geändert*, *auf beiden Seiten hinzugefügt*.
+
 ## Die drei Fenster
 
 | Fenster | Ist |
 |---|---|
-| Links | **Ours** — die Seite, auf der du warst, beschriftet mit ihrem Commit |
-| Rechts | **Theirs** — die hereinkommende Seite, beschriftet mit ihrem Commit |
-| Mitte | Das **Ergebnis**: editierbar, mit Zeilennummern, und das, was tatsächlich gestaged wird |
+| **Deine Seite** | Die Seite, auf der du warst, überschrieben mit dem neuesten Commit dieser Seite, der die Datei angefasst hat: SHA, Betreff, Autor, wie lange her |
+| **Basis** | Die Fassung, von der beide Seiten ausgingen — der gemeinsame Vorfahr, oder bei einem Pick oder einem Rebase-Schritt der Parent des angewendeten Commits. Die Zeilen, die jeder Konflikt ersetzt hat, sind schattiert |
+| **Eingehend** | Die hereinkommende Seite, genauso überschrieben wie Deine Seite |
 
-Alle drei Fenster lassen sich in der Größe verändern, und die Kopfzeile des
-Ergebnisses trägt zwei Ansichtsschalter:
+**Basis zeigen** im Kopf des Ergebnisses blendet das Basis-Fenster aus oder ein
+und merkt sich deine Wahl. Es ist ausgegraut, wenn es keine Basis gibt — beide
+Seiten haben die Datei hinzugefügt.
+
+Alle Fenster lassen sich in der Größe verändern, und der Kopf des Ergebnisses
+trägt zwei Ansichtsschalter:
 
 | Schalter | Was er tut |
 |---|---|
-| **Umbruch** | Bricht lange Zeilen in den Fenstern A und B um, statt sie zu scrollen. Das Ergebnisfenster behält eine Zeile pro Zeile — seine Seitenmarker hängen davon ab — und scrollt deshalb immer |
-| **Verknüpft** | Scrollt A, B und das Ergebnis gemeinsam, vertikal und seitlich. Ihre Zeilenzahlen unterscheiden sich, deshalb wird die vertikale Position proportional angeglichen |
+| **Umbruch** | Bricht lange Zeilen in den seitlichen Fenstern um, statt sie zu scrollen. Die Textansicht des Ergebnisses behält eine Zeile pro Zeile — ihre Seitenmarker hängen davon ab — und scrollt deshalb immer |
+| **Scrollen koppeln** | Scrollt die Fenster und das Ergebnis gemeinsam, vertikal und seitlich. Ihre Zeilenzahlen unterscheiden sich, deshalb wird die vertikale Position proportional angeglichen |
 
-Umbruch startet aus, Verknüpft startet an, und beide merken sich ihren Zustand.
+Umbruch startet aus, Scrollen koppeln startet an, und beide merken sich ihren
+Zustand.
+
+## Das Ergebnis
+
+Das Ergebnis ist die Datei so, wie sie geschrieben wird. Jeder Konflikt sitzt an
+seiner Stelle als Karte mit vier Antworten:
+
+| Antwort | Was in der Datei landet |
+|---|---|
+| **Deine nehmen** | Deine Zeilen, und nur deine |
+| **Ihre nehmen** | Ihre Zeilen, und nur ihre |
+| **Beide** | Deine Zeilen, dann ihre |
+| **Bearbeiten** | Beide, im Texteditor geöffnet und mit dem Konflikt markiert — für den Fall, dass die Antwort „beide, aber angepasst“ lautet |
+
+Eine unbeantwortete Karte zeigt beide Seiten in der Vorschau, jede Zeile mit
+*← deine* oder *← ihre* markiert und mit der Zeilennummer versehen, auf der sie
+landet, wenn du sie nimmst — so entscheidest du, ohne aufzublicken. Bei einer
+Datei mit sehr langen Zeilen bleiben die Antworten sichtbar, während der Code
+darunter seitlich scrollt. **Ganze Datei: deine | ihre** im Kopf der Datei
+beantwortet alle Konflikte auf einmal.
+
+**Als Text bearbeiten** schaltet das Ergebnis auf einen einfachen Editor zum
+freien Tippen um, mit der Zeilenzahl der Datei im Kopf. Sobald du getippt hast,
+beschreiben die Karten nicht mehr, was dasteht; der Text bleibt deshalb, bis
+**Auswahl zurücksetzen** alles zurückholt.
+
+Die Fußzeile zählt, was in dieser Datei noch offen ist; **_Datei_ als gelöst
+markieren** schreibt das Ergebnis und staged es und bleibt deaktiviert, bis jeder
+Konflikt eine Antwort hat.
 
 ## Sich zurechtfinden
 
 Beim Öffnen einer Datei landest du auf ihrem **ersten Konflikt**, nicht am
-Anfang der Datei. Die Pfeile ⌃ / ⌄ in der Kopfzeile des Ergebnisses — oder
+Anfang der Datei. Die Pfeile ⌃ / ⌄ im Kopf des Ergebnisses — oder
 <kbd>Alt+↑</kbd> / <kbd>Alt+↓</kbd> — führen durch die übrigen und scrollen
-dabei alle drei Fenster zu jedem einzelnen.
+dabei jedes Fenster zu jedem einzelnen.
 
-## Auswählen
+## Zeilenweise auswählen
 
-Pro **Zeile**, pro **Block** oder gleich die **ganze Seite** — und du kannst
-beide Seiten eines Blocks übernehmen, wenn die Antwort „beides behalten“ lautet.
-Ein Navigator führt dich Konflikt für Konflikt durch das, was noch offen ist,
-damit du nicht versehentlich einen Marker zurücklässt.
+Die seitlichen Fenster wählen weiterhin pro **Zeile** und pro **Block** aus, und
+das Kontrollkästchen in ihrem Kopf nimmt die **ganze Seite** — für die Antwort,
+die keine Karte anbietet, etwa zwei Zeilen von dir und eine von ihnen.
+Zeilenweise Auswahlen erscheinen sofort in den Karten.
+
+## Dateien ohne etwas zum Zusammenführen
+
+Manche Konflikte haben keine Zeilen zum Vergleichen: Eine Seite hat eine Datei
+**gelöscht**, die die andere geändert hat, oder beide Seiten haben sie
+unterschiedlich **umbenannt**. Drei Fenster, von denen eines leer ist, würden
+nichts erklären — diese Fälle bekommen stattdessen eine Karte: wer was getan hat,
+mit Commit, Autor und Alter jeder Seite.
+
+![Eine Datei, die auf einer Seite gelöscht und auf der anderen geändert wurde](../../screenshots/conflict-deleted.webp)
+
+| Fall | Möglichkeiten |
+|---|---|
+| Auf einer Seite gelöscht | **Datei behalten** (mit den Änderungen der anderen Seite), **Datei löschen** (fragt vorher) und **Ansehen, was du geändert hast** — der Diff gegen die Basis, damit du weißt, was das Löschen wegwirft |
+| Auf beiden Seiten umbenannt | Den einen Namen **behalten**, den anderen, oder **beide Namen** |
+
+git speichert keine Verbindung zwischen einem umbenannten Original und seinen
+zwei neuen Namen, also ordnet die Karte sie über den Inhalt zu. Wenn sie es nicht
+erkennen kann — mehrere Umbenennungen auf einmal, und die Dateien wurden auch
+geändert —, sagt sie das, und die neuen Namen erscheinen als eigene Chips.
+
+## Abschließen
+
+Wenn die letzte Datei gelöst ist, schickt dich der Arbeitsbereich nicht auf die
+Suche nach **Fortsetzen**: Eine Karte fasst zusammen, wie die Konflikte
+beantwortet wurden, lässt dich die Merge-Nachricht bearbeiten (vorbelegt mit der
+von git) und schließt von dort aus ab.
+
+![Alle Konflikte gelöst, mit der Merge-Nachricht und dem rerere-Schalter](../../screenshots/conflict-done.webp)
+
+- Die Zusammenfassung zählt, was sie dich hat wählen sehen: deine, ihre, beide,
+  von Hand bearbeitet. Eine außerhalb des Resolvers gelöste Datei zählt als
+  Datei, nicht als Antwort.
+- Ein **Rebase**-Schritt behält die eigene Nachricht des wieder eingespielten
+  Commits, deshalb gibt es dafür kein Nachrichtenfeld.
+- **Diese Lösungen (rerere) für das nächste Mal merken** ist gits
+  `rerere.enabled`, derselbe Schalter wie in den Einstellungen. git merkt sich
+  nur Konflikte, die es hat entstehen sehen; hier eingeschaltet, wirkt es also
+  ab dem nächsten.
+- **Noch einmal prüfen** schließt den Resolver mit dem gestagten Ergebnis.
+
+## Rückgängig machen
+
+Jede Lösung — eine als gelöst markierte Datei, eine übernommene Seite, eine
+behaltene oder gelöschte Datei, eine geklärte Umbenennung — hat einen
+Rückgängig-Eintrag. Rückgängig stellt den Konflikt genau so wieder her, wie git
+ihn hinterlassen hat: die Marker, beide Seiten und die Basis im Index, die Datei
+auf der Platte. **Abbrechen** ist das Einzige, was sich nicht rückgängig machen
+lässt — deshalb fragt es nach.
 
 ## KI-Unterstützung
 
-Ist die KI aktiviert, schlägt **Mit KI lösen** einen Merge im Ergebnis-Fenster
-vor. Sie wendet nie etwas von selbst an: Du liest ihn, bearbeitest ihn und
+Ist die KI aktiviert, schlägt **Mit KI lösen** einen Merge im Ergebnis vor, als
+Text. Sie wendet nie etwas von selbst an: Du liest ihn, bearbeitest ihn und
 stagest ihn. Siehe [KI-Funktionen](ai.md).
 
 ## Xcode-Projektdateien
@@ -83,7 +197,7 @@ zusammenzuführen**: Objekte über ihre ID zuordnen, jede Ergänzung beider Seit
 wirklich etwas auseinanderging. Das Band über den Panels sagt, was jede Seite
 hinzugefügt hat und was — falls überhaupt — für dich übrig bleibt.
 
-Wie der KI-Vorschlag landet es im Ausgabebereich und merkt nichts vor. Du liest
+Wie der KI-Vorschlag landet es im Ergebnis und merkt nichts vor. Du liest
 es, bevor du speicherst.
 
 ![Das Band für die strukturelle Zusammenführung über den Konflikt-Panels, bei einer Xcode-Projektdatei](../../screenshots/conflict-pbxproj.webp)

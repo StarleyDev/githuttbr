@@ -2,9 +2,15 @@ import { useEffect, useMemo, useState } from 'react'
 import {
   AlertTriangle,
   CheckCircle2,
+  GitCommitHorizontal,
+  Link2,
+  ListChecks,
   Loader2,
+  PackageCheck,
   Plus,
   RefreshCw,
+  ShieldCheck,
+  Stethoscope,
   Trash2,
   Wand2,
   XCircle
@@ -242,12 +248,17 @@ export function RepoConfigTab({ repoPath }: { repoPath: string }): React.JSX.Ele
 
       {doctor.length > 0 && (
         <section className="rc-section">
-          <h4>
-            {t('doctor.title')}
-            <button className="btn ghost small rc-head-btn" disabled={checking} onClick={() => void recheck()}>
-              {checking ? <Loader2 size={12} className="spin" /> : <RefreshCw size={12} />} {t('doctor.recheck')}
-            </button>
-          </h4>
+          <div className="theme-section-header">
+            <h4 className="settings-section-title">
+              <Stethoscope size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />
+              {t('doctor.title')}
+            </h4>
+            <div className="theme-section-actions">
+              <button className="btn ghost small" disabled={checking} onClick={() => void recheck()}>
+                {checking ? <Loader2 size={12} className="spin" /> : <RefreshCw size={12} />} {t('doctor.recheck')}
+              </button>
+            </div>
+          </div>
           <span className="settings-hint">{t('doctor.hint')}</span>
           {doctor.map((c) => (
             <DoctorRow key={c.id} check={c} repoPath={repoPath} />
@@ -256,7 +267,10 @@ export function RepoConfigTab({ repoPath }: { repoPath: string }): React.JSX.Ele
       )}
 
       <section className="rc-section">
-        <h4>{t('repoConfig.protect')}</h4>
+        <h4 className="settings-section-title">
+          <ShieldCheck size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />
+          {t('repoConfig.protect')}
+        </h4>
         <span className="settings-hint">{t('repoConfig.protectHint')}</span>
         <BranchMultiSelect
           options={branchOptions}
@@ -266,7 +280,10 @@ export function RepoConfigTab({ repoPath }: { repoPath: string }): React.JSX.Ele
       </section>
 
       <section className="rc-section">
-        <h4>{t('repoConfig.links')}</h4>
+        <h4 className="settings-section-title">
+          <Link2 size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />
+          {t('repoConfig.links')}
+        </h4>
         <span className="settings-hint">{t('repoConfig.linksHint')}</span>
         <div className="rc-list">
           {links.map((link, i) => (
@@ -329,7 +346,10 @@ export function RepoConfigTab({ repoPath }: { repoPath: string }): React.JSX.Ele
       </section>
 
       <section className="rc-section">
-        <h4>{t('repoConfig.commit')}</h4>
+        <h4 className="settings-section-title">
+          <GitCommitHorizontal size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />
+          {t('repoConfig.commit')}
+        </h4>
         <span className="settings-hint">{t('repoConfig.scopesHint')}</span>
         <BranchMultiSelect
           options={[]}
@@ -355,7 +375,10 @@ export function RepoConfigTab({ repoPath }: { repoPath: string }): React.JSX.Ele
       </section>
 
       <section className="rc-section">
-        <h4>{t('repoConfig.requires')}</h4>
+        <h4 className="settings-section-title">
+          <PackageCheck size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />
+          {t('repoConfig.requires')}
+        </h4>
         <span className="settings-hint">{t('repoConfig.requiresHint')}</span>
         <div className="rc-row">
           <label className="rc-label">{t('repoConfig.reqNode')}</label>
@@ -434,7 +457,10 @@ export function RepoConfigTab({ repoPath }: { repoPath: string }): React.JSX.Ele
       </section>
 
       <section className="rc-section">
-        <h4>{t('repoConfig.checklist')}</h4>
+        <h4 className="settings-section-title">
+          <ListChecks size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />
+          {t('repoConfig.checklist')}
+        </h4>
         <span className="settings-hint">{t('repoConfig.checklistHint')}</span>
         <LineList
           values={draft.checklist?.push ?? []}

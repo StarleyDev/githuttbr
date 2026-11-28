@@ -30,7 +30,7 @@ vi.mock('../src/renderer/src/infrastructure/api', () => ({
   }
 }))
 
-import { useSettingsStore } from '../src/renderer/src/stores/settings'
+import { sendPendingSettingsSave, useSettingsStore } from '../src/renderer/src/stores/settings'
 import { useUIStore } from '../src/renderer/src/stores/ui'
 import { SettingsSaveRefused } from '../src/renderer/src/infrastructure/api'
 
@@ -56,6 +56,21 @@ describe('the settings store', () => {
     expect(saves()).toHaveLength(1)
     expect(saves()[0].settings).toMatchObject({ language: 'de', confirmForcePush: false })
     expect(saves()[0].generation).toBe(gen)
+  })
+
+  it('a page going away sends the pending save at once, not after the debounce', async () => {
+    useSettingsStore.getState().update((s) => ({ ...s, prVisits: { 'https://example.com/o/r#7': 1234 } }))
+    expect(saves()).toHaveLength(0)
+    // Called from beforeunload: no timer gets to fire after it.
+    sendPendingSettingsSave()
+    expect(saves()).toHaveLength(1)
+    expect(saves()[0].settings?.prVisits).toEqual({ 'https://example.com/o/r#7': 1234 })
+    // The debounce is spent: nothing goes out twice.
+    await vi.advanceTimersByTimeAsync(300)
+    expect(saves()).toHaveLength(1)
+    // Nothing pending, nothing sent.
+    sendPendingSettingsSave()
+    expect(saves()).toHaveLength(1)
   })
 
   it('a pending save goes out before an unlock, never after it with the older state', async () => {

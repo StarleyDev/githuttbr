@@ -93,11 +93,12 @@ binnen code blijven ongemoeid.
 een antwoord in een thread, een regelreactie en de beschrijving van een nieuw
 issue. Het werkt ook vanuit de tabbladen, de werkbalk en het voorbeeld, niet alleen
 vanuit het veld. Esc annuleert een regelreactie, vanaf dezelfde plekken. Een
-**antwoord in een thread** was vroeger een veld van één regel dat met Enter werd
-verstuurd; nu is het een klein tekstvak, dus Enter is een nieuwe regel (of het
-volgende lijstitem) en ⌘/Ctrl+Enter verstuurt. Een antwoordvak toont zijn
-tabbladen en gereedschap zodra je erin klikt, zodat een lang gesprek niet onder
-elke thread een werkbalk krijgt.
+**antwoord in een thread** is een veld van één regel, zodat een lang gesprek niet
+onder elke thread een werkbalk krijgt: Enter verstuurt, Shift+Enter voegt een regel
+toe (het veld groeit mee, ook met een geplakt blok) en Esc gooit weg wat je typte,
+na het eerst te vragen. Het heeft geen tabbladen of werkbalk, maar de
+opmaaksneltoetsen en de aanvulling met **@** / **#** werken erin, en er verschijnt
+een knop **Antwoorden** zodra er iets te versturen is.
 
 ## Het spiekbriefje
 

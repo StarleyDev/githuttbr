@@ -8,6 +8,7 @@ import type {
   CiStatus,
   ConflictContext,
   ConflictOpKind,
+  ConflictSnapshot,
   ConflictSide,
   DivergedStrategy,
   GitLockFile,
@@ -1477,6 +1478,43 @@ async function repointLegacyDiffDrivers(path: string): Promise<void> {
     for (const entry of changed) await gitApi.setDiffDriver(path, entry.name, entry[pick], entry.scope === 'global')
   }
   pushUndo(path, { label: t('undoLabel.diffDriversRepointed'), undo: write('previous'), redo: write('next') })
+}
+
+/**
+ * Resolve some unmerged paths with an undo entry. The index stages and the
+ * working-tree bytes are captured first, so undo puts the conflict back exactly
+ * as git left it — markers, both sides, the base — rather than a copy of it.
+ */
+function runConflictResolution(path: string, label: string, files: string[], fn: () => Promise<void>): Promise<boolean> {
+  let snapshot: ConflictSnapshot | null = null
+  return useRepoStore.getState().run(
+    path,
+    label,
+    async () => {
+      snapshot = await gitApi.conflictSnapshot(path, files).catch(() => null)
+      await fn()
+    },
+    {
+      label: interp(t('conflictWs.undoResolved'), { file: files[0] ?? '' }),
+      // No snapshot (a submodule's folder cannot be hashed) means nothing to put
+      // back: say so rather than report an undo that did nothing.
+      undo: async () => {
+        if (!snapshot) throw new Error(t('conflictWs.undoUnavailable'))
+        try {
+          await gitApi.conflictRestore(path, snapshot)
+        } catch (err) {
+          // The saved blobs are loose objects: a `gc --prune=now` removes them.
+          const gone = err instanceof Error && /cat-file|bad file|not a valid object|could not get object/i.test(err.message)
+          throw gone ? new Error(t('conflictWs.undoGone')) : err
+        }
+      },
+      redo: fn
+    },
+    null,
+    undefined,
+    // Resolving moves files out of Conflicted; the op itself is still running.
+    ['status', 'treeStatus', 'mergeState']
+  )
 }
 
 /** True when the repository really is mid-merge/rebase/cherry-pick right now. */
@@ -3109,11 +3147,11 @@ export const repoActions = {
    * true but reads as a failure. Both actions therefore re-check first, and
    * treat "already over" as the banner being stale rather than as an error.
    */
-  conflictContinue: async (path: string, kind: ConflictOpKind) => {
+  conflictContinue: async (path: string, kind: ConflictOpKind, message?: string) => {
     if (!(await stillInProgress(path))) return false
     return useRepoStore
       .getState()
-      .run(path, interp(t('act.continued'), { kind }), () => gitApi.conflictOpContinue(path, kind), undefined, null, isNoOpConflictError(path))
+      .run(path, interp(t('act.continued'), { kind }), () => gitApi.conflictOpContinue(path, kind, message), undefined, null, isNoOpConflictError(path))
   },
 
   conflictAbort: async (path: string, kind: ConflictOpKind) => {
@@ -3130,8 +3168,21 @@ export const repoActions = {
         : side === 'ours'
           ? t('act.conflictKeptOurs')
           : t('act.conflictKeptTheirs')
-    return useRepoStore.getState().run(path, `${verb} ${file}`, () => gitApi.conflictTakeSide(path, file, side))
+    return runConflictResolution(path, `${verb} ${file}`, [file], () => gitApi.conflictTakeSide(path, file, side))
   },
+
+  /** Save a hand-made resolution of `file` and stage it. Undo brings the markers back. */
+  conflictSaveResolution: (path: string, file: string, content: string) =>
+    runConflictResolution(path, interp(t('conflict.resolvedFile'), { file }), [file], () =>
+      gitApi.resolveConflict(path, file, content)
+    ),
+
+  /**
+   * Settle paths with nothing to merge line by line — deleted on one side,
+   * renamed on both: stage `keep`, remove `drop`. Undo restores the conflict.
+   */
+  conflictResolvePaths: (path: string, label: string, keep: string[], drop: string[]) =>
+    runConflictResolution(path, label, [...keep, ...drop], () => gitApi.conflictResolvePaths(path, keep, drop)),
 
   revertCommit: (path: string, hash: string) =>
     useRepoStore.getState().run(path, interp(t('act.reverted'), { sha: hash.slice(0, 7) }), () => gitApi.revertCommit(path, hash), {

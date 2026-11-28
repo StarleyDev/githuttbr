@@ -2,23 +2,50 @@
 title: Résoudre les conflits
 category: Travailler sur les changements
 order: 32
-summary: Un résolveur à trois panneaux qui vous dit quel côté est lequel.
-keywords: conflit conflict résolveur resolver fusion merge conflits ours theirs nôtre leur résoudre resolve marqueurs markers three-way rerere réutiliser résolution enregistrée mémoriser rejouer
+summary: Un seul écran pour toute l'étape en conflit — chaque fichier, l'ancêtre commun, une réponse par conflit, et la ligne d'arrivée.
+keywords: conflit conflict résolveur resolver fusion merge conflits ours theirs nôtre leur base ancêtre commun résoudre resolve marqueurs markers three-way supprimé renommé modify delete rename rerere réutiliser résolution enregistrée mémoriser rejouer terminer continuer abandonner
 ---
 
 # Résoudre les conflits
 
-Quand une fusion, un rebase, un cherry-pick ou un revert s'arrête, une bannière
-vous dit **ce qui** s'est arrêté et **entre quoi** — « fusion de `feature/x` dans
-`main` », et pas simplement « conflit ».
+Quand une fusion, un rebase, un cherry-pick ou un revert s'arrête, le résolveur
+fait de toute l'étape un seul écran. La barre du haut dit **ce qui** s'est
+arrêté et **entre quoi** — « Fusion de `feature` dans `main` », et pas
+simplement « conflit » — et où vous en êtes : *2 sur 5 fichiers* résolus, avec
+les conflits qui restent sur l'ensemble des fichiers.
 
 ![Le résolveur de conflits](../../screenshots/conflict-resolver.webp)
 
+## La bande des fichiers
+
+Sous la barre, une pastille par fichier sur lequel cette étape s'est arrêtée :
+
+| Pastille | Signifie |
+|---|---|
+| Verte avec ✓ | Résolu — indexé, plus rien à décider |
+| Cerclée | Le fichier sur lequel vous êtes |
+| Un nombre rouge | Combien de blocs en conflit le fichier contient encore |
+| Une étiquette | Un conflit sans texte à fusionner : *supprimé d’un côté*, *renommé des deux côtés*, *ajouté d’un côté* |
+
+Les pastilles résolues viennent d'abord et les ouvertes ensuite, chaque groupe
+par ordre de nom : la bande se lit comme le fait à gauche et le reste à droite.
+
+**Fichier suivant →** saute au prochain fichier encore ouvert, et marquer un
+fichier comme résolu vous y emmène de lui-même. **Continuer** dans la barre reste
+désactivé tant que toutes les pastilles ne sont pas vertes ; **Abandonner**
+demande d'abord et dit ce que vous perdez.
+
+git oublie un fichier dès qu'il est indexé : « résolu » désigne donc ce que
+GitHuttBr a vu pendant cette étape, plus les fichiers que git a listés dans son
+message de fusion. Un fichier indexé dans un terminal avant d'ouvrir le résolveur
+compte quand même ; après un redémarrage en plein rebase, la moitié résolue de
+cette étape peut ne pas compter.
+
 ## Pourquoi ça entre en conflit
 
-**Pourquoi ça entre en conflit**, dans l'en-tête, liste par côté les commits qui
-ont touché ce fichier depuis que les branches se sont séparées — c'est
-`git log --merge`, que git livre depuis toujours et que personne ne trouve.
+**Pourquoi ça entre en conflit**, dans l'en-tête du fichier, liste par côté les
+commits qui ont touché ce fichier depuis que les branches se sont séparées —
+c'est `git log --merge`, que git livre depuis toujours et que personne ne trouve.
 
 ![Les commits de chaque côté ayant touché le fichier en conflit](../../screenshots/conflict-why.webp)
 
@@ -27,44 +54,128 @@ qui est généralement ce qui tranche réellement la résolution. Une liste vide
 signifie qu'aucun des deux côtés n'a validé de changement sur ce chemin exact —
 l'opposition vient d'un renommage ou d'un déplacement.
 
+L'en-tête dit aussi sur quel conflit vous êtes et de quel type de conflit il
+s'agit pour le fichier, lu dans le statut de git lui-même : *les deux côtés ont
+modifié les mêmes lignes*, *ajouté des deux côtés*.
+
 ## Les trois panneaux
 
 | Panneau | C'est |
 |---|---|
-| Gauche | **Le nôtre** — le côté où vous étiez, étiqueté avec son commit |
-| Droite | **Le leur** — le côté qui arrive, étiqueté avec son commit |
-| Milieu | La **sortie** : éditable, numérotée, et c'est elle qui est réellement indexée |
+| **Votre côté** | Le côté où vous étiez, surmonté du commit le plus récent de ce côté ayant touché le fichier : sha, sujet, auteur, il y a combien de temps |
+| **Base** | La version dont les deux côtés sont partis — l'ancêtre commun ou, pour un pick ou une étape de rebase, le parent du commit appliqué. Les lignes que chaque conflit a remplacées sont ombrées |
+| **Entrant** | Le côté qui arrive, surmonté de la même façon que Votre côté |
 
-Les trois panneaux se redimensionnent, et l'en-tête de la sortie porte deux
+**Afficher la base**, dans l'en-tête du résultat, masque ou affiche le panneau
+Base et retient votre choix. Il est grisé quand il n'y a pas de base — les deux
+côtés ont ajouté le fichier.
+
+Tous les panneaux se redimensionnent, et l'en-tête du résultat porte deux
 bascules d'affichage :
 
 | Bascule | Ce qu'elle fait |
 |---|---|
-| **Retour à la ligne** | Coupe les lignes longues dans les panneaux A et B au lieu de les faire défiler. Le panneau de sortie garde une rangée par ligne — ses marqueurs latéraux en dépendent — donc il défile toujours |
-| **Lié** | Fait défiler A, B et la sortie ensemble, verticalement et latéralement. Leurs nombres de lignes diffèrent, donc la position verticale est alignée par proportion |
+| **Retour à la ligne** | Coupe les lignes longues dans les panneaux latéraux au lieu de les faire défiler. La vue texte du résultat garde une rangée par ligne — ses marqueurs latéraux en dépendent — donc elle défile toujours |
+| **Lier le défilement** | Fait défiler les panneaux et le résultat ensemble, verticalement et latéralement. Leurs nombres de lignes diffèrent, donc la position verticale est alignée par proportion |
 
-Le retour à la ligne démarre désactivé, Lié démarre activé, et les deux
-retiennent leur état.
+Le retour à la ligne démarre désactivé, Lier le défilement démarre activé, et les
+deux retiennent leur état.
+
+## Le résultat
+
+Le résultat est le fichier tel qu'il sera écrit. Chaque conflit y reste à sa
+place sous forme de carte portant quatre réponses :
+
+| Réponse | Ce qui arrive dans le fichier |
+|---|---|
+| **Prendre le vôtre** | Vos lignes, et seulement les vôtres |
+| **Prendre le leur** | Leurs lignes, et seulement les leurs |
+| **Les deux** | Vos lignes, puis les leurs |
+| **Modifier** | Les deux, ouvertes dans l'éditeur de texte avec le conflit sélectionné, pour quand la réponse est « les deux, mais ajustées » |
+
+Une carte sans réponse prévisualise les deux côtés, chaque ligne marquée
+*← vôtre* ou *← leur* et numérotée avec la ligne où elle arrivera si vous la
+prenez : vous décidez sans lever les yeux. Sur un fichier aux lignes très
+longues, les réponses restent visibles pendant que le code défile latéralement
+dessous. **Fichier entier : le vôtre | le leur**, dans l'en-tête du fichier,
+répond à tous les conflits d'un coup.
+
+**Modifier en texte** bascule le résultat vers un éditeur simple pour taper
+librement, avec le nombre de lignes du fichier dans l'en-tête. Dès que vous avez
+tapé, les cartes ne décrivent plus ce qui est là : le texte reste donc tel quel
+jusqu'à ce que **Réinitialiser les choix** remette tout en place.
+
+Le pied compte ce qui reste dans ce fichier ; **Marquer *fichier* comme résolu**
+écrit le résultat et l'indexe, et reste désactivé tant que chaque conflit n'a pas
+de réponse.
 
 ## Se déplacer
 
 Ouvrir un fichier vous amène sur son **premier conflit**, pas en haut du
-fichier. Les flèches ⌃ / ⌄ de l'en-tête de la sortie — ou <kbd>Alt+↑</kbd> /
-<kbd>Alt+↓</kbd> — parcourent les suivants, en faisant défiler les trois
-panneaux jusqu'à chacun.
+fichier. Les flèches ⌃ / ⌄ de l'en-tête du résultat — ou <kbd>Alt+↑</kbd> /
+<kbd>Alt+↓</kbd> — parcourent les suivants, en faisant défiler chaque panneau
+jusqu'à chacun.
 
-## Choisir
+## Choisir ligne par ligne
 
-Par **ligne**, par **bloc**, ou le **côté entier** d'un coup — et vous pouvez
-prendre les deux côtés d'un bloc quand la réponse est « garder les deux ». Un
-navigateur conflit par conflit vous fait passer en revue ce qui reste, pour que
-vous ne puissiez pas laisser un marqueur derrière vous par accident.
+Les panneaux latéraux choisissent toujours par **ligne** et par **bloc**, et la
+case de leur en-tête prend le **côté entier** — pour la réponse qu'aucune carte
+ne propose, comme deux lignes à vous et une à eux. Les choix ligne par ligne
+apparaissent dans les cartes à mesure.
+
+## Fichiers sans rien à fusionner
+
+Certains conflits n'ont pas de lignes à comparer : un côté a **supprimé** un
+fichier que l'autre a modifié, ou les deux côtés l'ont **renommé** sous des noms
+différents. Trois panneaux dont un vide n'expliqueraient rien, alors ces cas ont
+droit à une carte — qui a fait quoi, avec le commit, l'auteur et l'âge de chaque
+côté.
+
+![Un fichier supprimé d'un côté et modifié de l'autre](../../screenshots/conflict-deleted.webp)
+
+| Cas | Choix |
+|---|---|
+| Supprimé d’un côté | **Garder le fichier** (avec les modifications de l'autre côté), **Supprimer le fichier** (demande d'abord), et **Voir ce que vous avez modifié** — le diff depuis la base, pour savoir ce que la suppression jette |
+| Renommé des deux côtés | **Garder** un nom, l'autre, ou **les deux noms** |
+
+git n'enregistre aucun lien entre un original renommé et ses deux nouveaux noms,
+donc la carte les apparie par contenu. Quand elle ne peut pas trancher —
+plusieurs renommages à la fois, et les fichiers modifiés en plus — elle le dit,
+et les nouveaux noms apparaissent comme leurs propres pastilles.
+
+## Terminer
+
+Quand le dernier fichier est résolu, l'espace de travail ne vous envoie pas
+chercher **Continuer** : une carte résume comment les conflits ont été tranchés,
+vous laisse modifier le message de fusion (prérempli avec celui de git) et
+termine depuis là.
+
+![Tous les conflits résolus, avec le message de fusion et l'interrupteur rerere](../../screenshots/conflict-done.webp)
+
+- Le résumé compte ce qu'il vous a vu choisir : le vôtre, le leur, les deux,
+  modifié à la main. Un fichier résolu en dehors du résolveur compte comme un
+  fichier, pas comme une réponse.
+- Une étape de **rebase** garde le message propre du commit rejoué, donc il n'y a
+  pas de zone de message pour elle.
+- **Retenir ces résolutions (rerere) pour la prochaine fois** est le
+  `rerere.enabled` de git, le même interrupteur que dans les Paramètres. git ne
+  retient que les conflits qu'il a vus se produire : l'activer ici prend effet à
+  partir du suivant.
+- **Revoir** ferme le résolveur sur le résultat indexé.
+
+## Annuler
+
+Chaque résolution — un fichier marqué résolu, un côté pris, un fichier gardé ou
+supprimé, un renommage tranché — a une entrée d'annulation. Annuler remet le
+conflit exactement comme git l'avait laissé : les marqueurs, les deux côtés et la
+base dans l'index, le fichier sur le disque. **Abandonner** est la seule chose
+qui ne peut pas être annulée, et c'est pourquoi il demande.
 
 ## Assistance IA
 
-Avec l'IA activée, **Résoudre avec l'IA** propose une fusion dans le panneau de
-sortie. Elle n'applique jamais rien d'elle-même : vous la lisez, l'éditez et
-l'indexez. Voir [Fonctions IA](ai.md).
+Avec l'IA activée, **Résoudre avec l’IA** propose une fusion dans le résultat,
+sous forme de texte. Elle n'applique jamais rien d'elle-même : vous la lisez,
+l'éditez et l'indexez. Voir [Fonctions IA](ai.md).
 
 ## Fichiers de projet Xcode
 
@@ -84,7 +195,7 @@ des deux côtés, unir les tableaux `children` et `files`, et s'arrêter sur ce 
 a réellement divergé. Le bandeau au-dessus des panneaux indique ce que chaque
 côté a ajouté et ce qui — le cas échéant — vous reste à trancher.
 
-Comme la proposition de l'IA, elle atterrit dans le panneau de sortie et
+Comme la proposition de l'IA, elle atterrit dans le résultat et
 n'indexe rien. Vous la relisez avant d'enregistrer.
 
 ![Le bandeau de fusion structurelle au-dessus des panneaux de conflit, sur un fichier de projet Xcode](../../screenshots/conflict-pbxproj.webp)

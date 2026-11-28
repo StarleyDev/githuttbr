@@ -14,7 +14,8 @@ export function CodeEditor({
   lineNumbers = false,
   disabled = false,
   autoFocus = false,
-  label
+  label,
+  changedLines
 }: {
   value: string
   onChange: (next: string) => void
@@ -25,6 +26,8 @@ export function CodeEditor({
   autoFocus?: boolean
   /** What screen readers announce for the text area — the file's name. */
   label?: string
+  /** Lines to tint (0-based), e.g. the ones an edit changed (lib/changedLines). */
+  changedLines?: ReadonlySet<number>
 }): React.JSX.Element {
   const areaRef = useRef<HTMLTextAreaElement>(null)
   const preRef = useRef<HTMLPreElement>(null)
@@ -37,8 +40,17 @@ export function CodeEditor({
   // shown uncoloured: highlighting it again on every keystroke freezes typing.
   const html = useMemo(() => {
     const paint = lines.length > HUGE_LINES ? escapeHtml : (l: string) => highlightLine(l, lang)
-    return lines.map((l) => paint(l) || '&nbsp;').join('\n') + '\n'
-  }, [lines, lang])
+    // A tinted line is an inline-block as wide as the editor: it keeps the
+    // row's height, so the backdrop still lines up with the textarea above it.
+    return (
+      lines
+        .map((l, i) => {
+          const html = paint(l) || '&nbsp;'
+          return changedLines?.has(i) ? `<span class="code-editor-changed">${html}</span>` : html
+        })
+        .join('\n') + '\n'
+    )
+  }, [lines, lang, changedLines])
   const gutter = useMemo(
     () => (lineNumbers ? Array.from({ length: lineCount }, (_, i) => i + 1).join('\n') + '\n' : ''),
     [lineNumbers, lineCount]

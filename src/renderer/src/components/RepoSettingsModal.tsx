@@ -434,9 +434,12 @@ export function RepoSettingsModal({ repoPath, initialTab }: { repoPath: string; 
           ))}
         </nav>
         <section className="repo-settings-content">
-          <div className="repo-settings-page-head">
-            <h4>{t(current.labelKey)}</h4>
-            <p>{t(current.descriptionKey)}</p>
+          {/* The page title reads like a Settings page heading: icon, accent, rule. */}
+          <div className="settings-general-header repo-settings-page-head">
+            <h4 className="settings-section-title">
+              {PAGE_ICON[page]} {t(current.labelKey)}
+            </h4>
+            <p className="settings-hint">{t(current.descriptionKey)}</p>
           </div>
           <div className="repo-settings-body">
             {page === 'general' && <GeneralTab repoPath={repoPath} onOpenPage={setPage} />}
@@ -444,7 +447,7 @@ export function RepoSettingsModal({ repoPath, initialTab }: { repoPath: string; 
             {page === 'info' && <RepoInfoTab repoPath={repoPath} />}
             {page === 'vault' && <RepoVaultTab repoPath={repoPath} onCount={onVaultCount} />}
             {page === 'analytics' && <AnalyticsSection aiEnabled={aiEnabled} />}
-            {page === 'insights' && <InsightsPage repoPath={repoPath} />}
+            {page === 'insights' && <InsightsPage repoPath={repoPath} embedded />}
             {page === 'history' && <RepoHistorySection />}
             {page === 'logs' && <RepoLogsTab repoPath={repoPath} />}
           </div>

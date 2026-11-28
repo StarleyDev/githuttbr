@@ -2,21 +2,48 @@
 title: Rozwiązywanie konfliktów
 category: Praca ze zmianami
 order: 32
-summary: Trzypanelowy edytor konfliktów, który mówi ci, która strona jest która.
-keywords: konflikt konflikty rozwiąż nasze ich znaczniki trójstronny zapamiętane rozwiązanie conflict resolver merge ours theirs markers three-way rerere reuse recorded resolution replay
+summary: Jeden ekran na cały krok z konfliktem — każdy plik, wspólny przodek, odpowiedź dla każdego konfliktu i meta.
+keywords: konflikt konflikty rozwiąż nasze ich twoje przychodzące baza wspólny przodek znaczniki trójstronny usunięty zmiana nazwy zapamiętane rozwiązanie zakończ kontynuuj przerwij conflict resolver merge ours theirs base common ancestor markers three-way modify delete rename rerere reuse recorded resolution replay finish continue abort
 ---
 
 # Rozwiązywanie konfliktów
 
-Kiedy merge, rebase, cherry-pick albo revert się zatrzyma, baner mówi ci, **co**
-się zatrzymało i **między czym** — „merge `feature/x` do `main`", a nie po
-prostu „konflikt".
+Kiedy merge, rebase, cherry-pick albo revert się zatrzyma, edytor konfliktów
+zamienia cały krok w jeden ekran. Pasek u góry mówi, **co** się zatrzymało i
+**między czym** — „Scalanie `feature` do `main`", a nie po prostu „konflikt" — i
+jak daleko jesteś: *2 z 5 plików rozwiązano*, razem z konfliktami, które wciąż
+zostały we wszystkich plikach.
 
 ![Edytor konfliktów](../../screenshots/conflict-resolver.webp)
 
+## Pasek plików
+
+Pod paskiem jest jeden chip na każdy plik, na którym ten krok się zatrzymał:
+
+| Chip | Oznacza |
+|---|---|
+| Zielony z ✓ | Rozwiązany — w przechowalni, nic więcej do decydowania |
+| Obrysowany | Plik, na którym jesteś |
+| Czerwona liczba | Ile bloków konfliktu plik jeszcze zawiera |
+| Etykieta | Konflikt bez tekstu do scalenia: *usunięty po jednej stronie*, *zmieniono nazwę po obu stronach*, *dodany po jednej stronie* |
+
+Rozwiązane chipy idą pierwsze, otwarte po nich, każda grupa według nazwy, więc
+pasek czyta się jako zrobione po lewej i to, co zostało, po prawej.
+
+**Następny plik →** przeskakuje do następnego wciąż otwartego, a oznaczenie pliku
+jako rozwiązanego samo cię tam przenosi. **Kontynuuj** na pasku pozostaje
+wyłączone, dopóki każdy chip nie jest zielony; **Przerwij** najpierw pyta i mówi,
+co tracisz.
+
+git zapomina o pliku w chwili, gdy trafi do przechowalni, więc „rozwiązany" to
+to, co GitHuttBr widział podczas tego kroku, plus pliki, które git wymienił w
+swoim komunikacie merge'a. Plik dodany do przechowalni w terminalu, zanim
+otworzyłeś edytor, nadal się liczy; po ponownym uruchomieniu w środku rebase'u
+rozwiązana połowa tego jednego kroku może się już nie liczyć.
+
 ## Dlaczego to jest w konflikcie
 
-**Dlaczego to jest w konflikcie** w nagłówku wypisuje, dla każdej strony
+**Dlaczego to konfliktuje** w nagłówku pliku wypisuje, dla każdej strony
 osobno, commity, które dotknęły tego pliku, odkąd gałęzie się rozeszły — czyli
 `git log --merge`, które git ma od zawsze i którego nikt nie znajduje.
 
@@ -27,44 +54,124 @@ przesądza o rozwiązaniu. Pustka w tym miejscu oznacza, że żadna ze stron nie
 zacommitowała zmiany dokładnie w tej ścieżce — kolizja wzięła się ze zmiany
 nazwy albo przeniesienia.
 
+Nagłówek mówi też, na którym konflikcie jesteś i jakiego rodzaju konflikt ma
+plik, odczytany z własnego statusu gita: *obie strony zmieniły te same wiersze*,
+*dodany po obu stronach*.
+
 ## Trzy panele
 
 | Panel | Jest |
 |---|---|
-| Lewy | **Nasze** — strona, na której byłeś, opisana swoim commitem |
-| Prawy | **Ich** — strona, która przychodzi, opisana swoim commitem |
-| Środkowy | **Wynik**: edytowalny, z numerami linii, i to on faktycznie trafia do przechowalni |
+| **Twoja strona** | Strona, na której byłeś, z nagłówkiem najnowszego commita po tej stronie, który dotknął pliku: sha, temat, autor, jak dawno temu |
+| **Baza** | Wersja, od której obie strony wyszły — wspólny przodek, a przy picku albo kroku rebase'u rodzic stosowanego commita. Wiersze, które zastąpił każdy konflikt, są zacienione |
+| **Przychodzące** | Strona, która przychodzi, z nagłówkiem takim samym jak Twoja strona |
 
-Wszystkie trzy panele da się rozsuwać, a nagłówek wyniku niesie dwa
-przełączniki widoku:
+**Pokaż bazę** w nagłówku wyniku ukrywa albo pokazuje panel Baza i pamięta twój
+wybór. Jest wyszarzone, gdy bazy nie ma — obie strony dodały plik.
+
+Wszystkie panele da się rozsuwać, a nagłówek wyniku niesie dwa przełączniki
+widoku:
 
 | Przełącznik | Co robi |
 |---|---|
-| **Zawijaj** | Zawija długie wiersze w panelach A i B zamiast je przewijać. Panel wyniku trzyma jeden rząd na wiersz — od tego zależą jego boczne znaczniki — więc zawsze się przewija |
-| **Powiązane** | Przewija A, B i wynik razem, w pionie i w poziomie. Ich liczby wierszy się różnią, więc pozycja pionowa jest dopasowywana proporcjonalnie |
+| **Zawijaj** | Zawija długie wiersze w panelach bocznych zamiast je przewijać. Widok tekstowy wyniku trzyma jeden rząd na wiersz — od tego zależą jego boczne znaczniki — więc zawsze się przewija |
+| **Połącz przewijanie** | Przewija panele i wynik razem, w pionie i w poziomie. Ich liczby wierszy się różnią, więc pozycja pionowa jest dopasowywana proporcjonalnie |
 
-Zawijaj na starcie jest wyłączone, Powiązane — włączone, a oba przełączniki
-pamiętają swój stan.
+Zawijaj na starcie jest wyłączone, Połącz przewijanie — włączone, a oba
+przełączniki pamiętają swój stan.
+
+## Wynik
+
+Wynik to plik w takiej postaci, w jakiej zostanie zapisany. Każdy konflikt
+stoi na swoim miejscu jako karta z czterema odpowiedziami:
+
+| Odpowiedź | Co trafia do pliku |
+|---|---|
+| **Użyj swojego** | Twoje wiersze i tylko twoje |
+| **Użyj ich** | Ich wiersze i tylko ich |
+| **Oba** | Twoje wiersze, a po nich ich |
+| **Edytuj** | Oba, otwarte w edytorze tekstu z zaznaczonym konfliktem, na wypadek gdy odpowiedź brzmi „oba, ale poprawione" |
+
+Karta bez odpowiedzi pokazuje podgląd obu stron, każdy wiersz oznaczony *←
+twoje* albo *← ich* i ponumerowany wierszem, na który trafi po wybraniu, więc
+możesz zdecydować bez podnoszenia wzroku. W pliku z bardzo długimi wierszami
+odpowiedzi zostają na widoku, a kod przewija się pod nimi w poziomie. **Cały
+plik: twój | ich** w nagłówku pliku odpowiada na każdy konflikt naraz.
+
+**Edytuj jako tekst** przełącza wynik na zwykły edytor do swobodnego pisania, z
+liczbą wierszy pliku w nagłówku. Gdy już coś wpiszesz, karty przestają opisywać
+to, co tam jest, więc tekst zostaje, dopóki **Resetuj wybory** nie przywróci
+wszystkiego.
+
+Stopka liczy, co zostało w tym pliku; **Oznacz *plik* jako rozwiązany** zapisuje
+wynik i dodaje go do przechowalni, i jest wyłączone, dopóki każdy konflikt nie
+ma odpowiedzi.
 
 ## Poruszanie się
 
 Otwarcie pliku ląduje na jego **pierwszym konflikcie**, a nie na początku
 pliku. Strzałki ⌃ / ⌄ w nagłówku wyniku — albo <kbd>Alt+↑</kbd> /
-<kbd>Alt+↓</kbd> — przechodzą przez resztę, przewijając wszystkie trzy panele
-do każdego z nich.
+<kbd>Alt+↓</kbd> — przechodzą przez resztę, przewijając każdy panel do każdego z
+nich.
 
-## Wybieranie
+## Wybieranie po wierszu
 
-Per **linia**, per **fragment** albo od razu **cała strona** — a gdy odpowiedź
-brzmi „zostaw obie", możesz wziąć obie strony fragmentu. Nawigator prowadzi cię
-konflikt po konflikcie przez to, co zostało, więc nie da się przypadkiem zostawić
-znacznika.
+Panele boczne nadal wybierają per **wiersz** i per **fragment**, a pole wyboru w
+ich nagłówku bierze **całą stronę** — dla odpowiedzi, której nie oferuje żadna
+karta, na przykład dwóch twoich wierszy i jednego ich. Wybory na poziomie
+wierszy od razu pojawiają się w kartach.
+
+## Pliki, w których nie ma czego scalać
+
+Niektóre konflikty nie mają wierszy do porównania: jedna strona **usunęła**
+plik, który druga zmieniła, albo obie strony **zmieniły jego nazwę** na różne.
+Trzy panele, z których jeden jest pusty, niczego by nie wyjaśniły, więc te
+dostają zamiast tego kartę — kto co zrobił, z commitem, autorem i wiekiem każdej
+strony.
+
+![Plik usunięty po jednej stronie i zmieniony po drugiej](../../screenshots/conflict-deleted.webp)
+
+| Przypadek | Wybory |
+|---|---|
+| Usunięty po jednej stronie | **Zachowaj plik** (ze zmianami, które wprowadziła druga strona), **Usuń plik** (najpierw pyta) i **Zobacz, co zmieniłeś** — diff od bazy, żebyś wiedział, co usunięcie wyrzuca |
+| Zmieniono nazwę po obu stronach | **Zachowaj** jedną nazwę, drugą albo **Zachowaj obie nazwy** |
+
+git nie zapisuje żadnego powiązania między przemianowanym oryginałem a jego
+dwiema nowymi nazwami, więc karta paruje je po treści. Gdy nie da się tego
+ustalić — kilka zmian nazw naraz, a pliki też zmienione — mówi o tym, a nowe
+nazwy pojawiają się jako osobne chipy.
+
+## Kończenie
+
+Gdy ostatni plik jest rozwiązany, obszar roboczy nie każe ci szukać
+**Kontynuuj**: karta podsumowuje, jak odpowiedziano na konflikty, pozwala
+edytować komunikat merge'a (wstępnie wypełniony tym od gita) i stamtąd kończy.
+
+![Wszystkie konflikty rozwiązane, z komunikatem merge'a i przełącznikiem rerere](../../screenshots/conflict-done.webp)
+
+- Podsumowanie liczy to, co widziało, że wybierasz: twoje, ich, oba, edytowane
+  ręcznie. Plik rozwiązany poza edytorem liczy się jako plik, nie jako
+  odpowiedź.
+- Krok **rebase'u** zachowuje własny komunikat odtwarzanego commita, więc nie
+  ma dla niego pola komunikatu.
+- **Zapamiętaj te rozwiązania (rerere) na następny raz** to gitowe
+  `rerere.enabled`, ten sam przełącznik co w Ustawieniach. git pamięta tylko
+  konflikty, które widział, więc włączenie go tutaj działa od następnego.
+- **Przejrzyj ponownie** zamyka edytor na wyniku w przechowalni.
+
+## Cofanie
+
+Każde rozwiązanie — plik oznaczony jako rozwiązany, wybrana strona, plik
+zachowany albo usunięty, rozstrzygnięta zmiana nazwy — ma wpis cofania. Cofnięcie
+przywraca konflikt dokładnie tak, jak git go zostawił: znaczniki, obie strony i
+bazę w indeksie, plik na dysku. **Przerwij** to jedyna rzecz, której nie da się
+cofnąć, i dlatego najpierw pyta.
 
 ## Wsparcie AI
 
-Przy włączonym AI **Rozwiąż z AI** proponuje scalenie w panelu wyniku. Nigdy nic
-nie stosuje samo z siebie: czytasz, poprawiasz i dodajesz do przechowalni.
-Zobacz [funkcje AI](ai.md).
+Przy włączonym AI **Rozwiąż z AI** proponuje scalenie w wyniku, jako tekst.
+Nigdy nic nie stosuje samo z siebie: czytasz, poprawiasz i dodajesz do
+przechowalni. Zobacz [funkcje AI](ai.md).
 
 ## Pliki projektu Xcode
 
@@ -83,7 +190,7 @@ obu stron, połączyć tablice `children` i `files` i zatrzymać się na tym, co
 naprawdę się rozjechało. Pasek nad panelami mówi, co dodała każda strona i co —
 jeśli cokolwiek — zostaje dla ciebie.
 
-Tak jak propozycja AI, ląduje w panelu wyniku i niczego nie przygotowuje do
+Tak jak propozycja AI, ląduje w wyniku i niczego nie przygotowuje do
 zatwierdzenia. Czytasz to przed zapisaniem.
 
 ![Pasek scalania strukturalnego nad panelami konfliktu, na pliku projektu Xcode](../../screenshots/conflict-pbxproj.webp)

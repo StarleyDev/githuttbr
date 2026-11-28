@@ -2,9 +2,9 @@
 title: Pull-requestspagina
 category: Synchroniseren & meerdere repo's
 order: 57
-summary: Alle pull requests van een repository op één pagina — per status, gefilterd op auteur, reviewer, doel en CI —, ‹ › om vanuit een PR door de gefilterde lijst te lopen, zijn commits, zijn updates (elke push, wat die veranderde, wat nieuw is sinds je laatste bezoek), en reacties op een regel van zijn diff.
-keywords: pull requests lijst pagina merge requests pr mr filter auteur reviewer van mij wacht op mijn review review gevraagd ci faalt doelbranch concepten gemerged gesloten zoeken triage vorige volgende alt pijl navigatie checkout naar de bronbranch doelbranch branchnaam kopiëren fetch regelreactie inline reactie reviewreactie diffreactie reageren op regel tabblad bestanden code review line comment tabblad commits commitlijst pr-commits commitgeschiedenis commit openen sha kopiëren pr-branch ophalen markdown-editor werkbalk voorbeeld vermelding commits tab commit list open commit copy sha markdown editor toolbar preview mention bestandsboom mappenboom boomweergave padweergave bekeken bestanden map als bekeken markeren bewerken verwijderen bewerkt typfout file tree viewed files edit delete edited typo verwijzing titel hoverkaart work item AB# issuenummer tooltip reference title hover card issue number fork pr-commits refs/pull head weergegeven reacties afbeeldingen trackingpixel geblokkeerde afbeelding klik om te laden taak tabel blok rendered comments images blocked image updates iteraties pushes force push rebase geschiedenis herschreven diffversies wat is er veranderd sinds het laatste bezoek nieuw-badge markeren als gezien update vergelijken iterations history rewritten diff versions what changed since last visit new badge mark as seen compare update
-source: d91d96af92225cb74da274f8d168b07f6110b709
+summary: Alle pull requests van een repository op één pagina — per status, gefilterd op auteur, reviewer, doel en CI —, ‹ › om vanuit een PR door de gefilterde lijst te lopen, zijn commits, zijn updates (elke push, wat die veranderde, wat nieuw is sinds je laatste bezoek), en reacties op een regel van zijn diff. Het gesprek als één tijdlijn, met wat nieuw is sinds je laatste bezoek.
+keywords: pull requests lijst pagina merge requests pr mr filter auteur reviewer van mij wacht op mijn review review gevraagd ci faalt doelbranch concepten gemerged gesloten zoeken triage vorige volgende alt pijl navigatie checkout naar de bronbranch doelbranch branchnaam kopiëren fetch regelreactie inline reactie reviewreactie diffreactie reageren op regel tabblad bestanden code review line comment tabblad commits commitlijst pr-commits commitgeschiedenis commit openen sha kopiëren pr-branch ophalen markdown-editor werkbalk voorbeeld vermelding commits tab commit list open commit copy sha markdown editor toolbar preview mention bestandsboom mappenboom boomweergave padweergave bekeken bestanden map als bekeken markeren bewerken verwijderen bewerkt typfout file tree viewed files edit delete edited typo verwijzing titel hoverkaart work item AB# issuenummer tooltip reference title hover card issue number fork pr-commits refs/pull head weergegeven reacties afbeeldingen trackingpixel geblokkeerde afbeelding klik om te laden taak tabel blok rendered comments images blocked image updates iteraties pushes force push rebase geschiedenis herschreven diffversies wat is er veranderd sinds het laatste bezoek nieuw-badge markeren als gezien update vergelijken iterations history rewritten diff versions what changed since last visit new badge mark as seen compare update gesprek tijdlijn open draden opgeloste draad goedgekeurd vroeg om wijzigingen gepushte commits rol reviewer nieuw sinds je laatste bezoek twee commits vergelijken typechips ci per commit diff bekijken volgende niet bekeken filter niet bekeken met opmerkingen reviewvoortgang gewijzigd sinds bekeken conversation timeline open threads resolved thread approved requested changes pushed commits reviewer role new since last visit compare two commits commit type chips conventional commits ci per commit view diff next unviewed filter unviewed with comments review progress changed since viewed
+source: 6c1d5afb9bb0a33fa35b74bcc119ac137da2bf22
 ---
 
 # Pull-requestspagina
@@ -16,7 +16,7 @@ openen, lezen, teruggaan, de volgende openen. De **pull-requestspagina**
 beantwoordt die vragen op één scherm, en zodra je een pull request opent, brengen
 **‹ ›** je naar de volgende uit dezelfde lijst zonder terug te gaan.
 
-![De pull-requestspagina gezocht op "pix": de treffers gemarkeerd, je eigen met "jij", een falende CI en een concept](../../screenshots/pull-requests.webp)
+![De pull-requestspagina geopend vanuit Missiecontrole: twee wachten op jouw review, drie van jezelf, de overige ingeklapt; elke rij met zijn grootte, waar elke reviewer staat, zijn checks, en een stip waar hij veranderde sinds je laatste bezoek](../../screenshots/pull-requests.webp)
 
 ## Openen
 
@@ -24,13 +24,20 @@ beantwoordt die vragen op één scherm, en zodra je een pull request opent, bren
   requests bekijken*).
 - *Pull requests…* in het opdrachtenpalet (⌘K), of **Gereedschap → Pull
   requests…**.
+- De **pull-requestschip** op de rij van een repository in
+  [Missiecontrole](mission-control.md). Open je hem daarvandaan, dan begint de
+  pagina met **← Terug naar Missiecontrole**, en die blijft staan als je een van
+  zijn pull requests opent en terugkomt met **← Pull requests**.
 
 Net als de wiki en de [CI-runs](ci-runs.md) hoort de pagina bij het tabblad van
 de repository.
 
-## Tabbladen
+## Statussen
 
-| Tabblad | Wat erin staat |
+De segmentknop links van het zoekveld bevat de vier statussen, elk met hoeveel
+erin zitten.
+
+| Status | Wat erin staat |
 |---|---|
 | **Open** | Alle open pull requests, concepten inbegrepen |
 | **Concepten** | Alleen de open pull requests die als concept zijn gemarkeerd |
@@ -45,17 +52,22 @@ per sessie; **Vernieuwen** vraagt ze opnieuw op.
 
 | Filter | Houdt over |
 |---|---|
-| **Zoeken** | Pull requests waarvan de titel, beschrijving, branches of het nummer elk getypt woord bevatten. `#482` of `482` vindt dat nummer; treffers worden in de titel gemarkeerd |
+| **Zoeken** | Pull requests waarvan de titel, beschrijving, auteur, branches of het nummer elk getypt woord bevatten. `#482` of `482` vindt dat nummer; treffers worden in de titel gemarkeerd |
 | **Auteur** | Eén auteur — elk met het aantal dat hij in dit tabblad heeft. **Ik** staat bovenaan |
 | **Reviewer** | Eén gevraagde reviewer, of **Review aan mij gevraagd** |
 | **Doelbranch** | Pull requests naar die branch |
-| **Van mij** | Een snelkoppeling voor *Auteur: Ik* |
 | **Wacht op mijn review** | Een snelkoppeling voor *Reviewer: review aan mij gevraagd* |
+| **Van mij** | Een snelkoppeling voor *Auteur: Ik* |
 | **CI faalt** | Pull requests waarvan de checks op de head zijn mislukt |
 
-De regel onder de filters zegt hoeveel pull requests van het tabblad worden
-getoond en welke filters aan staan, met **filters wissen** om ze allemaal weg te
-halen.
+Het zoekveld en de drie chips delen één rij; elke chip zegt hoeveel pull requests
+van de huidige status hij zou overhouden. **Auteur**, **Reviewer** en
+**Doelbranch** zitten onder **Meer filters ▾**, dat oplicht zolang er een van is
+ingesteld.
+
+Zolang er een filter aan staat, zegt een regel boven de lijst hoeveel pull
+requests van de status worden getoond en welke filters aan staan, met **filters
+wissen** om ze allemaal weg te halen.
 
 Filters blijven per repository bewaard **zolang de app draait** — verlaat de
 pagina, kom terug, en ze staan zoals je ze liet. Ze worden bewust niet bewaard
@@ -72,16 +84,53 @@ het is (geen user-scope), of er geen token is, worden **Ik**, **Van mij** en
 
 ## De lijst
 
-| Kolom | Wat hij toont |
+Open en Concepten zijn verdeeld in drie secties, in de volgorde waarin je ze
+afwerkt:
+
+| Sectie | Bevat |
 |---|---|
-| **#** | Het nummer, met een pictogram voor open, concept, gemerged of gesloten |
-| **Titel** | De titel, een *concept*-badge, en wie nog om een review is gevraagd — in de accentkleur als jij dat bent |
-| **Auteur** | De afbeelding van de host als die er een geeft, anders de initiaal, en **jij** bij je eigen |
-| **Branches** | Bron → doel |
-| **Checks** | De checks van de head samengevat — `6/6`, `1 mislukt`, `2 bezig`; hover voor de aantallen |
+| **Wacht op jouw review** | Pull requests waarvoor iemand jou om een review vroeg — de kop in geel |
+| **Jouw pull requests** | Die je zelf schreef |
+| **Overige** | Al de rest, ingeklapt achter **tonen** zolang de twee hierboven iets bevatten; zoeken of een filter klapt hem uit |
+
+Als de host niet kan zeggen wie je bent, valt er niets te sorteren en is de lijst
+één kaart. Gemerged en Gesloten zijn geschiedenis: één kaart, geen secties.
+
+Elke rij lees je van links naar rechts:
+
+| Onderdeel | Wat het toont |
+|---|---|
+| **Stip** | De pull request is veranderd sinds je zijn pagina het laatst verliet. Een die je nooit opende heeft geen stip — er is niets om mee te vergelijken |
+| **#** | Het nummer — groen zolang hij open is, grijs voor een concept |
+| **Titel** | De titel, zijn [Conventional Commits](committing.md)-type als gekleurde chip (`feat`, `fix`, `docs`…), een *concept*-badge. Eronder: de auteur (weggelaten bij je eigen), bron → doel, en **N reacties** — of **N nieuwe reacties** als anderen er sinds je laatste bezoek een paar schreven |
+| **Grootte** | `+48 −12 · 4 bestanden` — toegevoegde en verwijderde regels, aangeraakte bestanden; alleen `4 bestanden` waar de host geen regels telt |
+| **Review** | Het geldende oordeel van elke reviewer — **✓ bruno keurde goed**, **✕ ana vroeg om wijzigingen** — en daarna wie nog gevraagd is, **● wacht op jou** in geel. **✓ klaar om te mergen** als de host zegt dat de reviews rond zijn en de checks niet faalden; **geen reviewers** als niemand gevraagd werd of antwoordde |
+| **Checks** | De checks van de head — `✓ 6/6`, `✕ 1 mislukt`, `● 2 bezig`; hover voor de aantallen |
 | **Bijgewerkt** | Hoe lang geleden de laatste wijziging was; hover voor de datum |
 
-De rijen zijn gesorteerd op de laatste activiteit. Een klik opent de eigen
+### Wat elke host levert
+
+Grootte, reacties en oordelen staan niet in de lijst van elke host, en de pagina
+opent niet elke pull request afzonderlijk om ze te vinden — op één uitzondering
+na, hieronder: wat de lijst niet meelevert blijft leeg, nooit een nul.
+
+| Host | Grootte | Reacties | Reviewoordelen |
+|---|---|---|---|
+| **GitHub** | ✓ | ✓, en welke nieuw zijn | ✓, en *klaar om te mergen* — één extra GraphQL-verzoek voor de hele lijst |
+| **GitLab** | — | ✓ (alleen het aantal) | Wie gevraagd is; *klaar om te mergen* uit de mergestatus van GitLab |
+| **Azure DevOps** | Alleen bestanden, gelezen bij het openen van de pagina | — | ✓ uit de stemmen van de reviewers |
+| **Bitbucket Data Center** | — | ✓ (alleen het aantal) | ✓ |
+| **Bitbucket Cloud** | — | ✓ (alleen het aantal) | — |
+| **Forgejo** | ✓ als de server het invult | ✓ (alleen het aantal) | Wie gevraagd is |
+
+**Azure DevOps: alleen bestanden.** De API geeft geen regelaantallen per pull request — daarvoor zou de diff van elk bestand nodig zijn —, dus de cel toont `4 bestanden`, zonder +/−. Ook de lijst bevat geen aantal bestanden, dus deze pagina leest het zelf, voor de open en concept-rijen die ze tekent — gemergede en gesloten blijven leeg, omdat een volledige lijst daarvan honderden verzoeken zou kosten voor een getal waar niemand op reviewt: twee verzoeken per pull request (de iteraties, dan de wijzigingen van de laatste — hetzelfde aantal als het tabblad Bestanden), vier tegelijk. Ze blijven bewaard tot iemand naar die pull request pusht, zodat verversen of terugkomen op de pagina alleen vraagt naar de pull requests die bewogen. De periodieke verversing van de zijbalk leest ze nooit. Een aantal dat niet gelezen kan worden — geen rechten, een server die verzoeken afknijpt — laat de cel leeg, zonder foutmelding; een pull request met meer dan 20.000 wijzigingen wordt niet geteld.
+
+Het aantal reacties is dat van het gesprek — reacties op een regel van de diff
+tellen niet mee. Zonder token wordt het GitHub-verzoek overgeslagen en blijven die
+kolommen leeg.
+
+Binnen een sectie zijn de rijen gesorteerd op de laatste activiteit, en **‹ ›** in
+een pull request lopen ze af in de getekende volgorde. Een klik opent de eigen
 pagina van de pull request ([Hosting & pull requests](hosting.md)). Op een host
 zonder die pagina opent de rij de pull request in de browser.
 
@@ -90,7 +139,7 @@ de bovenliggende repository in de lijst, gemarkeerd met *op owner/repo*.
 
 ## Vanuit een pull request door de lijst lopen
 
-![Een pull request geopend vanuit de gefilterde lijst: ‹ 1 van 4 › en de filters waar hij vandaan kwam](../../screenshots/pull-request-nav.webp)
+![Een pull request geopend vanuit de gefilterde lijst: ‹ 1 van 7 › en de filters waar hij vandaan kwam](../../screenshots/pull-request-nav.webp)
 
 Een pull request die vanaf de pagina is geopend, toont een strook boven zijn
 titel:
@@ -169,31 +218,45 @@ De zijbalk zei hoeveel commits een pull request heeft, nooit welke. Eén commit
 tegelijk reviewen — zoals de meeste pull requests bedoeld zijn om gelezen te worden
 — stuurde je naar de browser. Het tabblad **Commits**, tussen Gesprek en Updates, toont ze:
 
+- **Een samenvattingsregel** bovenaan: hoeveel commits, van hoeveel auteurs, de
+  **+/−** van de pull request, en één gekleurde chip per type
+  [Conventional Commit](https://www.conventionalcommits.org/) met zijn aantal —
+  *feat 2 · fix 1 · test 1* vertelt je wat voor wijziging dit is voordat je er een
+  regel van leest. Features zijn groen, fixes en reverts rood, tests in de
+  accentkleur, performance geel, de rest grijs.
 - **Oudste eerst**, in de volgorde waarin ze worden toegepast, gegroepeerd onder de
   dag waarop ze zijn geschreven. Een commit die buiten de datumvolgorde is
   ingerebased, begint een eigen dag in plaats van te worden verplaatst.
-- Elke rij heeft de afbeelding van de auteur (waar de host er een geeft), het
-  onderwerp, de auteur, hoe lang geleden, en de korte SHA. Een **merge**-badge
-  markeert een commit met twee ouders, waar de host dat zegt.
-- **▸** naast een commit met meer dan een onderwerp toont de rest van zijn
-  bericht.
-- **Kopiëren** zet de volledige SHA op het klembord; **In de browser openen** opent
-  de commit op de host — binnen de pull request waar de host zo'n pagina heeft
-  (GitHub, GitLab, Bitbucket Data Center), anders op de commitpagina van de
-  repository.
+- Elke rij heeft de foto van de auteur (waar de host er een geeft), het onderwerp
+  — zijn type als dezelfde gekleurde chip en zijn scope gedempt, als het
+  Conventional Commits volgt — de auteur, hoe lang geleden, en, voor een commit die
+  deze clone heeft, zijn **+/−** en hoeveel bestanden hij raakte. Dan een
+  **CI**-stip (groen geslaagd, rood mislukt, geel bezig) waar de host een run voor
+  die commit meldt, de korte SHA en **Diff bekijken**. Een **merge**-badge markeert
+  een commit met twee ouders, waar de host dat zegt.
+- Een commit met meer dan een onderwerp toont de rest van zijn bericht onder de
+  rij.
+- Bij aanwijzen zet **Kopiëren** de volledige SHA op het klembord en opent **In de
+  browser openen** de commit op de host — binnen de pull request waar de host zo'n
+  pagina heeft (GitHub, GitLab, Bitbucket Data Center), anders op de commitpagina
+  van de repository.
 
 ![Het tabblad Commits: de commits van een pull request gegroepeerd per dag, één met het volledige bericht open](../../screenshots/pr-commits.webp)
 
-**Klik op een rij** — of ga er met Tab heen en druk op Enter — om de commit in de
-app te openen, zoals een klik in de graaf zou doen: de weergave van de repository,
-die commit geselecteerd, zijn details open. Dat werkt als deze clone de commit
-**heeft**. Heeft hij hem niet, dan zegt de rij dat in plaats van stil te falen, en
-biedt aan:
+Commits die zijn gemaakt nadat je de pull request voor het laatst verliet, staan
+onder een regel **Nieuw sinds je laatste bezoek** — dezelfde markering als in het
+tabblad Gesprek, van hetzelfde bezoek.
 
-- **PR-branch ophalen om hem te zien** — dezelfde fetch van één branch als bij
-  [naar de branch gaan](#naar-de-branch-van-een-pull-request), zonder de checkout. Kwam de commit mee, dan
-  opent hij; kwam hij niet mee (een force push heeft hem sindsdien herschreven),
-  dan zegt de melding dat.
+**Diff bekijken** — of een klik op de rij, of er met Tab heen en Enter — opent de
+commit in de app, zoals een klik in de grafiek zou doen: de weergave van de
+repository, die commit geselecteerd, zijn details open. Dat werkt als deze clone
+de commit **heeft**. Heeft hij hem niet, dan zegt de rij *nog niet in je
+repository* en verandert zijn knop:
+
+- **Branch ophalen** — dezelfde fetch van één branch als bij
+  [naar de branch gaan](#naar-de-branch-van-een-pull-request), zonder de checkout. Elke commit die meekwam,
+  kan daarna openen; kwam deze niet mee (een force push heeft hem sindsdien
+  herschreven), dan zegt de melding dat.
 - **Commits van de pull request ophalen**, bij een pull request uit een **fork**. Zijn
   branch staat in een andere repository, maar de meeste hosts spiegelen de head van
   een pull request in de doelrepository onder een eigen ref — `refs/pull/N/head`
@@ -204,6 +267,12 @@ biedt aan:
   Opnieuw fetchen zet de ref op de head zoals die dan is. Heeft de force push
   sindsdien de commit weggelaten, dan zegt de melding dat.
 - **In de browser openen**, voor als fetchen geen optie is.
+
+**Twee commits vergelijken** vraagt je twee rijen aan te vinken en opent dan de
+[vergelijking](merging.md#twee-willekeurige-refs-vergelijken) tussen ze in de weergave van
+de repository: de oudste is de basis, dus je ziet wat er van de ene naar de andere
+gebeurde — de commits ertussen en hun gecombineerde diff. Beide moeten in deze clone
+staan; tot dat zo is, is de knop grijs.
 
 De lijst wordt gelezen wanneer je het tabblad voor het eerst opent, niet met de
 pagina, en opnieuw bij elke **Vernieuwen**. Tot hij binnen is, is het aantal op het
@@ -243,6 +312,16 @@ Wat het niet doet:
 - **Squash-merges.** De commits van een met squash gemergede pull request hebben de
   doelbranch nooit bereikt, dus na het verwijderen van zijn branch staan ze alleen
   nog op de host.
+- **Getallen per commit komen uit je clone.** De **+/−** en het aantal bestanden
+  worden uit git gelezen, nooit aan de host gevraagd, dus een commit die nog niet
+  is opgehaald toont ze niet, en een merge ook niet (zijn wijziging is ten opzichte
+  van twee ouders). Een partial clone waarin de bestanden van een commit ontbreken,
+  toont ze niet in plaats van ze te downloaden.
+- **CI alleen voor de 40 recentste commits**, stilletjes: één verzoek per commit
+  zou bij een lange pull request oplopen, en CI draaide meestal toch op de gepushte
+  heads. Geen credential voor de host betekent geen stippen, nooit een aanmelding.
+- **De typechips lezen het onderwerp.** Een team dat geen Conventional Commits
+  schrijft, krijgt geen chips en geen typetellingen — er wordt niets geraden.
 - **Auteurs** worden genoemd zoals hun commits ze noemen. GitLab, Azure DevOps en
   Bitbucket Data Center geven geen afbeelding zonder een aanmelding die een
   afbeelding niet kan meesturen, dus die rijen tonen de initiaal.
@@ -390,16 +469,27 @@ heads vóór en na een force push zijn exact, dus zijn **Wijzigingen bekijken** 
 ## De bestanden lezen
 
 Een pull request met tweehonderd bestanden is lastig te lezen als tweehonderd
-volledige paden. De lijst in het tabblad **Bestanden** heeft dezelfde schakelaar
+volledige paden, en lastig af te maken zonder je plek kwijt te raken. Boven de lijst
+en de diff houdt een regel de telling bij — *4 van 9 bestanden bekeken*, met een
+balk — en **Vorige ongeziene** / **Volgende ongeziene** springen naar het
+dichtstbijzijnde bestand dat je nog niet hebt afgevinkt, omhoog of omlaag, en gaan
+rond de lijst heen; ze worden grijs zodra alles in de lijst bekeken is. Vink **Als
+gezien markeren bij verder gaan** aan en **Volgende ongeziene** vinkt het open
+bestand voor je af voordat hij verdergaat — lees je alles achter elkaar, dan raak
+je de vakjes nooit aan; de keuze wordt onthouden. **Tonen** beperkt de lijst tot
+**Niet bekeken** bestanden of bestanden **Met opmerkingen** (een reviewgesprek
+erop), en weer terug naar **Alle**.
+
+De lijst in het tabblad **Bestanden** heeft dezelfde schakelaar
 **Pad / Boom** als het commitpaneel, en de keuze geldt in de hele app. In **Boom**
 staan bestanden onder hun mappen (een keten als `src/main/ipc` is één rij), en elke
 map toont zijn opgetelde **+/−** en hoeveel van zijn bestanden bekeken zijn (*3/5*).
 Het selectievakje van een map markeert elk bestand erin als bekeken, of wist ze
 allemaal; vinkjes blijven alleen op deze computer en gaan nooit naar de host. Een
 vinkje onthoudt de versie van de diff van het bestand: als een push een bekeken
-bestand wijzigt, geldt het weer als niet bekeken, met een gele stip (*Gewijzigd sinds
+bestand wijzigt, geldt het weer als niet bekeken, met een label **gewijzigd** (*gewijzigd sinds
 je het bekeek*). Een bestand zonder diff (binair, te groot) wordt alleen op status en
-regelaantallen vergeleken. Een bestand met reviewgesprekken toont ernaast een aantal in een tekstballon (mappen tellen het hunne op), zodat de bestanden met reacties opvallen in een lange lijst; verouderde gesprekken tellen mee. Klik op een map, of druk erop op ←/→, om hem in te klappen;
+regelaantallen vergeleken. Een bestand met reviewgesprekken toont direct na zijn naam een aantal in een tekstballon, zodat de bestanden met reacties opvallen in een lange lijst; verouderde gesprekken tellen mee, en opgeloste ook — de lijsten van de hosts die de app leest, zeggen niet welke opgelost zijn. Klik op een map, of druk erop op ←/→, om hem in te klappen;
 ↑/↓ (of j/k) lopen door de bestanden op het scherm en openen elke diff. Ingeklapte
 mappen worden per pull request onthouden tot de app sluit, en een bestand dat erin
 wordt geopend, klapt de weg ernaartoe uit. De boom is op naam gesorteerd, niet in de
@@ -579,14 +669,82 @@ Wat het niet doet:
 - **Een bestand zonder diff** (binair, of te groot voor de host om mee te sturen)
   heeft geen regels om op te reageren.
 
+## Het gesprek
+
+Het verhaal van een pull request ligt verspreid: de beschrijving bovenaan, reacties
+in één lijst, regelthreads in een andere, oordelen alleen in de zijbalk, pushes in
+een eigen tabblad. Bijblijven betekende dat allemaal lezen en de volgorde in je hoofd
+weer in elkaar zetten. Het tabblad **Gesprek** vertelt het als één **tijdlijn**,
+langs een rail, in de volgorde waarin het gebeurde.
+
+![Het gesprek als tijdlijn: twee pushes, een regelthread die nog open is met zijn regels, een verzoek om wijzigingen, de regel die markeert wat nieuw is sinds het laatste bezoek, en een goedkeuring](../../screenshots/pull-request-page.webp)
+
+| Op de tijdlijn | Wat het toont |
+|---|---|
+| **De beschrijving** | Altijd eerst, met wie de pull request opende en wanneer |
+| **Reacties** | Het gesprek, elk met de rol van de auteur: **Auteur** of **Reviewer** |
+| **Pushes** | *sam pushte 2 commits*, dan één regel per commit; een klik op een hash opent het tabblad Commits |
+| **Regelthreads** | Op hun plek, bij hun eerste reactie: het bestand en de regel, de diffregels waar het om gaat, de antwoorden en een antwoordvak. Het pad en **Bekijken in Bestanden →** openen dat bestand in het tabblad Bestanden |
+| **Reviewoordelen** | **goedgekeurd** in groen, **vroeg om wijzigingen** in rood met wat de reviewer schreef, of de eigen reactie van een review |
+
+Een thread die de host als **open** meldt, krijgt een amberkleurig label, en de
+balk boven de tijdlijn telt ze: **1 open draad** toont alleen die, de draden die
+nog op een antwoord wachten. Een **opgeloste** thread klapt in tot één regel —
+*Opgeloste draad in src/palette.tsx:18 · 2 reacties* — en een klik klapt hem uit.
+**Reacties · Reviews · Commits · Alles** beperken de tijdlijn tot één soort; hij
+opent op **Reacties**, en **Alles** brengt alles terug.
+
+De **Reviewers** in de zijbalk zeggen het oordeel van elke persoon in woorden —
+**✓ goedgekeurd** of **vroeg om wijzigingen** — en een klok voor wie nog moet
+antwoorden.
+
+### Nieuw sinds je laatste bezoek
+
+Als je de pagina van een pull request verlaat (een andere pagina, een ander
+tabblad, sluiten, de app afsluiten of herladen), noteert de app de tijd. De
+volgende keer markeert een regel waar je stopte — **Nieuw sinds je laatste
+bezoek** — en zegt de balk hoeveel items erna kwamen. De markering wordt gezet bij
+het verlaten, niet bij het openen, dus ze blijft staan terwijl je leest. De eerste
+keer dat je een pull request opent, wordt niets als nieuw gemarkeerd.
+
+Wat je zelf schreef is voor jou nooit nieuw: je eigen reacties, antwoorden en
+reviews tellen niet mee en verplaatsen de regel niet. Een thread die vóór je
+bezoek begon en sindsdien een antwoord van iemand anders kreeg, telt ook als nieuw
+— hij blijft op de tijdlijn staan waar hij begon, dus zoek hem boven de regel.
+
+Tijden lezen als *2d geleden*; wijs aan voor de volledige datum.
+
+*Beperkingen:*
+
+- **Wanneer een commit werd gepusht** zeggen de hosts niet. Pushes worden
+  gereconstrueerd uit de commitlijst: opeenvolgende commits van dezelfde auteur, elk
+  binnen een uur na de vorige, tellen als één push, geplaatst op de datum van de
+  laatste. Een rebase die de datums herschreef, verschuift ze. Het tabblad Updates is
+  het eigen verslag van de host waar dat er is.
+- **Open of opgelost** komt van GitHub (één extra GraphQL-verzoek per keer lezen) en
+  GitLab. Threads op Azure DevOps, Bitbucket Data Center en Forgejo tonen geen label
+  en worden niet geteld.
+- **Oordelen op de tijdlijn** hebben een datum nodig: GitHub, GitLab (een
+  goedkeuring, gedateerd met de notitie die GitLab ervoor schrijft) en Forgejo geven
+  er een. Stemmen op Azure DevOps en goedkeuringen op Bitbucket Data Center hebben er
+  geen, dus die verschijnen alleen in de zijbalk.
+- Een GitHub-review zonder eigen tekst — de envelop waaronder elke reeks
+  regelreacties wordt ingediend — krijgt geen regel; zijn threads staan er al.
+- Je laatste bezoeken worden bewaard voor de 300 recentste pull requests, alleen
+  op deze computer. Een crash, of een app die geforceerd wordt gestopt, legt geen
+  bezoek vast.
+- **Van jou** wordt bepaald door je account op de host. Waar de host auteurs
+  alleen bij weergavenaam noemt en geen id geeft om mee te vergelijken, tellen je
+  eigen items als die van ieder ander.
+
 ## Reacties schrijven
 
 Elk vak op de pagina — de reactie onderaan, een antwoord in een thread, een reactie
 op een regel — is dezelfde Markdown-editor: tabbladen **Schrijven / Voorbeeld**,
 een opmaakbalk met de sneltoetsen van GitHub, lijsten die doorgaan bij Enter, en
 aanvulling met **@** / **#** uit de mensen en pull requests die al op het scherm
-staan. Een antwoordvak toont zijn gereedschap zodra je erin klikt, en verstuurt met
-⌘/Ctrl+Enter, omdat Enter nu een nieuwe regel begint.
+staan. Een antwoord in een thread is de uitzondering: een veld van één regel zonder
+werkbalk, waarin Enter verstuurt en Shift+Enter een regel toevoegt.
 [Reacties schrijven](writing-comments.md) heeft de details en de beperkingen.
 
 ## Hoe reacties worden getoond

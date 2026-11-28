@@ -2542,7 +2542,7 @@ function ThemeDialog({
         if (e.target === e.currentTarget) onClose()
       }}
     >
-      <div className="modal">
+      <div className="modal modal-std">
         <button className="modal-close" title={t('common.close')} aria-label={t('common.close')} onClick={onClose}>
           <X size={15} />
         </button>

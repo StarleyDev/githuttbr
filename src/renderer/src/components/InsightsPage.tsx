@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { BarChart3, RefreshCw, GitCommit, Users, Flame, FileText } from 'lucide-react'
+import { Activity, BarChart3, RefreshCw, GitCommit, Users, Flame, FileText } from 'lucide-react'
 import { gitApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
@@ -22,7 +22,11 @@ function fmt(n: number): string {
   return n.toLocaleString()
 }
 
-export function InsightsPage({ repoPath }: { repoPath: string }): React.JSX.Element {
+/**
+ * `embedded`: inside Repository settings, whose page head already says "Insights"
+ * with its icon — the page's own big title would say it twice.
+ */
+export function InsightsPage({ repoPath, embedded = false }: { repoPath: string; embedded?: boolean }): React.JSX.Element {
   const t = useT()
   const toast = useUIStore((s) => s.toast)
   const setFileView = useUIStore((s) => s.setFileView)
@@ -77,15 +81,17 @@ export function InsightsPage({ repoPath }: { repoPath: string }): React.JSX.Elem
         transition={{ duration: 0.2 }}
       >
         <PageHead>
-          <header className="changelog-header">
-            <div className="changelog-title">
-              <BarChart3 size={20} />
-              <div>
-                <h1>{t('insights.title')}</h1>
-                <span className="settings-hint">{repoName} {t('insights.subtitle')}</span>
+          {!embedded && (
+            <header className="changelog-header">
+              <div className="changelog-title">
+                <BarChart3 size={20} />
+                <div>
+                  <h1>{t('insights.title')}</h1>
+                  <span className="settings-hint">{repoName} {t('insights.subtitle')}</span>
+                </div>
               </div>
-            </div>
-          </header>
+            </header>
+          )}
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 16 }}>
             <div className="codesearch-tabs" style={{ margin: 0 }}>
               {RANGES.map((r) => (
@@ -132,7 +138,10 @@ export function InsightsPage({ repoPath }: { repoPath: string }): React.JSX.Elem
 
             {/* ── Churn timeline ── */}
             <section className="insights-section">
-              <h2>{t('insights.weeklyChurn')}</h2>
+              <h2 className="settings-section-title">
+                <Activity size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />
+                {t('insights.weeklyChurn')}
+              </h2>
               <div className="churn-chart">
                 {data.churn.map((c) => {
                   const h = ((c.added + c.removed) / maxChurn) * 100
@@ -160,7 +169,10 @@ export function InsightsPage({ repoPath }: { repoPath: string }): React.JSX.Elem
             <div className="insights-cols">
               {/* ── Top authors ── */}
               <section className="insights-section">
-                <h2>{t('insights.topContributors')}</h2>
+                <h2 className="settings-section-title">
+                  <Users size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />
+                  {t('insights.topContributors')}
+                </h2>
                 <div className="insights-rows">
                   {data.authors.slice(0, 12).map((a, i) => (
                     <div key={a.name} className="insights-row">
@@ -183,7 +195,10 @@ export function InsightsPage({ repoPath }: { repoPath: string }): React.JSX.Elem
 
               {/* ── Hotspots ── */}
               <section className="insights-section">
-                <h2>{t('insights.hotspots')}</h2>
+                <h2 className="settings-section-title">
+                  <Flame size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />
+                  {t('insights.hotspots')}
+                </h2>
                 <div className="insights-rows">
                   {data.hotspots.map((h) => (
                     <button

@@ -92,11 +92,13 @@ tutto ciò che sta dentro il codice restano come sono.
 ⌘/Ctrl+Invio invia da ogni riquadro: un commento a una pull request o a una issue,
 una risposta in un thread, un commento di riga e la descrizione di una nuova issue.
 Funziona anche dalle schede, dalla barra e dall’anteprima, non solo dal campo. Esc
-annulla un commento di riga, dagli stessi punti. Una **risposta in un thread** era
-prima un campo di una riga inviato con Invio; ora è una piccola casella di testo,
-quindi Invio è una nuova riga (o la voce di elenco successiva) e ⌘/Ctrl+Invio
-invia. Un riquadro di risposta mostra schede e strumenti appena ci fai clic dentro,
-così una conversazione lunga non si riempie di barre sotto ogni thread.
+annulla un commento di riga, dagli stessi punti. Una **risposta in un thread** è
+un campo di una riga, così una conversazione lunga non fa crescere una barra
+sotto ogni thread: Invio invia, Maiusc+Invio aggiunge una riga (il campo cresce
+con essa, e con un blocco incollato) ed Esc scarta ciò che hai scritto, chiedendo
+prima. Non ha schede né barra, ma le scorciatoie di formattazione e il
+completamento di **@** / **#** funzionano, e un pulsante **Rispondi** compare
+appena c’è qualcosa da inviare.
 
 ## Il promemoria
 

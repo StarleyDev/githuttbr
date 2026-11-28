@@ -4,22 +4,23 @@ category: Sincronização e vários repositórios
 order: 59
 summary: Acompanhe GitHub Actions, pipelines do GitLab, Azure Pipelines e Forgejo Actions pelo app — cada job, seus passos e seu log, com reexecutar e cancelar.
 keywords: execuções de ci ci runs actions workflow pipeline build github actions gitlab pipelines azure pipelines forgejo actions jobs passos steps logs reexecutar re-run cancelar dispatch workflow_dispatch selo badge status grafo
-source: 4440960af1bb5133767f3c65f45603e19e78bcb8
+source: c2212bcfa43b533553085d1fd72c02cd4dea9b4c
 ---
 
 # Execuções de CI
 
 Você deu push e agora espera: troca para o navegador, acha o repositório, abre
 Actions, acha a sua execução, abre o job que ficou vermelho, rola até o fim do
-log. **Execuções de CI** traz esse ciclo para perto do código. Uma página lista
-as execuções do remoto, das mais novas para as mais antigas; um clique abre os
-jobs de uma execução, os passos de cada job e o log; e os botões para rodar de
-novo ou parar ficam na própria linha.
+log. **Execuções de CI** traz esse ciclo para perto do código. Uma página mostra
+como cada workflow tem se saído, lista as execuções do remoto das mais novas
+para as mais antigas e abre uma execução que falhou direto no teste que quebrou
+— com o arquivo e a linha, a um clique do seu editor. Os botões para rodar de
+novo ou parar ficam no próprio cartão.
 
 Ela conversa com a API do próprio serviço, com o token que você já deu ao
 GitHuttBr. Nada roda na sua máquina — para isso, veja [CI local](local-ci.md).
 
-![A página Execuções de CI: uma execução que falhou aberta nos jobs, com o passo que falhou e o log](../../screenshots/ci-runs.webp)
+![A página Execuções de CI: um cartão por workflow com as últimas execuções, os filtros Falharam e Rodando, o progresso de uma execução em andamento e uma execução que falhou aberta no teste que quebrou e nos jobs](../../screenshots/ci-runs.webp)
 
 ## Como abrir
 
@@ -31,16 +32,20 @@ remoto chamado `origin` — ou o primeiro remoto, quando não há `origin`.
 
 | Parte | O que é |
 |---|---|
-| **Uma linha de execução** | O título do commit (ou o nome do workflow), a branch, o workflow, o número da execução, o que a disparou (push, pull request, agendamento, manual…), quem disparou e o commit. À direita: em que pé está, quanto tempo levou — ou está levando — e há quanto tempo começou |
+| **Cartões de workflow** | Um cartão por workflow: o que o dispara, a taxa de sucesso nas últimas 10 execuções terminadas (verde a partir de 90 %, âmbar a partir de 70 %, vermelho abaixo), essas execuções como quadradinhos coloridos — a mais antiga à esquerda, então a mais nova fica perto do "agora" —, o tempo médio e a job mais lenta ou como foi a última execução. Clique num cartão para listar só as execuções daquele workflow; clique de novo para ver todas |
 | **Todas as branches / branch atual** | Todas as execuções do remoto, ou só as da branch em que você está |
+| **Falharam / Rodando** | Filtros rápidos com o número de execuções que cada um deixa. Contam o que os outros filtros deixam, então o número é o que o clique mostra |
 | **Filtro** | Reduz as execuções carregadas por título, workflow, branch, autor, commit ou evento |
-| **Jobs** | Abra uma execução para listar os jobs, agrupados por estágio onde o serviço tem estágios (GitLab, Azure). Um job que falhou já abre os passos sozinho: o passo que falhou é a notícia |
+| **Um cartão de execução** | O título do commit (ou o nome do workflow), depois a branch, o workflow e o número da execução, o que a disparou (push, pull request, agendamento, manual…), quem disparou e o commit — clique no commit para copiá-lo. Quando a execução é de um pull request, **PR #n** abre a página desse pull request. À direita: em que pé está, quanto tempo levou e há quanto tempo |
+| **Uma execução rodando** | *Rodando · passo 3 de 5*, uma barra de progresso e o tempo até agora. O passo é o da job que está rodando; num serviço sem passos (GitLab, Forgejo) conta jobs |
+| **O teste que falhou** | Uma execução que falhou já abre sozinha, a mais nova, com o teste que o log aponta: a job, o teste, a primeira linha do erro e **caminho:linha** — clique nele, ou em *Abrir no editor*, para cair naquela linha. A mesma leitura da [aba Checks](hosting.md#a-aba-checks) de um pull request |
+| **Jobs** | Embaixo, cada job com estado e duração, agrupados por estágio onde o serviço tem estágios (GitLab, Azure). *Ver passos e log* abre os passos de uma job e o fim do log — numa job que falhou ele está sempre visível, nas outras aparece ao passar o mouse |
 | **Passos** | Cada passo de um job, com estado e duração — GitHub, Azure e Forgejo informam; o GitLab não tem passos |
-| **Log** | O botão 📜 num job terminado mostra o fim do log, com as cores. Só os últimos 512 KB são baixados — onde a falha está — e a página avisa quando o começo ficou de fora |
+| **Log** | O fim do log de um job terminado, com as cores. Só os últimos 512 KB são baixados — onde a falha está — e a página avisa quando o começo ficou de fora |
 
 Enquanto algo na página está na fila ou rodando, a lista pergunta ao serviço de
-novo a cada 15 segundos, e os jobs da execução aberta junto; as durações andam
-a cada segundo. Quando dois minutos de respostas não trazem nada novo — uma
+novo a cada 15 segundos, e junto os jobs da execução aberta e de cada execução
+rodando — é daí que vem a contagem de passos; as durações andam a cada segundo. Quando dois minutos de respostas não trazem nada novo — uma
 execução esperando aprovação de deploy, por exemplo — a consulta passa a ser
 uma vez por minuto, e volta a acelerar assim que algo muda. Uma lista em que
 tudo terminou não pergunta nada até você atualizar, e nada é perguntado com a
@@ -54,14 +59,15 @@ do seu repositório local sem custo; senão, o número.
 
 | Botão | Aparece quando | O que acontece |
 |---|---|---|
-| **Reexecutar falhas** | A execução falhou ou foi cancelada | Só os jobs que não passaram rodam de novo |
-| **Reexecutar** (↻) | A execução terminou, no GitHub | Todos os jobs rodam de novo |
-| **Cancelar** (⊘) | A execução está na fila ou rodando | Pergunta antes: os jobs em andamento são interrompidos e o trabalho deles se perde |
-| **Executar workflow** | O serviço permite iniciar à mão | Escolha o workflow e uma branch; ele começa como se a branch tivesse recebido push, e aparece na lista em alguns segundos |
+| **Rodar de novo os que falharam** | A execução falhou ou foi cancelada | Só os jobs que não passaram rodam de novo |
+| **Reexecutar** (↻) | A execução terminou, no GitHub — no cartão, ao passar o mouse | Todos os jobs rodam de novo |
+| **Abrir no navegador** | Ao passar o mouse no cartão | A execução no site do serviço |
+| **Cancelar** | A execução está na fila ou rodando | Pergunta antes: os jobs em andamento são interrompidos e o trabalho deles se perde |
+| **Rodar workflow** | O serviço permite iniciar à mão | Escolha o workflow e uma branch; ele começa como se a branch tivesse recebido push, e aparece na lista em alguns segundos |
 
 O que cada serviço permite:
 
-| Serviço | Lista e jobs | Passos | Log | Reexecutar tudo | Reexecutar falhas | Cancelar | Iniciar à mão |
+| Serviço | Lista e jobs | Passos | Log | Reexecutar tudo | Rodar de novo os que falharam | Cancelar | Iniciar à mão |
 |---|---|---|---|---|---|---|---|
 | **GitHub** (e Enterprise Server) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ — o workflow precisa do gatilho `workflow_dispatch` |
 | **GitLab** (e self-managed) | ✓ — pipelines, jobs por estágio | — | ✓ | — | ✓ (*Retry*) | ✓ | ✓ — roda o `.gitlab-ci.yml` na branch |
@@ -91,6 +97,19 @@ dentro da cota por hora do serviço.
 
 ## Limites
 
+- **Os cartões só conhecem as execuções que a página listou.** São as últimas
+  50 do filtro de branch em vigor — um workflow que roda pouco pode mostrar
+  menos de dez quadradinhos, e trocar para a branch atual recalcula todos os
+  cartões. A job mais lenta aparece quando a página já leu as jobs de alguma
+  execução terminada (a execução que falhou e que ela abre basta); até lá o
+  cartão diz como foi a última execução.
+- **O teste que falhou é lido do texto do log.** Vitest, Jest e pytest são
+  reconhecidos; outro runner, um erro de build ou um log cortado mostram só a
+  lista de jobs. Um caminho que o runner escreveu fora do checkout não abre.
+- **O PR #n depende do que o serviço informa.** O GitHub só aponta o pull
+  request em execuções do mesmo repositório, não de um fork; o GitLab informa
+  em pipelines de merge request e o Azure em builds de PR. Execuções do Forgejo
+  não trazem o link.
 - **O log é o final, e só quando o job termina.** GitHub e Forgejo só entregam
   o log de um job depois que ele acaba; enquanto roda, a página mostra os
   passos andando, não a saída. GitLab e Azure entregam o log parcial de um job

@@ -2,9 +2,9 @@
 title: Pull request sayfası
 category: Eşitleme ve çoklu depo
 order: 57
-summary: Bir deponun tüm pull request’leri tek sayfada — duruma göre, yazar, inceleyen, hedef ve CI ile süzülmüş —, bir PR’ın içinden süzülmüş listede ilerlemek için ‹ ›, commit’leri, güncellemeleri (her push, neyi değiştirdiği, son ziyaretinizden beri ne yeni) ve diff’inin bir satırına yorumlar.
-keywords: pull request’ler liste sayfa merge request pr mr filtre yazar inceleyen benimkiler incelememi bekleyenler benden inceleme istenen ci başarısız hedef dal taslaklar birleştirilen kapalı arama önceliklendirme önceki sonraki alt ok gezinme checkout kaynak dala git hedef dala git dal adını kopyala fetch satır yorumu satır içi yorum inceleme yorumu diff yorumu satıra yorum yap dosyalar sekmesi kod incelemesi line comment commit sekmesi commit listesi pr commit’leri commit geçmişi commit aç sha kopyala pr dalını getir markdown düzenleyici biçimlendirme çubuğu önizleme bahsetme commits tab commit list open commit copy sha markdown editor toolbar preview mention dosya ağacı klasör ağacı ağaç görünümü yol görünümü görülen dosyalar klasörü görüldü işaretle düzenle sil kaldır düzenlendi yazım hatası file tree viewed files edit delete edited typo referans başlık üzerine gelince kart work item AB# issue numarası ipucu reference title hover card issue number fork pr commit’leri refs/pull head işlenmiş yorumlar görseller izleme pikseli engellenmiş görsel yüklemek için tıkla görev tablo blok rendered comments images blocked image güncellemeler yinelemeler push’lar force push rebase geçmiş yeniden yazıldı diff sürümleri son ziyaretten beri ne değişti yeni rozeti görüldü olarak işaretle güncellemeyi karşılaştır updates iterations history rewritten diff versions what changed since last visit new badge mark as seen compare update
-source: d91d96af92225cb74da274f8d168b07f6110b709
+summary: Bir deponun tüm pull request’leri tek sayfada — duruma göre, yazar, inceleyen, hedef ve CI ile süzülmüş —, bir PR’ın içinden süzülmüş listede ilerlemek için ‹ ›, commit’leri, güncellemeleri (her push, neyi değiştirdiği, son ziyaretinizden beri ne yeni) ve diff’inin bir satırına yorumlar. Konuşma tek bir zaman çizelgesi olarak, son ziyaretinizden beri yeni olanlarla.
+keywords: pull request’ler liste sayfa merge request pr mr filtre yazar inceleyen benimkiler incelememi bekleyenler benden inceleme istenen ci başarısız hedef dal taslaklar birleştirilen kapalı arama önceliklendirme önceki sonraki alt ok gezinme checkout kaynak dala git hedef dala git dal adını kopyala fetch satır yorumu satır içi yorum inceleme yorumu diff yorumu satıra yorum yap dosyalar sekmesi kod incelemesi line comment commit sekmesi commit listesi pr commit’leri commit geçmişi commit aç sha kopyala pr dalını getir markdown düzenleyici biçimlendirme çubuğu önizleme bahsetme commits tab commit list open commit copy sha markdown editor toolbar preview mention dosya ağacı klasör ağacı ağaç görünümü yol görünümü görülen dosyalar klasörü görüldü işaretle düzenle sil kaldır düzenlendi yazım hatası file tree viewed files edit delete edited typo referans başlık üzerine gelince kart work item AB# issue numarası ipucu reference title hover card issue number fork pr commit’leri refs/pull head işlenmiş yorumlar görseller izleme pikseli engellenmiş görsel yüklemek için tıkla görev tablo blok rendered comments images blocked image güncellemeler yinelemeler push’lar force push rebase geçmiş yeniden yazıldı diff sürümleri son ziyaretten beri ne değişti yeni rozeti görüldü olarak işaretle güncellemeyi karşılaştır updates iterations history rewritten diff versions what changed since last visit new badge mark as seen compare update konuşma zaman çizelgesi açık başlıklar çözülmüş başlık onayladı değişiklik istedi gönderilen commit’ler inceleyen rolü son ziyaretinizden beri yeni iki commit’i karşılaştır commit tür çipleri commit başına ci diff’i göster sonraki görülmemiş filtre görülmemiş yorumlu inceleme ilerlemesi görüldükten sonra değişti conversation timeline open threads resolved thread approved requested changes pushed commits reviewer role new since last visit compare two commits commit type chips conventional commits ci per commit view diff next unviewed filter unviewed with comments review progress changed since viewed
+source: 6c1d5afb9bb0a33fa35b74bcc119ac137da2bf22
 ---
 
 # Pull request sayfası
@@ -16,7 +16,7 @@ okumak, geri dönmek, sonrakini açmak gerekiyordu. **Pull request sayfası** bu
 soruları tek ekranda yanıtlar ve bir pull request’i açtığınızda **‹ ›** geri
 dönmeden sizi aynı listenin bir sonrakine götürür.
 
-![“pix” için aranmış pull request sayfası: eşleşmeler vurgulu, sizinkiler “sen” ile işaretli, başarısız bir CI ve bir taslak](../../screenshots/pull-requests.webp)
+![Komuta merkezinden açılmış pull request sayfası: ikisi incelemeni bekliyor, üçü senin, diğerleri katlanmış; her satırda boyutu, her inceleyenin durumu, kontrolleri ve son ziyaretinden bu yana değiştiği yerde bir nokta](../../screenshots/pull-requests.webp)
 
 ## Açmak
 
@@ -24,12 +24,19 @@ dönmeden sizi aynı listenin bir sonrakine götürür.
   request’leri gör*).
 - Komut paletinde (⌘K) *Pull request’ler…* ya da **Araçlar → Pull
   request’ler…**.
+- [Komuta merkezinde](mission-control.md) bir deponun satırındaki **pull request
+  çipi**. Oradan açıldığında sayfa **← Görev kontrole dön** ile başlar ve pull
+  request’lerinden birini açıp **← Pull request’ler** ile geri döndüğünüzde de onu
+  korur.
 
 Wiki ve [CI çalıştırmaları](ci-runs.md) gibi, sayfa deponun sekmesinde açılır.
 
-## Sekmeler
+## Durumlar
 
-| Sekme | Ne içerir |
+Aramanın solundaki bölmeli düğme, her birinde kaç tane olduğuyla birlikte dört
+durumu tutar.
+
+| Durum | Ne içerir |
 |---|---|
 | **Açık** | Taslaklar dahil tüm açık pull request’ler |
 | **Taslaklar** | Yalnızca taslak olarak işaretlenmiş açık olanlar |
@@ -44,17 +51,21 @@ kez istenir; **Yenile** yeniden ister.
 
 | Filtre | Bıraktığı |
 |---|---|
-| **Ara** | Başlığı, açıklaması, dalları veya numarası yazılan her kelimeyi içeren pull request’ler. `#482` ya da `482` o numarayı bulur; eşleşmeler başlıkta vurgulanır |
+| **Ara** | Başlığı, açıklaması, yazarı, dalları veya numarası yazılan her kelimeyi içeren pull request’ler. `#482` ya da `482` o numarayı bulur; eşleşmeler başlıkta vurgulanır |
 | **Yazar** | Tek bir yazar — her biri bu sekmede kaç tane olduğuyla listelenir. **Ben** ilk sıradadır |
 | **İnceleyen** | İstenen tek bir inceleyen ya da **Benden inceleme istenen** |
 | **Hedef dal** | O dala açılan pull request’ler |
-| **Benimkiler** | *Yazar: Ben* için kısayol |
 | **İncelememi bekleyenler** | *İnceleyen: benden inceleme istenen* için kısayol |
+| **Benimkiler** | *Yazar: Ben* için kısayol |
 | **CI başarısız** | Head’inin kontrolleri başarısız olan pull request’ler |
 
-Filtrelerin altındaki satır, sekmedeki pull request’lerin kaçının gösterildiğini
-ve hangi filtrelerin açık olduğunu söyler; hepsini kaldırmak için **filtreleri
-temizle** vardır.
+Arama ve üç çip aynı satırı paylaşır; her çip, geçerli durumdaki pull
+request’lerden kaçını bırakacağını söyler. **Yazar**, **İnceleyen** ve **Hedef
+dal**, **Diğer filtreler ▾** altında durur; biri ayarlıyken bu düğme vurgulanır.
+
+Herhangi bir filtre açıkken listenin üstündeki bir satır, durumdaki pull
+request’lerin kaçının gösterildiğini ve hangi filtrelerin açık olduğunu söyler;
+hepsini kaldırmak için **filtreleri temizle** vardır.
 
 Filtreler depo başına **uygulama çalıştığı sürece** tutulur — sayfadan çıkın,
 geri gelin, bıraktığınız gibidirler. Yeniden başlatmalar arasında bilerek
@@ -70,16 +81,51 @@ token yoksa, **Ben**, **Benimkiler** ve **İncelememi bekleyenler** sunulmaz.
 
 ## Liste
 
-| Sütun | Ne gösterir |
+Açık ve Taslaklar, üzerlerinden geçtiğiniz sırayla üç bölüme ayrılır:
+
+| Bölüm | Ne tutar |
 |---|---|
-| **#** | Numara; açık, taslak, birleştirilmiş veya kapalı için bir simgeyle |
-| **Başlık** | Başlık, bir *taslak* rozeti ve kimden hâlâ inceleme istendiği — siz olduğunuzda vurgu renginde |
-| **Yazar** | Sunucu veriyorsa onun resmi, yoksa baş harf; kendi pull request’lerinizde **sen** |
-| **Dallar** | Kaynak → hedef |
-| **Kontroller** | Head’in kontrollerinin özeti — `6/6`, `1 başarısız`, `2 çalışıyor`; sayılar için üzerine gelin |
+| **İncelemeni bekleyenler** | Birinin senden inceleme istediği pull request’ler — başlık sarı |
+| **Senin pull request'lerin** | Senin yazdıkların |
+| **Diğerleri** | Geri kalan her şey; üstteki iki bölümde bir şey olduğu sürece **göster** arkasında katlıdır, bir arama ya da filtre onu açar |
+
+Sunucu kim olduğunu söyleyemediğinde ayıklanacak bir şey yoktur ve liste tek bir
+karttır. Birleştirilen ve Kapalı geçmiştir: tek kart, bölüm yok.
+
+Her satır soldan sağa okunur:
+
+| Parça | Ne gösterir |
+|---|---|
+| **Nokta** | Pull request, sayfasından son ayrılışından bu yana değişti. Hiç açmadığın birinde nokta yoktur — karşılaştıracak bir şey yoktur |
+| **#** | Numara — açıkken yeşil, taslakta gri |
+| **Başlık** | Başlık, [Conventional Commits](committing.md) türü renkli bir çip olarak (`feat`, `fix`, `docs`…), bir *taslak* rozeti. Altında: yazar (kendi pull request’lerinde yazılmaz), kaynak → hedef ve **N yorum** — son ziyaretinden bu yana başkaları yazdıysa **N yeni yorum** |
+| **Boyut** | `+48 −12 · 4 dosya` — eklenen ve silinen satırlar, dokunulan dosyalar; sunucunun satır saymadığı yerde yalnızca `4 dosya` |
+| **İnceleme** | Her inceleyenin geçerli kararı — **✓ bruno onayladı**, **✕ ana değişiklik istedi** — ardından kimden hâlâ istendiği, sarı renkte **● seni bekliyor**. Sunucu incelemelerin tamam olduğunu söylüyor ve kontroller başarısız olmadıysa **✓ birleştirmeye hazır**; kimseden istenmediyse ya da kimse yanıt vermediyse **inceleyen yok** |
+| **Kontroller** | Head’in kontrolleri — `✓ 6/6`, `✕ 1 başarısız`, `● 2 çalışıyor`; sayılar için üzerine gelin |
 | **Güncellendi** | En son ne kadar önce değiştiği; tarih için üzerine gelin |
 
-Satırlar en son etkinliğe göre sıralanır. Tıklamak pull request’in kendi
+### Her sunucu ne verir
+
+Boyut, yorumlar ve kararlar her sunucunun listesinde yoktur ve sayfa bunları
+bulmak için her pull request’i tek tek açmaz — aşağıda anlatılan tek bir istisna
+dışında: listenin taşımadığı şey boş kalır, asla sıfır olmaz.
+
+| Sunucu | Boyut | Yorumlar | İnceleme kararları |
+|---|---|---|---|
+| **GitHub** | ✓ | ✓, hangilerinin yeni olduğuyla | ✓, ve *birleştirmeye hazır* — tüm liste için tek bir ek GraphQL isteği |
+| **GitLab** | — | ✓ (yalnızca sayı) | Kimden istendiği; *birleştirmeye hazır* GitLab’in birleştirme durumundan |
+| **Azure DevOps** | Yalnızca dosyalar, sayfa açılınca okunur | — | ✓ inceleyenlerin oylarından |
+| **Bitbucket Data Center** | — | ✓ (yalnızca sayı) | ✓ |
+| **Bitbucket Cloud** | — | ✓ (yalnızca sayı) | — |
+| **Forgejo** | ✓ sunucu doldurduğunda | ✓ (yalnızca sayı) | Kimden istendiği |
+
+**Azure DevOps: yalnızca dosyalar.** API’si pull request başına satır sayısı vermez — bunun için her dosyanın diff’i gerekirdi —, bu yüzden hücre +/− olmadan `4 dosya` gösterir. Listesinde dosya sayısı da yoktur; bu yüzden bu sayfa onu kendisi okur, çizdiği açık ve taslak satırlar için — birleştirilen ve kapalı olanlar boş kalır, çünkü bunların tam listesi kimsenin incelemede kullanmadığı bir sayı için yüzlerce isteğe mal olurdu: pull request başına iki istek (yinelemeleri, ardından sonuncusunun değişiklikleri — Dosyalar sekmesindekiyle aynı sayı), aynı anda dört. Sayılar biri o pull request’e push edene kadar saklanır; böylece yenileme ya da sayfaya geri dönme yalnızca değişenleri sorar. Kenar çubuğunun düzenli yenilemesi bunları hiç okumaz. Okunamayan bir sayı — izin yok, istekleri kısan bir sunucu — hücreyi hatasız boş bırakır; 20.000’den fazla değişiklik içeren bir pull request sayılmaz.
+
+Yorum sayısı konuşmanın yorumlarıdır — diff’in bir satırına yazılan yorumlar buna
+dahil değildir. Token yoksa GitHub isteği atlanır ve bu sütunlar boş kalır.
+
+Bir bölümün içinde satırlar en son etkinliğe göre sıralanır ve bir pull request’in
+içindeki **‹ ›** onları çizildikleri sırayla dolaşır. Tıklamak pull request’in kendi
 sayfasını açar ([Sunucular ve pull request’ler](hosting.md)). Bu sayfası olmayan
 bir sunucuda satır pull request’i tarayıcıda açar.
 
@@ -88,7 +134,7 @@ listelenir, *owner/repo üzerinde* olarak işaretlenir.
 
 ## Bir pull request’ten listede ilerlemek
 
-![Süzülmüş listeden açılan bir pull request: ‹ 1 / 4 › ve geldiği filtreler](../../screenshots/pull-request-nav.webp)
+![Süzülmüş listeden açılan bir pull request: ‹ 1 / 7 › ve geldiği filtreler](../../screenshots/pull-request-nav.webp)
 
 Sayfadan açılan bir pull request, başlığının üstünde bir şerit gösterir:
 
@@ -160,28 +206,42 @@ Kenar çubuğu bir pull request’te kaç commit olduğunu söylüyordu, hangile
 olduğunu hiç söylemiyordu. Her seferinde bir commit incelemek — çoğu pull
 request’in okunması gereken biçim — sizi tarayıcıya gönderiyordu. Konuşma ile Güncellemeler arasındaki **Commit’ler** sekmesi onları listeler:
 
+- En üstte **bir özet satırı**: kaç commit, kaç yazardan, pull request’in
+  **+/−** değeri ve her [Conventional Commit](https://www.conventionalcommits.org/)
+  türü için sayısıyla birlikte renkli bir çip — *feat 2 · fix 1 · test 1*, bunun ne
+  tür bir değişiklik olduğunu daha tek satırını okumadan söyler. Özellikler yeşil,
+  düzeltmeler ve geri almalar kırmızı, testler vurgu renginde, performans sarı,
+  geri kalanı gri.
 - **Önce en eskiler**, uygulandıkları sırayla, yazıldıkları günün altında
   gruplanmış. Tarih sırasının dışında rebase ile gelen bir commit taşınmak yerine
   kendine ait bir gün başlatır.
-- Her satırda yazarın resmi (sunucu veriyorsa), konu, yazar, ne kadar önce olduğu
-  ve kısa SHA vardır. **birleştirme** rozeti, sunucu söylüyorsa iki ebeveynli bir
-  commit’i işaretler.
-- Konudan fazlası olan bir commit’in yanındaki **▸**, mesajının geri kalanını
+- Her satırda yazarın resmi (sunucu veriyorsa), konu — Conventional Commits’e
+  uyuyorsa türü aynı renkli çip olarak, kapsamı soluk — yazar, ne kadar önce ve bu
+  klonda bulunan bir commit için **+/−** değeri ile kaç dosyaya dokunduğu vardır.
+  Ardından, sunucu o commit için bir çalıştırma bildiriyorsa bir **CI** noktası
+  (yeşil geçti, kırmızı başarısız, sarı çalışıyor), kısa SHA ve **Diff’i göster**
+  gelir. Sunucu söylüyorsa, iki ebeveynli bir commit’i bir **birleştirme** rozeti
+  işaretler.
+- Konudan fazlası olan bir commit, mesajının geri kalanını satırın altında
   gösterir.
-- **Kopyala** tam SHA’yı panoya koyar; **Tarayıcıda aç** commit’i sunucuda açar —
-  sunucunun böyle bir sayfası varsa pull request’in içinde (GitHub, GitLab,
-  Bitbucket Data Center), yoksa deponun commit sayfasında.
+- Üzerine gelince **Kopyala** tam SHA’yı panoya koyar ve **Tarayıcıda aç**
+  commit’i sunucuda açar — sunucunun böyle bir sayfası varsa pull request’in içinde
+  (GitHub, GitLab, Bitbucket Data Center), yoksa deponun commit sayfasında.
 
 ![Commit’ler sekmesi: bir pull request’in commit’leri güne göre gruplanmış, birinin tam mesajı açık](../../screenshots/pr-commits.webp)
 
-Commit’i uygulamada açmak için **bir satıra tıklayın** — ya da Tab ile ona gelip
-Enter’a basın —; grafikte bir tıklamanın yapacağı gibi: deponun görünümü, o commit
-seçili, ayrıntıları açık. Bu, bu klonda commit **varsa** çalışır. Yoksa satır,
-sessizce başarısız olmak yerine bunu söyler ve şunları sunar:
+Pull request’ten en son ayrılmanızdan sonra yapılan commit’ler bir **Son
+ziyaretinizden beri yeni** çizgisinin altında durur — Konuşma sekmesindekiyle aynı
+işaret, aynı ziyaretten.
 
-- **Görmek için PR dalını getir** — [dala gitmek](#bir-pull-requestin-dalına-gitmek) ile aynı tek dallık
-  fetch, checkout olmadan. Commit onunla geldiyse açılır; gelmediyse (o zamandan
-  beri bir force push onu yeniden yazdıysa) bildirim bunu söyler.
+**Diff’i göster** — ya da satıra bir tıklama, ya da Tab ile ona gelip Enter —
+commit’i uygulamada, grafikte bir tıklamanın yapacağı gibi açar: deponun görünümü,
+o commit seçili, ayrıntıları açık. Bu, bu klonda commit **varsa** çalışır. Yoksa
+satır *henüz deponuzda değil* der ve düğmesi değişir:
+
+- **Dalı getir** — [dala gitmek](#bir-pull-requestin-dalına-gitmek) ile aynı tek dallık fetch,
+  checkout olmadan. Onunla gelen her commit sonra açılabilir; bu gelmediyse (o
+  zamandan beri bir force push onu yeniden yazdıysa) bildirim bunu söyler.
 - **Pull request’in commit’lerini al**, bir **fork**’tan gelen pull request’te. Dalı
   başka bir depodadır, ama çoğu sunucu bir pull request’in head’ini hedef depoda kendi
   ref’i altında yansıtır — `refs/pull/N/head` (GitHub, GitHub Enterprise Server,
@@ -192,6 +252,12 @@ sessizce başarısız olmak yerine bunu söyler ve şunları sunar:
   head’in o anki hâline taşır. O zamandan beri bir force push commit’i dışarıda
   bıraktıysa bildirim bunu söyler.
 - **Tarayıcıda aç**, fetch bir seçenek olmadığında.
+
+**İki commit’i karşılaştır** iki satırı işaretlemenizi ister, ardından deponun
+görünümünde ikisi arasındaki [karşılaştırmayı](merging.md#herhangi-iki-refi-karşılaştırma)
+açar: eski olan tabandır, böylece birinden diğerine ne olduğunu görürsünüz —
+aradaki commit’ler ve birleşik diff’leri. İkisi de bu klonda olmalıdır; iki tanesi
+olana dek düğme soluk kalır.
 
 Liste sayfayla birlikte değil, sekmeyi ilk açtığınızda okunur, ve her **Yenile**’de
 yeniden. Gelene kadar sekmedeki sayı, sunucunun pull request için verdiği sayıdır.
@@ -229,6 +295,17 @@ Yapmadıkları:
 - **Squash birleştirmeleri.** Squash ile birleştirilmiş bir pull request’in
   commit’leri hiçbir zaman hedef dala ulaşmamıştır, bu yüzden dalı silindikten sonra
   yalnızca sunucuda bulunurlar.
+- **Commit başına sayılar klonunuzdan gelir.** **+/−** ve dosya sayısı git’ten
+  okunur, asla sunucuya sorulmaz; bu yüzden henüz getirilmemiş bir commit bunları
+  göstermez, bir birleştirme de göstermez (değişikliği iki ebeveyne göredir).
+  Bir commit’in dosyaları eksik olan kısmi bir klon, onları indirmek yerine hiçbir
+  şey göstermez.
+- **Yalnızca en son 40 commit için CI**, sessizce: commit başına bir istek uzun bir
+  pull request’te birikir, ve CI genellikle zaten push edilen head’lerde
+  çalışmıştır. Sunucu için kimlik bilgisi yoksa nokta da yoktur, asla oturum açma
+  istenmez.
+- **Tür çipleri konuyu okur.** Conventional Commits yazmayan bir ekip ne çip ne de
+  tür sayısı alır — hiçbir şey tahmin edilmez.
 - **Yazarlar**, commit’lerinin onları adlandırdığı gibi adlandırılır. GitLab, Azure
   DevOps ve Bitbucket Data Center, bir resmin gönderemeyeceği bir oturum açma
   olmadan resim vermez, bu yüzden bu satırlar baş harfi gösterir.
@@ -372,7 +449,17 @@ kesindir, bu yüzden **Değişiklikleri göster** de kesindir.
 
 ## Dosyaları okumak
 
-İki yüz dosyalı bir pull request’i iki yüz tam yol olarak okumak zordur.
+İki yüz dosyalı bir pull request’i iki yüz tam yol olarak okumak zordur, yerinizi
+kaybetmeden bitirmek de. Listenin ve diff’in üstünde bir satır sayımı tutar —
+*9 dosyadan 4 tanesi görüldü*, bir çubukla — ve **Önceki görülmemiş** / **Sonraki
+görülmemiş** yukarı ya da aşağı, henüz işaretlemediğiniz en yakın dosyaya gider,
+listenin sonunda başa sarar; listelenen her şey görüldüğünde soluklaşırlar.
+**İlerlerken görüldü olarak işaretle** kutusunu işaretlerseniz **Sonraki görülmemiş**
+ilerlemeden önce açık dosyayı sizin yerinize işaretler — baştan sona okurken
+kutulara hiç dokunmazsınız; seçim hatırlanır. **Göster** listeyi **Görülmemiş**
+dosyalara ya da **Yorumlu** dosyalara (üzerinde herhangi bir inceleme konuşması
+olan) daraltır, ve yeniden **Tümü**’ne döner.
+
 **Dosyalar** sekmesinin listesinde commit panelindekiyle aynı **Yol / Ağaç** düğmesi
 vardır ve seçim uygulamanın her yerinde aynıdır. **Ağaç** görünümünde dosyalar
 klasörlerinin altında durur (`src/main/ipc` gibi bir zincir tek satırdır) ve her
@@ -380,9 +467,9 @@ klasör toplam **+/−** değerini ve dosyalarından kaçının görüldüğün�
 Bir klasörün onay kutusu içindeki her dosyayı görüldü olarak işaretler ya da hepsini
 temizler; işaretler yalnızca bu bilgisayarda tutulur, sunucuya asla gönderilmez. Bir
 işaret dosyanın diff sürümünü hatırlar: bir push görülmüş bir dosyayı değiştirdiğinde
-dosya sarı bir noktayla (*Gördüğünüzden beri değişti*) yeniden görülmemiş sayılır.
+dosya bir **değişti** etiketiyle (*gördüğünüzden beri değişti*) yeniden görülmemiş sayılır.
 Diff’i olmayan bir dosya (ikili, çok büyük) yalnızca durumu ve satır sayılarıyla
-karşılaştırılır. İnceleme konuşmaları olan bir dosyanın yanında konuşma balonu içinde bir sayı görünür (klasörler kendilerininkini toplar), böylece yorumlu dosyalar uzun bir listede göze çarpar; eskimiş konuşmalar da sayılır. Bir klasörü katlamak için ona tıklayın ya da üzerindeyken ←/→ tuşuna
+karşılaştırılır. İnceleme konuşmaları olan bir dosyanın adının hemen ardından konuşma balonu içinde bir sayı görünür, böylece yorumlu dosyalar uzun bir listede göze çarpar; eskimiş konuşmalar da sayılır, çözülmüş olanlar da — uygulamanın okuduğu sunucu listeleri hangilerinin çözüldüğünü söylemez. Bir klasörü katlamak için ona tıklayın ya da üzerindeyken ←/→ tuşuna
 basın; ↑/↓ (veya j/k) ekrandaki dosyalarda ilerler ve her diff’i açar. Katlanmış
 klasörler uygulama kapanana kadar pull request başına hatırlanır ve birinin içinde
 açılan bir dosya ona giden yolu açar. Ağaç, sunucunun dosyaları listelediği sıraya
@@ -556,14 +643,82 @@ Yapmadıkları:
 - **Diff’i olmayan bir dosyada** (ikili ya da sunucunun eklemeyeceği kadar büyük)
   yorum yapılacak satır yoktur.
 
+## Konuşma
+
+Bir pull request’in hikâyesi dağınıktır: açıklama en üstte, yorumlar bir listede,
+satır başlıkları başka bir listede, kararlar yalnızca kenar çubuğunda, push’lar kendi
+sekmesinde. Yetişmek, hepsini okuyup sırayı kafanızda yeniden kurmak demekti.
+**Konuşma** sekmesi bunu tek bir **zaman çizelgesi** olarak, bir ray boyunca, olduğu
+sırayla anlatır.
+
+![Zaman çizelgesi olarak konuşma: iki push, satırlarıyla hâlâ açık bir satır başlığı, bir değişiklik isteği, son ziyaretten beri yeni olanı işaretleyen çizgi ve bir onay](../../screenshots/pull-request-page.webp)
+
+| Zaman çizelgesinde | Ne gösterir |
+|---|---|
+| **Açıklama** | Her zaman ilk; pull request’i kimin ve ne zaman açtığıyla |
+| **Yorumlar** | Konuşma; her biri yazarının rolüyle: **Yazar** ya da **İnceleyen** |
+| **Push’lar** | *sam 2 commit gönderdi*, ardından commit başına bir satır; bir hash’e tıklamak Commit’ler sekmesini açar |
+| **Satır başlıkları** | Yerinde, ilk yorumlarının olduğu yerde: dosya ve satır, ilgili diff satırları, yanıtlar ve bir yanıt kutusu. Yol ve **Dosyalar'da görüntüle →** o dosyayı Dosyalar sekmesinde açar |
+| **İnceleme kararları** | Yeşil **onayladı**, inceleyenin yazdıklarıyla kırmızı **değişiklik istedi**, ya da bir incelemenin kendi yorumu |
+
+Sunucunun **açık** olarak bildirdiği bir başlık kehribar renkli bir etiket taşır
+ve zaman çizelgesinin üstündeki çubuk onları sayar: **1 açık başlık** yalnızca
+onları, hâlâ yanıt bekleyenleri gösterir. **Çözülmüş** bir başlık tek satıra
+katlanır — *src/palette.tsx:18 içinde çözülmüş başlık · 2 yorum* — ve bir tıklama
+onu açar. **Yorumlar · İncelemeler · Commit'ler · Tümü** zaman çizelgesini tek bir
+türe daraltır; **Yorumlar** ile açılır, **Tümü** her şeyi geri getirir.
+
+Kenar çubuğundaki **İnceleyenler** her kişinin kararını sözcüklerle söyler —
+**✓ onayladı** ya da **değişiklik istedi** — ve henüz yanıt vermemiş biri için bir
+saat gösterir.
+
+### Son ziyaretinizden beri yeni
+
+Bir pull request’in sayfasından ayrıldığınızda (başka bir sayfa, başka bir sekme,
+kapatma, uygulamadan çıkma ya da onu yeniden yükleme), uygulama zamanı not eder.
+Bir dahaki sefere bir çizgi kaldığınız yeri işaretler — **Son ziyaretinizden beri
+yeni** — ve çubuk ondan sonra kaç girdi geldiğini söyler. İşaret açarken değil
+ayrılırken konur, bu yüzden siz okurken yerinde kalır. Bir pull request’i ilk
+açtığınızda hiçbir şey yeni olarak işaretlenmez.
+
+Kendi yazdıklarınız sizin için asla yeni değildir: kendi yorumlarınız,
+yanıtlarınız ve incelemeleriniz ne sayılır ne de çizgiyi kaydırır. Ziyaretinizden
+önce başlamış ve o zamandan beri başka birinden yanıt almış bir başlık da yeni
+sayılır — zaman çizelgesinde başladığı yerde kalır, bu yüzden onu çizginin üstünde
+arayın.
+
+Süreler *2g önce* gibi okunur; tam tarih için üzerine gelin.
+
+*Sınırlar:*
+
+- **Bir commit’in ne zaman push edildiğini** sunucular söylemez. Push’lar commit
+  listesinden yeniden kurulur: aynı yazarın, her biri bir öncekinden bir saat içinde
+  olan ardışık commit’leri tek bir push sayılır ve sonuncunun tarihine yerleştirilir.
+  Tarihleri yeniden yazan bir rebase onları kaydırır. Güncellemeler sekmesi, olduğu
+  yerde sunucunun kendi kaydıdır.
+- **Açık ya da çözülmüş** bilgisi GitHub’dan (her okumada fazladan bir GraphQL
+  isteği) ve GitLab’dan gelir. Azure DevOps, Bitbucket Data Center ve Forgejo
+  başlıkları etiket göstermez ve sayılmaz.
+- **Zaman çizelgesindeki kararlar** bir tarih ister: GitHub, GitLab (bir onay,
+  GitLab’ın onun için yazdığı notun tarihiyle) ve Forgejo bir tarih verir. Azure
+  DevOps oyları ve Bitbucket Data Center onaylarının tarihi yoktur, bu yüzden yalnızca
+  kenar çubuğunda görünürler.
+- Kendi metni olmayan bir GitHub incelemesi — her satır yorumu grubunun altında
+  dosyalandığı zarf — satır almaz; başlıkları zaten görünür.
+- Son ziyaretleriniz en son 300 pull request için, yalnızca bu bilgisayarda
+  tutulur. Bir çökme ya da uygulamanın zorla kapatılması ziyaret kaydetmez.
+- **Sizinki** olduğu, sunucudaki hesabınızdan anlaşılır. Sunucunun yazarları
+  yalnızca görünen adlarıyla andığı ve eşleştirilecek bir kimlik vermediği yerde,
+  kendi girdileriniz herkesinki gibi sayılır.
+
 ## Yorum yazmak
 
 Sayfadaki her kutu — alttaki yorum, bir konuşmadaki yanıt, bir satıra yorum —
 aynı Markdown düzenleyicisidir: **Yaz / Önizleme** sekmeleri, GitHub’ın
 kısayollarıyla bir biçimlendirme çubuğu, Enter’da devam eden listeler ve ekranda
-zaten olan kişiler ve pull request’lerden **@** / **#** tamamlama. Bir yanıt kutusu
-içine tıkladığınızda araçlarını gösterir ve Enter artık yeni bir satır başlattığı
-için ⌘/Ctrl+Enter ile gönderir. Ayrıntılar ve sınırlar
+zaten olan kişiler ve pull request’lerden **@** / **#** tamamlama. Bir konuşma
+yanıtı istisnadır: araç çubuğu olmayan tek satırlık bir alandır; Enter gönderir,
+Shift+Enter bir satır ekler. Ayrıntılar ve sınırlar
 [Yorum yazmak](writing-comments.md) sayfasında.
 
 ## Yorumlar nasıl gösterilir

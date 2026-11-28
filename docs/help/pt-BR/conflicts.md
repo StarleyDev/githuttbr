@@ -2,22 +2,49 @@
 title: Resolvendo conflitos
 category: Trabalhando com mudanças
 order: 32
-summary: Um resolvedor de três painéis que diz qual lado é qual.
-keywords: conflito conflict resolvedor resolver merge conflicts ours theirs resolver marcadores markers three-way rerere reuse recorded resolution lembrar repetir
+summary: Uma tela para o passo inteiro em conflito — todos os arquivos, o ancestral comum, uma resposta por conflito e a linha de chegada.
+keywords: conflito conflict resolvedor resolver merge conflicts ours theirs base ancestral comum marcadores markers three-way apagado renomeado modify delete rename rerere reuse recorded resolution lembrar repetir concluir continuar abortar
 ---
 
 # Resolvendo conflitos
 
-Quando um merge, rebase, cherry-pick ou revert para, um aviso diz **o que** parou
-e **entre o que** — "fazendo merge de `feature/x` em `main`", não só "conflito".
+Quando um merge, rebase, cherry-pick ou revert para, o resolvedor transforma o
+passo inteiro em uma tela só. A barra do topo diz **o que** parou e **entre o
+que** — "Mesclando `feature` em `main`", não só "conflito" — e quanto já foi
+feito: *2 de 5 arquivos resolvidos*, com os conflitos que ainda faltam somando
+todos os arquivos.
 
 ![O resolvedor de conflitos](../../screenshots/conflict-resolver.webp)
 
+## A faixa de arquivos
+
+Logo abaixo da barra, um chip por arquivo em que este passo parou:
+
+| Chip | Significa |
+|---|---|
+| Verde com ✓ | Resolvido — preparado, nada mais a decidir |
+| Com contorno | O arquivo em que você está |
+| Um número vermelho | Quantos blocos em conflito o arquivo ainda tem |
+| Um rótulo | Um conflito sem texto para mesclar: *apagado de um lado*, *renomeado dos dois lados*, *adicionado de um lado* |
+
+Os chips resolvidos vêm primeiro e os abertos depois, cada grupo por nome, então
+a faixa mostra o que está feito à esquerda e o que falta à direita.
+
+**Próximo arquivo →** pula para o próximo ainda aberto, e marcar um arquivo como
+resolvido já leva você até lá. **Continuar** na barra fica desabilitado até todos
+os chips ficarem verdes; **Abortar** pergunta antes e diz o que se perde.
+
+O git esquece um arquivo no momento em que ele é preparado, então "resolvido" é o
+que o GitHuttBr viu durante este passo, mais os arquivos que o git listou na
+mensagem do merge. Um arquivo que você preparou num terminal antes de abrir o
+resolvedor continua contando; depois de reiniciar o app no meio de um rebase, a
+parte já resolvida daquele passo pode não contar.
+
 ## Por que isso conflita
 
-**Por que isso conflita**, no cabeçalho, lista por lado os commits que tocaram
-neste arquivo desde que as branches se separaram — é o `git log --merge`, que o
-git entrega desde sempre e ninguém encontra.
+**Por que isso conflita**, no cabeçalho do arquivo, lista por lado os commits que
+tocaram neste arquivo desde que as branches se separaram — é o `git log --merge`,
+que o git entrega desde sempre e ninguém encontra.
 
 ![Os commits de cada lado que tocaram no arquivo em conflito](../../screenshots/conflict-why.webp)
 
@@ -26,41 +53,119 @@ o que de fato decide a resolução. Nada ali significa que nenhum dos lados
 commitou uma mudança exatamente neste caminho — a colisão veio de uma renomeação
 ou de uma movimentação.
 
+O cabeçalho também diz em qual conflito você está e de que tipo é o conflito do
+arquivo, lido do próprio status do git: *os dois lados mudaram as mesmas linhas*,
+*adicionado nos dois lados*.
+
 ## Os três painéis
 
 | Painel | É |
 |---|---|
-| Esquerdo | **Nosso** — o lado em que você estava, rotulado com o commit dele |
-| Direito | **Deles** — o lado que está chegando, rotulado com o commit dele |
-| Central | A **saída**: editável, com números de linha, e o que de fato vai ser preparado |
+| **Seu lado** | O lado em que você estava, encabeçado pelo commit mais recente desse lado que tocou no arquivo: sha, assunto, autor, há quanto tempo |
+| **Base** | A versão de onde os dois lados partiram — o ancestral comum ou, num cherry-pick ou passo de rebase, o pai do commit sendo aplicado. As linhas que cada conflito substituiu ficam sombreadas |
+| **Chegando** | O lado que está chegando, encabeçado do mesmo jeito |
 
-Os três painéis são redimensionáveis, e o cabeçalho da saída traz duas
+**Mostrar a base**, no cabeçalho do resultado, esconde ou mostra o painel Base e
+lembra a sua escolha. Fica apagado quando não há base — os dois lados adicionaram
+o arquivo.
+
+Todos os painéis são redimensionáveis, e o cabeçalho do resultado traz duas
 alternâncias de visão:
 
 | Alternância | O que faz |
 |---|---|
-| **Quebrar linha** | Quebra linhas longas dentro dos painéis A e B em vez de rolá-las. O painel de saída mantém uma fileira por linha — os marcadores laterais dele dependem disso — então ele sempre rola |
-| **Vinculado** | Rola A, B e a saída juntos, na vertical e na horizontal. As contagens de linhas deles diferem, então a posição vertical é alinhada por proporção |
+| **Quebrar** | Quebra linhas longas dentro dos painéis laterais em vez de rolá-las. A visão em texto do resultado mantém uma fileira por linha — os marcadores laterais dela dependem disso — então ela sempre rola |
+| **Vincular rolagem** | Rola os painéis e o resultado juntos, na vertical e na horizontal. As contagens de linhas diferem, então a posição vertical é alinhada por proporção |
 
-Quebrar linha começa desligado, Vinculado começa ligado, e os dois lembram o
+Quebrar começa desligado, Vincular rolagem começa ligado, e os dois lembram o
 próprio estado.
+
+## O resultado
+
+O resultado é o arquivo como ele vai ser gravado. Cada conflito fica no lugar
+como um cartão com quatro respostas:
+
+| Resposta | O que entra no arquivo |
+|---|---|
+| **Usar o seu** | As suas linhas, e só elas |
+| **Usar o deles** | As linhas deles, e só elas |
+| **Os dois** | As suas linhas, depois as deles |
+| **Editar** | Os dois, abertos no editor de texto com o conflito selecionado, para quando a resposta é "os dois, mas ajustados" |
+
+Um cartão ainda sem resposta mostra os dois lados, cada linha marcada *← seu* ou
+*← deles* e numerada com a linha em que vai cair se for a escolhida, para você
+decidir sem olhar para cima. Num arquivo com linhas muito longas, as respostas
+ficam à vista enquanto o código rola de lado por baixo delas. **Arquivo todo: o seu | o
+deles**, no cabeçalho do arquivo, responde todos os conflitos de uma vez.
+
+**Editar como texto** troca o resultado por um editor simples, para digitar à
+vontade, com a contagem de linhas do arquivo no cabeçalho. Depois que você digita, os cartões já não descrevem o que está ali, então
+o texto fica até **Desfazer escolhas** voltar tudo ao começo.
+
+O rodapé conta o que falta neste arquivo; **Marcar *arquivo* como resolvido**
+grava o resultado e o prepara, e fica desabilitado até todo conflito ter resposta.
 
 ## Navegando
 
 Abrir um arquivo leva você ao **primeiro conflito** dele, não ao topo do
-arquivo. As setas ⌃ / ⌄ no cabeçalho da saída — ou <kbd>Alt+↑</kbd> /
-<kbd>Alt+↓</kbd> — percorrem os demais, rolando os três painéis até cada um.
+arquivo. As setas ⌃ / ⌄ no cabeçalho do resultado — ou <kbd>Alt+↑</kbd> /
+<kbd>Alt+↓</kbd> — percorrem os demais, rolando todos os painéis até cada um.
 
-## Escolhendo
+## Escolhendo por linha
 
-Por **linha**, por **bloco**, ou o **lado inteiro** de uma vez — e você pode ficar
-com os dois lados de um bloco quando a resposta é "manter os dois". Um navegador
-conflito a conflito leva você pelo que sobrou, para que não seja possível deixar
-um marcador para trás sem querer.
+Os painéis laterais continuam escolhendo por **linha** e por **bloco**, e a caixa
+no cabeçalho deles pega o **lado inteiro** — para a resposta que nenhum cartão
+oferece, como duas linhas suas e uma deles. As escolhas por linha aparecem nos
+cartões na hora.
+
+## Arquivos sem nada para mesclar
+
+Alguns conflitos não têm linhas para comparar: um lado **apagou** um arquivo que o
+outro mudou, ou os dois lados o **renomearam** para nomes diferentes. Três
+painéis com um deles vazio não explicariam nada, então estes ganham um cartão — quem
+fez o quê, com o commit, o autor e a idade de cada lado.
+
+![Um arquivo apagado de um lado e mudado do outro](../../screenshots/conflict-deleted.webp)
+
+| Caso | Escolhas |
+|---|---|
+| Apagado de um lado | **Manter o arquivo** (com as mudanças que o outro lado fez), **Apagar o arquivo** (pergunta antes) e **Ver o que você mudou** — o diff a partir da base, para você saber o que apagar joga fora |
+| Renomeado dos dois lados | **Manter** um nome, o outro, ou **os dois nomes** |
+
+O git não registra ligação entre o original renomeado e os dois nomes novos, então
+o cartão os associa pelo conteúdo. Quando não dá para saber — várias renomeações
+de uma vez, com os arquivos mudados também — ele diz isso, e os nomes novos
+aparecem como chips próprios.
+
+## Concluindo
+
+Quando o último arquivo é resolvido, o resolvedor não manda você procurar o
+**Continuar**: um cartão resume como os conflitos foram respondidos, deixa editar
+a mensagem do merge (já preenchida com a do git) e conclui dali mesmo.
+
+![Todos os conflitos resolvidos, com a mensagem do merge e o rerere](../../screenshots/conflict-done.webp)
+
+- O resumo conta o que ele viu você escolher: do seu lado, do deles, os dois,
+  editado à mão. Um arquivo resolvido fora do resolvedor conta como arquivo, não
+  como resposta.
+- Um passo de **rebase** mantém a mensagem do próprio commit reaplicado, então
+  não há caixa de mensagem para ele.
+- **Lembrar estas resoluções (rerere)** é o `rerere.enabled` do git, a mesma
+  chave das Configurações. O git só lembra conflitos que viu acontecer, então
+  ligar aqui vale a partir do próximo.
+- **Revisar de novo** fecha o resolvedor sobre o resultado preparado.
+
+## Desfazer
+
+Toda resolução — um arquivo marcado como resolvido, um lado escolhido, um arquivo
+mantido ou apagado, uma renomeação decidida — tem uma entrada de desfazer.
+Desfazer devolve o conflito exatamente como o git o deixou: os marcadores, os dois
+lados e a base no índice, o arquivo no disco. **Abortar** é a única coisa que não
+dá para desfazer, e por isso pergunta.
 
 ## Assistência da IA
 
-Com a IA ligada, **Resolver com IA** propõe um merge no painel de saída. Ela nunca
+Com a IA ligada, **Resolver com IA** propõe um merge no resultado, como texto. Ela nunca
 aplica nada por conta própria: você lê, edita e prepara. Veja
 [Recursos de IA](ai.md).
 
@@ -80,7 +185,7 @@ objetos por identificador, pegar toda adição dos dois lados, unir os arrays
 `children` e `files` e parar no que de fato divergiu. A faixa acima dos painéis
 diz o que cada lado adicionou e o que — se algo — sobra para você.
 
-Como a proposta da IA, ela cai no painel de saída e não prepara nada. Você lê
+Como a proposta da IA, ela cai no resultado e não prepara nada. Você lê
 antes de salvar.
 
 ![A faixa de mesclagem estrutural acima dos painéis de conflito, em um arquivo de projeto do Xcode](../../screenshots/conflict-pbxproj.webp)

@@ -2,23 +2,50 @@
 title: Çakışmaları çözme
 category: Değişikliklerle çalışma
 order: 32
-summary: Hangi tarafın hangisi olduğunu söyleyen üç panelli bir çakışma çözücü.
-keywords: çakışma conflict çözücü resolver merge conflicts ours theirs bizimki onlarınki işaretçi marker üç yönlü three-way rerere kaydedilmiş çözüm hatırla tekrar oynat
+summary: Çakışan adımın tamamı için tek ekran — her dosya, ortak ata, çakışma başına bir yanıt ve bitiş çizgisi.
+keywords: çakışma conflict çözücü resolver merge conflicts ours theirs bizimki onlarınki senin tarafın gelen taban base ortak ata common ancestor işaretçi marker üç yönlü three-way silindi yeniden adlandırıldı modify delete rename rerere kaydedilmiş çözüm hatırla tekrar oynat bitir devam iptal finish continue abort
 ---
 
 # Çakışmaları çözme
 
-Bir merge, rebase, cherry-pick ya da revert durduğunda bir bant **neyin**
-durduğunu ve **neyle ne arasında** durduğunu söyler — sadece "çakışma" değil,
-"`feature/x`, `main` içine birleştiriliyor".
+Bir merge, rebase, cherry-pick ya da revert durduğunda çözücü adımın tamamını tek
+bir ekrana dönüştürür. Üstteki çubuk **neyin** durduğunu ve **neyle ne arasında**
+durduğunu söyler — sadece "çakışma" değil, "`feature`, `main` içine
+birleştiriliyor" — ve ne kadar ilerlediğinizi: *5 dosyadan 2 tanesi çözüldü*,
+tüm dosyalarda hâlâ kalan çakışmalarla birlikte.
 
 ![Çakışma çözücü](../../screenshots/conflict-resolver.webp)
 
+## Dosya şeridi
+
+Çubuğun altında, bu adımın takıldığı her dosya için bir çip vardır:
+
+| Çip | Anlamı |
+|---|---|
+| ✓ ile yeşil | Çözüldü — hazırlandı, karar verilecek bir şey kalmadı |
+| Çerçeveli | Üzerinde bulunduğunuz dosya |
+| Kırmızı bir sayı | Dosyada hâlâ kaç çakışma bloğu olduğu |
+| Bir etiket | Birleştirilecek metni olmayan bir çakışma: *bir tarafta silindi*, *iki tarafta da yeniden adlandırıldı*, *bir tarafta eklendi* |
+
+Çözülmüş çipler önce, açık olanlar sonra gelir; her grup ada göre sıralıdır.
+Böylece şerit solda bitenler, sağda kalanlar olarak okunur.
+
+**Sonraki dosya →** hâlâ açık olan bir sonrakine atlar; bir dosyayı çözüldü
+olarak işaretlemek de sizi kendiliğinden oraya götürür. Çubuktaki **Devam et**
+her çip yeşil olana kadar devre dışı kalır; **İptal et** önce sorar ve neyi
+kaybedeceğinizi söyler.
+
+git bir dosyayı hazırlandığı anda unutur; bu yüzden "çözüldü", GitHuttBr'ın bu
+adım sırasında gördükleri ile git'in merge mesajında listelediği dosyalardır.
+Çözücüyü açmadan önce terminalde hazırladığınız bir dosya yine sayılır; rebase
+ortasında yeniden başlatmadan sonra ise o tek adımın çözülmüş yarısı
+sayılmayabilir.
+
 ## Bu neden çakışıyor
 
-Başlıktaki **Bu neden çakışıyor**, dallar ayrıldığından beri bu dosyaya dokunan
-commit'leri her taraf için ayrı ayrı listeler — `git log --merge` ile; git'in
-yıllardır sunduğu ama kimsenin bulamadığı komut.
+Dosya başlığındaki **Bu neden çakışıyor**, dallar ayrıldığından beri bu dosyaya
+dokunan commit'leri her taraf için ayrı ayrı listeler — `git log --merge` ile;
+git'in yıllardır sunduğu ama kimsenin bulamadığı komut.
 
 ![Çakışan dosyaya dokunan, her iki taraftan gelen commit'ler](../../screenshots/conflict-why.webp)
 
@@ -27,40 +54,123 @@ ve çözümü asıl belirleyen genellikle budur. Orada hiçbir şey yoksa, hiçb
 tam olarak bu yola bir değişiklik commit'lememiştir — çarpışma bir yeniden
 adlandırmadan ya da taşımadan gelmiştir.
 
+Başlık ayrıca hangi çakışmada olduğunuzu ve dosyanın ne tür bir çakışmada
+olduğunu da git'in kendi durumundan okuyarak söyler: *iki taraf da aynı satırları
+değiştirdi*, *iki tarafta da eklendi*.
+
 ## Üç panel
 
 | Panel | Nedir |
 |---|---|
-| Sol | **Bizimki** — üzerinde bulunduğunuz taraf, commit'iyle etiketli |
-| Sağ | **Onlarınki** — gelen taraf, commit'iyle etiketli |
-| Orta | **Çıktı**: düzenlenebilir, satır numaralı ve gerçekten hazırlanacak olan içerik |
+| **Senin tarafın** | Üzerinde bulunduğunuz taraf; başında o tarafta dosyaya dokunan en yeni commit durur: sha, konu, yazar, ne kadar önce |
+| **Taban** | İki tarafın da başladığı sürüm — ortak ata ya da bir pick veya rebase adımında uygulanan commit'in ebeveyni. Her çakışmanın yerini aldığı satırlar gölgelidir |
+| **Gelen** | Gelen taraf; başlığı Senin tarafın ile aynı biçimdedir |
 
-Üç panel de yeniden boyutlandırılabilir ve çıktı başlığı iki görünüm anahtarı
+Sonuç başlığındaki **Tabanı göster**, Taban panelini gizler ya da gösterir ve
+seçiminizi hatırlar. Taban olmadığında — iki taraf da dosyayı eklediğinde — soluk
+ve devre dışıdır.
+
+Tüm paneller yeniden boyutlandırılabilir ve sonuç başlığı iki görünüm anahtarı
 taşır:
 
 | Anahtar | Ne yapar |
 |---|---|
-| **Satır kaydır** | A ve B panellerindeki uzun satırları kaydırmak yerine alt satıra taşır. Çıktı paneli satır başına tek sıra tutar — yan işaretçileri buna dayanır — bu yüzden her zaman kayar |
-| **Bağlı** | A'yı, B'yi ve çıktıyı birlikte kaydırır; dikeyde ve yatayda. Satır sayıları farklı olduğundan dikey konum oranla eşleştirilir |
+| **Satır kaydır** | Yan panellerdeki uzun satırları kaydırmak yerine alt satıra taşır. Sonucun metin görünümü satır başına tek sıra tutar — yan işaretçileri buna dayanır — bu yüzden her zaman kayar |
+| **Kaydırmayı bağla** | Panelleri ve sonucu birlikte kaydırır; dikeyde ve yatayda. Satır sayıları farklı olduğundan dikey konum oranla eşleştirilir |
 
-Satır kaydır kapalı başlar, Bağlı açık başlar ve ikisi de durumunu hatırlar.
+Satır kaydır kapalı başlar, Kaydırmayı bağla açık başlar ve ikisi de durumunu
+hatırlar.
+
+## Sonuç
+
+Sonuç, dosyanın yazılacağı hâlidir. Her çakışma yerinde, üzerinde dört yanıt
+bulunan bir kart olarak durur:
+
+| Yanıt | Dosyaya ne girer |
+|---|---|
+| **Seninkini kullan** | Sizin satırlarınız, yalnızca sizinkiler |
+| **Onlarınkini kullan** | Onların satırları, yalnızca onlarınkiler |
+| **İkisi** | Önce sizin satırlarınız, sonra onlarınkiler |
+| **Düzenle** | İkisi birden, metin düzenleyicide çakışma seçili olarak açılır; yanıt "ikisi de, ama biraz düzeltilmiş" olduğunda |
+
+Yanıtlanmamış bir kart iki tarafı da önizler; her satır *← senin* ya da *←
+onların* ile etiketlenir ve seçilirse düşeceği satırın numarasını taşır, böylece
+başınızı kaldırmadan karar verebilirsiniz. Çok uzun satırlı bir dosyada kod
+altlarında yana kayarken yanıtlar görünür kalır. Dosya başlığındaki **Tüm dosya:
+seninki | onlarınki** her çakışmayı tek seferde yanıtlar.
+
+**Metin olarak düzenle**, sonucu serbestçe yazmak için düz bir düzenleyiciye
+çevirir; başlıkta dosyanın satır sayısı görünür. Bir şey yazdıktan sonra kartlar
+artık oradakini anlatmaz; bu yüzden metin, **Seçimleri sıfırla** her şeyi geri
+getirene kadar kalır.
+
+Alt bilgi bu dosyada kalanları sayar; ***dosya* dosyasını çözüldü olarak
+işaretle** sonucu yazar ve hazırlar; her çakışmanın bir yanıtı olana kadar devre
+dışıdır.
 
 ## Gezinmek
 
 Bir dosyayı açmak sizi dosyanın başına değil, **ilk çakışmasına** götürür.
-Çıktı başlığındaki ⌃ / ⌄ okları — ya da <kbd>Alt+↑</kbd> / <kbd>Alt+↓</kbd> —
-kalanlar arasında adım adım ilerleyerek üç paneli de her birine kaydırır.
+Sonuç başlığındaki ⌃ / ⌄ okları — ya da <kbd>Alt+↑</kbd> / <kbd>Alt+↓</kbd> —
+kalanlar arasında adım adım ilerleyerek her paneli her birine kaydırır.
 
-## Seçmek
+## Satır satır seçmek
 
-**Satır** bazında, **öbek** bazında ya da bir seferde **tüm taraf** — ve yanıt
-"ikisi de kalsın" olduğunda bir öbeğin her iki tarafını da alabilirsiniz.
-Çakışmadan çakışmaya ilerleyen bir gezinme aracı kalanları tek tek dolaştırır,
-böylece geride kazara bir işaretçi bırakamazsınız.
+Yan paneller hâlâ **satır** ve **öbek** bazında seçer, başlıklarındaki onay
+kutusu da **tüm tarafı** alır — hiçbir kartın sunmadığı yanıt için, örneğin
+sizden iki satır ve onlardan bir satır. Satır düzeyindeki seçimler oldukları anda
+kartlarda görünür.
+
+## Birleştirilecek bir şey olmayan dosyalar
+
+Bazı çakışmaların karşılaştırılacak satırı yoktur: bir taraf, diğerinin
+değiştirdiği bir dosyayı **silmiştir** ya da iki taraf da dosyayı farklı adlarla
+**yeniden adlandırmıştır**. Biri boş üç panel hiçbir şey açıklamaz; bu yüzden
+bunlar yerine bir kart alır — kim ne yaptı, her tarafın commit'i, yazarı ve
+yaşıyla.
+
+![Bir tarafta silinmiş, diğer tarafta değiştirilmiş bir dosya](../../screenshots/conflict-deleted.webp)
+
+| Durum | Seçenekler |
+|---|---|
+| Bir tarafta silindi | **Dosyayı tut** (diğer tarafın yaptığı değişikliklerle), **Dosyayı sil** (önce sorar) ve **Ne değiştirdiğini gör** — tabandan farkı gösterir, böylece silmenin neyi attığını bilirsiniz |
+| İki tarafta da yeniden adlandırıldı | Bir adı ya da diğerini **tut**, veya **İki adı da tut** |
+
+git, yeniden adlandırılmış bir orijinal ile iki yeni adı arasında hiçbir bağ
+kaydetmez; bu yüzden kart onları içeriğe göre eşleştirir. Anlayamadığında — aynı
+anda birkaç yeniden adlandırma varsa ve dosyalar da değişmişse — bunu söyler ve
+yeni adlar kendi çipleri olarak görünür.
+
+## Bitirmek
+
+Son dosya çözüldüğünde çalışma alanı sizi **Devam et**'i aramaya göndermez: bir
+kart çakışmaların nasıl yanıtlandığını özetler, merge mesajını (git'in kendi
+mesajıyla önceden doldurulmuş) düzenlemenize izin verir ve oradan bitirir.
+
+![Tüm çakışmalar çözülmüş; merge mesajı ve rerere anahtarıyla](../../screenshots/conflict-done.webp)
+
+- Özet, sizin seçtiğinizi gördüğünü sayar: seninki, onlarınki, ikisi, elle
+  düzenlenmiş. Çözücünün dışında çözülen bir dosya yanıt olarak değil, dosya
+  olarak sayılır.
+- Bir **rebase** adımı yeniden oynatılan commit'in kendi mesajını korur; bu
+  yüzden onun için mesaj kutusu yoktur.
+- **Bu çözümleri (rerere) bir dahaki sefere hatırla**, git'in
+  `rerere.enabled` ayarıdır; Ayarlar'daki anahtarın aynısı. git yalnızca
+  gerçekleştiğini gördüğü çakışmaları hatırlar; bu yüzden burada açmak bir
+  sonrakinden itibaren etkili olur.
+- **Yeniden gözden geçir** çözücüyü hazırlanmış sonuçla kapatır.
+
+## Geri alma
+
+Her çözümün — çözüldü olarak işaretlenen bir dosya, seçilen bir taraf, tutulan ya
+da silinen bir dosya, karara bağlanan bir yeniden adlandırma — bir geri alma
+kaydı vardır. Geri alma, çakışmayı git'in bıraktığı hâliyle tam olarak geri
+getirir: işaretçiler, dizindeki iki taraf ve taban, diskteki dosya. **İptal et**
+geri alınamayan tek şeydir; bu yüzden önce sorar.
 
 ## Yapay zekâ desteği
 
-Yapay zekâ etkinken **Yapay zekâ ile çöz**, çıktı paneline bir birleştirme
+Yapay zekâ etkinken **Yapay zekâ ile çöz**, sonuca metin olarak bir birleştirme
 önerir. Kendi başına hiçbir şey uygulamaz: siz okur, düzenler ve hazırlarsınız.
 Bkz. [Yapay zekâ özellikleri](ai.md).
 
@@ -80,7 +190,7 @@ göre eşleştir, iki taraftaki her eklemeyi al, `children` ve `files` dizilerin
 birleştir ve gerçekten ayrışan yerde dur. Panellerin üstündeki şerit, her
 tarafın ne eklediğini ve — varsa — sana ne kaldığını söyler.
 
-Yapay zekâ önerisi gibi, çıktı paneline düşer ve hiçbir şeyi hazırlamaz.
+Yapay zekâ önerisi gibi, sonuca düşer ve hiçbir şeyi hazırlamaz.
 Kaydetmeden önce okursun.
 
 ![Bir Xcode proje dosyasında, çakışma panellerinin üstündeki yapısal birleştirme şeridi](../../screenshots/conflict-pbxproj.webp)

@@ -215,9 +215,22 @@ export interface CommitEditInfo {
   descendants: number
   /** Reachable from a remote ref — rewriting means a force push later. */
   pushed: boolean
+  /** The remote-tracking branches that already hold it (`origin/main`), for the warning. */
+  remoteBranches: string[]
+  /** The commits a rewrite replays — descendants of it up to HEAD, newest first, capped. */
+  above: CommitEditAbove[]
+  /** How many commits a rewrite replays, uncapped; `above` may list fewer. */
+  aboveTotal: number
   message: string
   authorName: string
   authorDate: string // ISO
+}
+
+/** One commit above the edited one, before any preview has run. */
+export interface CommitEditAbove {
+  sha: string
+  subject: string
+  merge: boolean
 }
 
 /** A historical blob, loaded for in-place editing. */
@@ -601,6 +614,56 @@ export interface ConflictContext {
   ours: ConflictRefInfo | null
   /** Stage 3 (`--theirs`) commit: MERGE_HEAD / REBASE_HEAD / CHERRY_PICK_HEAD. */
   theirs: ConflictRefInfo | null
+  /** Short sha of the version both sides started from: the merge base, or the
+   *  picked/replayed commit's parent. '' when there is none to name. */
+  baseSha?: string
+}
+
+/**
+ * What kind of conflict a file is in, read from git's two-letter unmerged
+ * status (`UU`, `AA`, `DU`, `UD`, `AU`, `UA`, `DD`).
+ */
+export type ConflictFileKind =
+  | 'both-modified'
+  | 'both-added'
+  | 'deleted-by-us'
+  | 'deleted-by-them'
+  | 'added-by-us'
+  | 'added-by-them'
+  | 'renamed-both'
+
+/** One unmerged path, as the conflict workspace's file strip shows it. */
+export interface ConflictFileInfo {
+  path: string
+  /** git's `XY` code, verbatim. */
+  code: string
+  kind: ConflictFileKind
+  /** Conflict blocks (`<<<<<<<` markers) in the working-tree file. */
+  conflicts: number
+  /** On a `renamed-both` original: the name each side gave it. */
+  renamedTo?: { ours: string; theirs: string }
+  /** On one half of a rename/rename pair: the original it belongs to. The strip
+   *  folds it into that original's card instead of listing it twice. */
+  renameOf?: string
+}
+
+export interface ConflictOverview {
+  files: ConflictFileInfo[]
+  /** Paths git listed under `# Conflicts:` in MERGE_MSG — every file this step
+   *  stopped on, resolved or not. Empty for a rebase, which does not write it. */
+  listed: string[]
+}
+
+/**
+ * The unmerged state of some paths, captured before resolving them so the
+ * resolution can be undone: the index stages plus the working-tree content.
+ */
+export interface ConflictSnapshot {
+  /** `git ls-files -u -s -z` output for the paths. */
+  stages: string
+  /** `blob` is the sha of the file's bytes, written to the object store as a
+   *  loose object; null when the file was not on disk. */
+  files: { path: string; blob: string | null }[]
 }
 
 export interface StashInfo {
@@ -691,6 +754,41 @@ export interface PullRequest {
   body?: string
   /** The author's picture, when the host's list names one (https only is drawn). */
   authorAvatar?: string
+  /** Lines added and removed and files touched, when the host's list says
+   *  (GitHub through one GraphQL read, Forgejo in its list). Absent: unknown.
+   *  Azure DevOps has files only, read by the list page (PrFileCountRequest). */
+  additions?: number
+  deletions?: number
+  changedFiles?: number
+  /** Conversation comments, when the host's list counts them. */
+  commentCount?: number
+  /** When the latest comments were written and by whom — enough to count the
+   *  ones newer than your last visit. Absent where the list has no times. */
+  recentComments?: PrListComment[]
+  /** Each reviewer's standing verdict, when the host's list says. Present and
+   *  empty means "nobody has given one"; absent means the host did not say. */
+  reviews?: PrListReview[]
+  /** The host considers it approved and ready to go in (GitHub's review
+   *  decision, GitLab's merge status). */
+  readyToMerge?: boolean
+}
+
+/** A row the PR list page wants its changed-file count for — the head keys main's cache. */
+export interface PrFileCountRequest {
+  id: number
+  headSha: string
+}
+
+/** One comment's time and author, as the PR list counts the new ones. */
+export interface PrListComment {
+  at: string
+  author: string
+}
+
+/** A reviewer's verdict on a pull request, as its list row shows it. */
+export interface PrListReview {
+  login: string
+  verdict: 'approved' | 'changes'
 }
 
 /**
@@ -787,6 +885,11 @@ export interface PrComment {
 export interface PrReview {
   author: string
   state: 'APPROVED' | 'CHANGES_REQUESTED' | 'COMMENTED' | 'DISMISSED' | 'PENDING'
+  /** ISO date the review was submitted. Absent where the host does not say (Azure DevOps votes,
+   *  Bitbucket Data Center); without it the review shows in the sidebar, not on the timeline. */
+  submittedAt?: string
+  /** The review's own text (the summary written with "Request changes"), when the host gives one. */
+  body?: string
 }
 
 /** One comment within an inline review thread. */
@@ -825,6 +928,9 @@ export interface PrReviewThread {
    * the Files tab then lists it only in the conversation, never on a guessed line.
    */
   side?: PrLineSide
+  /** The host marks the thread resolved (GitHub, GitLab). Absent where the host does not say
+   *  or the read failed — unknown, which the page shows as neither open nor resolved. */
+  resolved?: boolean
 }
 
 /** Which version of a file a diff line belongs to: before the change, or after. */
@@ -856,6 +962,14 @@ export interface PrCheck {
   url: string // details/logs URL
   /** The app can read this check's log itself (a Forgejo Actions job on the PR's own server). */
   hasLog?: boolean
+  /** Epoch milliseconds, when the host says. Forgejo's are the status's own times, queue included. */
+  startedAt?: number
+  finishedAt?: number
+  /** The commit the check ran on. */
+  sha?: string
+  /** The CI run it belongs to, as the CI runs page knows it — set only where that
+   *  host lets the app re-run a run's failed jobs (GitHub Actions, GitLab, Azure). */
+  runId?: string
 }
 
 /** A changed file in a pull request (file-by-file review checklist). */
@@ -976,6 +1090,13 @@ export interface PrCommit {
   authoredAt: string
   /** Parent count — above one is a merge commit. Absent when the host does not say. */
   parents?: number
+}
+
+/** What one commit changed against its parent: the Commits tab's "+12 −3 · 2 files". */
+export interface PrCommitStats {
+  additions: number
+  deletions: number
+  files: number
 }
 
 /** A pull request's commits, oldest first. `truncated` when the host has more
@@ -1518,6 +1639,8 @@ export interface CiRun {
   url: string
   /** The definition this run belongs to, for "run again on another branch". */
   workflowId?: string
+  /** The pull / merge request the run was started for, when the host says. */
+  pullRequest?: number
 }
 
 export interface CiRunStep {
@@ -3410,6 +3533,10 @@ export interface TreeChild {
   name: string
   /** Blob size in bytes; null for trees and submodule gitlinks. */
   size: number | null
+  /** For a subtree: how many entries it holds, so a row can say "4 items" without opening it. */
+  count?: number
+  /** For a symlink (mode 120000): the path it points at, which is all its blob contains. */
+  target?: string
 }
 
 /** A raw object from the database, decoded enough to be walkable. */
@@ -3422,12 +3549,24 @@ export interface GitObject {
   rev: string
   commit?: {
     tree: string
+    /** How many entries the root tree holds. */
+    treeCount: number
     parents: string[]
+    /** Each parent's subject line, in the order of `parents`. */
+    parentSubjects: string[]
     author: string
     committer: string
     message: string
   }
-  tag?: { object: string; type: string; name: string; tagger: string; message: string }
+  tag?: {
+    object: string
+    type: string
+    name: string
+    tagger: string
+    message: string
+    /** The subject of the tagged object when it is a commit, else ''. */
+    targetSubject: string
+  }
   tree?: TreeChild[]
   blob?: {
     /** Decoded text, or null when the blob is binary. */
@@ -3444,6 +3583,8 @@ export interface RefObject {
   sha: string
   /** The kind of object the ref names — annotated tags point at a `tag`. */
   kind: GitObjectKind
+  /** For `HEAD` on a branch: the branch it is a symbolic ref to, short (`main`). */
+  symbolic?: string
 }
 
 /**
@@ -3905,8 +4046,12 @@ export type PageContent =
   // page has loaded the real one.
   // `via: 'list'` — opened from the pull requests page, so its ‹ › walk the
   // filtered list it came from rather than the repository's open PRs.
-  | { type: 'pr'; repoPath: string; remoteUrl: string; number: number; title: string; via?: 'list' }
-  | { type: 'pull-requests'; repoPath: string }
+  // `listFrom: 'mission'` — that list was opened from Mission Control: its
+  // "← Pull requests" takes the flag back, so the list keeps its way back there.
+  | { type: 'pr'; repoPath: string; remoteUrl: string; number: number; title: string; via?: 'list'
+      listFrom?: 'mission' }
+  // `from: 'mission'` — opened from Mission Control, so the page offers the way back.
+  | { type: 'pull-requests'; repoPath: string; from?: 'mission' }
 
 /** One dependency's licence, collected at build time by scripts/gen-licenses.mjs.
  *  `text` is null when the package ships an SPDX id but no licence file. */
@@ -4107,6 +4252,12 @@ export interface AppSettings {
   /** Bookmarked places in the code, per repository. */
   repoBookmarks?: Record<string, RepoBookmark[]>
   /**
+   * When each pull request page was last left, in ms since the epoch, keyed by
+   * remote identity + number (lib/prVisits.ts) — what "new since your last
+   * visit" counts from. Capped to the most recent pull requests.
+   */
+  prVisits?: Record<string, number>
+  /**
    * When the Problems dock is allowed to run the project's analyzers. They are
    * the repository's own toolchain — `tsc`, `eslint`, `cargo clippy` — so this
    * is about how much of your machine GitHuttBr may spend without being asked.
@@ -4127,6 +4278,8 @@ export interface AppSettings {
   /** How often Mission Control re-reads the repositories while it is on screen,
    *  in seconds; never below 30. It does not run while the page is closed. */
   missionRefreshSeconds?: number
+  /** Pull request Files tab: "Next unviewed" marks the open file viewed before moving on. */
+  prMarkViewedOnNext?: boolean
   /** How Mission Control colours "N commits since the tag", by range. */
   missionReleaseTiers?: ReleaseNoteTiers
   /** Raise an OS notification for new review-requested / CI inbox items. */

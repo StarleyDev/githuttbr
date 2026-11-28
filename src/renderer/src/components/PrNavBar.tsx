@@ -79,7 +79,11 @@ export function PrNavBar({ page }: { page: PrPage }): React.JSX.Element {
     <div className="prn-bar">
       <button
         className="prn-back"
-        onClick={() => useSettingsStore.getState().openPageTab({ type: 'pull-requests', repoPath: page.repoPath })}
+        onClick={() =>
+          useSettingsStore
+            .getState()
+            .openPageTab({ type: 'pull-requests', repoPath: page.repoPath, ...(page.listFrom ? { from: page.listFrom } : {}) })
+        }
         title={t('prNav.backTitle')}
       >
         <ArrowLeft size={14} /> {t('prList.title')}

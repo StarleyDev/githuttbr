@@ -6,6 +6,7 @@ import type { ReactNode } from 'react'
 import type {
   AppSettings,
   CiState,
+  ConflictFileInfo,
   DivergedStrategy,
   KeychainReason,
   RepoRef,
@@ -16,6 +17,8 @@ import type { WorktreeGroupPlan } from '../lib/worktrees'
 import type { SettingsPageId } from '../lib/settingsSearch'
 import type { WorkspaceCandidate } from '../lib/workspacePlan'
 import { touchMru } from '../lib/repoSwitcher'
+import { nextConflictSession, type ConflictSession } from '../lib/conflictWorkspace'
+import type { ConflictChoiceCounts } from '../lib/conflict'
 
 export type CiFilter = 'all' | CiState
 
@@ -547,6 +550,9 @@ interface UIState {
   /** File whose "why this conflicts" strip is open. Lives here rather than in
    *  the resolver so a background refresh, which remounts it, does not close it. */
   conflictWhy: string | null
+  /** Per repository: the files the current conflicted step stopped on and how
+   *  each was answered — git forgets a file once it is staged. */
+  conflictSessions: Record<string, ConflictSession>
   fileSearch: FileSearchState | null
   scrollToHash: string | null
   layout: PanelLayout
@@ -601,6 +607,8 @@ interface UIState {
   setFileView(view: FileViewState | null): void
   setEditorDirty(dirty: boolean): void
   setConflictView(view: ConflictViewState | null): void
+  trackConflictFiles(repoPath: string, key: string, files: ConflictFileInfo[], listed: string[]): void
+  recordConflictChoices(repoPath: string, file: string, counts: ConflictChoiceCounts): void
   setCommitEditView(view: CommitEditViewState | null): void
   /** Store the open commit editor's draft; ignored if that editor was closed meanwhile. */
   saveCommitEditDraft(repoPath: string, sha: string, draft: CommitEditDraft): void
@@ -663,6 +671,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   commitEditView: null,
   compareView: null,
   conflictWhy: null,
+  conflictSessions: {},
   fileSearch: null,
   scrollToHash: null,
   layout: loadLayout(),
@@ -759,6 +768,23 @@ export const useUIStore = create<UIState>((set, get) => ({
     })),
   setEditorDirty: (editorDirty) => set({ editorDirty }),
   setConflictView: (conflictView) => set({ conflictView }),
+  trackConflictFiles: (repoPath, key, files, listed) =>
+    set((s) => {
+      const prev = s.conflictSessions[repoPath]
+      const next = nextConflictSession(prev, key, files, listed)
+      return next === prev ? {} : { conflictSessions: { ...s.conflictSessions, [repoPath]: next } }
+    }),
+  recordConflictChoices: (repoPath, file, counts) =>
+    set((s) => {
+      const prev = s.conflictSessions[repoPath]
+      if (!prev) return {}
+      return {
+        conflictSessions: {
+          ...s.conflictSessions,
+          [repoPath]: { ...prev, choices: { ...prev.choices, [file]: counts } }
+        }
+      }
+    }),
   setCommitEditView: (commitEditView) => set({ commitEditView }),
   saveCommitEditDraft: (repoPath, sha, draft) =>
     set((s) =>

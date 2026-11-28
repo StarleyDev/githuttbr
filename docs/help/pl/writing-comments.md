@@ -90,11 +90,12 @@ kodu zostają nietknięte.
 ⌘/Ctrl+Enter wysyła z każdego pola: komentarz do pull requesta lub issue, odpowiedź
 w wątku, komentarz do wiersza i opis nowego issue. Działa też z zakładek, paska
 narzędzi i podglądu, nie tylko z pola. Esc anuluje komentarz do wiersza, z tych
-samych miejsc. **Odpowiedź w wątku** była kiedyś jednowierszowym polem wysyłanym
-Enterem; teraz to małe pole tekstowe, więc Enter to nowy wiersz (albo następny
-element listy), a ⌘/Ctrl+Enter wysyła. Pole odpowiedzi pokazuje swoje zakładki i
-narzędzia, gdy w nie klikniesz, żeby długa rozmowa nie obrastała paskiem narzędzi
-pod każdym wątkiem.
+samych miejsc. **Odpowiedź w wątku** to jednowierszowe pole, żeby długa rozmowa nie
+obrastała paskiem narzędzi pod każdym wątkiem: Enter wysyła, Shift+Enter dodaje
+wiersz (pole rośnie razem z nim, także przy wklejonym bloku), a Esc odrzuca to, co
+wpisano, po wcześniejszym pytaniu. Nie ma zakładek ani paska narzędzi, ale skróty
+formatowania i uzupełnianie **@** / **#** w nim działają, a przycisk **Odpowiedz**
+pojawia się, gdy jest co wysłać.
 
 ## Ściągawka
 

@@ -90,11 +90,12 @@ anything inside code are left alone.
 ⌘/Ctrl+Enter sends from every box: a pull request or issue comment, a thread
 reply, a line comment, and the description of a new issue. It works from the
 tabs, the toolbar and the preview too, not only the field. Esc cancels a line
-comment, from the same places. A **thread reply** used to be a one-line field
-sent with Enter; it is a small text box now, so Enter is a new line (or the
-next list item) and ⌘/Ctrl+Enter sends. A reply box shows its tabs and tools
-once you click into it, so a long conversation does not grow a toolbar under
-every thread.
+comment, from the same places. A **thread reply** is a one-line field, so a
+long conversation does not grow a toolbar under every thread: Enter sends,
+Shift+Enter adds a line (the field grows with it, and with a pasted block), and
+Esc drops what was typed, asking first. It has no tabs or toolbar, but the
+formatting shortcuts and **@** / **#** completion work in it, and a **Reply**
+button appears once there is something to send.
 
 ## The cheat sheet
 

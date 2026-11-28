@@ -34,6 +34,23 @@ export function ciStateKey(phase: CiRunPhase, outcome: CiRunOutcome | null): Tra
   }
 }
 
+const JOB_STATE_KEY: Partial<Record<TranslationKey, TranslationKey>> = {
+  'ciRuns.stateQueued': 'ciRuns.jobStateQueued',
+  'ciRuns.stateRunning': 'ciRuns.jobStateRunning',
+  'ciRuns.stateSuccess': 'ciRuns.jobStateSuccess',
+  'ciRuns.stateFailure': 'ciRuns.jobStateFailure',
+  'ciRuns.stateCancelled': 'ciRuns.jobStateCancelled',
+  'ciRuns.stateSkipped': 'ciRuns.jobStateSkipped',
+  'ciRuns.stateManual': 'ciRuns.jobStateManual',
+  'ciRuns.stateUnknown': 'ciRuns.jobStateUnknown'
+}
+
+/** A job's state inside its run: lower case, read after its name ("lint · passed · 58 s"). */
+export function ciJobStateKey(phase: CiRunPhase, outcome: CiRunOutcome | null): TranslationKey {
+  const key = ciStateKey(phase, outcome)
+  return JOB_STATE_KEY[key] ?? key
+}
+
 /** Something on the page is still moving: worth asking the host again soon. */
 export function hasActiveRuns(runs: readonly CiRun[]): boolean {
   return runs.some((r) => r.phase !== 'completed')

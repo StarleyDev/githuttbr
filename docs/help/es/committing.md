@@ -16,12 +16,20 @@ perfil — la general o la propia del perfil.
 
 | Estilo | Tiene esta pinta |
 |---|---|
-| **Convencional** | `feat(api)!: add rate limiting` — con un desplegable de tipos |
+| **Convencional** | `feat(api)!: add rate limiting` — con un botón **tipo ▾** antes del asunto |
 | **Gitmoji** | `✨ add rate limiting` — con un selector de emoji |
-| **Gitmoji + Convencional** | `✨ feat(api): add rate limiting` — selector de emoji *y* desplegable de tipo |
+| **Gitmoji + Convencional** | `✨ feat(api): add rate limiting` — selector de emoji *y* botón **tipo ▾** |
 | **Ticket** | `ABC-123: add rate limiting` — sacado del nombre de la rama |
 | **Simple** · **Auto** | Lo que escribas; con Auto es la IA quien decide la forma |
 | **Cavernícola** · **Haiku** | Exactamente lo que parecen |
+
+Con un estilo Convencional, el prefijo vive en el botón **tipo ▾** delante del
+asunto (*feat(api)*, o *tipo* mientras no haya ninguno) y el campo solo contiene
+las palabras que van detrás; el mensaje sigue recibiendo el `feat(api): …`
+completo. El botón lista los tipos, y **Sin tipo** quita el prefijo. Escribir el
+prefijo a mano también funciona, y <kbd>Backspace</kbd> al principio del campo
+vuelve a mostrar el prefijo como texto, para cambiar su ámbito; vuelve al botón
+cuando el campo pierde el foco.
 
 ![Compositor rellenado desde una plantilla de commit](../../screenshots/commit-template.webp)
 
@@ -68,7 +76,7 @@ Límites:
 
 Con la IA activada, el botón **✦** (*Generar con IA* al pasar el ratón) aparece
 bajo la descripción. Lee el diff preparado (staged) y escribe el resumen y la
-descripción en el estilo de arriba. A su lado, la fila dice quién responderá —
+descripción en el estilo de arriba. A su lado, un selector aparte dice quién responderá —
 *cuenta · modelo*, la pareja elegida para los mensajes de commit en **Ajustes →
 IA → Modelo por tarea** — para que un modelo local lento o uno caro nunca sea
 una sorpresa.
@@ -122,9 +130,12 @@ Límites:
 
 ## El linter
 
-Una comprobación en vivo y sin bloqueo: longitud del asunto (con contador de
-caracteres), punto final, asunto en minúscula o no imperativo, líneas del cuerpo
-demasiado anchas. Son pistas, nunca una barrera — no te impedirá hacer el commit.
+Una comprobación en vivo y sin bloqueo: longitud del asunto, punto final, asunto
+en minúscula o no imperativo, líneas del cuerpo demasiado anchas. Son pistas,
+nunca una barrera — no te impedirá hacer el commit. La longitud es el contador
+junto al asunto, medido contra el límite de 72 caracteres (*56/72*): se pone en
+rojo al pasar el límite, y su tooltip lleva el consejo de apuntar a 50. Las demás
+pistas aparecen bajo la descripción.
 
 ## Amend
 

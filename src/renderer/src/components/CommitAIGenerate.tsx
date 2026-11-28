@@ -11,9 +11,9 @@ import { useModelCatalogs } from './useModelCatalogs'
 import type { CommitGeneration } from './useCommitGeneration'
 
 /**
- * "✦ | account · model ▾" plus, on the same row, the running time with
- * Cancel, or Undo and Generate again once the text was replaced. The ▾ menu
- * picks an account and model for one generation only.
+ * "✦" and, as its own control, "account · model ▾" — plus, on the same row,
+ * the running time with Cancel, or Undo and Generate again once the text was
+ * replaced. The ▾ menu picks an account and model for one generation only.
  */
 export function CommitAIGenerate({ gen, disabled }: { gen: CommitGeneration; disabled: boolean }): React.JSX.Element {
   const t = useT()
@@ -57,7 +57,7 @@ export function CommitAIGenerate({ gen, disabled }: { gen: CommitGeneration; dis
   const doneTitle =
     state.phase === 'generated' ? interp(t('composerAI.generated'), { name: state.label, seconds: state.seconds }) : ''
 
-  // One row: the icon action, who answers, and — only while it matters — the
+  // One row: the ✦ action, who answers as its own picker, and — only while it matters — the
   // running time with Cancel, or Undo and Generate again. The button itself
   // shows the spinner, so nothing else repeats that the AI is writing.
   return (

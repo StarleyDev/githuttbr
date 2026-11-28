@@ -402,6 +402,32 @@ describe('commit editing (bisect-bug playground)', () => {
     expect(g(R, ['show', `${newTarget}:README.md`])).toContain('Edited three weeks later.')
   })
 
+  it('lists the commits above and lets an edit reach a file the commit did not touch', async () => {
+    const R = cloneFixture('bisect-bug')
+    const target = g(R, ['log', '--format=%H', '--', 'README.md'])
+    const info = await gitService.commitEditInfo(R, target)
+    // Newest first, exactly the set the rewrite replays.
+    expect(info.above.map((c) => c.sha)).toEqual(g(R, ['rev-list', '--ancestry-path', `${target}..HEAD`]).split('\n'))
+    expect(info.aboveTotal).toBe(info.above.length)
+    expect(info.remoteBranches).toEqual([])
+
+    const files = await gitService.commitEditableFiles(R, target)
+    expect(files).toContain('README.md')
+    // A file in the snapshot that neither this commit nor anything above it changes.
+    const touched = new Set([
+      ...g(R, ['show', '--name-only', '--format=', target]).split('\n'),
+      ...g(R, ['diff', '--name-only', target, 'HEAD']).split('\n')
+    ])
+    const untouched = files.find((f) => !touched.has(f))
+    expect(untouched).toBeDefined()
+    const edits = { [untouched!]: 'added to this commit by an edit\n' }
+    const preview = await gitService.commitEditPreview(R, target, edits, info.message)
+    expect(preview.newTip).not.toBeNull()
+    await gitService.commitEditApply(R, target, edits, info.message)
+    const newTarget = g(R, ['log', '--format=%H', '--', 'README.md'])
+    expect(g(R, ['show', '--name-only', '--format=', newTarget]).split('\n')).toContain(untouched)
+  })
+
   it('forecasts a conflict when a descendant rewrote the same file', async () => {
     const R = cloneFixture('bisect-bug')
     // discount.js is rewritten again later in history → editing its first

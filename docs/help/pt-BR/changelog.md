@@ -4,6 +4,7 @@ category: Trabalhando com mudanças
 order: 34
 summary: Transforma os conventional commits entre duas refs num changelog agrupado.
 keywords: changelog notas de release release notes conventional commits gerar CHANGELOG
+source: 82fe9093441415a9cd578fe981f73d1082852b29
 ---
 
 # Gerador de changelog
@@ -18,6 +19,11 @@ commits entre elas num changelog, agrupado por tipo de Conventional Commit.
 - Commits que não seguem convenção nenhuma caem em **Outros** em vez de serem
   descartados — um changelog que perde commits em silêncio é pior do que um
   changelog bagunçado.
+
+O resultado abre no mesmo editor **Escrever / Visualizar** da descrição de um
+pull request, com a barra de formatação: reescreva uma entrada, tire uma linha
+que ninguém precisa e veja como fica renderizado antes de mandar para qualquer
+lugar. Gerar de novo substitui as suas edições.
 
 Copie o resultado, ou **acrescente-o direto no topo do `CHANGELOG.md`**.
 

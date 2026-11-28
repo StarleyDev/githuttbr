@@ -2,9 +2,9 @@
 title: Página de pull requests
 category: Sincronização e vários repositórios
 order: 57
-summary: Todos os pull requests de um repositório numa página — por estado, filtrados por autor, revisor, destino e CI — ‹ › para percorrer a lista filtrada de dentro de um PR, os commits dele, as atualizações (cada push, o que mudou, o que é novo desde a sua última visita), e comentários numa linha do diff.
-keywords: título referência cartão item de trabalho AB# número de issue dica pull requests lista página merge requests pr mr filtro autor revisor meus aguardando minha revisão revisão pedida ci falhando branch de destino rascunhos mesclados fechados busca triagem anterior próximo alt seta navegação checkout ir para branch de origem destino copiar nome da branch buscar fetch comentário de linha comentário inline comentário de revisão comentar na linha aba arquivos revisão de código aba commits lista de commits commits do pr histórico abrir commit copiar sha buscar branch do pr commits de pr de fork refs/pull head atualizações iterações pushes force push rebase histórico reescrito versões de diff o que mudou desde a última visita selo nova marcar como visto comparar atualização editor markdown barra formatação visualizar menção árvore de arquivos pastas visão em árvore visão de caminhos arquivos vistos marcar pasta como vista editar excluir apagar editado erro digitação renderizado comentários imagens pixel rastreamento imagem bloqueada clique carregar tarefas tabela bloco
-source: d91d96af92225cb74da274f8d168b07f6110b709
+summary: Todos os pull requests de um repositório numa página — por estado, filtrados por autor, revisor, destino e CI — ‹ › para percorrer a lista filtrada de dentro de um PR, os commits dele, as atualizações (cada push, o que mudou, o que é novo desde a sua última visita), e comentários numa linha do diff. A conversa como uma linha do tempo, com o que é novo desde a sua última visita.
+keywords: título referência cartão item de trabalho AB# número de issue dica pull requests lista página merge requests pr mr filtro autor revisor meus aguardando minha revisão revisão pedida ci falhando branch de destino rascunhos mesclados fechados busca triagem anterior próximo alt seta navegação checkout ir para branch de origem destino copiar nome da branch buscar fetch comentário de linha comentário inline comentário de revisão comentar na linha aba arquivos revisão de código aba commits lista de commits commits do pr histórico abrir commit copiar sha buscar branch do pr commits de pr de fork refs/pull head atualizações iterações pushes force push rebase histórico reescrito versões de diff o que mudou desde a última visita selo nova marcar como visto comparar atualização editor markdown barra formatação visualizar menção árvore de arquivos pastas visão em árvore visão de caminhos arquivos vistos marcar pasta como vista editar excluir apagar editado erro digitação renderizado comentários imagens pixel rastreamento imagem bloqueada clique carregar tarefas tabela bloco conversa linha do tempo threads abertas thread resolvida aprovou pediu alterações enviou commits papel revisor novo desde a última visita comparar dois commits selos de tipo ci por commit ver diff próximo não visto filtro não vistos com comentários progresso mudou
+source: 6c1d5afb9bb0a33fa35b74bcc119ac137da2bf22
 ---
 
 # Página de pull requests
@@ -16,7 +16,7 @@ significava abrir cada um, ler, voltar, abrir o próximo. A **página de pull
 requests** responde a essas perguntas numa tela só e, depois que você abre um
 pull request, **‹ ›** levam ao próximo da mesma lista sem precisar voltar.
 
-![A página de pull requests buscando "pix": os trechos encontrados destacados, os seus marcados com "você", um CI falhando e um rascunho](../../screenshots/pull-requests.webp)
+![A página de pull requests aberta pelo Mission control: dois aguardando a sua revisão, três seus, os outros recolhidos; cada linha com o tamanho, a situação de cada revisor, os checks e um ponto onde mudou desde a sua última visita](../../screenshots/pull-requests.webp)
 
 ## Como abrir
 
@@ -24,13 +24,19 @@ pull request, **‹ ›** levam ao próximo da mesma lista sem precisar voltar.
   todos os pull requests*).
 - *Pull requests…* na paleta de comandos (⌘K), ou **Ferramentas → Pull
   requests…**.
+- O **chip de pull requests** na linha de um repositório no
+  [Mission control](mission-control.md). Aberta por ali, a página começa com
+  **← Voltar ao Mission control**, e continua com ele quando você abre um dos
+  pull requests dela e volta com **← Pull requests**.
 
 Como a wiki e as [execuções de CI](ci-runs.md), a página fica presa à aba do
 repositório.
 
-## Abas
+## Estados
 
-| Aba | O que mostra |
+O controle segmentado à esquerda da busca tem os quatro estados, com quantos cada um tem.
+
+| Estado | O que mostra |
 |---|---|
 | **Abertos** | Todos os pull requests abertos, rascunhos incluídos |
 | **Rascunhos** | Só os abertos marcados como rascunho |
@@ -45,16 +51,22 @@ por sessão; **Atualizar** pede de novo.
 
 | Filtro | Mantém |
 |---|---|
-| **Buscar** | Pull requests cujo título, descrição, branches ou número contêm todas as palavras digitadas. `#482` ou `482` encontra esse número; os trechos encontrados ficam destacados no título |
+| **Buscar** | Pull requests cujo título, descrição, autor, branches ou número contêm todas as palavras digitadas. `#482` ou `482` encontra esse número; os trechos encontrados ficam destacados no título |
 | **Autor** | Um autor — cada um com quantos tem nesta aba. **Eu** vem primeiro |
 | **Revisor** | Um revisor pedido, ou **Pedem minha revisão** |
 | **Branch de destino** | Pull requests para essa branch |
-| **Meus** | Atalho para *Autor: Eu* |
 | **Aguardando minha revisão** | Atalho para *Revisor: pedem minha revisão* |
+| **Meus** | Atalho para *Autor: Eu* |
 | **CI falhando** | Pull requests cujos checks no head falharam |
 
-A linha abaixo dos filtros diz quantos pull requests da aba aparecem e quais
-filtros estão ligados, com **limpar filtros** para tirar todos.
+A busca e os três chips ficam numa linha só; cada chip diz quantos pull
+requests do estado atual ele manteria. **Autor**, **Revisor** e **Branch de
+destino** ficam em **Mais filtros ▾**, que fica aceso enquanto um deles está
+ligado.
+
+Com algum filtro ligado, uma linha acima da lista diz quantos pull requests do
+estado aparecem e quais filtros estão ligados, com **limpar filtros** para tirar
+todos.
 
 Os filtros ficam guardados por repositório **enquanto o app está aberto** — saia
 da página, volte, e estão como você deixou. Eles não são salvos entre
@@ -70,18 +82,65 @@ ou não há token, **Eu**, **Meus** e **Aguardando minha revisão** não aparece
 
 ## A lista
 
-| Coluna | O que mostra |
+Abertos e Rascunhos se dividem em três seções, na ordem em que você trabalha:
+
+| Seção | O que tem |
 |---|---|
-| **#** | O número, com um ícone de aberto, rascunho, mesclado ou fechado |
-| **Título** | O título, um selo *rascunho* e quem ainda tem revisão pedida — na cor de destaque quando é você |
-| **Autor** | A foto do host, quando ele dá uma, senão a inicial, e **você** nos seus |
-| **Branches** | Origem → destino |
-| **Checks** | Os checks do head resumidos — `6/6`, `1 falhou`, `2 rodando`; passe o mouse para ver as contagens |
+| **Aguardando sua revisão** | Pull requests em que pediram a sua revisão — o título em amarelo |
+| **Seus pull requests** | Os que você escreveu |
+| **Outros** | Todo o resto, recolhido atrás de **mostrar** enquanto as duas de cima têm algo; uma busca ou um filtro abre a seção |
+
+Quando o host não sabe dizer quem é você, não há o que separar e a lista é um
+cartão só. Mesclados e Fechados são histórico: um cartão, sem seções.
+
+Cada linha se lê da esquerda para a direita:
+
+| Parte | O que mostra |
+|---|---|
+| **Ponto** | O pull request mudou desde a última vez que você saiu da página dele. Um que você nunca abriu não tem ponto — não há com o que comparar |
+| **#** | O número — verde enquanto aberto, cinza num rascunho |
+| **Título** | O título, o tipo [Conventional Commits](committing.md) num chip colorido (`feat`, `fix`, `docs`…) e um selo *rascunho*. Embaixo: o autor (omitido nos seus), origem → destino e **N comentários** — ou **N comentários novos** quando outras pessoas escreveram desde a sua última visita |
+| **Tamanho** | `+48 −12 · 4 arq.` — linhas adicionadas e removidas, arquivos tocados; só `4 arq.` onde o host não conta linhas |
+| **Revisão** | O veredito de cada revisor — **✓ bruno aprovou**, **✕ ana pediu alterações** — e depois quem ainda tem revisão pedida, **● esperando você** em amarelo. **✓ pronto para mesclar** quando o host diz que as revisões estão feitas e os checks não falharam; **sem revisores** quando ninguém foi chamado nem respondeu |
+| **Checks** | Os checks do head — `✓ 6/6`, `✕ 1 falhando`, `● 2 rodando`; passe o mouse para ver as contagens |
 | **Atualizado** | Há quanto tempo mudou pela última vez; passe o mouse para ver a data |
 
-As linhas são ordenadas pela atividade mais recente. Um clique abre a página do
-próprio pull request ([Hosting e pull requests](hosting.md)). Num host sem essa
-página, a linha abre o pull request no navegador.
+### O que cada host entrega
+
+Tamanho, comentários e vereditos não estão na lista de todo host, e a página
+não abre cada pull request para buscá-los — com uma exceção, abaixo: o que a
+lista não traz fica em branco, nunca zero.
+
+| Host | Tamanho | Comentários | Vereditos |
+|---|---|---|---|
+| **GitHub** | ✓ | ✓, e quais são novos | ✓, e *pronto para mesclar* — um pedido GraphQL a mais para a lista inteira |
+| **GitLab** | — | ✓ (só a contagem) | Quem tem revisão pedida; *pronto para mesclar* pelo status de merge do GitLab |
+| **Azure DevOps** | Só arquivos, lidos quando a página abre | — | ✓ pelos votos dos revisores |
+| **Bitbucket Data Center** | — | ✓ (só a contagem) | ✓ |
+| **Bitbucket Cloud** | — | ✓ (só a contagem) | — |
+| **Forgejo** | ✓ quando o servidor preenche | ✓ (só a contagem) | Quem tem revisão pedida |
+
+**Azure DevOps: só arquivos.** A API dele não tem contagem de linhas por pull
+request — exigiria o diff de cada arquivo —, então a célula mostra `4 arq.`, sem
++/−. A lista também não traz a contagem de arquivos, então esta página a lê,
+para as linhas abertas e de rascunho que mostra — as mescladas e fechadas ficam
+em branco, porque uma lista cheia delas custaria centenas de pedidos por um
+número que ninguém usa para revisar: dois pedidos por pull request (as iterações, depois
+as mudanças da última — a mesma contagem da aba Arquivos), quatro por vez. Elas
+ficam guardadas até alguém fazer push naquele pull request, então atualizar ou
+voltar à página só pergunta pelos que mudaram. A atualização periódica da
+barra lateral nunca as lê. Uma contagem que não pode ser lida — sem permissão,
+servidor limitando pedidos — deixa a célula em branco, sem erro; um pull
+request com mais de 20.000 mudanças não é contado.
+
+A contagem é dos comentários da conversa — comentários numa linha do diff não
+entram. Sem token, o pedido ao GitHub não é feito e essas colunas ficam vazias.
+
+Dentro de uma seção, as linhas são ordenadas pela atividade mais recente, e
+**‹ ›** dentro de um pull request as percorrem na ordem em que aparecem. Um
+clique abre a página do próprio pull request ([Hosting e pull
+requests](hosting.md)). Num host sem essa página, a linha abre o pull request
+no navegador.
 
 Num [checkout de fork](hosting.md#your-pull-requests-on-the-parent-of-a-fork),
 os seus pull requests no repositório pai também aparecem, marcados *em
@@ -89,7 +148,7 @@ dono/repo*.
 
 ## Percorrer a lista a partir de um pull request
 
-![Um pull request aberto da lista filtrada: ‹ 1 de 4 › e os filtros de onde veio](../../screenshots/pull-request-nav.webp)
+![Um pull request aberto da lista filtrada: ‹ 1 de 7 › e os filtros de onde veio](../../screenshots/pull-request-nav.webp)
 
 Um pull request aberto pela página mostra uma faixa acima do título:
 
@@ -167,28 +226,43 @@ um commit de cada vez — como a maioria dos pull requests foi feita para ser
 lida — mandava você para o navegador. A aba **Commits**, entre Conversa e
 Atualizações, lista os commits:
 
+- **Uma linha de resumo** no topo: quantos commits, de quantos autores, o
+  **+/−** do pull request, e um selo colorido por tipo de
+  [Conventional Commit](https://www.conventionalcommits.org/) com a contagem —
+  *feat 2 · fix 1 · test 1* diz que tipo de mudança é essa antes de você ler
+  uma linha dela. Features em verde, correções e reverts em vermelho, testes na
+  cor de destaque, desempenho em amarelo, o resto em cinza.
 - **Do mais antigo para o mais novo**, a ordem em que se aplicam, agrupados
   pelo dia em que foram escritos. Um commit que entrou fora da ordem das datas
   num rebase abre um dia próprio em vez de ser movido.
-- Cada linha tem a foto do autor (quando o host dá uma), o assunto, o autor,
-  há quanto tempo e o SHA curto. Um selo **merge** marca um commit com dois
+- Cada linha tem a foto do autor (quando o host dá uma), o assunto — o tipo no
+  mesmo selo colorido e o escopo apagado, quando segue Conventional Commits —,
+  o autor, há quanto tempo e, para um commit que este clone tem, o **+/−** e
+  quantos arquivos ele mexeu. Depois um ponto de **CI** (verde passou, vermelho
+  falhou, amarelo rodando) quando o host informa uma execução para aquele
+  commit, o SHA curto e **Ver diff**. Um selo **merge** marca um commit com dois
   pais, quando o host informa.
-- **▸** ao lado de um commit com mais que o assunto mostra o resto da mensagem.
-- **Copiar** põe o SHA completo na área de transferência; **Abrir no
-  navegador** abre o commit no host — dentro do pull request quando o host tem
-  essa página (GitHub, GitLab, Bitbucket Data Center), senão na página do
-  commit no repositório.
+- Um commit com mais que o assunto mostra o resto da mensagem embaixo da linha.
+- Ao passar o mouse, **Copiar** põe o SHA completo na área de transferência e
+  **Abrir no navegador** abre o commit no host — dentro do pull request quando
+  o host tem essa página (GitHub, GitLab, Bitbucket Data Center), senão na
+  página do commit no repositório.
 
 ![A aba Commits: os commits de um pull request agrupados por dia, um com a mensagem completa aberta](../../screenshots/pr-commits.webp)
 
-**Clique numa linha** — ou chegue nela com Tab e aperte Enter — para abrir o
-commit no app, como um clique no grafo faria: a visão do repositório, o commit
-selecionado, os detalhes abertos. Isso funciona quando este clone **tem** o
-commit. Quando não tem, a linha diz isso em vez de falhar calada, e oferece:
+Os commits feitos depois que você saiu do pull request pela última vez ficam
+abaixo de uma linha **Novo desde a sua última visita** — a mesma marca da aba
+Conversa, da mesma visita.
 
-- **Buscar a branch do PR para ver** — a mesma busca de uma branch só de
+**Ver diff** — ou um clique na linha, ou chegar nela com Tab e apertar Enter —
+abre o commit no app, como um clique no grafo faria: a visão do repositório, o
+commit selecionado, os detalhes abertos. Isso funciona quando este clone
+**tem** o commit. Quando não tem, a linha diz *ainda não está no seu
+repositório* e o botão muda:
+
+- **Buscar a branch** — a mesma busca de uma branch só de
   [ir para a branch](#ir-para-a-branch-de-um-pull-request), sem o checkout.
-  Quando o commit veio junto, ele abre; quando não veio (um force push o
+  Todo commit que veio junto passa a abrir; se este não veio (um force push o
   reescreveu depois), o aviso diz isso.
 - **Buscar os commits do pull request**, num pull request vindo de um
   **fork**. A branch dele fica em outro repositório, mas a maioria dos hosts
@@ -201,6 +275,12 @@ commit. Quando não tem, a linha diz isso em vez de falhar calada, e oferece:
   move a ref para a ponta do momento. Se um force push deixou o commit de fora,
   o aviso diz isso.
 - **Abrir no navegador**, para quando buscar não é uma opção.
+
+**Comparar dois commits** pede que você marque duas linhas e abre a
+[comparação](merging.md#compare-duas-refs-quaisquer) entre elas na visão do
+repositório: o mais antigo é a base, então você vê o que aconteceu de um para o
+outro — os commits no meio e o diff somado. Os dois precisam estar neste clone;
+enquanto não estiverem, o botão fica apagado.
 
 A lista é lida na primeira vez que você abre a aba, não junto com a página, e
 de novo a cada **Atualizar**. Até ela chegar, o número da aba é o que o host
@@ -240,6 +320,16 @@ O que não faz:
 - **Squash merges.** Os commits de um pull request mesclado com squash nunca
   chegaram à branch de destino; depois que a branch dele é apagada, estão só no
   host.
+- **Os números de cada commit vêm do seu clone.** O **+/−** e a contagem de
+  arquivos são lidos do git, nunca pedidos ao host, então um commit ainda não
+  buscado não mostra nenhum, nem um merge (a mudança dele é contra dois pais).
+  Um clone parcial sem os arquivos de um commit não mostra nada em vez de
+  baixá-los.
+- **CI só dos 40 commits mais recentes**, em silêncio: uma requisição por
+  commit pesaria num pull request longo, e o CI costuma rodar nas pontas
+  enviadas mesmo. Sem credencial para o host, não há pontos, nunca um login.
+- **Os selos de tipo leem o assunto.** Um time que não escreve Conventional
+  Commits não ganha selos nem contagem por tipo — nada é adivinhado.
 - **Autores** aparecem como os commits os nomeiam. GitLab, Azure DevOps e
   Bitbucket Data Center não dão foto sem um login que uma imagem não consegue
   mandar, então essas linhas mostram a inicial.
@@ -389,19 +479,29 @@ de um force push são exatos, então o **Ver as mudanças** dele também é.
 ## Ler os arquivos
 
 Um pull request de duzentos arquivos é difícil de ler como duzentos caminhos
-completos. A lista da aba **Arquivos** tem a mesma chave **Caminho / Árvore**
+completos, e difícil de terminar sem perder o ponto. Acima da lista e do diff,
+uma linha faz a conta — *4 de 9 arquivos vistos*, com uma barra — e **Anterior
+não visto** / **Próximo não visto** levam ao arquivo mais perto, para cima ou para
+baixo, que você ainda não marcou, dando a volta na lista; ficam apagados quando
+tudo o que está listado já foi visto. Com **Marcar como visto ao avançar**
+ligado, o **Próximo não visto** marca o arquivo aberto antes de seguir — lendo
+em sequência, você não precisa mexer nas caixinhas; a escolha fica guardada.
+**Mostrar** reduz a lista aos arquivos **Não vistos** ou **Com comentários**
+(qualquer conversa de revisão neles), e volta para **Todos**.
+
+A lista da aba **Arquivos** tem a mesma chave **Caminho / Árvore**
 do painel de commit, e a escolha vale para o app inteiro. Em **Árvore**, os
 arquivos ficam sob as pastas (uma sequência como `src/main/ipc` vira uma linha
 só), e cada pasta mostra a soma de **+/−** e quantos dos seus arquivos já foram
 vistos (*3/5*). A caixa de uma pasta marca como vistos todos os arquivos dentro
 dela, ou desmarca todos; as marcas ficam só neste computador, nunca vão para o
 host. Uma marca guarda a versão do diff do arquivo: quando um push muda um
-arquivo visto, ele volta a aparecer como não visto, com um ponto amarelo
+arquivo visto, ele volta a aparecer como não visto, com o selo **mudou**
 (*mudou desde que você viu*). Um arquivo sem diff (binário, grande demais) é
 comparado só pelo status e pela contagem de linhas. Um arquivo com conversas
-de revisão mostra um balão com a contagem ao lado (as pastas somam as dos seus
-arquivos), para os que têm comentários se destacarem numa lista longa; as
-conversas desatualizadas também contam. Clique numa pasta, ou aperte ←/→ nela, para recolhê-la; ↑/↓ (ou j/k)
+de revisão mostra um balão com a contagem logo depois do nome, para os que têm comentários se destacarem numa lista longa; as
+conversas desatualizadas também contam, e as resolvidas também — as listas que
+o app lê dos hosts não dizem quais estão resolvidas. Clique numa pasta, ou aperte ←/→ nela, para recolhê-la; ↑/↓ (ou j/k)
 percorrem os arquivos na tela e abrem o diff de cada um. As pastas recolhidas
 são lembradas por pull request até o app fechar, e um arquivo aberto dentro de
 uma delas reabre o caminho até ele. A árvore é ordenada por nome, não na ordem
@@ -583,15 +683,85 @@ O que não faz:
 - **Um arquivo sem diff** (binário, ou grande demais para o host incluir) não
   tem linhas para comentar.
 
+## A conversa
+
+A história de um pull request fica espalhada: a descrição no topo, comentários
+numa lista, threads de linha em outra, os vereditos só na barra lateral, os
+pushes numa aba à parte. Pôr-se em dia era ler tudo e remontar a ordem de
+cabeça. A aba **Conversa** conta tudo como uma **linha do tempo**, num trilho,
+na ordem em que aconteceu.
+
+![A conversa como linha do tempo: dois pushes, uma thread de linha ainda aberta com as linhas dela, um pedido de alterações, a linha que marca o que é novo desde a última visita e uma aprovação](../../screenshots/pull-request-page.webp)
+
+| Na linha do tempo | O que mostra |
+|---|---|
+| **A descrição** | Sempre primeiro, com quem abriu o pull request e quando |
+| **Comentários** | A conversa, cada um com o papel do autor: **Autor** ou **Revisor** |
+| **Pushes** | *sam enviou 2 commits*, depois uma linha por commit; um clique no hash abre a aba Commits |
+| **Threads de linha** | No lugar, no horário do primeiro comentário: o arquivo e a linha, as linhas do diff de que ela trata, as respostas e uma caixa de resposta. O caminho e **Ver em Arquivos →** abrem esse arquivo na aba Arquivos |
+| **Vereditos de revisão** | **aprovou** em verde, **pediu alterações** em vermelho com o que o revisor escreveu, ou o comentário de uma revisão |
+
+Uma thread que o host diz estar **aberta** leva uma etiqueta âmbar, e a barra
+acima da linha do tempo conta essas threads: **1 thread aberta** mostra só elas,
+as que ainda esperam resposta. Uma thread **resolvida** se recolhe numa linha —
+*Thread resolvida em src/palette.tsx:18 · 2 comentários* — e um clique a abre.
+**Comentários · Revisões · Commits · Tudo** reduzem a linha do tempo a um tipo;
+**Comentários** é o que abre primeiro, e **Tudo** traz o resto de volta.
+
+Os **Revisores** da barra lateral dizem o veredito de cada pessoa por escrito —
+**✓ aprovou** ou **pediu alterações** — e um relógio para quem ainda não
+respondeu.
+
+### Novo desde a sua última visita
+
+Quando você sai da página de um pull request (outra página, outra aba,
+fechando-a, ou fechando ou recarregando o app), o app anota a hora. Na próxima
+vez, uma linha marca onde você parou — **Novo desde a sua última visita** — e a
+barra diz quantos itens vieram depois. A marca é feita ao sair, não ao abrir,
+então ela fica parada enquanto você lê. Na primeira vez que você abre um pull
+request, nada aparece como novo.
+
+O que você mesmo escreveu nunca é novo para você: os seus comentários,
+respostas e revisões não entram na contagem nem mudam a linha de lugar. Uma
+thread que começou antes da sua visita e recebeu resposta de outra pessoa
+depois também conta como nova — ela fica onde começou na linha do tempo, então
+procure-a acima da linha.
+
+Os horários aparecem como *há 2d*; passe o mouse para ver a data completa.
+
+*Limites:*
+
+- **Quando um commit foi enviado** é algo que os hosts não dizem. Os pushes são
+  remontados a partir da lista de commits: commits seguidos do mesmo autor, cada
+  um até uma hora depois do anterior, contam como um push, colocado na data do
+  último. Um rebase que reescreveu as datas os desloca. A aba Atualizações é o
+  registro do próprio host, onde existe.
+- **Aberta ou resolvida** vem do GitHub (uma requisição GraphQL a mais por
+  leitura) e do GitLab. Threads do Azure DevOps, do Bitbucket Data Center e do
+  Forgejo não mostram etiqueta nem entram na contagem.
+- **Vereditos na linha do tempo** precisam de data: GitHub, GitLab (uma
+  aprovação, datada pela nota que o GitLab escreve para ela) e Forgejo dão uma.
+  Votos do Azure DevOps e aprovações do Bitbucket Data Center não têm, então
+  aparecem só na barra lateral.
+- Uma revisão do GitHub sem texto próprio — o envelope em que cada lote de
+  comentários de linha é arquivado — não ganha linha; as threads dela já
+  aparecem.
+- Suas últimas visitas ficam guardadas para os 300 pull requests mais recentes,
+  só neste computador. Um travamento, ou o app encerrado à força, não registra
+  a visita.
+- **Seus** é decidido pela sua conta no host. Onde o host só nomeia os autores
+  pelo nome de exibição, sem um id para comparar, os seus itens contam como os
+  de qualquer pessoa.
+
 ## Escrever comentários
 
 Toda caixa da página — o comentário no fim, a resposta dentro de uma thread, o
 comentário numa linha — é o mesmo editor de Markdown: abas **Escrever /
 Visualizar**, uma barra de formatação com os atalhos do GitHub, listas que
 continuam no Enter e sugestões de **@** / **#** a partir das pessoas e dos pull
-requests que já estão na tela. A caixa de resposta mostra as ferramentas quando
-você clica nela, e envia com ⌘/Ctrl+Enter, já que o Enter agora começa uma
-linha nova. [Escrever comentários](writing-comments.md) tem os detalhes e os
+requests que já estão na tela. A resposta de thread é a exceção: um campo de uma
+linha, sem barra, em que Enter envia e Shift+Enter quebra a linha.
+[Escrever comentários](writing-comments.md) tem os detalhes e os
 limites.
 
 ## Como os comentários aparecem

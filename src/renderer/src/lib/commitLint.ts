@@ -76,6 +76,13 @@ export function subjectCounterLevel(len: number): '' | 'warn' | 'error' {
 }
 
 export const SUBJECT_IDEAL_LEN = SUBJECT_IDEAL
+/** The hard limit the counter reads against (`56/72`). */
+export const SUBJECT_MAX_LEN = SUBJECT_MAX
+
+/** Whether a hint is about the subject's length — the counter carries those. */
+export function isSubjectLengthHint(hint: LintHint): boolean {
+  return hint.key === 'commitLint.subjectTooLong' || hint.key === 'commitLint.subjectLong'
+}
 
 /** Conventional-Commit types (matches the project's commitlint allow-list). */
 export const CC_TYPES = ['feat', 'fix', 'docs', 'style', 'refactor', 'perf', 'test', 'build', 'ci', 'chore', 'revert'] as const

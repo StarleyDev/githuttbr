@@ -2406,6 +2406,25 @@ function trapTabIn(e: React.KeyboardEvent, box: HTMLElement | null): void {
   }
 }
 
+
+/**
+ * Large dialogs browsed from inside keep Settings' height: sized to their
+ * content, they would open tiny and jump as you pick a file or a result.
+ */
+const FIXED_HEIGHT_MODALS: ReadonlySet<string> = new Set([
+  'time-machine',
+  'timelapse',
+  'range-diff',
+  'code-search',
+  'todos',
+  'objects',
+  'cli-edit',
+  'ai-pr-review'
+])
+
+/** Not full of information, but varying a lot: Settings' width, the height of their content. */
+const SETTINGS_WIDTH_MODALS: ReadonlySet<string> = new Set(['pr-preview', 'export', 'gitflow', 'subtree', 'history-purge'])
+
 export function ModalHost(): React.JSX.Element {
   const t = useT()
   const { modal, closeModal, dialog, closeDialog } = useUIStore()
@@ -2485,6 +2504,8 @@ export function ModalHost(): React.JSX.Element {
                   ? 'modal-branch-cleanup'
                   : modal.kind === 'create-pr'
                   ? 'modal-create-pr'
+                  : SETTINGS_WIDTH_MODALS.has(modal.kind)
+                  ? 'modal-lg-auto'
                   : modal.kind === 'settings'
                   ? 'modal-wide modal-settings'
                   : modal.kind === 'settings-import' || modal.kind === 'settings-export'
@@ -2520,8 +2541,10 @@ export function ModalHost(): React.JSX.Element {
                       modal.kind === 'local-ci' ||
                       modal.kind === 'cli-edit' ||
                       modal.kind === 'stack'
-                    ? 'modal-tall'
-                    : ''
+                    ? FIXED_HEIGHT_MODALS.has(modal.kind)
+                      ? 'modal-tall modal-tall-fixed'
+                      : 'modal-tall'
+                    : 'modal-std'
               }`}
               initial={{ opacity: 0, scale: 0.94, y: 16 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -2669,7 +2692,7 @@ export function ModalHost(): React.JSX.Element {
               className={
                 dialog.kind === 'settings-import' || dialog.kind === 'settings-export'
                   ? 'modal modal-settings-import'
-                  : 'modal'
+                  : 'modal modal-std'
               }
               initial={{ opacity: 0, scale: 0.96, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}

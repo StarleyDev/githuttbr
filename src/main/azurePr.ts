@@ -349,7 +349,8 @@ export function mapAzureBuildPolicies(r: AzureRepo, evaluations: readonly AzPoli
         status: done ? 'completed' : st === 'queued' ? 'queued' : 'in_progress',
         conclusion,
         url: buildId ? azureBuildUrl(r.org, r.project, buildId) : '',
-        ...(buildId ? { hasLog: true } : {})
+        // The build is the CI runs page's run: it retries a build's failed jobs.
+        ...(buildId ? { hasLog: true, runId: String(buildId) } : {})
       }
     })
 }
@@ -547,6 +548,28 @@ async function getAzureIterationChanges(
   return { changes, truncated: true }
 }
 
+/** A change that is a file — what the Files tab lists; folder entries are left out. */
+const isAzureFileChange = (c: AzChange): boolean => !!c.item?.path && !c.item.isFolder && c.item.gitObjectType !== 'tree'
+
+/** The latest iteration of a pull request and every change it holds — what the PR changes as of its last push. */
+async function getAzureLatestChanges(
+  ado: Ado,
+  r: AzureRepo,
+  id: number,
+  throttle: AzureThrottle
+): Promise<{ last: AzIteration; changes: AzChange[]; truncated: boolean } | null> {
+  const base = `${repoApi(r)}/pullrequests/${id}`
+  const its = await withThrottleRetry(() => ado<{ value?: AzIteration[] }>(`${base}/iterations?${V}`), throttle)
+  const last = (its.value ?? [])[(its.value ?? []).length - 1]
+  if (!last) return null
+  const { changes, truncated } = await getAzureIterationChanges(
+    ado,
+    (skip) => `${base}/iterations/${last.id}/changes?$top=2000${skip ? `&$skip=${skip}` : ''}&${V}`,
+    throttle
+  )
+  return { last, changes, truncated }
+}
+
 export async function azurePrFiles(
   ado: Ado,
   bytes: AdoBytes,
@@ -554,23 +577,28 @@ export async function azurePrFiles(
   id: number,
   throttle: AzureThrottle = new AzureThrottle()
 ): Promise<{ files: PrFile[]; truncated: boolean }> {
-  const base = `${repoApi(r)}/pullrequests/${id}`
-  const its = await withThrottleRetry(
-    () =>
-      ado<{ value?: Array<{ id: number; sourceRefCommit?: { commitId: string }; commonRefCommit?: { commitId: string } }> }>(
-        `${base}/iterations?${V}`
-      ),
-    throttle
-  )
-  const last = (its.value ?? [])[(its.value ?? []).length - 1]
-  if (!last) return { files: [], truncated: false }
-  const { changes, truncated } = await getAzureIterationChanges(
-    ado,
-    (skip) => `${base}/iterations/${last.id}/changes?$top=2000${skip ? `&$skip=${skip}` : ''}&${V}`,
-    throttle
-  )
+  const latest = await getAzureLatestChanges(ado, r, id, throttle)
+  if (!latest) return { files: [], truncated: false }
+  const { last, changes, truncated } = latest
   const files = await diffAzureChanges(bytes, r, changes, last.commonRefCommit?.commitId, last.sourceRefCommit?.commitId, throttle)
   return { files, truncated }
+}
+
+/**
+ * How many files a pull request changes, for the list page's size column —
+ * the Files tab's count, read without a single diff. Azure has no per-PR line
+ * counts, so this is all the column can say. Null when the change list was cut
+ * by the page cap: a number that is not the whole count would read as one.
+ */
+export async function azurePrFileCount(
+  ado: Ado,
+  r: AzureRepo,
+  id: number,
+  throttle: AzureThrottle = new AzureThrottle()
+): Promise<number | null> {
+  const latest = await getAzureLatestChanges(ado, r, id, throttle)
+  if (!latest) return 0
+  return latest.truncated ? null : latest.changes.filter(isAzureFileChange).length
 }
 
 /**
@@ -670,7 +698,7 @@ async function diffAzureChanges(
   after: string | undefined,
   throttle: AzureThrottle
 ): Promise<PrFile[]> {
-  const entries = changeEntries.filter((c) => c.item?.path && !c.item.isFolder && c.item.gitObjectType !== 'tree')
+  const entries = changeEntries.filter(isAzureFileChange)
   const files: PrFile[] = entries.map((c) => ({ ...toAzurePrFile(c), noPatchReason: 'notLoaded' as const }))
   const eager = Math.min(AZURE_EAGER_FILES, files.length)
   const deadline = throttle.now() + AZURE_FILES_DEADLINE_MS

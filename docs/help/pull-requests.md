@@ -2,8 +2,8 @@
 title: Pull requests page
 category: Sync & many repos
 order: 57
-summary: Every pull request of a repository on one page — by state, filtered by author, reviewer, target and CI — ‹ › to walk the filtered list from inside a PR, its commits, its updates (each push, what it changed, what is new since your last visit), and comments on a line of its diff.
-keywords: reference title hover card work item AB# issue number tooltip pull requests list page merge requests pr mr filter author reviewer mine awaiting my review review requested ci failing target branch drafts merged closed search triage previous next alt arrow navigation checkout branch go to source target branch copy branch name fetch line comment inline comment review comment diff comment comment on line files tab code review commits tab commit list pr commits commit history open commit copy sha fetch pr branch fork pr commits refs/pull head updates iterations pushes force push rebase history rewritten diff versions what changed since last visit new badge mark as seen compare update markdown editor toolbar preview mention file tree folder tree view path view viewed files mark folder viewed edit delete remove edited typo rendered comments images tracking pixel blocked image click load task table block
+summary: Every pull request of a repository on one page — by state, filtered by author, reviewer, target and CI — ‹ › to walk the filtered list from inside a PR, its commits, its updates (each push, what it changed, what is new since your last visit), and comments on a line of its diff. The conversation as one timeline, with what is new since your last visit.
+keywords: reference title hover card work item AB# issue number tooltip pull requests list page merge requests pr mr filter author reviewer mine awaiting my review review requested ci failing target branch drafts merged closed search triage previous next alt arrow navigation checkout branch go to source target branch copy branch name fetch line comment inline comment review comment diff comment comment on line files tab code review commits tab commit list pr commits commit history open commit copy sha fetch pr branch fork pr commits refs/pull head updates iterations pushes force push rebase history rewritten diff versions what changed since last visit new badge mark as seen compare update markdown editor toolbar preview mention file tree folder tree view path view viewed files mark folder viewed edit delete remove edited typo rendered comments images tracking pixel blocked image click load task table block conversation timeline open threads resolved thread approved requested changes pushed commits reviewer role new since last visit compare two commits commit type chips conventional commits ci per commit view diff next unviewed filter unviewed with comments review progress changed since viewed
 ---
 
 # Pull requests page
@@ -15,19 +15,25 @@ the next. The **pull requests page** answers those questions on one screen, and
 once you open a pull request, **‹ ›** take you to the next one of the same list
 without going back.
 
-![The pull requests page searched for "pix": the matches highlighted, your own marked "you", a failing CI and a draft](../screenshots/pull-requests.webp)
+![The pull requests page opened from Mission Control: two awaiting your review, three of your own, the others folded; each row with its size, where every reviewer stands, its checks, and a dot where it changed since your last visit](../screenshots/pull-requests.webp)
 
 ## Opening it
 
 - The **list icon** on the sidebar's **PULL REQUESTS** header (*See all pull
   requests*).
 - *Pull requests…* in the command palette (⌘K), or **Tools → Pull requests…**.
+- The **pull requests chip** on a repository's row in [Mission Control](mission-control.md).
+  Opened from there, the page starts with **← Back to Mission control**, and
+  keeps it when you open one of its pull requests and come back with
+  **← Pull requests**.
 
 Like the wiki and [CI runs](ci-runs.md), the page rides on the repository's tab.
 
-## Tabs
+## States
 
-| Tab | What it holds |
+The segmented control left of the search holds the four states, with how many each has.
+
+| State | What it holds |
 |---|---|
 | **Open** | Every open pull request, drafts included |
 | **Drafts** | Only the open ones marked as drafts |
@@ -42,16 +48,21 @@ session; **Refresh** asks again.
 
 | Filter | Keeps |
 |---|---|
-| **Search** | Pull requests whose title, description, branches or number contain every word typed. `#482` or `482` finds that number; matches are highlighted in the title |
+| **Search** | Pull requests whose title, description, author, branches or number contain every word typed. `#482` or `482` finds that number; matches are highlighted in the title |
 | **Author** | One author — each listed with how many it has in this tab. **Me** is first |
 | **Reviewer** | One requested reviewer, or **Review requested from me** |
 | **Target branch** | Pull requests into that branch |
-| **Mine** | A shortcut for *Author: Me* |
 | **Awaiting my review** | A shortcut for *Reviewer: review requested from me* |
+| **Mine** | A shortcut for *Author: Me* |
 | **CI failing** | Pull requests whose head's checks failed |
 
-The line under the filters says how many of the tab's pull requests are shown
-and which filters are on, with **clear filters** to drop them all.
+Search and the three chips share one row; each chip says how many pull requests
+of the current state it would keep. **Author**, **Reviewer** and **Target
+branch** live under **More filters ▾**, which lights up while one of them is set.
+
+While any filter is on, a line above the list says how many of the state's pull
+requests are shown and which filters are on, with **clear filters** to drop
+them all.
 
 Filters are kept per repository **while the app runs** — leave the page, come
 back, they are as you left them. They are not saved across restarts on
@@ -67,16 +78,62 @@ there is no token, **Me**, **Mine** and **Awaiting my review** are not offered.
 
 ## The list
 
-| Column | What it shows |
+Open and Drafts are split into three sections, in the order you work through them:
+
+| Section | Holds |
 |---|---|
-| **#** | The number, with an icon for open, draft, merged or closed |
-| **Title** | The title, a *draft* badge, and who is still asked to review — in the accent colour when it is you |
-| **Author** | The host's picture where it gives one, else the initial, and **you** on your own |
-| **Branches** | Source → target |
-| **Checks** | The head's checks rolled up — `6/6`, `1 failed`, `2 running`; hover for the counts |
+| **Awaiting your review** | Pull requests someone asked you to review — the heading in yellow |
+| **Your pull requests** | The ones you wrote |
+| **Others** | Everything else, folded behind **show** while the two above have something; a search or a filter unfolds it |
+
+When the host cannot say who you are, there is nothing to triage and the list is
+one card. Merged and Closed are history: one card, no sections.
+
+Each row reads left to right:
+
+| Part | What it shows |
+|---|---|
+| **Dot** | The pull request changed since you last left its page. One you never opened has no dot — there is nothing to compare with |
+| **#** | The number — green while open, grey for a draft |
+| **Title** | The title, its [Conventional Commits](committing.md) type as a coloured chip (`feat`, `fix`, `docs`…), a *draft* badge. Under it: the author (left out on your own), source → target, and **N comments** — or **N new comments** when some were written by others since your last visit |
+| **Size** | `+48 −12 · 4 files` — lines added and removed, files touched; `4 files` alone where the host counts no lines |
+| **Review** | Each reviewer's standing verdict — **✓ bruno approved**, **✕ ana requested changes** — then who is still asked, **● waiting for you** in yellow. **✓ ready to merge** when the host says the reviews are done and the checks did not fail; **no reviewers** when nobody was asked or answered |
+| **Checks** | The head's checks — `✓ 6/6`, `✕ 1 failing`, `● 2 running`; hover for the counts |
 | **Updated** | How long ago it last changed; hover for the date |
 
-Rows are sorted by the latest activity. A click opens the pull request's own
+### What each host gives
+
+Size, comments and verdicts are not in every host's list, and the page does
+not open each pull request to find them — with one exception, below: what the
+list does not carry stays blank, never a zero.
+
+| Host | Size | Comments | Review verdicts |
+|---|---|---|---|
+| **GitHub** | ✓ | ✓, and which are new | ✓, and *ready to merge* — one extra GraphQL request for the whole list |
+| **GitLab** | — | ✓ (count only) | Who is asked; *ready to merge* from GitLab's merge status |
+| **Azure DevOps** | Files only, read when the page opens | — | ✓ from the reviewers' votes |
+| **Bitbucket Data Center** | — | ✓ (count only) | ✓ |
+| **Bitbucket Cloud** | — | ✓ (count only) | — |
+| **Forgejo** | ✓ when the server fills it | ✓ (count only) | Who is asked |
+
+**Azure DevOps: files only.** Its API has no line counts for a pull request —
+they would take every file's diff — so the cell reads `4 files`, with no +/−.
+Its list has no file count either, so this page reads it, for the open and
+draft rows it draws — merged and closed ones stay blank, as a full list of them
+would cost hundreds of requests for a number nobody reviews by: two requests per pull request (its iterations, then the last one's
+changes — the same count as its Files tab), four at a time. They are kept until
+someone pushes to that pull request, so a refresh or coming back to the page
+asks only for the ones that moved. The sidebar's periodic refresh never reads
+them. A count that cannot be read — no permission, a throttled server — leaves
+the cell blank, without an error; a pull request of over 20,000 changes is
+not counted.
+
+The comment count is the conversation's comments — comments on a line of the diff
+are not in it. Without a token the GitHub request is skipped, and those columns
+stay empty.
+
+Within a section, rows are sorted by the latest activity, and **‹ ›** inside a pull
+request walk them in the order drawn. A click opens the pull request's own
 page ([Hosting & pull requests](hosting.md)). On a host without that page, the
 row opens the pull request in the browser.
 
@@ -85,7 +142,7 @@ too, marked *on owner/repo*.
 
 ## Walking the list from a pull request
 
-![A pull request opened from the filtered list: ‹ 1 of 4 › and the filters it came from](../screenshots/pull-request-nav.webp)
+![A pull request opened from the filtered list: ‹ 1 of 7 › and the filters it came from](../screenshots/pull-request-nav.webp)
 
 A pull request opened from the page shows a strip above its title:
 
@@ -161,28 +218,43 @@ one commit at a time — the way most pull requests are meant to be read — sen
 you to the browser. The **Commits** tab, between Conversation and Updates, lists
 them:
 
+- **A summary line** on top: how many commits, by how many authors, the pull
+  request's **+/−**, and one coloured chip per
+  [Conventional Commit](https://www.conventionalcommits.org/) type with its
+  count — *feat 2 · fix 1 · test 1* tells you what kind of change this is
+  before you read a line of it. Features are green, fixes and reverts red,
+  tests in the accent colour, performance yellow, the rest grey.
 - **Oldest first**, the order they apply in, grouped under the day they were
   authored. A commit rebased in out of date order starts a day of its own
   rather than being moved.
-- Each row has the author's picture (where the host gives one), the subject,
-  the author, how long ago, and the short SHA. A **merge** badge marks a commit
-  with two parents, where the host says.
-- **▸** beside a commit with more than a subject shows the rest of its message.
-- **Copy** puts the full SHA on the clipboard; **Open in browser** opens the
-  commit on the host — inside the pull request where the host has such a page
-  (GitHub, GitLab, Bitbucket Data Center), else on the repository's commit page.
+- Each row has the author's picture (where the host gives one), the subject —
+  its type as the same coloured chip and its scope muted, when it follows
+  Conventional Commits — the author, how long ago, and, for a commit this
+  clone has, its **+/−** and how many files it touched. Then a **CI** dot
+  (green passed, red failed, yellow running) where the host reports a run for
+  that commit, the short SHA, and **View diff**. A **merge** badge marks a
+  commit with two parents, where the host says.
+- A commit with more than a subject shows the rest of its message under the row.
+- On hover, **Copy** puts the full SHA on the clipboard and **Open in browser**
+  opens the commit on the host — inside the pull request where the host has
+  such a page (GitHub, GitLab, Bitbucket Data Center), else on the repository's
+  commit page.
 
 ![The Commits tab: a pull request's commits grouped by day, one with its full message open](../screenshots/pr-commits.webp)
 
-**Click a row** — or Tab to it and press Enter — to open the commit in the app,
-as a click in the graph would: the repository's view, that commit selected,
-its details open. That works when this clone **has** the commit. When it does
-not, the row says so instead of failing quietly, and offers:
+Commits made after you last left the pull request sit below a **New since your
+last visit** line — the same mark as the Conversation tab, from the same visit.
 
-- **Fetch the PR branch to see it** — the same single-branch fetch as
+**View diff** — or a click on the row, or Tab to it and Enter — opens the
+commit in the app, as a click in the graph would: the repository's view, that
+commit selected, its details open. That works when this clone **has** the
+commit. When it does not, the row says *not in your repository yet* and its
+button changes:
+
+- **Fetch the branch** — the same single-branch fetch as
   [going to the branch](#going-to-a-pull-requests-branch), without the
-  checkout. When the commit came with it, it opens; when it did not (a force
-  push rewrote it since), the toast says so.
+  checkout. Every commit that came with it can then open; if this one did not
+  (a force push rewrote it since), the toast says so.
 - **Fetch the pull request's commits**, on a pull request from a **fork**. Its
   branch lives in another repository, but most hosts mirror a pull request's
   head in the target repository under a ref of its own — `refs/pull/N/head`
@@ -194,6 +266,12 @@ not, the row says so instead of failing quietly, and offers:
   to the head as it is then. If the force push since left the commit out, the
   toast says so.
 - **Open in browser**, for when fetching is not an option.
+
+**Compare two commits** asks you to tick two rows, then opens the
+[comparison](merging.md#compare-any-two-refs) between them in the repository's view:
+the older one is the base, so you see what happened from one to the other —
+the commits in between and their combined diff. Both have to be in this clone;
+until two are, the button is greyed out.
 
 The list is read the first time you open the tab, not with the page, and again
 on every **Refresh**. Until it is in, the tab's count is the one the host
@@ -231,6 +309,15 @@ What it does not do:
   branch is gone.
 - **Squash merges.** A squash-merged pull request's commits never reached the
   target branch, so after its branch is deleted they are on the host only.
+- **Per-commit numbers come from your clone.** The **+/−** and file count are
+  read from git, never asked of the host, so a commit not fetched yet shows
+  none, and neither does a merge (its change is against two parents). A
+  partial clone missing a commit's files shows none rather than download them.
+- **CI for the 40 most recent commits only**, quietly: one request per commit
+  would add up on a long pull request, and CI usually ran on the pushed heads
+  anyway. No credential for the host means no dots, never a sign-in.
+- **The type chips read the subject.** A team that does not write Conventional
+  Commits gets no chips and no type counts — nothing is guessed.
 - **Authors** are named as their commits name them. GitLab, Azure DevOps and
   Bitbucket Data Center give no picture without a sign-in an image cannot
   send, so those rows show the initial.
@@ -374,7 +461,17 @@ and after heads are exact, so its **View changes** is too.
 
 ## Reading the files
 
-A pull request of two hundred files is hard to read as two hundred full paths.
+A pull request of two hundred files is hard to read as two hundred full paths,
+and hard to finish without losing your place. Above the list and the diff, a
+line keeps count — *4 of 9 files viewed*, with a bar — and **Previous
+unviewed** / **Next unviewed** step to the nearest file you have not ticked,
+up or down, wrapping round the list; they grey out once everything listed is
+viewed. Tick **Mark as viewed when moving on** and **Next unviewed** ticks the
+open file for you before moving on — reading straight through, you never touch
+the boxes; the choice is remembered. **Show** narrows the list
+to **Unviewed** files or files **With comments** (any review conversation on
+them), and back to **All**.
+
 The **Files** tab's list has the same **Path / Tree** switch as the commit
 panel, and the choice is the same one app-wide. In **Tree**, files sit under
 their folders (a chain like `src/main/ipc` is one row), and each folder shows
@@ -382,11 +479,12 @@ its summed **+/−** and how many of its files are viewed (*3/5*). A folder's
 checkbox marks every file inside as viewed, or clears them all; ticks are kept
 on this computer only, never sent to the host. A tick holds the version of the
 file's diff: when a push changes a viewed file, it reads as not viewed again,
-with a yellow dot (*changed since you viewed it*). A file without a diff
+with a **changed** pill (*changed since you viewed it*). A file without a diff
 (binary, too large) is compared by its status and line counts only. A file with review
-conversations shows a speech-bubble count beside it (folders add theirs up), so
+conversations shows a speech-bubble count right after its name, so
 the ones with comments stand out in a long list; outdated conversations count
-too. Click a folder, or press ←/→ on
+too, and so do resolved ones — the hosts' lists the app reads do not say which
+are resolved. Click a folder, or press ←/→ on
 it, to fold it; ↑/↓ (or j/k) step through the files on screen and open each
 diff. Folded folders are remembered per pull request until the app quits, and a
 file opened inside one unfolds the way to it. The tree is sorted by name, not in
@@ -557,14 +655,77 @@ What it does not do:
 - **A file without a diff** (binary, or too large for the host to include)
   has no lines to comment on.
 
+## The conversation
+
+A pull request's story is scattered: the description at the top, comments in
+one list, line threads in another, verdicts only in the sidebar, pushes in a
+tab of their own. Catching up meant reading all of them and putting the order
+back together in your head. The **Conversation** tab tells it as one
+**timeline**, down a rail, in the order it happened.
+
+![The conversation as a timeline: two pushes, a line thread still open with its lines, a change request, the line marking what is new since the last visit, and an approval](../screenshots/pull-request-page.webp)
+
+| On the timeline | What it shows |
+|---|---|
+| **The description** | Always first, with who opened the pull request and when |
+| **Comments** | The conversation, each with its author's role: **Author** or **Reviewer** |
+| **Pushes** | *sam pushed 2 commits*, then one line per commit; a click on a hash opens the Commits tab |
+| **Line threads** | In place, at their first comment: the file and line, the diff lines it is about, the replies and a reply box. The path and **View in Files →** open that file in the Files tab |
+| **Review verdicts** | **approved** in green, **requested changes** in red with what the reviewer wrote, or a review's own comment |
+
+A thread the host reports **open** carries an amber pill, and the bar above the
+timeline counts them: **1 open thread** shows only those, the ones still waiting
+for an answer. A **resolved** thread folds to one line — *Resolved thread in
+src/palette.tsx:18 · 2 comments* — and a click unfolds it. **Comments · Reviews · Commits · All** narrow the timeline to one kind;
+**Comments** is the one it opens on, and **All** brings everything back.
+
+The sidebar's **Reviewers** say each person's verdict in words — **✓ approved**
+or **requested changes** — and a clock for someone still to answer.
+
+### New since your last visit
+
+When you leave a pull request's page (another page, another tab, closing it,
+quitting or reloading the app), the app notes the time. Next time, a line marks
+where you stopped — **New since your last visit** — and the bar says how many
+entries came after it. The mark is made on leaving, not on opening, so it stays
+put while you read. The first time you open a pull request nothing is marked new.
+
+What you wrote yourself is never new to you: your own comments, replies and
+reviews neither count nor move the line. A thread that began before your visit
+and got a reply from someone else since counts as new too — it stays where it
+began on the timeline, so look for it above the line.
+
+Times read *2d ago*; hover for the full date.
+
+*Limits:*
+
+- **When a commit was pushed** is not something the hosts say. Pushes are
+  rebuilt from the commit list: consecutive commits by the same author, each
+  within an hour of the one before, count as one push, placed at the last
+  one's date. A rebase that rewrote the dates moves them. The Updates tab is the
+  host's own record where there is one.
+- **Open or resolved** comes from GitHub (one extra GraphQL request per read)
+  and GitLab. Azure DevOps, Bitbucket Data Center and Forgejo threads show no
+  pill and are not counted.
+- **Verdicts on the timeline** need a date: GitHub, GitLab (an approval, dated
+  by the note GitLab writes for it) and Forgejo give one. Azure DevOps votes and
+  Bitbucket Data Center approvals have none, so they appear only in the sidebar.
+- A GitHub review with no text of its own — the envelope every batch of line
+  comments is filed under — gets no line; its threads already show.
+- Your last visits are kept for the 300 most recent pull requests, on this
+  computer only. A crash, or the app being killed, records no visit.
+- **Yours** is told by your account on the host. Where the host names authors
+  only by display name and gives no id to match, your own entries count like
+  anyone's.
+
 ## Writing comments
 
 Every box on the page — the comment at the bottom, a reply inside a thread, a
 comment on a line — is the same Markdown editor: **Write / Preview** tabs, a
 formatting toolbar with GitHub's shortcuts, lists that continue on Enter, and
 **@** / **#** completion from the people and pull requests already on screen.
-A reply box shows its tools once you click into it, and sends with
-⌘/Ctrl+Enter, since Enter now starts a new line. [Writing comments](writing-comments.md)
+A thread reply is the exception: a one-line field with no toolbar, where Enter
+sends and Shift+Enter adds a line. [Writing comments](writing-comments.md)
 has the details and the limits.
 
 ## How comments are shown

@@ -18,6 +18,11 @@ commits between them into a changelog, grouped by Conventional Commit type.
 - Commits that follow no convention land under **Other** rather than being
   dropped — a changelog that silently loses commits is worse than a messy one.
 
+The result opens in the same **Write / Preview** editor as a pull request's
+description, toolbar included: reword an entry, drop a line nobody needs, and
+check how it renders before it goes anywhere. Generating again replaces your
+edits.
+
 Copy the result, or **prepend it straight to `CHANGELOG.md`**.
 
 > Writing your messages in [Conventional style](committing.md) is what makes

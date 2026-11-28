@@ -2,9 +2,9 @@
 title: Pull-Request-Seite
 category: Sync & viele Repos
 order: 57
-summary: Alle Pull Requests eines Repositorys auf einer Seite — nach Status, gefiltert nach Autor, Reviewer, Ziel und CI —, ‹ ›, um die gefilterte Liste aus einem PR heraus durchzugehen, seine Commits, seine Updates (jeder Push, was er geändert hat, was seit deinem letzten Besuch neu ist) und Kommentare zu einer Zeile seines Diffs.
-keywords: pull requests liste seite merge requests pr mr filter autor reviewer meine wartet auf mein review review angefragt ci schlägt fehl ziel-branch entwürfe gemergt geschlossen suche triage vorheriger nächster alt pfeil navigation checkout auschecken zum quell-branch ziel-branch branch-name kopieren fetch zeilenkommentar inline-kommentar review-kommentar diff-kommentar zeile kommentieren dateien-tab code review line comment commits-tab commit-liste pr-commits commit-verlauf commit öffnen sha kopieren pr-branch fetchen markdown-editor werkzeugleiste vorschau erwähnung commits tab commit list open commit copy sha markdown editor toolbar preview mention dateibaum ordnerbaum baumansicht pfadansicht gesehene dateien ordner als gesehen markieren bearbeiten löschen entfernen bearbeitet tippfehler file tree viewed files edit delete edited typo verweis titel hover-karte work item AB# issue-nummer tooltip reference title hover card issue number fork pr-commits refs/pull head gerenderte kommentare bilder tracking-pixel blockiertes bild zum laden klicken aufgabe tabelle block rendered comments images blocked image updates iterationen pushes force-push rebase verlauf umgeschrieben diff-versionen was hat sich geändert seit dem letzten besuch neu-badge als gesehen markieren update vergleichen iterations history rewritten diff versions what changed since last visit new badge mark as seen compare update
-source: d91d96af92225cb74da274f8d168b07f6110b709
+summary: Alle Pull Requests eines Repositorys auf einer Seite — nach Status, gefiltert nach Autor, Reviewer, Ziel und CI —, ‹ ›, um die gefilterte Liste aus einem PR heraus durchzugehen, seine Commits, seine Updates (jeder Push, was er geändert hat, was seit deinem letzten Besuch neu ist) und Kommentare zu einer Zeile seines Diffs. Die Unterhaltung als ein Verlauf, mit dem, was seit deinem letzten Besuch neu ist.
+keywords: pull requests liste seite merge requests pr mr filter autor reviewer meine wartet auf mein review review angefragt ci schlägt fehl ziel-branch entwürfe gemergt geschlossen suche triage vorheriger nächster alt pfeil navigation checkout auschecken zum quell-branch ziel-branch branch-name kopieren fetch zeilenkommentar inline-kommentar review-kommentar diff-kommentar zeile kommentieren dateien-tab code review line comment commits-tab commit-liste pr-commits commit-verlauf commit öffnen sha kopieren pr-branch fetchen markdown-editor werkzeugleiste vorschau erwähnung commits tab commit list open commit copy sha markdown editor toolbar preview mention dateibaum ordnerbaum baumansicht pfadansicht gesehene dateien ordner als gesehen markieren bearbeiten löschen entfernen bearbeitet tippfehler file tree viewed files edit delete edited typo verweis titel hover-karte work item AB# issue-nummer tooltip reference title hover card issue number fork pr-commits refs/pull head gerenderte kommentare bilder tracking-pixel blockiertes bild zum laden klicken aufgabe tabelle block rendered comments images blocked image updates iterationen pushes force-push rebase verlauf umgeschrieben diff-versionen was hat sich geändert seit dem letzten besuch neu-badge als gesehen markieren update vergleichen iterations history rewritten diff versions what changed since last visit new badge mark as seen compare update unterhaltung verlauf zeitleiste offene threads gelöster thread genehmigt änderungen angefordert gepushte commits reviewer-rolle neu seit deinem letzten besuch zwei commits vergleichen commit-typ-chips ci pro commit diff ansehen nächste ungesehene ungesehen filtern mit kommentaren review-fortschritt geändert seit gesehen conversation timeline open threads resolved thread approved requested changes pushed commits reviewer role new since last visit compare two commits commit type chips conventional commits ci per commit view diff next unviewed filter unviewed with comments review progress changed since viewed
+source: 6c1d5afb9bb0a33fa35b74bcc119ac137da2bf22
 ---
 
 # Pull-Request-Seite
@@ -17,20 +17,26 @@ du jeden öffnen, lesen, zurückgehen, den nächsten öffnen. Die
 du einen Pull Request öffnest, bringen dich **‹ ›** zum nächsten derselben Liste,
 ohne zurückzugehen.
 
-![Die Pull-Request-Seite mit der Suche nach „pix“: Treffer hervorgehoben, eigene mit „du“ markiert, eine fehlschlagende CI und ein Entwurf](../../screenshots/pull-requests.webp)
+![Die Pull-Request-Seite, aus dem Leitstand geöffnet: zwei warten auf dein Review, drei sind deine eigenen, die anderen eingeklappt; jede Zeile mit ihrer Größe, dem Stand jedes Reviewers, ihren Checks und einem Punkt, wo sich seit deinem letzten Besuch etwas geändert hat](../../screenshots/pull-requests.webp)
 
 ## Öffnen
 
 - Das **Listensymbol** im Kopf **PULL REQUESTS** der Seitenleiste (*Alle Pull
   Requests anzeigen*).
 - *Pull Requests…* in der Befehlspalette (⌘K) oder **Werkzeuge → Pull Requests…**.
+- Der **Pull-Request-Chip** in der Zeile eines Repositorys in der [Missionskontrolle](mission-control.md).
+  Von dort geöffnet, beginnt die Seite mit **← Zurück zum Leitstand** und behält
+  es, wenn du einen ihrer Pull Requests öffnest und mit **← Pull Requests**
+  zurückkommst.
 
 Wie das Wiki und die [CI-Läufe](ci-runs.md) hängt die Seite am Tab des
 Repositorys.
 
-## Tabs
+## Status
 
-| Tab | Was er enthält |
+Das Segment-Steuerelement links neben der Suche enthält die vier Status, jeweils mit ihrer Anzahl.
+
+| Status | Was er enthält |
 |---|---|
 | **Offen** | Alle offenen Pull Requests, Entwürfe eingeschlossen |
 | **Entwürfe** | Nur die offenen, die als Entwurf markiert sind |
@@ -45,17 +51,22 @@ schon hat. Gemergt und Geschlossen werden erst abgefragt, wenn du einen davon
 
 | Filter | Behält |
 |---|---|
-| **Suchen** | Pull Requests, deren Titel, Beschreibung, Branches oder Nummer jedes eingegebene Wort enthalten. `#482` oder `482` findet diese Nummer; Treffer werden im Titel hervorgehoben |
+| **Suchen** | Pull Requests, deren Titel, Beschreibung, Autor, Branches oder Nummer jedes eingegebene Wort enthalten. `#482` oder `482` findet diese Nummer; Treffer werden im Titel hervorgehoben |
 | **Autor** | Einen Autor — jeder mit der Anzahl seiner PRs in diesem Tab. **Ich** steht oben |
 | **Reviewer** | Einen angefragten Reviewer oder **Review von mir angefragt** |
 | **Ziel-Branch** | Pull Requests in diesen Branch |
-| **Meine** | Eine Abkürzung für *Autor: Ich* |
 | **Wartet auf mein Review** | Eine Abkürzung für *Reviewer: Review von mir angefragt* |
+| **Meine** | Eine Abkürzung für *Autor: Ich* |
 | **CI schlägt fehl** | Pull Requests, deren Checks am Head fehlgeschlagen sind |
 
-Die Zeile unter den Filtern sagt, wie viele Pull Requests des Tabs angezeigt
-werden und welche Filter aktiv sind, mit **Filter zurücksetzen**, um alle zu
-entfernen.
+Die Suche und die drei Chips teilen sich eine Zeile; jeder Chip sagt, wie viele
+Pull Requests des aktuellen Status er übrig ließe. **Autor**, **Reviewer** und
+**Ziel-Branch** liegen unter **Weitere Filter ▾**, das hervorgehoben ist, solange
+einer davon gesetzt ist.
+
+Solange ein Filter aktiv ist, sagt eine Zeile über der Liste, wie viele Pull
+Requests des Status angezeigt werden und welche Filter aktiv sind, mit **Filter
+zurücksetzen**, um alle zu entfernen.
 
 Filter bleiben pro Repository erhalten, **solange die App läuft** — verlasse die
 Seite, komm zurück, sie sind, wie du sie verlassen hast. Über einen Neustart
@@ -73,16 +84,54 @@ wem es gehört (kein User-Scope), oder es kein Token gibt, werden **Ich**,
 
 ## Die Liste
 
-| Spalte | Was sie zeigt |
+Offen und Entwürfe sind in drei Abschnitte geteilt, in der Reihenfolge, in der du sie abarbeitest:
+
+| Abschnitt | Enthält |
 |---|---|
-| **#** | Die Nummer, mit einem Symbol für offen, Entwurf, gemergt oder geschlossen |
-| **Titel** | Der Titel, ein *Entwurf*-Badge und wer noch um ein Review gebeten ist — in der Akzentfarbe, wenn du es bist |
-| **Autor** | Das Bild vom Host, wo er eins liefert, sonst die Initiale, und **du** bei deinen eigenen |
-| **Branches** | Quelle → Ziel |
-| **Checks** | Die Checks des Heads zusammengefasst — `6/6`, `1 fehlgeschlagen`, `2 laufen`; Hover zeigt die Zahlen |
+| **Wartet auf dein Review** | Pull Requests, für die dich jemand um ein Review gebeten hat — die Überschrift in Gelb |
+| **Deine Pull Requests** | Die, die du geschrieben hast |
+| **Andere** | Alles andere, hinter **anzeigen** eingeklappt, solange die beiden oberen etwas enthalten; eine Suche oder ein Filter klappt es auf |
+
+Wenn der Host nicht sagen kann, wer du bist, gibt es nichts zu sortieren, und die
+Liste ist eine einzige Karte. Gemergt und Geschlossen sind Geschichte: eine Karte,
+keine Abschnitte.
+
+Jede Zeile liest sich von links nach rechts:
+
+| Teil | Was er zeigt |
+|---|---|
+| **Punkt** | Der Pull Request hat sich geändert, seit du seine Seite zuletzt verlassen hast. Einer, den du nie geöffnet hast, hat keinen Punkt — es gibt nichts zu vergleichen |
+| **#** | Die Nummer — grün, solange offen, grau bei einem Entwurf |
+| **Titel** | Der Titel, sein [Conventional-Commits](committing.md)-Typ als farbiger Chip (`feat`, `fix`, `docs`…), ein *Entwurf*-Badge. Darunter: der Autor (bei deinen eigenen weggelassen), Quelle → Ziel und **N Kommentare** — oder **N neue Kommentare**, wenn andere seit deinem letzten Besuch welche geschrieben haben |
+| **Größe** | `+48 −12 · 4 Dateien` — hinzugefügte und entfernte Zeilen, berührte Dateien; nur `4 Dateien`, wo der Host keine Zeilen zählt |
+| **Review** | Das aktuelle Urteil jedes Reviewers — **✓ bruno hat genehmigt**, **✕ ana hat Änderungen angefordert** —, dann wer noch angefragt ist, **● wartet auf dich** in Gelb. **✓ bereit zum Mergen**, wenn der Host sagt, dass die Reviews erledigt sind und die Checks nicht fehlgeschlagen sind; **keine Reviewer**, wenn niemand angefragt wurde oder geantwortet hat |
+| **Checks** | Die Checks des Heads — `✓ 6/6`, `✕ 1 fehlgeschlagen`, `● 2 laufen`; Hover zeigt die Zahlen |
 | **Aktualisiert** | Wie lange die letzte Änderung her ist; Hover zeigt das Datum |
 
-Die Zeilen sind nach der letzten Aktivität sortiert. Ein Klick öffnet die eigene
+### Was jeder Host liefert
+
+Größe, Kommentare und Urteile stehen nicht in der Liste jedes Hosts, und die
+Seite öffnet nicht jeden Pull Request einzeln, um sie zu finden — mit einer
+Ausnahme, siehe unten: was die Liste nicht mitbringt, bleibt leer, nie eine
+Null.
+
+| Host | Größe | Kommentare | Review-Urteile |
+|---|---|---|---|
+| **GitHub** | ✓ | ✓, und welche neu sind | ✓, und *bereit zum Mergen* — eine zusätzliche GraphQL-Anfrage für die ganze Liste |
+| **GitLab** | — | ✓ (nur die Anzahl) | Wer angefragt ist; *bereit zum Mergen* aus GitLabs Merge-Status |
+| **Azure DevOps** | Nur Dateien, beim Öffnen der Seite gelesen | — | ✓ aus den Stimmen der Reviewer |
+| **Bitbucket Data Center** | — | ✓ (nur die Anzahl) | ✓ |
+| **Bitbucket Cloud** | — | ✓ (nur die Anzahl) | — |
+| **Forgejo** | ✓, wenn der Server es füllt | ✓ (nur die Anzahl) | Wer angefragt ist |
+
+**Azure DevOps: nur Dateien.** Seine API kennt keine Zeilenzahlen für einen Pull Request — dafür bräuchte es den Diff jeder Datei —, daher zeigt die Zelle `4 Dateien`, ohne +/−. Auch seine Liste enthält keine Dateizahl, also liest diese Seite sie selbst, für die offenen und Entwurfszeilen, die sie zeichnet — gemergte und geschlossene bleiben leer, denn eine volle Liste davon würde Hunderte Anfragen kosten, für eine Zahl, nach der niemand reviewt: zwei Anfragen pro Pull Request (seine Iterationen, dann die Änderungen der letzten — dieselbe Zahl wie in seinem Tab Dateien), vier gleichzeitig. Die Zahlen bleiben erhalten, bis jemand auf diesen Pull Request pusht, sodass eine Aktualisierung oder die Rückkehr zur Seite nur nach denen fragt, die sich bewegt haben. Die periodische Aktualisierung der Seitenleiste liest sie nie. Eine Zahl, die nicht gelesen werden kann — keine Berechtigung, ein drosselnder Server —, lässt die Zelle leer, ohne Fehler; ein Pull Request mit über 20.000 Änderungen wird nicht gezählt.
+
+Die Kommentaranzahl sind die Kommentare der Unterhaltung — Kommentare an einer
+Zeile des Diffs zählen nicht dazu. Ohne Token entfällt die GitHub-Anfrage, und
+diese Spalten bleiben leer.
+
+Innerhalb eines Abschnitts sind die Zeilen nach der letzten Aktivität sortiert,
+und **‹ ›** in einem Pull Request gehen sie in der gezeigten Reihenfolge durch. Ein Klick öffnet die eigene
 Seite des Pull Requests ([Hosting & Pull Requests](hosting.md)). Auf einem Host
 ohne diese Seite öffnet die Zeile den Pull Request im Browser.
 
@@ -91,7 +140,7 @@ Ursprungs-Repository gelistet, markiert mit *auf owner/repo*.
 
 ## Die Liste aus einem Pull Request heraus durchgehen
 
-![Ein aus der gefilterten Liste geöffneter Pull Request: ‹ 1 von 4 › und die Filter, aus denen er kam](../../screenshots/pull-request-nav.webp)
+![Ein aus der gefilterten Liste geöffneter Pull Request: ‹ 1 von 7 › und die Filter, aus denen er kam](../../screenshots/pull-request-nav.webp)
 
 Ein von der Seite aus geöffneter Pull Request zeigt eine Leiste über seinem
 Titel:
@@ -172,32 +221,46 @@ Die Seitenleiste sagte, wie viele Commits ein Pull Request hat, nie welche. Eine
 Commit nach dem anderen zu reviewen — so, wie die meisten Pull Requests gelesen
 werden sollen — schickte dich in den Browser. Der Tab **Commits**, zwischen Unterhaltung und Updates, listet sie:
 
+- **Eine Zusammenfassungszeile** oben: wie viele Commits, von wie vielen Autoren,
+  das **+/−** des Pull Requests und ein farbiger Chip pro
+  [Conventional-Commit](https://www.conventionalcommits.org/)-Typ mit seiner
+  Anzahl — *feat 2 · fix 1 · test 1* sagt dir, welche Art Änderung das ist, bevor
+  du eine Zeile davon liest. Features sind grün, Fixes und Reverts rot, Tests in
+  der Akzentfarbe, Performance gelb, der Rest grau.
 - **Älteste zuerst**, in der Reihenfolge, in der sie angewendet werden, gruppiert
   nach dem Tag, an dem sie geschrieben wurden. Ein Commit, der außer der
   Datumsreihenfolge hineingerebased wurde, beginnt einen eigenen Tag, statt
   verschoben zu werden.
-- Jede Zeile hat das Bild des Autors (wo der Host eins liefert), den Betreff, den
-  Autor, wie lange es her ist, und den kurzen SHA. Ein **Merge**-Badge markiert
-  einen Commit mit zwei Eltern, wo der Host das sagt.
-- **▸** neben einem Commit mit mehr als einem Betreff zeigt den Rest seiner
-  Nachricht.
-- **Kopieren** legt den vollständigen SHA in die Zwischenablage; **Im Browser
-  öffnen** öffnet den Commit auf dem Host — innerhalb des Pull Requests, wo der
-  Host eine solche Seite hat (GitHub, GitLab, Bitbucket Data Center), sonst auf der
-  Commit-Seite des Repositorys.
+- Jede Zeile hat das Bild des Autors (wo der Host eins liefert), den Betreff —
+  sein Typ als derselbe farbige Chip und sein Scope gedämpft, wenn er Conventional
+  Commits folgt —, den Autor, wie lange es her ist, und, bei einem Commit, den
+  dieser Klon hat, sein **+/−** und wie viele Dateien er angefasst hat. Dann ein
+  **CI**-Punkt (grün bestanden, rot fehlgeschlagen, gelb läuft), wo der Host einen
+  Lauf für diesen Commit meldet, der kurze SHA und **Diff ansehen**. Ein
+  **Merge**-Badge markiert einen Commit mit zwei Eltern, wo der Host das sagt.
+- Ein Commit mit mehr als einem Betreff zeigt den Rest seiner Nachricht unter der
+  Zeile.
+- Beim Darüberfahren legt **Kopieren** den vollständigen SHA in die
+  Zwischenablage, und **Im Browser öffnen** öffnet den Commit auf dem Host —
+  innerhalb des Pull Requests, wo der Host eine solche Seite hat (GitHub, GitLab,
+  Bitbucket Data Center), sonst auf der Commit-Seite des Repositorys.
 
 ![Der Tab Commits: die Commits eines Pull Requests nach Tag gruppiert, einer mit geöffneter vollständiger Nachricht](../../screenshots/pr-commits.webp)
 
-**Klick auf eine Zeile** — oder springe mit Tab hin und drück Enter —, um den
-Commit in der App zu öffnen, wie ein Klick im Graphen: die Ansicht des
-Repositorys, dieser Commit ausgewählt, seine Details offen. Das klappt, wenn dieser
-Klon den Commit **hat**. Hat er ihn nicht, sagt die Zeile das, statt still zu
-scheitern, und bietet an:
+Commits, die nach deinem letzten Verlassen des Pull Requests entstanden sind,
+stehen unter einer Linie **Neu seit deinem letzten Besuch** — dieselbe Markierung
+wie im Tab Unterhaltung, aus demselben Besuch.
 
-- **PR-Branch abrufen, um ihn zu sehen** — derselbe Fetch eines einzelnen Branches
-  wie beim [Wechsel zum Branch](#zum-branch-eines-pull-requests-wechseln), ohne den Checkout. Kam der Commit
-  mit, öffnet er sich; kam er nicht (ein Force-Push hat ihn seitdem umgeschrieben),
-  sagt der Toast das.
+**Diff ansehen** — oder ein Klick auf die Zeile, oder mit Tab hinspringen und
+Enter — öffnet den Commit in der App, wie ein Klick im Graphen: die Ansicht des
+Repositorys, dieser Commit ausgewählt, seine Details offen. Das klappt, wenn
+dieser Klon den Commit **hat**. Hat er ihn nicht, sagt die Zeile *noch nicht in
+deinem Repository*, und ihr Button ändert sich:
+
+- **Branch holen** — derselbe Fetch eines einzelnen Branches wie beim
+  [Wechsel zum Branch](#zum-branch-eines-pull-requests-wechseln), ohne den
+  Checkout. Jeder Commit, der dabei mitkam, lässt sich dann öffnen; kam dieser
+  nicht mit (ein Force-Push hat ihn seitdem umgeschrieben), sagt der Toast das.
 - **Commits des Pull Requests abrufen**, bei einem Pull Request aus einem **Fork**.
   Sein Branch liegt in einem anderen Repository, aber die meisten Hosts spiegeln
   den Head eines Pull Requests im Ziel-Repository unter einer eigenen Ref —
@@ -209,6 +272,12 @@ scheitern, und bietet an:
   Ref auf den Head, wie er dann ist. Hat der Force-Push seitdem den Commit
   ausgelassen, sagt der Toast das.
 - **Im Browser öffnen**, für den Fall, dass Fetchen keine Option ist.
+
+**Zwei Commits vergleichen** lässt dich zwei Zeilen ankreuzen und öffnet dann den
+[Vergleich](merging.md#compare-any-two-refs) zwischen ihnen in der Ansicht des
+Repositorys: Der ältere ist die Basis, du siehst also, was von einem zum anderen
+passiert ist — die Commits dazwischen und ihren gemeinsamen Diff. Beide müssen in
+diesem Klon sein; solange das nicht für zwei gilt, ist der Button ausgegraut.
 
 Die Liste wird gelesen, wenn du den Tab zum ersten Mal öffnest, nicht mit der
 Seite, und erneut bei jedem **Aktualisieren**. Bis sie da ist, ist die Zahl im Tab
@@ -247,6 +316,17 @@ Was es nicht tut:
 - **Squash-Merges.** Die Commits eines per Squash gemergten Pull Requests haben den
   Ziel-Branch nie erreicht, also gibt es sie nach dem Löschen seines Branches nur
   noch auf dem Host.
+- **Zahlen pro Commit kommen aus deinem Klon.** Das **+/−** und die Dateizahl
+  werden aus git gelesen, nie beim Host erfragt; ein noch nicht gefetchter Commit
+  zeigt also keine, und ein Merge auch nicht (seine Änderung bezieht sich auf zwei
+  Eltern). Ein Partial Clone, dem die Dateien eines Commits fehlen, zeigt keine,
+  statt sie herunterzuladen.
+- **CI nur für die 40 neuesten Commits**, stillschweigend: eine Anfrage pro Commit
+  würde sich bei einem langen Pull Request summieren, und CI lief meist ohnehin auf
+  den gepushten Heads. Ohne Zugangsdaten für den Host gibt es keine Punkte, nie
+  eine Anmeldung.
+- **Die Typ-Chips lesen den Betreff.** Ein Team, das keine Conventional Commits
+  schreibt, bekommt keine Chips und keine Typzahlen — nichts wird geraten.
 - **Autoren** werden so genannt, wie ihre Commits sie nennen. GitLab, Azure DevOps
   und Bitbucket Data Center liefern kein Bild ohne eine Anmeldung, die ein Bild
   nicht mitschicken kann, also zeigen diese Zeilen die Initiale.
@@ -397,16 +477,27 @@ Force-Push sind exakt, also auch sein **Änderungen anzeigen**.
 ## Die Dateien lesen
 
 Ein Pull Request mit zweihundert Dateien ist als zweihundert vollständige Pfade
-schwer zu lesen. Die Liste im Tab **Dateien** hat denselben Schalter **Pfad /
+schwer zu lesen und schwer zu Ende zu bringen, ohne den Faden zu verlieren. Über
+der Liste und dem Diff führt eine Zeile Buch — *4 von 9 Dateien angesehen*, mit
+einem Balken —, und **Vorherige ungesehene** / **Nächste ungesehene** springen zur
+nächstgelegenen Datei, die du nicht abgehakt hast, nach oben oder unten, und
+laufen dabei rund um die Liste; sie sind ausgegraut, sobald alles Gelistete
+angesehen ist. Hake **Beim Weitergehen als gesehen markieren** an, und **Nächste
+ungesehene** hakt die offene Datei für dich ab, bevor es weitergeht — wer
+durchliest, berührt die Kästchen nie; die Wahl wird gespeichert. **Anzeigen:** grenzt die Liste
+auf **Ungesehen** oder **Mit Kommentaren** (irgendeine Review-Unterhaltung darauf)
+ein, und zurück auf **Alle**.
+
+Die Liste im Tab **Dateien** hat denselben Schalter **Pfad /
 Baum** wie das Commit-Panel, und die Wahl gilt in der ganzen App. In **Baum** stehen
 Dateien unter ihren Ordnern (eine Kette wie `src/main/ipc` ist eine Zeile), und
 jeder Ordner zeigt sein summiertes **+/−** und wie viele seiner Dateien gesehen sind
 (*3/5*). Das Kontrollkästchen eines Ordners markiert jede Datei darin als gesehen
 oder entfernt alle Häkchen; die Häkchen bleiben nur auf diesem Computer und gehen
 nie an den Host. Ein Häkchen merkt sich die Fassung des Diffs der Datei: ändert ein
-Push eine gesehene Datei, gilt sie wieder als nicht gesehen, mit einem gelben Punkt
-(*Geändert, seit du es gesehen hast*). Eine Datei ohne Diff (binär, zu groß) wird nur
-nach Status und Zeilenzahlen verglichen. Eine Datei mit Review-Unterhaltungen zeigt daneben eine Zahl in einer Sprechblase (Ordner zählen ihre zusammen), sodass die kommentierten in einer langen Liste hervorstechen; veraltete Unterhaltungen zählen mit. Klick auf einen Ordner oder drück ←/→ darauf,
+Push eine gesehene Datei, gilt sie wieder als nicht gesehen, mit einer Pille
+**geändert** (*Geändert, seit du es gesehen hast*). Eine Datei ohne Diff (binär, zu groß) wird nur
+nach Status und Zeilenzahlen verglichen. Eine Datei mit Review-Unterhaltungen zeigt direkt hinter ihrem Namen eine Zahl in einer Sprechblase, sodass die kommentierten in einer langen Liste hervorstechen; veraltete Unterhaltungen zählen mit, und gelöste auch — die Listen der Hosts, die die App liest, sagen nicht, welche gelöst sind. Klick auf einen Ordner oder drück ←/→ darauf,
 um ihn einzuklappen; ↑/↓ (oder j/k) gehen durch die Dateien auf dem Bildschirm und
 öffnen jeden Diff. Eingeklappte Ordner werden pro Pull Request gemerkt, bis die App
 beendet wird, und eine Datei, die darin geöffnet wird, klappt den Weg zu ihr auf. Der
@@ -592,15 +683,87 @@ Was es nicht tut:
 - **Eine Datei ohne Diff** (binär oder zu groß, als dass der Host sie mitliefert)
   hat keine Zeilen zum Kommentieren.
 
+## Die Unterhaltung
+
+Die Geschichte eines Pull Requests ist verstreut: die Beschreibung oben,
+Kommentare in einer Liste, Zeilen-Threads in einer anderen, Urteile nur in der
+Seitenleiste, Pushes in einem eigenen Tab. Auf den neuesten Stand zu kommen hieß,
+alles zu lesen und die Reihenfolge im Kopf wieder zusammenzusetzen. Der Tab
+**Unterhaltung** erzählt sie als einen **Verlauf**, eine Schiene entlang, in der
+Reihenfolge, in der es passiert ist.
+
+![Die Unterhaltung als Verlauf: zwei Pushes, ein noch offener Zeilen-Thread mit seinen Zeilen, eine Änderungsanforderung, die Linie, die markiert, was seit dem letzten Besuch neu ist, und eine Genehmigung](../../screenshots/pull-request-page.webp)
+
+| Im Verlauf | Was es zeigt |
+|---|---|
+| **Die Beschreibung** | Immer zuerst, mit wer den Pull Request eröffnet hat und wann |
+| **Kommentare** | Die Unterhaltung, jeder mit der Rolle seines Autors: **Autor** oder **Reviewer** |
+| **Pushes** | *sam hat 2 Commits gepusht*, dann eine Zeile pro Commit; ein Klick auf einen Hash öffnet den Tab Commits |
+| **Zeilen-Threads** | An Ort und Stelle, bei ihrem ersten Kommentar: Datei und Zeile, die Diff-Zeilen, um die es geht, die Antworten und ein Antwortfeld. Der Pfad und **In Dateien ansehen →** öffnen diese Datei im Tab Dateien |
+| **Review-Urteile** | **genehmigt** in Grün, **Änderungen angefordert** in Rot mit dem, was der Reviewer geschrieben hat, oder der eigene Kommentar eines Reviews |
+
+Ein Thread, den der Host als **offen** meldet, trägt eine bernsteinfarbene Pille,
+und die Leiste über dem Verlauf zählt sie: **1 offener Thread** zeigt nur diese,
+die noch auf eine Antwort warten. Ein **gelöster** Thread klappt auf eine Zeile
+zusammen — *Gelöster Thread in src/palette.tsx:18 · 2 Kommentare* —, und ein Klick
+klappt ihn auf. **Kommentare · Reviews · Commits · Alles** grenzen den Verlauf auf
+eine Art ein; **Kommentare** ist die Ansicht, mit der er öffnet, und **Alles**
+holt alles zurück.
+
+Die **Reviewer** in der Seitenleiste nennen das Urteil jeder Person in Worten —
+**✓ genehmigt** oder **Änderungen angefordert** — und eine Uhr für jemanden, der
+noch antworten muss.
+
+### Neu seit deinem letzten Besuch
+
+Wenn du die Seite eines Pull Requests verlässt (eine andere Seite, ein anderer
+Tab, Schließen, die App beenden oder neu laden), merkt sich die App die Zeit. Beim nächsten Mal markiert eine
+Linie, wo du aufgehört hast — **Neu seit deinem letzten Besuch** —, und die Leiste
+sagt, wie viele Einträge danach kamen. Die Markierung wird beim Verlassen gesetzt,
+nicht beim Öffnen, also bleibt sie stehen, während du liest. Beim ersten Öffnen
+eines Pull Requests ist nichts als neu markiert.
+
+Was du selbst geschrieben hast, ist für dich nie neu: deine eigenen Kommentare,
+Antworten und Reviews zählen nicht mit und verschieben die Linie nicht. Ein
+Thread, der vor deinem Besuch begann und seitdem eine Antwort von jemand anderem
+bekommen hat, zählt ebenfalls als neu — er bleibt im Verlauf dort, wo er begann,
+also such ihn oberhalb der Linie.
+
+Zeiten lauten *vor 2 T.*; fahr darüber für das volle Datum.
+
+*Grenzen:*
+
+- **Wann ein Commit gepusht wurde**, sagen die Hosts nicht. Pushes werden aus der
+  Commit-Liste rekonstruiert: aufeinanderfolgende Commits desselben Autors, jeder
+  innerhalb einer Stunde nach dem vorigen, zählen als ein Push, platziert am Datum
+  des letzten. Ein Rebase, der die Daten umgeschrieben hat, verschiebt sie. Der Tab
+  Updates ist die eigene Aufzeichnung des Hosts, wo es eine gibt.
+- **Offen oder gelöst** kommt von GitHub (eine zusätzliche GraphQL-Anfrage pro
+  Lesen) und GitLab. Threads von Azure DevOps, Bitbucket Data Center und Forgejo
+  zeigen keine Pille und werden nicht gezählt.
+- **Urteile im Verlauf** brauchen ein Datum: GitHub, GitLab (eine Genehmigung,
+  datiert durch die Notiz, die GitLab dafür schreibt) und Forgejo liefern eins.
+  Stimmen von Azure DevOps und Genehmigungen von Bitbucket Data Center haben
+  keins, also erscheinen sie nur in der Seitenleiste.
+- Ein GitHub-Review ohne eigenen Text — die Hülle, unter der jeder Stapel von
+  Zeilenkommentaren abgelegt wird — bekommt keine Zeile; seine Threads stehen schon
+  da.
+- Deine letzten Besuche werden für die 300 zuletzt besuchten Pull Requests
+  gespeichert, nur auf diesem Computer. Ein Absturz oder eine abgewürgte App
+  zeichnet keinen Besuch auf.
+- **Deine** erkennt die App an deinem Konto beim Host. Wo der Host Autoren nur
+  mit Anzeigenamen nennt und keine ID zum Abgleichen liefert, zählen deine eigenen
+  Einträge wie die aller anderen.
+
 ## Kommentare schreiben
 
 Jedes Feld auf der Seite — der Kommentar unten, eine Antwort in einem Thread, ein
 Kommentar zu einer Zeile — ist derselbe Markdown-Editor: Tabs **Schreiben /
 Vorschau**, eine Formatierungsleiste mit GitHubs Tastenkürzeln, Listen, die bei
 Enter weitergehen, und Vervollständigung mit **@** / **#** aus den Personen und
-Pull Requests, die schon auf dem Bildschirm sind. Ein Antwortfeld zeigt seine
-Werkzeuge, sobald du hineinklickst, und sendet mit ⌘/Ctrl+Enter, da Enter jetzt
-eine neue Zeile beginnt. [Kommentare schreiben](writing-comments.md) hat die
+Pull Requests, die schon auf dem Bildschirm sind. Eine Thread-Antwort ist die
+Ausnahme: ein einzeiliges Feld ohne Werkzeugleiste, in dem Enter sendet und
+Shift+Enter eine Zeile hinzufügt. [Kommentare schreiben](writing-comments.md) hat die
 Details und die Grenzen.
 
 ## Wie Kommentare angezeigt werden

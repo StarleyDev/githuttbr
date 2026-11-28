@@ -22,7 +22,7 @@ import { GraphView } from './components/GraphView'
 import { FileViewer } from './components/FileViewer'
 import { CommitEditView } from './components/CommitEditView'
 import { BranchCompareView } from './components/BranchCompareView'
-import { ConflictResolver } from './components/ConflictResolver'
+import { ConflictWorkspace } from './components/ConflictWorkspace'
 import { CommitDetails } from './components/CommitDetails'
 import { StashDetails } from './components/StashDetails'
 import { CommitComposer } from './components/CommitComposer'
@@ -258,7 +258,7 @@ function PageBody({ page }: { page: PageContent }): React.JSX.Element | null {
     case 'ci-runs':
       return <CiRunsPage repoPath={page.repoPath} />
     case 'pull-requests':
-      return <PullRequestsPage repoPath={page.repoPath} />
+      return <PullRequestsPage repoPath={page.repoPath} fromMission={page.from === 'mission'} />
     case 'devtools':
       return <DevToolsPage launchId={page.launchId} url={page.url} label={page.label} tool={page.tool} />
     case 'pr':
@@ -298,7 +298,7 @@ function PageView({ tab }: { tab: PageTab }): React.JSX.Element {
     case 'ci-runs':
       return <CiRunsPage repoPath={tab.page.repoPath} />
     case 'pull-requests':
-      return <PullRequestsPage repoPath={tab.page.repoPath} />
+      return <PullRequestsPage repoPath={tab.page.repoPath} fromMission={tab.page.from === 'mission'} />
     case 'vault':
       return <VaultPage />
     case 'repositories':
@@ -337,7 +337,9 @@ function ConflictBanner({ repo }: { repo: RepoData }): React.JSX.Element | null 
   const t = useT()
   const setConflictView = useUIStore((s) => s.setConflictView)
   const select = useRepoStore((s) => s.select)
-  if (!repo.mergeState) return null
+  // The conflict workspace carries its own operation bar; two would compete.
+  const workspaceOpen = useUIStore((s) => s.conflictView?.repoPath === repo.path)
+  if (!repo.mergeState || workspaceOpen) return null
   const conflicted = repo.status?.conflicted ?? []
   const verbs: Record<ConflictOpKind, string> = {
     merge: t('conflict.opMerge'),
@@ -1189,7 +1191,7 @@ export default function App(): React.JSX.Element {
                 <ConflictBanner repo={repo} />
                 <DebugToolbar repoPath={repo.path} />
                 {conflictView && conflictView.repoPath === repo.path ? (
-                  <ConflictResolver key={conflictView.file} view={conflictView} />
+                  <ConflictWorkspace view={conflictView} />
                 ) : commitEditSha && commitEditRepo === repo.path ? (
                   <CommitEditView key={commitEditSha} repoPath={repo.path} sha={commitEditSha} />
                 ) : compareRepo === repo.path ? (

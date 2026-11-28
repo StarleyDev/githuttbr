@@ -106,10 +106,19 @@ export function currentPrNav(page: PrPage): ReturnType<typeof resolvePrNav> {
 }
 
 /** Open a PR from the list page: the walk is remembered, and the PR replaces
- *  the one the list opened before rather than adding an icon per click. */
-export function openPrFromList(repoPath: string, entry: PrNavEntry, nav: PrListNav): void {
+ *  the one the list opened before rather than adding an icon per click.
+ *  `listFrom` is where the list itself came from, handed back on the way back. */
+export function openPrFromList(repoPath: string, entry: PrNavEntry, nav: PrListNav, listFrom?: 'mission'): void {
   usePrListStore.getState().rememberNav(repoPath, nav)
-  const page: PrPage = { type: 'pr', repoPath, remoteUrl: entry.remoteUrl, number: entry.number, title: entry.title, via: 'list' }
+  const page: PrPage = {
+    type: 'pr',
+    repoPath,
+    remoteUrl: entry.remoteUrl,
+    number: entry.number,
+    title: entry.title,
+    via: 'list',
+    ...(listFrom ? { listFrom } : {})
+  }
   const settings = useSettingsStore.getState()
   const previous = findListPrPage(repoPath)
   if (previous) settings.replaceOpenPage(previous, page)

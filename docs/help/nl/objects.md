@@ -4,6 +4,7 @@ category: Repository & geschiedenis
 order: 16
 summary: Loop door de laag onder de grafiek — commits, trees, blobs, tags en de refs die ernaar wijzen. Niets hier verandert iets.
 keywords: objecten objects verkenner explorer blob tree commit tag ref plumbing cat-file ls-tree sha1 interne werking database rev-parse HEAD^{tree} loose packed
+source: 946d418d5b13af167a16a2f0d3164d813b423ab6
 ---
 
 # Objectverkenner
@@ -16,7 +17,7 @@ met een naam die een tree eraan gaf, houdt het porselein op magie te zijn.
 `⌘K` → **Objectverkenner**. Niets op deze pagina kan één byte veranderen — elke
 aanroep erachter is een leesactie.
 
-![De velden van een commit, met zijn tree en ouders als links, naast de reflijst](../../screenshots/objects.webp)
+![De commit waar main naar wijst: het pad vanaf de branch, waar hij naar wijst en waar een commit in het model staat](../../screenshots/objects.webp)
 
 ## De vier objecten
 
@@ -38,20 +39,54 @@ met een sha erin. Dat is de hele inhoud van "branchen is goedkoop".
 
 ## Rondlopen
 
-De linkerkolom somt elke ref in de repository op, gegroepeerd zoals git ze
-groepeert. Klik er een aan om te belanden op het object dat hij benoemt.
+![Van de commit naar src/: eerst mappen, elke modus uitgeschreven](../../screenshots/objects-tree.webp)
 
-Van daaruit is alles een link:
+De linkerkolom toont elke ref, gegroepeerd zoals git groepeert: HEAD (met
+`→ main` als hij op een branch staat), Branches, Tags en Remotes, elk met een
+aantal. Remotes begint ingeklapt. Een vierkant teken is een ref naar een commit,
+een rond groen een **geannoteerde** tag. Het filter beperkt alle groepen tegelijk.
+Klik op een ref om op het object te landen dat hij noemt; die rij blijft
+gemarkeerd zolang je vandaar verder loopt.
 
-- Een **commit** toont zijn `tree` en elke `parent` — klik door naar de
-  momentopname, of achteruit door de geschiedenis, commit voor commit.
-- Een **tree** somt zijn regels op met modus, type, sha en grootte. Klik een naam
-  aan om dat kind te openen.
-- Een **blob** toont zijn tekst (het begin ervan, bij iets groots), of zegt
-  ronduit dat hij binair is.
-- Een **geannoteerde tag** toont waar hij naar wijst — klik door naar de commit.
+Vanaf daar is alles een deur:
 
-**Terug** loopt je stappen weer af.
+- Een **commit** toont waar hij naar **wijst** — zijn root-tree, met het aantal
+  items, en elke ouder, met zijn onderwerp — dan auteur en committer (*dezelfde
+  als de auteur* als ze gelijk zijn) en het bericht.
+- Een **tree** is een tabel van naam, modus, object en grootte, eerst mappen.
+  Elke modus staat voluit: *bestand*, *uitvoerbaar*, *map*, *symlink*,
+  *submodule*. Een map zegt hoeveel items hij heeft; een symlink, waarheen hij wijst.
+- Een **blob** toont zijn tekst met regelnummers (alleen het begin, als hij groot
+  is), of zegt duidelijk dat hij binair is. Via een tree bereikt, zegt een balk
+  hoe hij daar heet — *Heet src/app.ts in commit 07c6f3d, modus 100644 (gewoon
+  bestand)* — met een link naar de geschiedenis van het bestand.
+- Een **geannoteerde tag** wijst naar het object dat hij noemt en legt de tagger vast.
+
+![Een blob, de naam die zijn tree hem gaf, en waar hij in het model staat](../../screenshots/objects-blob.webp)
+
+### Het pad
+
+De band onder het revisieveld is het afgelegde **pad**:
+`branch main → commit 07c6f3d → root → src/ → app.ts`. De tree van een commit is
+de **root**; een bestand of map krijgt de naam van de rij waarop je klikte. Klik
+op een item om ernaar terug te gaan. Een revisie typen, een ref kiezen of een
+van de voorbeelden naast **Openen** begint een nieuw pad.
+
+**Terug** en **Vooruit** lopen door alles wat je opende, zoals in een browser:
+na terug brengt Vooruit je weer verder, tot je vandaar iets nieuws opent. Het
+revisieveld volgt de route, dus `main:src/app.ts` staat altijd klaar om te kopiëren.
+
+### Kleuren
+
+Elke soort houdt overal één kleur — badge, pad-item, kaart, rij: commit in de
+accentkleur van het thema, tree in het geel, blob in blauw, tag en ref in groen.
+Onder de kop van het object zegt één zin wat die soort *is*.
+
+### Waar je bent in het model
+
+De strook onder in het paneel is de keten van git — **ref → commit → tree →
+blob**, met **tag** tussen ref en commit bij een geannoteerde tag — en de soort
+op het scherm licht op als *je bent hier*.
 
 ## Een revisie intypen
 
@@ -83,6 +118,12 @@ submodule-gitlink — en die laatste is alles wat een submodule opslaat.
 - **Onbereikbare objecten zijn nog steeds objecten.** Plak een sha uit een
   dangling-rapport van `git fsck` en hij opent, wat vaak de snelste manier is om
   te zien wat een verloren commit bevatte voor je besluit of je hem terughaalt.
+- **Een submodule-rij gaat niet open.** De gitlink noemt een commit van een
+  andere repository, die deze niet heeft.
+- **Aantallen en symlinkdoelen hebben een plafond.** Een tree met meer dan 300
+  submappen toont ze zonder aantal, en alleen de eerste 50 symlinks tonen hun doel.
+- **Het pad eindigt met het dialoogvenster.** Sluit het en het volgende begint
+  weer bij de branch van HEAD.
 
 Zie ook: [De grafiek](graph.md) · [Repository-onderhoud](maintenance.md) ·
 [Herstel](recovery.md)

@@ -96,11 +96,13 @@ Ein **@** oder **#** innerhalb eines Wortes (eine E-Mail-Adresse), das `#` einer
 Issue, eine Thread-Antwort, einen Zeilenkommentar und die Beschreibung eines neuen
 Issues. Es funktioniert auch aus den Tabs, der Werkzeugleiste und der Vorschau,
 nicht nur aus dem Feld. Esc bricht einen Zeilenkommentar ab, von denselben Stellen
-aus. Eine **Thread-Antwort** war früher ein einzeiliges Feld, das mit Enter gesendet
-wurde; jetzt ist sie ein kleines Textfeld, also ist Enter eine neue Zeile (oder der
-nächste Listeneintrag) und ⌘/Ctrl+Enter sendet. Ein Antwortfeld zeigt seine Tabs
-und Werkzeuge, sobald du hineinklickst, damit eine lange Unterhaltung nicht unter
-jedem Thread eine Werkzeugleiste wachsen lässt.
+aus. Eine **Thread-Antwort** ist ein
+einzeiliges Feld, damit eine lange Unterhaltung nicht unter jedem Thread eine
+Werkzeugleiste wachsen lässt: Enter sendet, Shift+Enter fügt eine Zeile hinzu
+(das Feld wächst mit, auch bei einem eingefügten Block), und Esc verwirft das
+Getippte, nach einer Rückfrage. Es hat keine Tabs und keine Werkzeugleiste, aber
+die Formatierungskürzel und die **@** / **#**-Vervollständigung funktionieren
+darin, und ein **Antworten**-Button erscheint, sobald es etwas zu senden gibt.
 
 ## Der Spickzettel
 

@@ -17,7 +17,7 @@ export const PR_LIST_TABS: PrListTab[] = ['open', 'drafts', 'merged', 'closed']
 export const ME = '@me'
 
 export interface PrListFilters {
-  /** Words that must all appear in the title, description, number or a branch. */
+  /** Words that must all appear in the title, description, author, number or a branch. */
   query: string
   /** '' for anyone, ME, or a login as the host names it. */
   author: string
@@ -100,7 +100,7 @@ export function queryTerms(query: string): string[] {
 export function matchesQuery(pr: PullRequest, query: string): boolean {
   const terms = queryTerms(query)
   if (!terms.length) return true
-  const hay = [pr.title, pr.body ?? '', pr.sourceBranch, pr.targetBranch].join('\n').toLowerCase()
+  const hay = [pr.title, pr.body ?? '', pr.author, pr.sourceBranch, pr.targetBranch].join('\n').toLowerCase()
   return terms.every((term) => {
     const num = /^#?(\d+)$/.exec(term)
     if (num && Number(num[1]) === pr.id) return true

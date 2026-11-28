@@ -91,7 +91,7 @@ Die Hauptspalte hat drei Bereiche:
 |---|---|
 | **Unterhaltung** | Beschreibung, Kommentare und Inline-Review-Threads (`datei:zeile`, mit Antworten). Nur die Unterhaltung scrollt: Das Kommentarfeld mit kommentieren / freigeben / Änderungen anfordern und die Merge-Box (Merge, Squash oder Rebase) bleiben unten fest, sodass ein langer Pull Request sie nie außer Reichweite schiebt |
 | **Dateien** | Jede geänderte Datei und der Diff der gewählten neben der Liste, mit Syntax-Hervorhebung und Änderungen auf Wortebene (geheim aussehende Dateien maskiert, wenn diese Einstellung an ist). Eine ✓-„Gesehen“-Liste merkt sich deinen Fortschritt. Eine Datei, für die der Host keinen Diff schickt (binär oder zu groß), verlinkt auf den Host |
-| **Checks** | CI-Check-Runs (GitHub) oder Pipeline-Jobs (GitLab), mit bestanden/fehlgeschlagen/läuft und Links zu den Logs. Jeder Lauf des Repositorys — nicht nur die dieses Pull Requests — steht auf der Seite [CI-Läufe](ci-runs.md) |
+| **Checks** | Wie die CI des Head-Commits gelaufen ist und warum sie fehlschlug — siehe [den Tab Checks](#der-tab-checks). Jeder Lauf des Repositorys — nicht nur die dieses Pull Requests — steht auf der Seite [CI-Läufe](ci-runs.md) |
 
 Die Seitenleiste zeigt:
 
@@ -113,6 +113,58 @@ meldet, fällt weg.
 
 Wenn jemand mitten im Review force-pusht, zeigt dir [was sich seitdem geändert hat](range-diff.md)
 genau, was sich bewegt hat.
+
+### Der Tab Checks
+
+Ein roter Check beantwortet eine Frage schlecht: *was* kaputtgegangen ist. Der
+Tab Checks beantwortet sie ohne Umweg über die Website der CI. Die Beschriftung
+des Tabs trägt eine rote Zahl der fehlgeschlagenen Checks, du weißt es also,
+bevor du ihn öffnest.
+
+![Der Tab Checks: eine Zusammenfassung des Laufs, der aus dem Log gelesene fehlgeschlagene Test und das nummerierte Log](../../screenshots/pr-check-log.webp)
+
+- **Die Zusammenfassung** oben sagt, wie viele Checks fehlgeschlagen sind (oder
+  dass alle bestanden haben, oder wie viele noch laufen), auf welchem Commit,
+  wann der letzte fertig wurde und wie lange sie zusammen gebraucht haben.
+  **Fehlgeschlagene erneut ausführen** startet die fehlgeschlagenen Jobs auf dem
+  Host neu; **CI-Läufe öffnen** öffnet die Seite [CI-Läufe](ci-runs.md) des
+  Repositorys.
+- **Eine Karte pro Check**, mit Ergebnis und Dauer. Ein fehlgeschlagener Check
+  öffnet sich von selbst; ein bestandener bleibt eine Zeile bis **Log ansehen**.
+  **Log kopieren** kopiert das Log als reinen Text; **Auf dem Host ansehen →**
+  öffnet den Check auf der Website des Hosts.
+- **Der fehlgeschlagene Test.** Ist das Log ein Lauf von **vitest**, **jest**
+  oder **pytest**, nennt die Karte die fehlgeschlagenen Tests, den Fehler und
+  die Stelle: Der `pfad:zeile`-Chip und **Im Editor öffnen** öffnen die Datei an
+  dieser Zeile in deinem [Editor](editor.md), und **Im PR-Diff ansehen** wechselt
+  zum Tab Dateien auf diese Datei, wenn der Pull Request sie ändert.
+- **Das vollständige Log** klappt unter der Karte auf, nummeriert, mit Farben,
+  und die Zeilen, die einen Fehler markieren, sind hervorgehoben. Sehr lange
+  Logs zeigen ihre letzten paar tausend Zeilen, nummeriert ab dem echten Anfang.
+
+Wo jeder Host steht:
+
+| Host | Log in der App | Zeiten und Commit | Fehlgeschlagene erneut ausführen |
+|---|---|---|---|
+| GitHub | Jobs von GitHub Actions | Ja | Ja — der Workflow-Lauf des Jobs |
+| GitLab | Pipeline-Jobs | Ja | Ja — wiederholt die fehlgeschlagenen Jobs der Pipeline |
+| Azure DevOps | Build-Validierung und Pipeline-Status | Nein | Build-Validierung — wiederholt die fehlgeschlagenen Jobs des Builds |
+| Forgejo | Jobs von Forgejo Actions | Aus dem Status, die Zeit zählt also das Warten in der Warteschlange mit | Nein — Forgejo hat keine API dafür |
+| Bitbucket Data Center | Nein | Nein | Nein |
+
+Grenzen:
+
+- Der fehlgeschlagene Test wird aus dem Text des Logs gelesen, nicht aus einem
+  Testbericht. Ein anderer Runner, ein Fehler, bevor die Tests liefen (ein
+  Build- oder Installationsfehler), oder ein Log, das vor dem Fehlerabschnitt
+  abgeschnitten ist, zeigt wie bisher nur das Log. Höchstens zwanzig Fehler
+  werden aufgelistet.
+- Ein Pfad, den das Log als Pfad der CI-Maschine ausgibt
+  (`/home/runner/work/…`), wird nach Möglichkeit in einen Pfad im Repository
+  zurückverwandelt; einer, bei dem das nicht geht, wird angezeigt, aber nicht
+  geöffnet.
+- Ein Check einer anderen App (ein Coverage- oder Sicherheitsdienst) hat kein
+  Log in der App: **Auf dem Host ansehen →** ist der einzige Weg hinein.
 
 ### Schließen, wieder öffnen und Entwürfe
 
@@ -238,9 +290,7 @@ lädt, und schickt das Token nur, wenn der Link ein Job auf genau diesem Server
 ist; ein Status einer externen CI bekommt es nie. Ein Server, der Logs nur einem
 angemeldeten Browser gibt, antwortet mit seiner Anmeldeseite — die Zeile sagt
 das und bietet den Browser an. Sehr lange Logs zeigen ihre letzten paar tausend
-Zeilen.
-
-![Das Log eines Forgejo-Actions-Jobs, geöffnet unter seiner Check-Zeile](../../screenshots/pr-check-log.webp)
+Zeilen; [der Tab Checks](#der-tab-checks) zeigt, was er mit ihnen macht.
 
 Wie bei GitLab gilt: **Ein Forgejo-Token geht nur an den Server, der es
 ausgestellt hat.** Ein Profil ohne Forgejo-Adresse hat überhaupt keine

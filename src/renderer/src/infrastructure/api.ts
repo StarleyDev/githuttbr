@@ -22,6 +22,7 @@ import type {
   ModelCatalog,
   BlameLine,
   BranchCompareResult,
+  PrCommitStats,
   PrComparison,
   BranchesPayload,
   CheckoutRemoteResult,
@@ -55,6 +56,8 @@ import type {
   ConflictOpKind,
   ConflictSide,
   ConflictVersions,
+  ConflictOverview,
+  ConflictSnapshot,
   FileEntry,
   FileHistoryEntry,
   FsDropMode,
@@ -243,6 +246,8 @@ export const gitApi = {
   fetchRemoteBranch: (path: string, remote: string, branch: string) =>
     call<boolean>('fetchRemoteBranch', path, remote, branch),
   getLocalCommits: (path: string, shas: string[]) => call<string[]>('getLocalCommits', path, shas),
+  getCommitStats: (path: string, shas: string[]) =>
+    call<Record<string, PrCommitStats>>('getCommitStats', path, shas),
   fetchCommitsById: (path: string, remote: string, shas: string[]) => call<boolean>('fetchCommitsById', path, remote, shas),
   getCommitRangeFiles: (path: string, from: string, to: string) =>
     call<import('../../../shared/types').PrFile[]>('getCommitRangeFiles', path, from, to),
@@ -702,8 +707,15 @@ export const gitApi = {
   conflictVersions: (path: string, file: string) => call<ConflictVersions>('conflictVersions', path, file),
   resolveConflict: (path: string, file: string, content: string) => call<void>('resolveConflict', path, file, content),
   conflictTakeSide: (path: string, file: string, side: ConflictSide) => call<void>('conflictTakeSide', path, file, side),
-  conflictOpContinue: (path: string, kind: ConflictOpKind) => call<void>('conflictOpContinue', path, kind),
+  conflictOpContinue: (path: string, kind: ConflictOpKind, message?: string) =>
+    call<void>('conflictOpContinue', path, kind, message),
   conflictOpAbort: (path: string, kind: ConflictOpKind) => call<void>('conflictOpAbort', path, kind),
+  /** Every unmerged path with its kind of conflict and block count, for the file strip. */
+  conflictOverview: (path: string) => call<ConflictOverview>('conflictOverview', path),
+  conflictSnapshot: (path: string, files: string[]) => call<ConflictSnapshot>('conflictSnapshot', path, files),
+  conflictRestore: (path: string, snapshot: ConflictSnapshot) => call<void>('conflictRestore', path, snapshot),
+  conflictResolvePaths: (path: string, keep: string[], drop: string[]) =>
+    call<void>('conflictResolvePaths', path, keep, drop),
 
   interactiveRebaseSteps: (path: string, base: string) =>
     call<{ hash: string; subject: string }[]>('interactiveRebaseSteps', path, base),
@@ -732,6 +744,7 @@ export const gitApi = {
     call<string[]>('stackPruneMerged', path, alsoMerged, leaf),
   commitEditInfo: (path: string, sha: string) => call<CommitEditInfo>('commitEditInfo', path, sha),
   blobAtCommit: (path: string, sha: string, file: string) => call<BlobAtCommit>('blobAtCommit', path, sha, file),
+  commitEditableFiles: (path: string, sha: string) => call<string[]>('commitEditableFiles', path, sha),
   commitEditPreview: (path: string, sha: string, edits: Record<string, string>, message: string) =>
     call<CommitEditPreview>('commitEditPreview', path, sha, edits, message),
   commitEditApply: (path: string, sha: string, edits: Record<string, string>, message: string) =>
@@ -1327,6 +1340,13 @@ export const hostingApi = {
   /** One file's diff read on demand — this clone first, then the host. Always the file back, with a reason when still no patch. */
   prFileDiff: (repoPath: string, remoteUrl: string, tokens: PrTokens, request: import('../../../shared/types').PrFileDiffRequest) =>
     window.api.hosting.prFileDiff(repoPath, remoteUrl, tokens, request) as Promise<import('../../../shared/types').PrFile>,
+  /** Changed-file counts by PR id, for the list page on Azure DevOps; a row it could not count is absent. */
+  getPrFileCounts: (
+    repoPath: string,
+    remoteUrl: string,
+    tokens: PrTokens,
+    requests: import('../../../shared/types').PrFileCountRequest[]
+  ) => window.api.hosting.getPrFileCounts(repoPath, remoteUrl, tokens, requests) as Promise<Record<number, number>>,
   prListCommits: (repoPath: string, remoteUrl: string, tokens: PrTokens, number: number) =>
     window.api.hosting.prListCommits(repoPath, remoteUrl, tokens, number) as Promise<import('../../../shared/types').PrCommitList>,
   prListUpdates: (repoPath: string, remoteUrl: string, tokens: PrTokens, number: number) =>

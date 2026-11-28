@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ChevronDown, ChevronRight, CircleDot, Folder, FolderOpen, MessageSquare } from 'lucide-react'
+import { ChevronDown, ChevronRight, Folder, FolderOpen, MessageSquare } from 'lucide-react'
 import type { PrFile } from '../../../shared/types'
 import { restoreScrollTop } from '../lib/scrollRestore'
 import { useSettingsStore } from '../stores/settings'
@@ -17,7 +17,6 @@ import {
 } from '../lib/fileTree'
 import { ViewToggle } from './CommitComposer'
 import { useT, interp, type TranslationKey } from '../i18n'
-import { sumThreadCounts } from '../lib/prFileThreads'
 import { hasKnownLineCounts } from '../lib/prNoPatch'
 
 type PrTreeNode = FileTreeNode<PrFile>
@@ -34,7 +33,7 @@ function ThreadBadge({ count }: { count: number }): React.JSX.Element | null {
   if (count <= 0) return null
   const label = interp(t('prPage.fileThreads'), { n: count })
   return (
-    <span className="prp-file-threads" title={label} aria-label={label}>
+    <span className="prf-threads" title={label} aria-label={label}>
       <MessageSquare size={10} aria-hidden="true" />
       {count}
     </span>
@@ -117,12 +116,8 @@ const FileRow = memo(function FileRow({
         {label}
       </span>
       {isChanged && (
-        <span
-          className="prp-file-changed"
-          title={t('prPage.changedSinceViewed')}
-          aria-label={t('prPage.changedSinceViewed')}
-        >
-          <CircleDot size={10} aria-hidden="true" />
+        <span className="prf-changed" title={t('prPage.changedSinceViewed')}>
+          {t('prFiles.changedPill')}
         </span>
       )}
       <ThreadBadge count={threadCount} />
@@ -147,7 +142,6 @@ const FolderRow = memo(function FolderRow({
   isCollapsed,
   totals,
   viewedCount,
-  threadCount,
   onToggleFolder,
   onSetFilesViewed
 }: {
@@ -157,8 +151,6 @@ const FolderRow = memo(function FolderRow({
   isCollapsed: boolean
   totals: FolderTotals<PrFile>
   viewedCount: number
-  /** Review conversations across the folder's files. */
-  threadCount: number
   onToggleFolder: (path: string) => void
   onSetFilesViewed: (filenames: string[], viewed: boolean) => void
 }): React.JSX.Element {
@@ -216,7 +208,6 @@ const FolderRow = memo(function FolderRow({
       >
         {viewedCount}/{total}
       </span>
-      <ThreadBadge count={threadCount} />
       <span className="prd-file-stat">
         <span className="ins-add">+{totals.additions}</span>{' '}
         <span className="ins-del">−{totals.deletions}</span>
@@ -286,11 +277,6 @@ export const PrFileList = memo(function PrFileList({
     }
     return out
   }, [totals, viewed])
-  const threadsByFolder = useMemo(() => {
-    const out = new Map<string, number>()
-    for (const [path, sum] of totals) out.set(path, sumThreadCounts(threadCounts, sum.files.map((f) => f.filename)))
-    return out
-  }, [totals, threadCounts])
   const rows = useMemo<FileTreeRow<PrFile>[]>(
     () =>
       view === 'tree'
@@ -318,11 +304,21 @@ export const PrFileList = memo(function PrFileList({
       }),
     []
   )
-  // Only files count, and only those still in the pull request.
-  const viewedCount = useMemo(
-    () => files.reduce((n, f) => n + (viewed.has(f.filename) ? 1 : 0), 0),
-    [files, viewed]
-  )
+  // "Next unviewed" selects a file further down, maybe out of sight: bring it into view.
+  // Not on mount — the remembered scroll is put back then.
+  const mounted = useRef(false)
+  useEffect(() => {
+    if (!mounted.current) {
+      mounted.current = true
+      return
+    }
+    if (!selected) return
+    const frame = requestAnimationFrame(() => {
+      const row = listRef.current?.querySelector<HTMLElement>(`[data-file-path="${CSS.escape(selected)}"]`)
+      row?.scrollIntoView({ block: 'nearest' })
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [selected])
 
   const focusRow = (index: number): void => {
     requestAnimationFrame(() => {
@@ -386,9 +382,8 @@ export const PrFileList = memo(function PrFileList({
       }
     >
       <div className="prp-file-list-head">
-        <span className="prd-section-title">
-          {interp(t('prDetail.filesViewed'), { n: `${viewedCount}/${files.length}` })}
-        </span>
+        {/* The viewed count lives in the header line above (PrFilesProgress). */}
+        <span className="prd-section-title">{t('prDetail.filesTitle')}</span>
         <ViewToggle />
       </div>
       <div role="tree" aria-label={t('prPage.filesTree')} ref={listRef} onKeyDown={onKeyDown}>
@@ -416,13 +411,13 @@ export const PrFileList = memo(function PrFileList({
               isCollapsed={collapsed.has(node.path)}
               totals={totals.get(node.path) ?? NO_TOTALS}
               viewedCount={viewedByFolder.get(node.path) ?? 0}
-              threadCount={threadsByFolder.get(node.path) ?? 0}
               onToggleFolder={toggleFolder}
               onSetFilesViewed={onSetFilesViewed}
             />
           )
         )}
       </div>
+      {files.length === 0 && <p className="prp-muted prf-filter-empty">{t('prFiles.filterEmpty')}</p>}
     </div>
   )
 })

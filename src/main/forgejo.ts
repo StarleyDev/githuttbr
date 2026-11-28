@@ -29,6 +29,7 @@ import type {
   RemoteRepo
 } from '../shared/types'
 import { HttpStatusError } from './httpStatusError'
+import { isoToMs } from './ciRuns'
 import { getAnchorLine, getAnchorSide } from '../shared/prLineAnchor'
 import { finishPrCommits, orderOldestFirst, PR_COMMITS_MAX, type RawPrCommit } from '../shared/prCommits'
 import { finishPrUpdates, groupForgejoPushes, singleUpdate, type ForgejoPush } from '../shared/prUpdates'
@@ -125,6 +126,11 @@ interface FjPull {
   updated_at?: string
   body?: string | null
   user?: { login?: string; avatar_url?: string }
+  /** Newer servers fill these in the list too; older ones leave them out. */
+  additions?: number
+  deletions?: number
+  changed_files?: number
+  comments?: number
 }
 
 /** Forgejo marks a draft with a title prefix on older versions, `draft` on newer ones. */
@@ -145,7 +151,12 @@ export function mapForgejoPull(p: FjPull): PullRequest {
     ...(p.state === 'closed' ? { state: p.merged ? 'merged' : 'closed' } : {}),
     ...(p.updated_at ? { updatedAt: p.updated_at } : {}),
     ...(p.body ? { body: p.body } : {}),
-    ...(p.user?.avatar_url && /^https:\/\//i.test(p.user.avatar_url) ? { authorAvatar: p.user.avatar_url } : {})
+    ...(p.user?.avatar_url && /^https:\/\//i.test(p.user.avatar_url) ? { authorAvatar: p.user.avatar_url } : {}),
+    // A size of all zeroes is what a server that does not compute it sends: unknown, not empty.
+    ...(typeof p.additions === 'number' && typeof p.deletions === 'number' && p.changed_files
+      ? { additions: p.additions, deletions: p.deletions, changedFiles: p.changed_files }
+      : {}),
+    ...(typeof p.comments === 'number' ? { commentCount: p.comments } : {})
   }
 }
 
@@ -576,7 +587,16 @@ export async function forgejoPullDetail(
     comments: comments.map(mapForgejoComment),
     reviews: reviews.flatMap((rv) => {
       const state = mapForgejoReviewState(rv)
-      return state ? [{ author: rv.user?.login ?? 'unknown', state }] : []
+      return state
+        ? [
+            {
+              author: rv.user?.login ?? 'unknown',
+              state,
+              ...(rv.submitted_at ? { submittedAt: rv.submitted_at } : {}),
+              ...(rv.body?.trim() ? { body: rv.body } : {})
+            }
+          ]
+        : []
     }),
     reviewThreads,
     createdAt: pr.created_at,
@@ -606,17 +626,26 @@ export async function forgejoPullChecks(base: string, owner: string, repo: strin
   const pr = await fjJson<FjPull>(`${r}/pulls/${number}`, token)
   const sha = pr.head?.sha
   if (!sha) return []
-  const st = await fjJson<{ statuses?: Array<{ context: string; status: string; target_url?: string }> }>(
-    `${r}/commits/${sha}/status`,
-    token
-  ).catch(() => ({ statuses: [] }))
-  return (st.statuses ?? []).map((s) => ({
-    name: s.context,
-    status: s.status === 'pending' ? 'in_progress' : 'completed',
-    conclusion: s.status === 'pending' ? null : s.status === 'success' ? 'success' : s.status === 'warning' ? 'neutral' : 'failure',
-    url: s.target_url ?? '',
-    ...(forgejoJobLogUrl(base, s.target_url ?? '') ? { hasLog: true } : {})
-  }))
+  const st = await fjJson<{
+    statuses?: Array<{ context: string; status: string; target_url?: string; created_at?: string; updated_at?: string }>
+  }>(`${r}/commits/${sha}/status`, token).catch(() => ({ statuses: [] }))
+  return (st.statuses ?? []).map((s) => {
+    const done = s.status !== 'pending'
+    // A status has no run times of its own: posted when the job was queued,
+    // updated when it ended — so its span counts the wait in the queue too.
+    const startedAt = isoToMs(s.created_at)
+    const finishedAt = done ? isoToMs(s.updated_at) : undefined
+    return {
+      name: s.context,
+      status: done ? 'completed' : 'in_progress',
+      conclusion: !done ? null : s.status === 'success' ? 'success' : s.status === 'warning' ? 'neutral' : 'failure',
+      url: s.target_url ?? '',
+      ...(forgejoJobLogUrl(base, s.target_url ?? '') ? { hasLog: true } : {}),
+      ...(startedAt ? { startedAt } : {}),
+      ...(finishedAt ? { finishedAt } : {}),
+      sha
+    }
+  })
 }
 
 /**

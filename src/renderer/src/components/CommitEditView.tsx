@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { AlertTriangle, Check, CircleSlash, GitMerge, Loader2, Radar, SquarePen, Upload, X } from 'lucide-react'
+import { CircleSlash, SquarePen, X } from 'lucide-react'
 import type { CommitEditInfo, CommitEditPreview, FileEntry } from '../../../shared/types'
 import { gitApi } from '../infrastructure/api'
 import { useUIStore, type CommitEditDraft, type CommitEditFileDraft, type CommitEditViewState } from '../stores/ui'
@@ -7,9 +7,11 @@ import { repoActions, useRepoStore } from '../stores/repo'
 import { useSettingsStore } from '../stores/settings'
 import { t as tNow, useT, interp } from '../i18n'
 import { emojifyGitmoji } from '../../../shared/gitmoji'
-import { guessLanguage } from '../lib/highlight'
-import { CodeEditor } from './CodeEditor'
+import { timeAgo } from '../lib/timeAgo'
+import { countUnappliedChanges, describeUnappliedChanges } from '../lib/commitEditPanel'
 import { CommitAIGenerate } from './CommitAIGenerate'
+import { CommitEditFilesCard, isFileDraftChanged } from './CommitEditFilesCard'
+import { CommitEditImpactPanel } from './CommitEditImpactPanel'
 import { CommitMessageEditor, SUMMARY_MAX_LENGTH } from './CommitMessageEditor'
 import { joinCommitMessage, splitCommitMessage } from '../lib/commitMessage'
 import { useCommitGeneration } from './useCommitGeneration'
@@ -65,7 +67,8 @@ export function CommitEditView({ repoPath, sha }: { repoPath: string; sha: strin
     return open && open.repoPath === repoPath && open.sha === sha ? open.draft : undefined
   })
   const [info, setInfo] = useState<CommitEditInfo | null>(null)
-  const [files, setFiles] = useState<FileEntry[]>([])
+  // null until the commit's own file list is in.
+  const [files, setFiles] = useState<FileEntry[] | null>(null)
   const [drafts, setDrafts] = useState<Record<string, CommitEditFileDraft>>(saved?.files ?? {})
   const [selFile, setSelFile] = useState(saved?.selFile ?? '')
   // Summary and description, edited apart like in the composer; null until the
@@ -77,6 +80,9 @@ export function CommitEditView({ repoPath, sha }: { repoPath: string; sha: strin
   const [busy, setBusy] = useState(false)
   const aiEnabled = useSettingsStore((s) => s.activeAI().enabled !== false)
   const branch = useRepoStore((s) => s.repos[repoPath]?.branches.current ?? '')
+  const upstream = useRepoStore(
+    (s) => s.repos[repoPath]?.branches.locals.find((b) => b.isCurrent)?.upstream ?? null
+  )
   const scopes = useRepoStore((s) => s.repos[repoPath]?.config?.config?.commit?.scopes) ?? NO_SCOPES
 
   useEffect(() => {
@@ -120,10 +126,19 @@ export function CommitEditView({ repoPath, sha }: { repoPath: string; sha: strin
   const edits = useMemo(() => {
     const out: Record<string, string> = {}
     for (const [path, d] of Object.entries(drafts)) {
-      if (!d.binary && !d.tooLarge && !d.missing && d.draft !== d.original) out[path] = d.draft
+      if (isFileDraftChanged(d)) out[path] = d.draft
     }
     return out
   }, [drafts])
+  const changedFiles = Object.keys(edits).length
+
+  // Files opened through "Add file": every draft the commit's own list lacks.
+  // Derived rather than stored, so a restored draft brings them back too.
+  const added = useMemo(() => {
+    if (!files) return []
+    const own = new Set(files.map((f) => f.path))
+    return Object.keys(drafts).filter((path) => !own.has(path))
+  }, [files, drafts])
 
   const summary = parts?.summary ?? ''
   const description = parts?.description ?? ''
@@ -138,7 +153,7 @@ export function CommitEditView({ repoPath, sha }: { repoPath: string; sha: strin
   const summaryMaxLength = Math.max(SUMMARY_MAX_LENGTH, loaded?.summary.length ?? 0)
   const messageChanged = info !== null && message !== null && message !== original
   // Before `info` arrives, a restored draft is the only judge of dirtiness.
-  const dirty = Object.keys(edits).length > 0 || messageChanged || (info === null && Boolean(saved?.dirty))
+  const dirty = changedFiles > 0 || messageChanged || (info === null && Boolean(saved?.dirty))
   // Ancestry is the only hard requirement — merges in the range are replayed
   // with their recorded resolutions.
   const editable = Boolean(info?.ancestor)
@@ -176,6 +191,9 @@ export function CommitEditView({ repoPath, sha }: { repoPath: string; sha: strin
   const setMessageParts = (next: MessageParts): void => {
     setParts(next)
     setPreview(null)
+  }
+  const restoreOriginalMessage = (): void => {
+    if (loaded) setMessageParts({ summary: loaded.summary, description: loaded.description })
   }
   const setSummary = (next: string): void => setMessageParts({ summary: next, description })
   const setDescription = (next: string): void => setMessageParts({ summary, description: next })
@@ -221,152 +239,116 @@ export function CommitEditView({ repoPath, sha }: { repoPath: string; sha: strin
     })
   }
 
-  const sel = drafts[selFile]
+  const unapplied = describeUnappliedChanges(countUnappliedChanges(messageChanged, changedFiles))
+  const age = info ? timeAgo(Date.parse(info.authorDate), Date.now()) : null
+  const [beforeLabel, beforeRest = ''] = t('commitEdit.before').split('{subject}')
+  const showAIRow = aiEnabled || messageChanged
 
   return (
     <div className="file-viewer commitedit-view">
-      <div className="fv-header">
+      <div className="fv-header commitedit-header">
         <span className="commitedit-title">
-          <SquarePen size={15} aria-hidden="true" />
-          <strong>{t('commitEdit.title')}</strong>
+          <SquarePen size={16} aria-hidden="true" />
+          <h1 className="commitedit-heading">{t('commitEdit.title')}</h1>
           <span className="commitedit-sha">{sha.slice(0, 7)}</span>
           <span className="commitedit-subject" title={subject}>
             {emojifyGitmoji(subject)}
           </span>
+          {info && (
+            <span className="commitedit-byline">
+              {interp(t('commitEdit.byline'), {
+                author: info.authorName,
+                age: age ? interp(t(age.key), { n: age.n }) : ''
+              })}
+            </span>
+          )}
         </span>
-        <button className="icon-btn" title={t('common.close')} onClick={closeCommitEdit}>
+        {dirty && info && <span className="commitedit-pill">{interp(t(unapplied.key), unapplied.vars)}</span>}
+        <button className="icon-btn" title={t('common.close')} aria-label={t('common.close')} onClick={closeCommitEdit}>
           <X size={15} />
         </button>
       </div>
 
-      <div className="commitedit">
-        <p className="settings-hint">{t('commitEdit.intro')}</p>
-
-        {info && !info.ancestor && (
-          <div className="commitedit-banner error">
-            <CircleSlash size={13} /> {t('commitEdit.notLinear')}
-          </div>
-        )}
-        {info && info.ancestor && info.merges > 0 && (
-          <div className="commitedit-banner">
-            <GitMerge size={13} /> {interp(t('commitEdit.mergesInRange'), { n: info.merges })}
-          </div>
-        )}
-        {info?.pushed && info.ancestor && (
-          <div className="commitedit-banner warn">
-            <Upload size={13} /> {t('commitEdit.pushedWarning')}
-          </div>
-        )}
-
-        <div className="commitedit-label-row">
-          <label className="commitedit-label" htmlFor="commitedit-summary">
-            {t('commitEdit.message')}
-          </label>
+      {info && !info.ancestor && (
+        <div className="commitedit-banner error commitedit-notlinear">
+          <CircleSlash size={13} /> {t('commitEdit.notLinear')}
         </div>
-        <div className="commitedit-message">
-          {/* Keyed on the load: the ticket field reads its key from the summary
-              once, when it mounts, and the summary only arrives with the commit. */}
-          <CommitMessageEditor
-            key={parts ? 'loaded' : 'loading'}
+      )}
+
+      <div className="commitedit-body">
+        <div className="commitedit-main">
+          <section className="commitedit-card commitedit-message-card">
+            <header className="commitedit-card-head">
+              <label htmlFor="commitedit-summary">{t('commitEdit.messageCard')}</label>
+              {messageChanged && <span className="commitedit-edited">{t('commitEdit.edited')}</span>}
+              <span className="commitedit-card-spacer" />
+              {messageChanged && (
+                <button type="button" className="commitedit-link" onClick={restoreOriginalMessage} disabled={!editable}>
+                  {t('commitEdit.backToOriginal')}
+                </button>
+              )}
+            </header>
+            <div className="commitedit-message">
+              {/* Keyed on the load: the ticket field reads its key from the summary
+                  once, when it mounts, and the summary only arrives with the commit. */}
+              <CommitMessageEditor
+                key={parts ? 'loaded' : 'loading'}
+                repoPath={repoPath}
+                branch={branch}
+                scopes={scopes}
+                summary={summary}
+                description={description}
+                setSummary={setSummary}
+                setDescription={setDescription}
+                disabled={!editable}
+                readOnly={generation.state.phase === 'generating'}
+                summaryId="commitedit-summary"
+                summaryMaxLength={summaryMaxLength}
+                afterDescription={
+                  showAIRow && (
+                    <div className="commitedit-ai-row">
+                      {aiEnabled && <CommitAIGenerate gen={generation} disabled={!editable} />}
+                      <span className="commitedit-card-spacer" />
+                      {messageChanged && loaded && (
+                        <span className="commitedit-before" title={loaded.summary}>
+                          {beforeLabel}
+                          <span className="commitedit-before-subject">{emojifyGitmoji(loaded.summary)}</span>
+                          {beforeRest}
+                        </span>
+                      )}
+                    </div>
+                  )
+                }
+              />
+            </div>
+          </section>
+
+          <CommitEditFilesCard
             repoPath={repoPath}
-            branch={branch}
-            scopes={scopes}
-            summary={summary}
-            description={description}
-            setSummary={setSummary}
-            setDescription={setDescription}
-            disabled={!editable}
-            readOnly={generation.state.phase === 'generating'}
-            summaryId="commitedit-summary"
-            summaryMaxLength={summaryMaxLength}
-            afterDescription={aiEnabled && <CommitAIGenerate gen={generation} disabled={!editable} />}
+            sha={sha}
+            files={files}
+            added={added}
+            drafts={drafts}
+            selFile={selFile}
+            editable={editable}
+            onSelectFile={(f) => void selectFile(f)}
+            onChangeDraft={setDraft}
           />
         </div>
 
-        <div className="commitedit-split">
-          <div className="commitedit-files">
-            {files.map((f) => {
-              const d = drafts[f.path]
-              const changed = d && !d.binary && !d.missing && d.draft !== d.original
-              return (
-                <div
-                  key={f.path}
-                  className={`snapshot-file-row ${selFile === f.path ? 'active' : ''}`}
-                  onClick={() => void selectFile(f)}
-                >
-                  <span className={`snapshot-file-status st-${f.status.toLowerCase()}`}>{f.status}</span>
-                  <span className="snapshot-file-path">{f.path}</span>
-                  {changed && <span className="commitedit-dot" title={t('commitEdit.modified')} />}
-                </div>
-              )
-            })}
-          </div>
-          <div className="commitedit-editor">
-            {!sel ? (
-              <p className="settings-hint commitedit-empty">{t('commitEdit.selectFile')}</p>
-            ) : sel.missing ? (
-              <p className="settings-hint commitedit-empty">{t('commitEdit.notEditable')}</p>
-            ) : sel.binary ? (
-              <p className="settings-hint commitedit-empty">{t('commitEdit.binary')}</p>
-            ) : sel.tooLarge ? (
-              <p className="settings-hint commitedit-empty">{t('commitEdit.tooLarge')}</p>
-            ) : (
-              // Keyed by file so each opens scrolled to its top, not where the last one was.
-              <CodeEditor
-                key={selFile}
-                value={sel.draft}
-                onChange={(next) => setDraft(selFile, next)}
-                lang={guessLanguage(selFile)}
-                lineNumbers
-                label={selFile}
-                disabled={!editable}
-              />
-            )}
-          </div>
-        </div>
-
-        <div className="commitedit-cascade">
-          <div className="commitedit-cascade-head">
-            <button className="btn ghost small" onClick={() => void runPreview()} disabled={!editable || !dirty || busy}>
-              {busy ? <Loader2 size={13} className="spin" /> : <Radar size={13} />} {t('commitEdit.preview')}
-            </button>
-            {info && info.ancestor && (
-              <span className="settings-hint">{interp(t('commitEdit.descendants'), { n: info.descendants })}</span>
-            )}
-            <button
-              className="btn primary small"
-              style={{ marginLeft: 'auto' }}
-              onClick={apply}
-              disabled={!editable || !dirty || busy || (preview !== null && preview.newTip === null)}
-            >
-              <SquarePen size={13} /> {t('commitEdit.apply')}
-            </button>
-          </div>
-          {preview && (
-            <div className="commitedit-steps">
-              {preview.steps.length === 0 && <p className="settings-hint">{t('commitEdit.noDescendants')}</p>}
-              {preview.steps.map((s) => (
-                <div key={s.sha} className={`commitedit-step ${s.status}`}>
-                  {s.status === 'clean' ? (
-                    <Check size={12} />
-                  ) : s.status === 'conflict' ? (
-                    <AlertTriangle size={12} />
-                  ) : (
-                    <CircleSlash size={12} />
-                  )}
-                  {s.merge && <GitMerge size={12} className="commitedit-step-merge" aria-hidden="true" />}
-                  <span className="commitedit-step-subject">{emojifyGitmoji(s.subject)}</span>
-                  {s.status === 'conflict' && (
-                    <span className="commitedit-step-files" title={s.files.join('\n')}>
-                      {interp(t('radar.conflictFiles'), { n: String(s.files.length) })}
-                    </span>
-                  )}
-                </div>
-              ))}
-              {preview.newTip === null && <p className="commitedit-banner error">{t('commitEdit.conflictHint')}</p>}
-            </div>
-          )}
-        </div>
+        <CommitEditImpactPanel
+          info={info}
+          subject={loaded?.summary || subject}
+          preview={preview}
+          messageChanged={messageChanged}
+          changedFiles={changedFiles}
+          upstream={upstream}
+          canPreview={editable && dirty && !busy}
+          canApply={editable && dirty && !busy && !(preview !== null && preview.newTip === null)}
+          busy={busy}
+          onPreview={() => void runPreview()}
+          onApply={apply}
+        />
       </div>
     </div>
   )

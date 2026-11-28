@@ -23,6 +23,7 @@ import {
 import type {
   BlameLine,
   PrFile,
+  PrCommitStats,
   DoctorCheck,
   DoctorFix,
   RepoConfig,
@@ -36,8 +37,11 @@ import type {
   BranchInfo,
   CommitBranchInfo,
   ConflictContext,
+  ConflictFileInfo,
   ConflictOpKind,
+  ConflictOverview,
   ConflictRefInfo,
+  ConflictSnapshot,
   ConflictVersions,
   FileChangeKind,
   FileEntry,
@@ -84,6 +88,7 @@ import type {
   SnapshotKind,
   TeammateRadarEntry,
   TeammateRadarResult,
+  CommitEditAbove,
   CommitEditInfo,
   CommitEditStep,
   CommitEditPreview,
@@ -136,6 +141,7 @@ import type {
   GitObject,
   GitObjectKind,
   RefObject,
+  TreeChild,
   MergeOptions,
   FsckReport,
   MaintenanceResult,
@@ -192,6 +198,14 @@ import { DiffChunkSplitter } from './diffStream'
 import { diffFileVersions } from '../shared/prFileDiff'
 import { parseMergeTreeSingle, parseMergeTreeStdin, type MergeTreeRecord } from '../shared/mergeTree'
 import { parseRangeDiff } from '../shared/rangeDiff'
+import {
+  conflictKindOf,
+  countConflictBlocks,
+  pairRenames,
+  parseMergeMsgConflicts,
+  parseUnmergedStages,
+  parseUnmergedStatus
+} from '../shared/conflictFiles'
 import { countUniqueCommits, parseBranchTrackingConfig, parseRevListParents } from '../shared/branchCleanup'
 import { branchMatches } from '../shared/repoConfig'
 import { parseForcedUpdates } from '../shared/fetchPorcelain'
@@ -302,6 +316,7 @@ const EVENT_FOR_METHOD: Record<string, ActivityEvent> = {
   stashPop: 'stashPop',
   resolveConflict: 'conflictResolved',
   conflictTakeSide: 'conflictResolved',
+  conflictResolvePaths: 'conflictResolved',
   createTag: 'tagCreate',
   cherryPick: 'cherryPick',
   revertCommit: 'revert',
@@ -1907,6 +1922,42 @@ async function probePrRef(repoPath: string, remote: string, candidates: PrRefCan
  */
 const DIFF_PREFIXES = ['--src-prefix=a/', '--dst-prefix=b/']
 
+/** A full object id, sha-1 or sha-256. */
+const GIT_OBJECT_ID = /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/
+
+/**
+ * A repo-relative path that came over IPC, as an absolute path inside the work
+ * tree — or a throw. Refuses absolute paths, `..` and `.git` segments, and
+ * NUL or line breaks (which would split an `--index-info` record). The prefix
+ * test carries the separator, so `/repo-evil` does not pass for `/repo`.
+ */
+function conflictPathInRepo(repoPath: string, path: unknown): string {
+  if (typeof path !== 'string' || !path || /[\0\r\n]/.test(path) || isAbsolute(path) || /^[A-Za-z]:/.test(path)) {
+    throw new Error(`Refusing a path outside the repository: ${String(path)}`)
+  }
+  if (path.split(/[\\/]/).some((seg) => seg === '..' || seg.toLowerCase() === '.git')) {
+    throw new Error(`Refusing a path outside the repository: ${path}`)
+  }
+  const root = resolvePath(repoPath)
+  const abs = resolvePath(root, path)
+  if (!abs.startsWith(root + sep)) throw new Error(`Refusing a path outside the repository: ${path}`)
+  return abs
+}
+
+/**
+ * A directory inside the repo can be a symlink to anywhere, which the lexical
+ * check of conflictPathInRepo cannot see: resolve the nearest existing parent
+ * of `abs` for real and refuse when it lands outside `root` (itself real).
+ */
+async function assertRealPathInside(root: string, abs: string): Promise<void> {
+  let dir = dirname(abs)
+  while (!(await lstat(dir).catch(() => null)) && dirname(dir) !== dir) dir = dirname(dir)
+  const real = await realpath(dir)
+  if (real !== root && !real.startsWith(root + sep)) {
+    throw new Error(`Refusing to write outside the repository: ${relative(root, abs)}`)
+  }
+}
+
 async function runGit(
   repoPath: string,
   args: string[],
@@ -2389,6 +2440,9 @@ async function rewriteWithEdits(
   }
 }
 
+/** Commits above an edited one listed for the side panel; the count covers the rest. */
+const COMMIT_EDIT_ABOVE_MAX = 100
+
 /**
  * What stands between `sha` and HEAD. Editing needs only ancestry — merges in
  * the range are replayed with their recorded resolutions, so they inform the
@@ -2419,6 +2473,64 @@ function gitWithStdin(repoPath: string, args: string[], input: string, extraEnv?
     child.stdin.on('error', () => undefined)
     child.stdin.end(input)
   })
+}
+
+/** How many entries a tree holds — `ls-tree` names only, counted. */
+async function countTreeEntries(repoPath: string, tree: string): Promise<number> {
+  if (!tree) return 0
+  const out = await runGit(repoPath, ['ls-tree', '-z', '--name-only', tree], undefined, 64 * 1024 * 1024).catch(() => '')
+  return out.split('\0').filter(Boolean).length
+}
+
+/** Subject line of each commit, by sha — one `log --no-walk` for the lot. */
+async function commitSubjects(repoPath: string, shas: string[]): Promise<Map<string, string>> {
+  const subjects = new Map<string, string>()
+  const wanted = shas.filter((s) => /^[0-9a-f]{40}([0-9a-f]{24})?$/i.test(s))
+  if (!wanted.length) return subjects
+  const out = await runGit(repoPath, ['log', '--no-walk=unsorted', `--format=%H${SEP}%s`, ...wanted, '--']).catch(() => '')
+  for (const line of out.split('\n')) {
+    const [sha, subject] = line.split(SEP)
+    if (sha && subject !== undefined) subjects.set(sha, subject)
+  }
+  return subjects
+}
+
+/** A tree with this many subtrees is not worth a second listing just for counts. */
+const OBJECT_SUBTREE_COUNT_LIMIT = 300
+/** Symlinks whose target is read for a tree listing; past this they show only their size. */
+const OBJECT_SYMLINK_TARGET_LIMIT = 50
+
+/**
+ * Fill in what a tree row says beside its mode: a subtree's entry count, and
+ * a symlink's target. The counts come from one more `ls-tree` over the
+ * subtrees as pathspecs — literal, so a directory named `*` means itself.
+ */
+async function describeTreeChildren(repoPath: string, tree: string, children: TreeChild[]): Promise<void> {
+  const subtrees = children.filter((c) => c.kind === 'tree')
+  if (subtrees.length && subtrees.length <= OBJECT_SUBTREE_COUNT_LIMIT) {
+    const out = await runGit(
+      repoPath,
+      ['--literal-pathspecs', 'ls-tree', '-z', '--name-only', tree, '--', ...subtrees.map((c) => `${c.name}/`)],
+      undefined,
+      64 * 1024 * 1024
+    ).catch(() => '')
+    const counts = new Map<string, number>()
+    for (const path of out.split('\0')) {
+      const slash = path.indexOf('/')
+      if (slash > 0) counts.set(path.slice(0, slash), (counts.get(path.slice(0, slash)) ?? 0) + 1)
+    }
+    for (const child of subtrees) child.count = counts.get(child.name) ?? 0
+  }
+  // A few reads at a time: a folder full of links must not spawn fifty gits at once.
+  const links = children.filter((c) => c.mode === '120000').slice(0, OBJECT_SYMLINK_TARGET_LIMIT)
+  for (let i = 0; i < links.length; i += 6) {
+    await Promise.all(
+      links.slice(i, i + 6).map(async (child) => {
+        const target = await runGit(repoPath, ['cat-file', 'blob', child.sha]).catch(() => '')
+        if (target) child.target = target.slice(0, 300)
+      })
+    )
+  }
 }
 
 /** One in-memory merge of `ref` into `base`, used to fill gaps left by a batch abort. */
@@ -3850,7 +3962,20 @@ export const gitService = {
       if (!source) source = theirs?.branch || theirs?.sha || ''
     }
 
-    return { kind, source, target, ours, theirs }
+    // The version both sides started from. A merge has a real merge base; a
+    // pick or a rebase step applies one commit's change, so its base is that
+    // commit's parent — and a revert's is the reverted commit itself.
+    const baseRev = kind === 'merge' ? null : kind === 'revert' ? 'REVERT_HEAD' : `${theirsRef}^`
+    let baseSha = ''
+    try {
+      baseSha = baseRev
+        ? (await git.raw(['rev-parse', '--short', baseRev])).trim()
+        : (await git.raw(['merge-base', 'HEAD', 'MERGE_HEAD'])).trim().slice(0, 7)
+    } catch {
+      baseSha = ''
+    }
+
+    return { kind, source, target, ours, theirs, baseSha }
   },
 
   async conflictVersions(repoPath: string, file: string): Promise<ConflictVersions> {
@@ -3887,7 +4012,13 @@ export const gitService = {
     await git.add([file])
   },
 
-  async conflictOpContinue(repoPath: string, kind: ConflictOpKind): Promise<void> {
+  async conflictOpContinue(repoPath: string, kind: ConflictOpKind, message?: string): Promise<void> {
+    // A merge, pick or revert commits whatever MERGE_MSG says, so an edited
+    // message is written there first. A rebase step keeps its commit's own.
+    if (message !== undefined && message.trim() && kind !== 'rebase') {
+      const msgPath = (await gitFor(repoPath).raw(['rev-parse', '--git-path', 'MERGE_MSG'])).trim()
+      await writeFile(isAbsolute(msgPath) ? msgPath : join(repoPath, msgPath), message.trim() + '\n', 'utf-8')
+    }
     // Suppress the commit-message editor on --continue. Pass core.editor via a
     // `-c` arg (with allowUnsafeEditor) rather than `.env()`: simple-git's
     // unsafe-operations guard scans the *entire* env object handed to `.env()`,
@@ -3907,6 +4038,131 @@ export const gitService = {
     else if (kind === 'cherry-pick') await git.raw(['cherry-pick', '--abort'])
     else if (kind === 'rebase') await git.raw(['rebase', '--abort'])
     else await git.raw(['revert', '--abort'])
+  },
+
+  /**
+   * Every unmerged path with the kind of conflict it is in and how many blocks
+   * it still holds — the conflict workspace's file strip. `listed` adds the
+   * files this step stopped on that are already resolved, so progress can say
+   * "2 of 5" rather than only what is left.
+   */
+  async conflictOverview(repoPath: string): Promise<ConflictOverview> {
+    const [statusZ, stagesZ] = await Promise.all([
+      runGit(repoPath, ['status', '--porcelain=v1', '-z', '--untracked-files=no']).catch(() => ''),
+      runGit(repoPath, ['ls-files', '-u', '-s', '-z']).catch(() => '')
+    ])
+    const files: ConflictFileInfo[] = []
+    for (const { code, path } of parseUnmergedStatus(statusZ)) {
+      const kind = conflictKindOf(code)
+      if (!kind) continue
+      let conflicts = 0
+      if (kind === 'both-modified' || kind === 'both-added') {
+        try {
+          conflicts = countConflictBlocks(await readFile(join(repoPath, path), 'utf-8'))
+        } catch {
+          conflicts = 0
+        }
+      }
+      files.push({ path, code, kind, conflicts })
+    }
+    let listed: string[] = []
+    try {
+      const msgPath = (await gitFor(repoPath).raw(['rev-parse', '--git-path', 'MERGE_MSG'])).trim()
+      const abs = isAbsolute(msgPath) ? msgPath : join(repoPath, msgPath)
+      if (existsSync(abs)) listed = parseMergeMsgConflicts(await readFile(abs, 'utf-8'))
+    } catch {
+      listed = []
+    }
+    return { files: pairRenames(files, parseUnmergedStages(stagesZ)), listed }
+  },
+
+  /**
+   * The index stages and working-tree content of some unmerged paths, so a
+   * resolution of them can be put back exactly as git left it. The content goes
+   * into the object store as a loose blob and only its sha crosses to the
+   * renderer: an undo stack holding whole lockfiles would grow by megabytes per
+   * resolution. Loose objects outlive `gc` for its prune grace (two weeks).
+   */
+  async conflictSnapshot(repoPath: string, files: string[]): Promise<ConflictSnapshot> {
+    for (const path of files) conflictPathInRepo(repoPath, path)
+    const stages = files.length ? await runGit(repoPath, ['ls-files', '-u', '-s', '-z', '--', ...files]) : ''
+    const out: ConflictSnapshot['files'] = []
+    for (const path of files) {
+      if (!(await lstat(join(repoPath, path)).catch(() => null))) {
+        out.push({ path, blob: null })
+        continue
+      }
+      // --no-filters: the bytes as they are on disk, not cleaned (eol, LFS) —
+      // restoring writes them straight back. A file that exists but cannot be
+      // hashed throws: recording it as absent would make undo delete it.
+      const blob = (await runGit(repoPath, ['hash-object', '-w', '--no-filters', '--', path])).trim()
+      out.push({ path, blob })
+    }
+    return { stages, files: out }
+  },
+
+  /**
+   * Undo a resolution: write the working-tree files back, then replace each
+   * path's index entry with the unmerged stages captured before. Mode 0 drops
+   * the resolved (stage 0) entry, which `--index-info` needs said explicitly.
+   *
+   * The snapshot crosses IPC, so nothing in it is trusted: every path must stay
+   * inside the work tree and every sha and mode must look like one, checked for
+   * all of them before the first byte is written.
+   */
+  async conflictRestore(repoPath: string, snapshot: ConflictSnapshot): Promise<void> {
+    const stages = parseUnmergedStages(snapshot.stages)
+    const writes = snapshot.files.map((f) => {
+      if (f.blob !== null && !GIT_OBJECT_ID.test(f.blob)) throw new Error(`Not a blob id: ${f.blob}`)
+      return { abs: conflictPathInRepo(repoPath, f.path), blob: f.blob }
+    })
+    for (const s of stages) {
+      conflictPathInRepo(repoPath, s.path)
+      if (!GIT_OBJECT_ID.test(s.sha) || !/^[0-7]{6}$/.test(s.mode) || s.stage < 1 || s.stage > 3) {
+        throw new Error(`Not an index entry: ${s.path}`)
+      }
+    }
+    const paths = [...new Set([...snapshot.files.map((f) => f.path), ...stages.map((s) => s.path)])]
+    const root = await realpath(resolvePath(repoPath))
+    for (const w of writes) {
+      await assertRealPathInside(root, w.abs)
+      if (w.blob === null) {
+        await rm(w.abs, { force: true })
+        continue
+      }
+      const { stdout } = await pexecFile('git', ['-C', repoPath, 'cat-file', 'blob', w.blob], {
+        env: noPromptEnv(),
+        encoding: 'buffer',
+        maxBuffer: 1024 * 1024 * 1024
+      })
+      await mkdir(dirname(w.abs), { recursive: true })
+      await writeFile(w.abs, stdout)
+    }
+    // The null id is as long as the repository's object ids: 64 in a sha256 repo.
+    const zero = '0'.repeat(stages[0]?.sha.length ?? 40)
+    const lines = [
+      ...paths.map((p) => `0 ${zero}\t${p}`),
+      ...stages.map((s) => `${s.mode} ${s.sha} ${s.stage}\t${s.path}`)
+    ]
+    await new Promise<void>((resolve, reject) => {
+      const child = spawn('git', ['-C', repoPath, 'update-index', '-z', '--index-info'], { env: noPromptEnv() })
+      let err = ''
+      child.stderr.on('data', (d: Buffer) => (err += d.toString()))
+      child.on('error', reject)
+      child.on('close', (code) => (code === 0 ? resolve() : reject(new Error(err.trim() || 'git update-index failed'))))
+      child.stdin.end(lines.map((l) => l + '\0').join(''))
+    })
+  },
+
+  /**
+   * Settle unmerged paths that have no text to merge — a file deleted on one
+   * side, a file renamed differently on both: stage `keep` as it stands in the
+   * working tree, and remove `drop` from the index and the disk.
+   */
+  async conflictResolvePaths(repoPath: string, keep: string[], drop: string[]): Promise<void> {
+    for (const path of [...keep, ...drop]) conflictPathInRepo(repoPath, path)
+    if (drop.length) await runGit(repoPath, ['rm', '-q', '-f', '--ignore-unmatch', '--', ...drop])
+    if (keep.length) await runGit(repoPath, ['add', '--', ...keep])
   },
 
   async stashes(repoPath: string): Promise<StashInfo[]> {
@@ -5315,6 +5571,41 @@ export const gitService = {
   },
 
   /**
+   * Lines added and removed, and files touched, by each of `shas` against its
+   * parent — the Commits tab's per-row numbers. Only the commits this clone
+   * holds (getLocalCommits), in one `git log` pass. A merge gets no entry: its
+   * change is against two parents. Blobs a partial clone lacks are not fetched
+   * (missing stays missing), so there the whole answer is empty rather than slow.
+   */
+  async getCommitStats(repoPath: string, shas: unknown): Promise<Record<string, PrCommitStats>> {
+    const here = await gitService.getLocalCommits(repoPath, shas)
+    if (!here.length) return {}
+    const out = await runGit(
+      repoPath,
+      ['log', '--no-walk=unsorted', '--numstat', '--no-textconv', '--no-ext-diff', '--format=%x01%H %P', ...here, '--'],
+      { GIT_NO_LAZY_FETCH: '1' },
+      32 << 20
+    ).catch(() => '')
+    const stats: Record<string, PrCommitStats> = {}
+    for (const rec of out.split('\x01')) {
+      const [head, ...rows] = rec.split('\n')
+      const [sha, ...parents] = head.trim().split(' ').filter(Boolean)
+      if (!sha || parents.length > 1) continue
+      const s: PrCommitStats = { additions: 0, deletions: 0, files: 0 }
+      for (const row of rows) {
+        // "<added>\t<removed>\t<path>", "-" for a binary file's counts.
+        const m = /^(\d+|-)\t(\d+|-)\t/.exec(row)
+        if (!m) continue
+        s.files++
+        if (m[1] !== '-') s.additions += Number(m[1])
+        if (m[2] !== '-') s.deletions += Number(m[2])
+      }
+      stats[sha.toLowerCase()] = s
+    }
+    return stats
+  },
+
+  /**
    * The files changed between two commits, each with its patch — what one
    * push to a pull request did, for its Updates tab, and a whole pull request
    * (merge base → head) for its Files tab. The two trees directly (`from to`,
@@ -6343,7 +6634,11 @@ export const gitService = {
     }
     // HEAD is a ref too, and the one people start from — for-each-ref omits it.
     const head = (await runGit(repoPath, ['rev-parse', 'HEAD']).catch(() => '')).trim()
-    if (head) refs.unshift({ name: 'HEAD', sha: head, kind: 'commit' })
+    if (head) {
+      // On a branch, HEAD is a pointer to a pointer — say which, as `HEAD → main`.
+      const symbolic = (await runGit(repoPath, ['symbolic-ref', '-q', '--short', 'HEAD']).catch(() => '')).trim()
+      refs.unshift({ name: 'HEAD', sha: head, kind: 'commit', ...(symbolic ? { symbolic } : {}) })
+    }
     return refs
   },
 
@@ -6378,6 +6673,7 @@ export const gitService = {
             size: rawSize && rawSize !== '-' ? Number(rawSize) : null
           }
         })
+      await describeTreeChildren(repoPath, sha, object.tree)
       return object
     }
 
@@ -6386,9 +6682,19 @@ export const gitService = {
     if (kind === 'commit') {
       const header = body.split('\n\n')[0] ?? ''
       const field = (key: string): string => new RegExp(`^${key} (.*)$`, 'm').exec(header)?.[1]?.trim() ?? ''
+      const tree = field('tree')
+      const parents = [...header.matchAll(/^parent (.*)$/gm)].map((m) => m[1].trim())
+      // What the "points to" cards say without opening anything: the root's
+      // entry count and each parent's subject. Two cheap reads.
+      const [treeCount, subjects] = await Promise.all([
+        countTreeEntries(repoPath, tree),
+        commitSubjects(repoPath, parents)
+      ])
       object.commit = {
-        tree: field('tree'),
-        parents: [...header.matchAll(/^parent (.*)$/gm)].map((m) => m[1].trim()),
+        tree,
+        treeCount,
+        parents,
+        parentSubjects: parents.map((p) => subjects.get(p) ?? ''),
         author: field('author'),
         committer: field('committer'),
         message: body.slice(header.length).replace(/^\n+/, '')
@@ -6399,12 +6705,16 @@ export const gitService = {
     if (kind === 'tag') {
       const header = body.split('\n\n')[0] ?? ''
       const field = (key: string): string => new RegExp(`^${key} (.*)$`, 'm').exec(header)?.[1]?.trim() ?? ''
+      const target = field('object')
+      const type = field('type')
+      const targetSubject = type === 'commit' ? ((await commitSubjects(repoPath, [target])).get(target) ?? '') : ''
       object.tag = {
-        object: field('object'),
-        type: field('type'),
+        object: target,
+        type,
         name: field('tag'),
         tagger: field('tagger'),
-        message: body.slice(header.length).replace(/^\n+/, '')
+        message: body.slice(header.length).replace(/^\n+/, ''),
+        targetSubject
       }
       return object
     }
@@ -10030,14 +10340,39 @@ export const gitService = {
     const descendants = range.ancestor
       ? Number((await runGit(repoPath, ['rev-list', '--count', `${sha}..HEAD`])).trim())
       : 0
-    const pushed = Boolean((await runGit(repoPath, ['branch', '-r', '--contains', sha]).catch(() => '')).trim())
+    // `origin/HEAD -> origin/main` is an alias, not a branch of its own.
+    const remoteBranches = (await runGit(repoPath, ['branch', '-r', '--contains', sha]).catch(() => ''))
+      .split('\n')
+      .map((l) => l.trim())
+      .filter((l) => l && !l.includes(' -> '))
+    // Exactly the set the rewrite replays: descendants of the commit that HEAD
+    // reaches. Side-branch commits in `sha..HEAD` keep their identity, so
+    // --ancestry-path leaves them out. Capped — the list is for reading.
+    const above: CommitEditAbove[] = []
+    let aboveTotal = 0
+    if (range.ancestor) {
+      const listed = await runGit(repoPath, [
+        'log', '--ancestry-path', '--topo-order', `--max-count=${COMMIT_EDIT_ABOVE_MAX}`,
+        '--format=%H%x00%P%x00%s', `${sha}..HEAD`
+      ])
+      for (const line of listed.split('\n').filter(Boolean)) {
+        const [h, p, ...s] = line.split('\x00')
+        above.push({ sha: h, subject: s.join('\x00'), merge: p.split(' ').filter(Boolean).length > 1 })
+      }
+      aboveTotal = Number(
+        (await runGit(repoPath, ['rev-list', '--count', '--ancestry-path', `${sha}..HEAD`])).trim()
+      )
+    }
     const id = await commitIdentity(repoPath, sha)
     return {
       linear: range.ancestor && range.merges === 0,
       ancestor: range.ancestor,
       merges: range.merges,
       descendants,
-      pushed,
+      pushed: remoteBranches.length > 0,
+      remoteBranches,
+      above,
+      aboveTotal,
       message: id.message,
       authorName: id.name,
       authorDate: id.date
@@ -10052,6 +10387,23 @@ export const gitService = {
     const buf = await readBlobBuffer(repoPath, `${sha}:${file}`)
     const binary = buf.subarray(0, 8192).includes(0)
     return { content: binary ? null : buf.toString('utf-8'), binary, size }
+  },
+
+  /**
+   * The files of the commit's snapshot the rewrite can take an edit to —
+   * regular blobs only, since the engine refuses symlinks and submodules. Lets
+   * an edit reach a file the commit itself did not touch.
+   */
+  async commitEditableFiles(repoPath: string, sha: string): Promise<string[]> {
+    const listing = await runGit(repoPath, ['ls-tree', '-r', '-z', sha], undefined, 256 * 1024 * 1024)
+    const out: string[] = []
+    for (const entry of listing.split('\0')) {
+      const tab = entry.indexOf('\t')
+      if (tab < 0) continue
+      const mode = entry.slice(0, entry.indexOf(' '))
+      if (mode === '100644' || mode === '100755') out.push(entry.slice(tab + 1))
+    }
+    return out
   },
 
   /** Dry-run the rewrite: same engine as apply, no ref ever moves. */
@@ -10398,6 +10750,7 @@ const APP_LEVEL_METHODS = new Set<string>(['clone', 'cancelClone', 'init', 'remo
 
 const READ_METHODS = new Set<string>([
   'getLocalCommits',
+  'getCommitStats',
   'getCommitRangeFiles',
   'getMergeBase',
   'isAncestor',
@@ -10515,6 +10868,8 @@ const READ_METHODS = new Set<string>([
   'mergeMessage',
   'conflictContext',
   'conflictVersions',
+  'conflictOverview',
+  'conflictSnapshot',
   'interactiveRebaseSteps',
   'compareBranches',
   'prComparison',
@@ -10523,6 +10878,7 @@ const READ_METHODS = new Set<string>([
   'commitEditInfo',
   'commitMenuProbe',
   'blobAtCommit',
+  'commitEditableFiles',
   'semanticDiff',
   'rangeDiff',
   'refTips',

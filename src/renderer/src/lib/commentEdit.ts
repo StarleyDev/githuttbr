@@ -39,7 +39,18 @@ export function isMyComment(
   comment: { author: string; authorId?: string; authorUniqueName?: string; handle?: PrCommentHandle },
   who: CommentViewer | null | undefined
 ): boolean {
-  if (!comment.handle || !who) return false
+  return !!comment.handle && isWrittenByViewer(comment, who)
+}
+
+/**
+ * The viewer wrote this entry — isMyComment's matching without the handle it
+ * needs to offer actions: what "N new since your last visit" leaves out.
+ */
+export function isWrittenByViewer(
+  comment: { author: string; authorId?: string; authorUniqueName?: string },
+  who: CommentViewer | null | undefined
+): boolean {
+  if (!who) return false
   // A blank name names nobody: only a real one on both sides may match.
   const author = comment.authorUniqueName?.trim()
   const viewer = who.viewerUniqueName?.trim()
