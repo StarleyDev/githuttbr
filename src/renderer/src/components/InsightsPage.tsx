@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { BarChart3, RefreshCw, GitCommit, Users, Flame, FileText } from 'lucide-react'
+import { Activity, BarChart3, RefreshCw, GitCommit, Users, Flame, FileText } from 'lucide-react'
 import { gitApi } from '../infrastructure/api'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
@@ -132,7 +132,10 @@ export function InsightsPage({ repoPath }: { repoPath: string }): React.JSX.Elem
 
             {/* ── Churn timeline ── */}
             <section className="insights-section">
-              <h2>{t('insights.weeklyChurn')}</h2>
+              <h2 className="settings-section-title">
+                <Activity size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />
+                {t('insights.weeklyChurn')}
+              </h2>
               <div className="churn-chart">
                 {data.churn.map((c) => {
                   const h = ((c.added + c.removed) / maxChurn) * 100
@@ -160,7 +163,10 @@ export function InsightsPage({ repoPath }: { repoPath: string }): React.JSX.Elem
             <div className="insights-cols">
               {/* ── Top authors ── */}
               <section className="insights-section">
-                <h2>{t('insights.topContributors')}</h2>
+                <h2 className="settings-section-title">
+                  <Users size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />
+                  {t('insights.topContributors')}
+                </h2>
                 <div className="insights-rows">
                   {data.authors.slice(0, 12).map((a, i) => (
                     <div key={a.name} className="insights-row">
@@ -183,7 +189,10 @@ export function InsightsPage({ repoPath }: { repoPath: string }): React.JSX.Elem
 
               {/* ── Hotspots ── */}
               <section className="insights-section">
-                <h2>{t('insights.hotspots')}</h2>
+                <h2 className="settings-section-title">
+                  <Flame size={13} style={{ marginRight: 6, verticalAlign: '-2px' }} />
+                  {t('insights.hotspots')}
+                </h2>
                 <div className="insights-rows">
                   {data.hotspots.map((h) => (
                     <button

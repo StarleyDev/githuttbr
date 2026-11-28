@@ -9713,8 +9713,10 @@ body.col-resizing .node-ava {
 
 /* Section titles carry the accent and a rule running to the far edge, so where
    one section ends and the next begins does not hang on reading small grey
-   capitals — it is a visible boundary, also for low vision. */
-.settings-form h4 {
+   capitals — it is a visible boundary, also for low vision. Repository settings
+   is the same kind of dialog, so its section titles take the same look. */
+.settings-form h4,
+.repo-settings-content .settings-section-title {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -9725,7 +9727,8 @@ body.col-resizing .node-ava {
   color: var(--accent);
   margin-top: 18px;
 }
-.settings-form h4::after {
+.settings-form h4::after,
+.repo-settings-content .settings-section-title::after {
   content: '';
   flex: 1;
   min-width: 24px;
@@ -10859,7 +10862,8 @@ body.col-resizing .node-ava {
 }
 /* A hint right under a section title explains what follows, so it sits as a
    line of its own with room before the control — not glued to the select. */
-.settings-form h4 + .settings-hint {
+.settings-form h4 + .settings-hint,
+.repo-settings-content .settings-section-title + .settings-hint {
   display: block;
   margin: -2px 0 8px;
 }
@@ -20783,9 +20787,8 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .repo-settings-nav-item.active { background: var(--accent-soft); color: var(--text-0); }
 .repo-settings-nav-item.active svg { color: var(--accent); }
 .repo-settings-content { flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 0; }
-.repo-settings-page-head { margin-bottom: 12px; }
-.repo-settings-page-head h4 { margin: 0 0 3px; font-size: 15px; }
-.repo-settings-page-head p { margin: 0; font-size: 12.5px; color: var(--text-2); }
+.repo-settings-page-head { margin-bottom: 12px; padding-inline-end: 6px; }
+.repo-settings-page-head .settings-section-title { margin-top: 0; }
 .repo-settings-content .repo-settings-body { padding-inline-end: 6px; }
 .repo-settings-banner {
   display: flex;
@@ -21922,13 +21925,10 @@ button.pck-chip:hover { color: var(--text-0); }
 
 .rc { display: flex; flex-direction: column; gap: 4px; }
 .rc-section { margin-top: 18px; display: flex; flex-direction: column; gap: 4px; }
-.rc-section > h4 {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0 0 2px;
-}
-.rc-head-btn { margin-inline-start: auto; }
+/* The section already spaces itself; the title adds no gap of its own. */
+.rc-section > .settings-section-title,
+.rc-section > .theme-section-header { margin: 0 0 2px; }
+.rc-section .theme-section-header .settings-section-title { margin: 0; }
 .rc-empty {
   display: flex;
   flex-direction: column;
