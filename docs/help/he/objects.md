@@ -4,6 +4,7 @@ category: מאגר והיסטוריה
 order: 16
 summary: הליכה בשכבה שמתחת לגרף — קומיטים, עצים, בלובים, תגיות וה־refs שמצביעים עליהם. שום דבר כאן אינו משנה דבר.
 keywords: אובייקטים סייר בלוב עץ קומיט תגית אינסטלציה פנימיים מסד objects object explorer blob tree commit tag ref plumbing cat-file ls-tree sha1 internals database rev-parse HEAD^{tree} loose packed
+source: 946d418d5b13af167a16a2f0d3164d813b423ab6
 ---
 
 # סייר האובייקטים

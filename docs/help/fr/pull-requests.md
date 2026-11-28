@@ -4,7 +4,7 @@ category: Synchronisation et multi-dépôts
 order: 57
 summary: Toutes les pull requests d’un dépôt sur une page — par état, filtrées par auteur, relecteur, cible et CI —, ‹ › pour parcourir la liste filtrée depuis une PR, ses commits, ses mises à jour (chaque push, ce qu’il a changé, ce qui est nouveau depuis votre dernière visite), et des commentaires sur une ligne de son diff. La conversation en une seule chronologie, avec ce qui est nouveau depuis votre dernière visite.
 keywords: pull requests liste page merge requests pr mr filtre auteur relecteur les miennes en attente de ma relecture relecture demandée ci en échec branche cible brouillons fusionnées fermées recherche tri précédent suivant alt flèche navigation checkout aller à la branche source cible copier le nom de la branche fetch commentaire de ligne commentaire en ligne commentaire de relecture commentaire de diff commenter une ligne onglet fichiers revue de code line comment onglet commits liste des commits commits de la pr historique des commits ouvrir un commit copier le sha récupérer la branche de la pr éditeur markdown barre d’outils aperçu mention commits tab commit list open commit copy sha markdown editor toolbar preview mention arbre des fichiers arborescence vue arbre vue chemin fichiers vus marquer le dossier comme vu modifier supprimer modifié coquille file tree viewed files edit delete edited typo référence titre carte au survol work item AB# numéro d’issue infobulle reference title hover card issue number fork commits de la pr refs/pull head commentaires rendus images pixel espion image bloquée cliquer pour charger tâche tableau bloc rendered comments images blocked image mises à jour itérations pushs force push rebase historique réécrit versions du diff ce qui a changé depuis la dernière visite badge nouveau marquer comme vu comparer mise à jour updates iterations history rewritten diff versions what changed since last visit new badge mark as seen compare update conversation chronologie fils ouverts fil résolu a approuvé a demandé des modifications commits poussés rôle de relecteur nouveau depuis votre dernière visite comparer deux commits pastilles de type de commit ci par commit voir le diff suivant non vu filtrer non vus avec commentaires progression de la relecture modifié depuis la consultation conversation timeline open threads resolved thread approved requested changes pushed commits reviewer role new since last visit compare two commits commit type chips conventional commits ci per commit view diff next unviewed filter unviewed with comments review progress changed since viewed
-source: d91d96af92225cb74da274f8d168b07f6110b709
+source: 6c1d5afb9bb0a33fa35b74bcc119ac137da2bf22
 ---
 
 # Page des pull requests
@@ -105,16 +105,17 @@ Chaque ligne se lit de gauche à droite :
 | **Point** | La pull request a changé depuis que vous avez quitté sa page la dernière fois. Une que vous n’avez jamais ouverte n’a pas de point — il n’y a rien à comparer |
 | **#** | Le numéro — vert tant qu’elle est ouverte, gris pour un brouillon |
 | **Titre** | Le titre, son type [Conventional Commits](committing.md) en puce colorée (`feat`, `fix`, `docs`…), un badge *brouillon*. En dessous : l’auteur (omis sur les vôtres), source → cible, et **N commentaires** — ou **N nouveaux commentaires** quand d’autres en ont écrit depuis votre dernière visite |
-| **Taille** | `+48 −12 · 4 fichiers` — lignes ajoutées et retirées, fichiers touchés |
+| **Taille** | `+48 −12 · 4 fichiers` — lignes ajoutées et retirées, fichiers touchés ; `4 fichiers` seul là où l’hébergeur ne compte pas les lignes |
 | **Relecture** | Le verdict en vigueur de chaque relecteur — **✓ bruno a approuvé**, **✕ ana a demandé des modifications** — puis qui est encore sollicité, **● vous attend** en jaune. **✓ prête à fusionner** quand l’hébergeur dit que les relectures sont faites et que les vérifications n’ont pas échoué ; **aucun relecteur** quand personne n’a été sollicité ni n’a répondu |
 | **Vérifications** | Les vérifications du head — `✓ 6/6`, `✕ 1 en échec`, `● 2 en cours` ; survolez pour les comptes |
 | **Mise à jour** | Depuis quand elle a changé pour la dernière fois ; survolez pour la date |
 
 ### Ce que donne chaque hébergeur
 
-La taille, les commentaires et les verdicts ne figurent pas dans la liste de tous
-les hébergeurs, et la page n’ouvre jamais chaque pull request pour les trouver :
-ce que la liste n’apporte pas reste vide, jamais à zéro.
+La taille, les commentaires et les verdicts ne figurent pas dans la liste de
+tous les hébergeurs, et la page n’ouvre pas chaque pull request pour les trouver
+— à une exception près, ci-dessous : ce que la liste n’apporte pas reste vide,
+jamais à zéro.
 
 | Hébergeur | Taille | Commentaires | Verdicts de relecture |
 |---|---|---|---|
@@ -125,7 +126,7 @@ ce que la liste n’apporte pas reste vide, jamais à zéro.
 | **Bitbucket Cloud** | — | ✓ (le nombre seulement) | — |
 | **Forgejo** | ✓ quand le serveur le remplit | ✓ (le nombre seulement) | Qui est sollicité |
 
-**Azure DevOps : fichiers seuls.** Son API ne donne pas de nombre de lignes par pull request, la cellule n’affiche donc que les fichiers, sans +/−. Cette page les lit pour les lignes qu’elle affiche — deux requêtes par pull request, quatre à la fois — et les garde jusqu’à ce que quelqu’un pousse sur cette pull request ; le rafraîchissement périodique de la barre latérale ne les lit jamais. Un nombre illisible laisse la cellule vide, sans erreur.
+**Azure DevOps : fichiers seuls.** Son API ne donne pas de nombre de lignes par pull request — il faudrait le diff de chaque fichier —, la cellule affiche donc `4 fichiers`, sans +/−. Sa liste ne donne pas non plus le nombre de fichiers, cette page le lit donc elle-même, pour les lignes ouvertes et brouillons qu’elle affiche — les fusionnées et les fermées restent vides, car une liste complète coûterait des centaines de requêtes pour un chiffre qui ne sert à aucune relecture : deux requêtes par pull request (ses itérations, puis les changements de la dernière — le même nombre que son onglet Fichiers), quatre à la fois. Ils sont gardés jusqu’à ce que quelqu’un pousse sur cette pull request, si bien qu’un rafraîchissement ou un retour sur la page ne demande que celles qui ont bougé. Le rafraîchissement périodique de la barre latérale ne les lit jamais. Un nombre illisible — pas de permission, un serveur qui limite les requêtes — laisse la cellule vide, sans erreur ; une pull request de plus de 20 000 changements n’est pas comptée.
 
 Le nombre de commentaires est celui de la conversation — les commentaires sur une
 ligne du diff n’y sont pas. Sans jeton, la requête GitHub est sautée, et ces

@@ -4,6 +4,7 @@ category: Repositório e histórico
 order: 16
 summary: Caminhe pela camada abaixo do grafo — commits, trees, blobs, tags e as refs que apontam para eles. Nada aqui muda nada.
 keywords: objetos objects explorador de objetos blob tree commit tag ref plumbing cat-file ls-tree sha1 internals banco de dados rev-parse HEAD^{tree} loose packed
+source: 946d418d5b13af167a16a2f0d3164d813b423ab6
 ---
 
 # Explorador de objetos

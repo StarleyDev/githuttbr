@@ -4,7 +4,7 @@ category: Synchroniseren & meerdere repo's
 order: 57
 summary: Alle pull requests van een repository op één pagina — per status, gefilterd op auteur, reviewer, doel en CI —, ‹ › om vanuit een PR door de gefilterde lijst te lopen, zijn commits, zijn updates (elke push, wat die veranderde, wat nieuw is sinds je laatste bezoek), en reacties op een regel van zijn diff. Het gesprek als één tijdlijn, met wat nieuw is sinds je laatste bezoek.
 keywords: pull requests lijst pagina merge requests pr mr filter auteur reviewer van mij wacht op mijn review review gevraagd ci faalt doelbranch concepten gemerged gesloten zoeken triage vorige volgende alt pijl navigatie checkout naar de bronbranch doelbranch branchnaam kopiëren fetch regelreactie inline reactie reviewreactie diffreactie reageren op regel tabblad bestanden code review line comment tabblad commits commitlijst pr-commits commitgeschiedenis commit openen sha kopiëren pr-branch ophalen markdown-editor werkbalk voorbeeld vermelding commits tab commit list open commit copy sha markdown editor toolbar preview mention bestandsboom mappenboom boomweergave padweergave bekeken bestanden map als bekeken markeren bewerken verwijderen bewerkt typfout file tree viewed files edit delete edited typo verwijzing titel hoverkaart work item AB# issuenummer tooltip reference title hover card issue number fork pr-commits refs/pull head weergegeven reacties afbeeldingen trackingpixel geblokkeerde afbeelding klik om te laden taak tabel blok rendered comments images blocked image updates iteraties pushes force push rebase geschiedenis herschreven diffversies wat is er veranderd sinds het laatste bezoek nieuw-badge markeren als gezien update vergelijken iterations history rewritten diff versions what changed since last visit new badge mark as seen compare update gesprek tijdlijn open draden opgeloste draad goedgekeurd vroeg om wijzigingen gepushte commits rol reviewer nieuw sinds je laatste bezoek twee commits vergelijken typechips ci per commit diff bekijken volgende niet bekeken filter niet bekeken met opmerkingen reviewvoortgang gewijzigd sinds bekeken conversation timeline open threads resolved thread approved requested changes pushed commits reviewer role new since last visit compare two commits commit type chips conventional commits ci per commit view diff next unviewed filter unviewed with comments review progress changed since viewed
-source: d91d96af92225cb74da274f8d168b07f6110b709
+source: 6c1d5afb9bb0a33fa35b74bcc119ac137da2bf22
 ---
 
 # Pull-requestspagina
@@ -103,7 +103,7 @@ Elke rij lees je van links naar rechts:
 | **Stip** | De pull request is veranderd sinds je zijn pagina het laatst verliet. Een die je nooit opende heeft geen stip — er is niets om mee te vergelijken |
 | **#** | Het nummer — groen zolang hij open is, grijs voor een concept |
 | **Titel** | De titel, zijn [Conventional Commits](committing.md)-type als gekleurde chip (`feat`, `fix`, `docs`…), een *concept*-badge. Eronder: de auteur (weggelaten bij je eigen), bron → doel, en **N reacties** — of **N nieuwe reacties** als anderen er sinds je laatste bezoek een paar schreven |
-| **Grootte** | `+48 −12 · 4 bestanden` — toegevoegde en verwijderde regels, aangeraakte bestanden |
+| **Grootte** | `+48 −12 · 4 bestanden` — toegevoegde en verwijderde regels, aangeraakte bestanden; alleen `4 bestanden` waar de host geen regels telt |
 | **Review** | Het geldende oordeel van elke reviewer — **✓ bruno keurde goed**, **✕ ana vroeg om wijzigingen** — en daarna wie nog gevraagd is, **● wacht op jou** in geel. **✓ klaar om te mergen** als de host zegt dat de reviews rond zijn en de checks niet faalden; **geen reviewers** als niemand gevraagd werd of antwoordde |
 | **Checks** | De checks van de head — `✓ 6/6`, `✕ 1 mislukt`, `● 2 bezig`; hover voor de aantallen |
 | **Bijgewerkt** | Hoe lang geleden de laatste wijziging was; hover voor de datum |
@@ -111,8 +111,8 @@ Elke rij lees je van links naar rechts:
 ### Wat elke host levert
 
 Grootte, reacties en oordelen staan niet in de lijst van elke host, en de pagina
-opent nooit elke pull request afzonderlijk om ze te vinden: wat de lijst niet
-meelevert blijft leeg, nooit een nul.
+opent niet elke pull request afzonderlijk om ze te vinden — op één uitzondering
+na, hieronder: wat de lijst niet meelevert blijft leeg, nooit een nul.
 
 | Host | Grootte | Reacties | Reviewoordelen |
 |---|---|---|---|
@@ -123,7 +123,7 @@ meelevert blijft leeg, nooit een nul.
 | **Bitbucket Cloud** | — | ✓ (alleen het aantal) | — |
 | **Forgejo** | ✓ als de server het invult | ✓ (alleen het aantal) | Wie gevraagd is |
 
-**Azure DevOps: alleen bestanden.** De API geeft geen regelaantallen per pull request, dus de cel toont alleen de bestanden, zonder +/−. Deze pagina leest ze voor de rijen die ze toont — twee verzoeken per pull request, vier tegelijk — en bewaart ze tot iemand naar die pull request pusht; de periodieke verversing van de zijbalk leest ze nooit. Een aantal dat niet gelezen kan worden laat de cel leeg, zonder foutmelding.
+**Azure DevOps: alleen bestanden.** De API geeft geen regelaantallen per pull request — daarvoor zou de diff van elk bestand nodig zijn —, dus de cel toont `4 bestanden`, zonder +/−. Ook de lijst bevat geen aantal bestanden, dus deze pagina leest het zelf, voor de open en concept-rijen die ze tekent — gemergede en gesloten blijven leeg, omdat een volledige lijst daarvan honderden verzoeken zou kosten voor een getal waar niemand op reviewt: twee verzoeken per pull request (de iteraties, dan de wijzigingen van de laatste — hetzelfde aantal als het tabblad Bestanden), vier tegelijk. Ze blijven bewaard tot iemand naar die pull request pusht, zodat verversen of terugkomen op de pagina alleen vraagt naar de pull requests die bewogen. De periodieke verversing van de zijbalk leest ze nooit. Een aantal dat niet gelezen kan worden — geen rechten, een server die verzoeken afknijpt — laat de cel leeg, zonder foutmelding; een pull request met meer dan 20.000 wijzigingen wordt niet geteld.
 
 Het aantal reacties is dat van het gesprek — reacties op een regel van de diff
 tellen niet mee. Zonder token wordt het GitHub-verzoek overgeslagen en blijven die

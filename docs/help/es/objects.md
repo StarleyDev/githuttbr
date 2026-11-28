@@ -4,6 +4,7 @@ category: Repositorio e historial
 order: 16
 summary: Recorre la capa que hay debajo del grafo — commits, árboles, blobs, tags y las refs que los apuntan. Aquí nada cambia nada.
 keywords: objetos objects object explorador explorer blob árbol tree commit tag etiqueta ref plumbing cat-file ls-tree sha1 internals interioridades base de datos database rev-parse HEAD^{tree} loose packed suelto empaquetado
+source: 946d418d5b13af167a16a2f0d3164d813b423ab6
 ---
 
 # Explorador de objetos

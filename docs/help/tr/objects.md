@@ -4,6 +4,7 @@ category: Depo ve geçmiş
 order: 16
 summary: Grafiğin altındaki katmanda dolaşın — commit'ler, ağaçlar, blob'lar, etiketler ve onlara işaret eden ref'ler. Burada hiçbir şey bir şeyi değiştirmez.
 keywords: nesneler objects nesne gezgini object explorer blob tree ağaç commit tag etiket ref plumbing cat-file ls-tree sha1 iç yapı internals veritabanı rev-parse HEAD^{tree} loose packed
+source: 946d418d5b13af167a16a2f0d3164d813b423ab6
 ---
 
 # Nesne gezgini

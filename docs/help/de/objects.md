@@ -4,6 +4,7 @@ category: Repository & Historie
 order: 16
 summary: Die Schicht unter dem Graphen ablaufen — Commits, Trees, Blobs, Tags und die Refs, die auf sie zeigen. Nichts hier ändert irgendetwas.
 keywords: objekte objects objekt-explorer object explorer blob tree commit tag ref plumbing cat-file ls-tree sha1 interna internals datenbank database rev-parse HEAD^{tree} lose loose gepackt packed
+source: 946d418d5b13af167a16a2f0d3164d813b423ab6
 ---
 
 # Objekt-Explorer

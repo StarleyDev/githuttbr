@@ -4,6 +4,7 @@ category: リポジトリと履歴
 order: 16
 summary: グラフの下にある層をたどる — コミット、ツリー、blob、タグ、そしてそれらを指す ref。ここでは何ひとつ変更されません。
 keywords: objects オブジェクト object explorer エクスプローラー blob ツリー tree commit コミット tag タグ ref plumbing 配管 cat-file ls-tree sha1 internals 内部構造 database データベース rev-parse HEAD^{tree} loose packed 緩いオブジェクト パック
+source: 946d418d5b13af167a16a2f0d3164d813b423ab6
 ---
 
 # オブジェクトエクスプローラー

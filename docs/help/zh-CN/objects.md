@@ -4,6 +4,7 @@ category: 仓库与历史
 order: 16
 summary: 走一遍提交图底下的那一层——提交、树、blob、标签，以及指向它们的引用。这里没有任何东西会改变任何东西。
 keywords: objects 对象 object explorer 浏览器 blob tree 树 commit 提交 tag 标签 ref 引用 plumbing 管道命令 cat-file ls-tree sha1 internals 内部 database 数据库 rev-parse HEAD^{tree} loose packed 打包
+source: 946d418d5b13af167a16a2f0d3164d813b423ab6
 ---
 
 # 对象浏览器

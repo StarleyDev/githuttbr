@@ -4,6 +4,7 @@ category: Репозиторий и история
 order: 16
 summary: Пройдитесь по слою под графом — коммиты, деревья, блобы, теги и ссылки, которые на них указывают. Здесь ничего ничего не меняет.
 keywords: объекты обозреватель объектов objects blob tree commit tag ref блоб дерево коммит тег ссылка plumbing cat-file ls-tree sha1 внутренности база объектов rev-parse HEAD^{tree} loose packed
+source: 946d418d5b13af167a16a2f0d3164d813b423ab6
 ---
 
 # Обозреватель объектов

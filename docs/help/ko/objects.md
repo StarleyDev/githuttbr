@@ -4,6 +4,7 @@ category: 저장소와 히스토리
 order: 16
 summary: 그래프 아래 계층을 걸어 다녀요 — 커밋, 트리, 블롭, 태그, 그리고 그것들을 가리키는 ref. 여기서는 아무것도 바뀌지 않아요.
 keywords: 객체 탐색기 블롭 트리 커밋 태그 참조 내부구조 데이터베이스 읽기전용 objects object explorer blob tree commit tag ref plumbing cat-file ls-tree sha1 internals database rev-parse HEAD^{tree} loose packed
+source: 946d418d5b13af167a16a2f0d3164d813b423ab6
 ---
 
 # 객체 탐색기

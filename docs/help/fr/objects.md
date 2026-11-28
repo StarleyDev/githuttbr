@@ -4,6 +4,7 @@ category: Dépôt et historique
 order: 16
 summary: Parcourir la couche sous le graphe — commits, arbres, blobs, étiquettes et les références qui pointent vers eux. Rien ici ne modifie quoi que ce soit.
 keywords: objets objects explorateur explorer blob arbre tree commit étiquette tag ref référence plomberie plumbing cat-file ls-tree sha1 internes internals base de données rev-parse HEAD^{tree} loose packed
+source: 946d418d5b13af167a16a2f0d3164d813b423ab6
 ---
 
 # Explorateur d'objets

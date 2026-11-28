@@ -4,7 +4,7 @@ category: 동기화와 여러 저장소
 order: 57
 summary: 저장소의 모든 풀 리퀘스트를 한 페이지에 — 상태별로, 작성자·리뷰어·대상·CI로 필터링하고 — PR 안에서 ‹ ›로 필터링된 목록을 넘기며, 그 커밋과 업데이트(각 푸시, 무엇을 바꿨는지, 마지막 방문 이후 새로운 것)를 보고, diff의 줄에 댓글을 답니다. 대화는 하나의 타임라인으로, 마지막 방문 이후 새 항목과 함께.
 keywords: 풀 리퀘스트 pull requests 목록 페이지 머지 리퀘스트 merge requests pr mr 필터 작성자 리뷰어 내 것 내 리뷰 대기 리뷰 요청 ci 실패 대상 브랜치 초안 병합됨 닫힘 검색 분류 이전 다음 alt 화살표 탐색 체크아웃 checkout 소스 브랜치로 이동 대상 브랜치 브랜치 이름 복사 페치 fetch 줄 댓글 인라인 댓글 리뷰 댓글 diff 댓글 줄에 댓글 달기 파일 탭 코드 리뷰 line comment 커밋 탭 커밋 목록 PR 커밋 커밋 기록 커밋 열기 SHA 복사 PR 브랜치 가져오기 Markdown 편집기 도구 모음 미리 보기 멘션 commits tab commit list open commit copy sha markdown editor toolbar preview mention 파일 트리 폴더 트리 트리 보기 경로 보기 확인한 파일 폴더를 확인함으로 표시 편집 삭제 제거 편집됨 오타 file tree viewed files edit delete edited typo 참조 제목 호버 카드 작업 항목 AB# 이슈 번호 툴팁 reference title hover card work item issue number 포크 PR 커밋 refs/pull head 렌더링된 댓글 이미지 추적 픽셀 차단된 이미지 클릭하여 불러오기 작업 표 블록 rendered comments images blocked image 업데이트 반복 푸시 강제 푸시 리베이스 기록 재작성 diff 버전 마지막 방문 이후 변경 새 항목 배지 확인함으로 표시 업데이트 비교 updates iterations pushes force push rebase history rewritten diff versions what changed since last visit new badge mark as seen compare update 대화 타임라인 열린 스레드 해결된 스레드 승인함 변경 요청함 푸시한 커밋 리뷰어 역할 마지막 방문 이후 새 항목 두 커밋 비교 커밋 타입 칩 커밋별 CI diff 보기 다음 미확인 미확인 필터 댓글 있음 리뷰 진행률 확인 후 변경됨 conversation timeline open threads resolved thread approved requested changes pushed commits reviewer role new since last visit compare two commits commit type chips conventional commits ci per commit view diff next unviewed filter unviewed with comments review progress changed since viewed
-source: d91d96af92225cb74da274f8d168b07f6110b709
+source: 6c1d5afb9bb0a33fa35b74bcc119ac137da2bf22
 ---
 
 # 풀 리퀘스트 페이지
@@ -94,15 +94,14 @@ source: d91d96af92225cb74da274f8d168b07f6110b709
 | **점** | 마지막으로 그 페이지를 떠난 뒤 풀 리퀘스트가 바뀌었습니다. 한 번도 연 적 없는 것에는 점이 없습니다 — 비교할 기준이 없으니까요 |
 | **#** | 번호 — 열려 있으면 초록색, 초안이면 회색 |
 | **제목** | 제목, [Conventional Commits](committing.md) 타입을 나타내는 색 칩(`feat`, `fix`, `docs`…), *초안* 배지. 그 아래에는 작성자(내 것이면 생략), 소스 → 대상, 그리고 **댓글 N개** — 마지막 방문 이후 다른 사람이 쓴 댓글이 있으면 **새 댓글 N개** |
-| **크기** | `+48 −12 · 파일 4개` — 추가·삭제된 줄과 바뀐 파일 수 |
+| **크기** | `+48 −12 · 파일 4개` — 추가·삭제된 줄과 바뀐 파일 수. 호스트가 줄 수를 세지 않으면 `파일 4개`만 |
 | **리뷰** | 리뷰어마다 현재 유효한 판정 — **✓ bruno 승인**, **✕ ana 변경 요청** — 이어서 아직 요청받은 사람, 노란색 **● 내 리뷰 대기 중**. 호스트가 리뷰가 끝났다고 하고 검사가 실패하지 않았으면 **✓ 머지 준비 완료**, 아무도 요청받거나 답하지 않았으면 **리뷰어 없음** |
 | **검사** | head의 검사 — `✓ 6/6`, `✕ 실패 1`, `● 실행 중 2`. 마우스를 올리면 개수 |
 | **업데이트** | 마지막으로 바뀐 지 얼마나 됐는지. 마우스를 올리면 날짜 |
 
 ### 호스트마다 주는 것
 
-크기, 댓글, 판정은 모든 호스트의 목록에 들어 있지 않으며, 페이지는 그것을 찾으려고
-풀 리퀘스트를 하나씩 열지 않습니다. 목록에 없는 것은 0이 아니라 빈칸으로 남습니다.
+크기, 댓글, 판정은 모든 호스트의 목록에 들어 있지 않으며, 페이지는 그것을 찾으려고 풀 리퀘스트를 하나씩 열지 않습니다(아래에서 설명하는 예외 하나만 빼고요). 목록에 없는 것은 0이 아니라 빈칸으로 남습니다.
 
 | 호스트 | 크기 | 댓글 | 리뷰 판정 |
 |---|---|---|---|
@@ -113,7 +112,7 @@ source: d91d96af92225cb74da274f8d168b07f6110b709
 | **Bitbucket Cloud** | — | ✓ (개수만) | — |
 | **Forgejo** | ✓ 서버가 채워 줄 때 | ✓ (개수만) | 누가 요청받았는지 |
 
-**Azure DevOps: 파일 수만.** API가 풀 리퀘스트별 줄 수를 제공하지 않으므로 셀에는 +/− 없이 파일 수만 표시됩니다. 이 페이지가 표시하는 행에 대해 읽고(풀 리퀘스트마다 요청 2개, 한 번에 4개까지) 누군가 그 풀 리퀘스트에 푸시할 때까지 보관합니다. 사이드바의 주기적 새로 고침은 이것을 읽지 않습니다. 읽지 못한 수는 오류 없이 빈칸으로 남습니다.
+**Azure DevOps: 파일 수만.** API가 풀 리퀘스트별 줄 수를 제공하지 않으므로(모든 파일의 diff가 필요하기 때문에) 셀에는 +/− 없이 `파일 4개`로 표시됩니다. 목록에도 파일 수가 없어서 이 페이지가 직접 읽는데, 화면에 그리는 열림과 초안 행만 읽습니다. 병합됨과 닫힘 행은 빈칸으로 남습니다. 그 목록 전체를 읽으면 아무도 리뷰에 쓰지 않는 숫자 하나에 수백 개의 요청이 들기 때문입니다. 풀 리퀘스트마다 요청 2개(반복 목록, 그다음 마지막 반복의 변경 — 파일 탭과 같은 수)이며, 한 번에 4개까지 보냅니다. 누군가 그 풀 리퀘스트에 푸시할 때까지 보관하므로, 새로 고치거나 페이지로 돌아오면 바뀐 것만 다시 묻습니다. 사이드바의 주기적 새로 고침은 이것을 읽지 않습니다. 읽지 못한 수(권한 없음, 요청을 제한하는 서버)는 오류 없이 빈칸으로 남고, 변경이 20,000개를 넘는 풀 리퀘스트는 세지 않습니다.
 
 댓글 수는 대화의 댓글입니다 — diff의 줄에 단 댓글은 포함되지 않습니다. 토큰이
 없으면 GitHub 요청을 건너뛰고, 그 열들은 비어 있습니다.
