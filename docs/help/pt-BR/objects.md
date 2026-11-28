@@ -16,7 +16,7 @@ dado a ele por uma tree, a porcelana deixa de ser mágica.
 `⌘K` → **Explorador de objetos**. Nada nesta página consegue mudar um byte — toda
 chamada por trás dela é uma leitura.
 
-![Os campos de um commit, com a tree e os pais como links, ao lado da lista de refs](../../screenshots/objects.webp)
+![O commit para o qual main aponta: o caminho desde a branch, para onde ele aponta e onde um commit fica no modelo](../../screenshots/objects.webp)
 
 ## Os quatro objetos
 
@@ -38,21 +38,56 @@ contendo um sha. É nisso que consiste todo o "criar branch é barato".
 
 ## Caminhando
 
-A coluna da esquerda lista toda ref do repositório, agrupada como o git as agrupa.
-Clique numa para cair no objeto que ela nomeia.
+![Do commit até src/: pastas primeiro, cada modo explicado](../../screenshots/objects-tree.webp)
 
-Dali em diante tudo é link:
+A coluna da esquerda lista todas as refs, agrupadas como o git agrupa: HEAD
+(com `→ main` quando está numa branch), Branches, Tags e Remotas, cada grupo
+com sua contagem. Remotas começa recolhido. O marcador quadrado é uma ref para
+um commit; o redondo verde, uma tag **anotada**. O filtro estreita todos os
+grupos de uma vez. Clique numa ref para cair no objeto que ela nomeia; essa
+linha fica acesa enquanto você caminha a partir dela.
 
-- Um **commit** mostra sua `tree` e cada `parent` — clique para atravessar até o
-  instantâneo, ou para trás pelo histórico, um commit por vez.
-- Uma **tree** lista suas entradas com modo, tipo, sha e tamanho. Clique num nome
-  para abrir aquele filho.
-- Um **blob** mostra seu texto (o começo dele, para qualquer coisa grande), ou diz
-  com todas as letras quando é binário.
-- Uma **tag anotada** mostra para o que ela aponta — clique para atravessar até o
-  commit.
+Dali em diante, tudo é uma porta:
 
-**Voltar** refaz seus passos.
+- Um **commit** mostra para onde **aponta** — a árvore raiz, com quantos itens
+  ela tem, e cada pai, com seu assunto — depois autor e committer (*o mesmo que
+  o autor* quando coincidem) e a mensagem.
+- Uma **árvore** é uma tabela de nome, modo, objeto e tamanho, pastas
+  primeiro. Cada modo vem por extenso: *arquivo*, *executável*, *pasta*, *link
+  simbólico*, *submódulo*. Uma pasta diz quantos itens tem; um link, para onde
+  aponta.
+- Um **blob** mostra o texto com números de linha (só o começo, quando é
+  grande), ou diz com clareza que é binário. Quando você chega nele por uma
+  árvore, uma faixa diz como ele se chama ali — *Chamado de src/app.ts no
+  commit 07c6f3d, modo 100644 (arquivo comum)* — com um link para o histórico
+  do arquivo.
+- Uma **tag anotada** aponta para o objeto que nomeia e registra quem a criou.
+
+![Um blob, o nome que a árvore deu a ele e onde ele fica no modelo](../../screenshots/objects-blob.webp)
+
+### O caminho
+
+A faixa abaixo da caixa de revisão é o **caminho** que você percorreu:
+`branch main → commit 07c6f3d → raiz → src/ → app.ts`. A árvore de um commit é
+a **raiz**; um arquivo ou pasta recebe o nome da linha em que você clicou.
+Clique em qualquer item para voltar até ele. Digitar uma revisão, escolher uma
+ref ou um dos exemplos ao lado de **Abrir** começa um caminho novo.
+
+**Voltar** e **Avançar** percorrem tudo o que você abriu, como num navegador:
+depois de voltar, Avançar retorna, até você abrir algo novo dali. A caixa de
+revisão acompanha a caminhada, então `main:src/app.ts` está sempre lá para copiar.
+
+### Cores
+
+Cada tipo mantém uma cor onde quer que apareça — selo, item do caminho, cartão,
+linha: commit na cor de destaque do tema, árvore no amarelo, blob em azul, tag
+e ref em verde. Abaixo do cabeçalho do objeto, uma frase diz o que aquele tipo *é*.
+
+### Onde você está no modelo
+
+A faixa no pé do painel é a cadeia do git — **ref → commit → tree → blob**,
+com **tag** entre ref e commit numa tag anotada — e o tipo na tela fica aceso
+como *você está aqui*.
 
 ## Digitando uma revisão
 
@@ -84,6 +119,13 @@ de submódulo — sendo este último tudo o que um submódulo guarda.
 - **Objetos inalcançáveis continuam sendo objetos.** Cole um sha de um relatório de
   dangling do `git fsck` e ele abre, o que muitas vezes é a forma mais rápida de
   ver o que um commit perdido continha antes de decidir se vale recuperá-lo.
+- **Uma linha de submódulo não abre.** O gitlink nomeia um commit de outro
+  repositório, que este não tem.
+- **Contagens e destinos de link têm teto.** Uma árvore com mais de 300
+  subpastas lista as pastas sem a contagem de itens, e só os 50 primeiros
+  links simbólicos mostram o destino.
+- **O caminho acaba com o diálogo.** Feche-o e o próximo recomeça pela branch
+  do HEAD.
 
 Veja também: [O grafo](graph.md) · [Manutenção do repositório](maintenance.md) ·
 [Recuperação](recovery.md)

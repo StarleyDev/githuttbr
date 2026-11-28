@@ -16,7 +16,7 @@ blob *olduğunu* gördüğünüzde, üst düzey komutlar sihir olmaktan çıkar.
 `⌘K` → **Nesne gezgini**. Bu sayfadaki hiçbir şey tek bir bayt değiştiremez —
 arkasındaki her çağrı bir okumadır.
 
-![Bir commit'in alanları, ağacı ve ebeveynleri bağlantı olarak, ref listesinin yanında](../../screenshots/objects.webp)
+![main’in gösterdiği commit: daldan gelen yol, neyi gösterdiği ve bir commit’in modeldeki yeri](../../screenshots/objects.webp)
 
 ## Dört nesne
 
@@ -37,21 +37,54 @@ dosyadan ibarettir. "Dallanma ucuzdur" cümlesinin tamamı budur.
 
 ## Dolaşmak
 
-Sol sütun, depodaki her ref'i git'in grupladığı şekilde gruplayarak listeler.
-Birine tıklayın, adlandırdığı nesneye inin.
+![Commit’ten src/ klasörüne: önce klasörler, her mod açıkça yazılı](../../screenshots/objects-tree.webp)
 
-Oradan sonra her şey bir bağlantıdır:
+Sol sütun her ref’i git’in grupladığı gibi listeler: HEAD (bir daldayken
+`→ main` ile), Dallar, Etiketler ve Uzaklar; her grubun bir sayısı vardır.
+Uzaklar kapalı başlar. Kare işaret bir commit’e giden ref’tir, yuvarlak yeşil
+olan **açıklamalı** bir etiket. Filtre tüm grupları aynı anda daraltır. Bir
+ref’e tıklayınca adlandırdığı nesneye gidersiniz; oradan yürüdüğünüz sürece o
+satır vurgulu kalır.
 
-- Bir **commit** kendi `tree`'sini ve her `parent`'ını gösterir — anlık görüntüye
-  geçin ya da geçmişte commit commit geriye doğru yürüyün.
-- Bir **tree** girdilerini mod, tür, sha ve boyutla listeler. O alt öğeyi açmak
-  için bir ada tıklayın.
-- Bir **blob** metnini gösterir (büyük olanlarda baş kısmını) ya da ikili olduğunu
-  açıkça söyler.
-- Bir **açıklamalı etiket** neye işaret ettiğini gösterir — commit'e geçmek için
-  tıklayın.
+Oradan itibaren her şey bir kapıdır:
 
-**Geri** adımlarınızı geri sarar.
+- Bir **commit** neyi **gösterdiğini** gösterir — kök ağacını, kaç öğe tuttuğuyla,
+  ve her üst commit’i konusuyla — sonra yazar ve commit’leyeni (*yazarla aynı*,
+  eşleştiklerinde) ve mesajı.
+- Bir **ağaç** ad, mod, nesne ve boyut tablosudur, önce klasörler. Her mod
+  yazıyla belirtilir: *dosya*, *çalıştırılabilir*, *klasör*, *sembolik bağ*,
+  *alt modül*. Bir klasör kaç öğe tuttuğunu, bir sembolik bağ nereyi gösterdiğini söyler.
+- Bir **blob** metnini satır numaralarıyla gösterir (büyükse yalnızca başını) ya
+  da ikili olduğunu açıkça söyler. Bir ağaç üzerinden gelindiğinde bir şerit
+  orada ne ad taşıdığını söyler — *07c6f3d commit’inde src/app.ts adıyla, mod
+  100644 (normal dosya)* — ve dosyanın geçmişine bir bağlantı verir.
+- **Açıklamalı bir etiket** adlandırdığı nesneyi gösterir ve etiketleyeni kaydeder.
+
+![Bir blob, ağacının ona verdiği ad ve modeldeki yeri](../../screenshots/objects-blob.webp)
+
+### Yol
+
+Revizyon kutusunun altındaki şerit, yürüdüğünüz **yol**dur:
+`dal main → commit 07c6f3d → kök → src/ → app.ts`. Bir commit’in ağacı **kök**tür;
+bir dosya ya da klasör tıkladığınız satırın adını alır. Geri dönmek için
+herhangi bir öğeye tıklayın. Bir revizyon yazmak, bir ref ya da **Aç**
+düğmesinin yanındaki örneklerden birini seçmek yeni bir yol başlatır.
+
+**Geri** ve **İleri**, açtığınız her şeyde bir tarayıcıdaki gibi gezinir: geri
+gittikten sonra İleri sizi geri getirir, ta ki oradan yeni bir şey açana dek.
+Revizyon kutusu yürüyüşü izler; `main:src/app.ts` her zaman kopyalanmaya hazırdır.
+
+### Renkler
+
+Her tür göründüğü her yerde tek bir renk taşır — rozet, yol öğesi, kart, satır:
+commit temanın vurgu renginde, ağaç onun sarısında, blob mavide, etiket ve ref
+yeşilde. Nesnenin başlığının altında tek bir cümle o türün ne *olduğunu* söyler.
+
+### Modelde neredesiniz
+
+Bölmenin altındaki şerit git’in zinciridir — **ref → commit → tree → blob**,
+açıklamalı etikette ref ile commit arasında **tag** ile — ve ekrandaki tür
+*buradasınız* olarak yanar.
 
 ## Bir revizyon yazmak
 
@@ -84,6 +117,11 @@ Bir ağaç listesindeki mod rakamlarını bilmek işe yarar: `100644` bir dosya,
 - **Erişilemeyen nesneler de nesnedir.** Bir `git fsck` sarkan nesne raporundan
   bir sha yapıştırın, açılır; kaybolan bir commit'in ne içerdiğini kurtarmaya
   karar vermeden önce görmenin en hızlı yolu genellikle budur.
+- **Bir alt modül satırı açılmaz.** Gitlink’i başka bir deponun commit’ini
+  adlandırır; bu depoda o yoktur.
+- **Sayıların ve bağ hedeflerinin bir tavanı vardır.** 300’den fazla alt klasörü
+  olan bir ağaç bunları sayısız listeler ve yalnızca ilk 50 sembolik bağ hedefini gösterir.
+- **Yol iletişim kutusuyla biter.** Kapatın; sonraki HEAD’in dalından yeniden başlar.
 
 Ayrıca bakınız: [Grafik](graph.md) · [Depo bakımı](maintenance.md) ·
 [Kurtarma](recovery.md)

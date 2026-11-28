@@ -17,7 +17,7 @@ hört das Porzellan auf, Magie zu sein.
 `⌘K` → **Objekt-Explorer**. Nichts auf dieser Seite kann ein Byte verändern —
 jeder Aufruf dahinter ist ein Lesevorgang.
 
-![Die Felder eines Commits, mit Tree und Parents als Links, neben der Ref-Liste](../../screenshots/objects.webp)
+![Der Commit, auf den main zeigt: der Pfad ab dem Branch, worauf er zeigt und wo ein Commit im Modell steht](../../screenshots/objects.webp)
 
 ## Die vier Objekte
 
@@ -39,20 +39,55 @@ die eine SHA enthält. Das ist alles, was hinter „Branchen ist billig" steckt.
 
 ## Ablaufen
 
-Die linke Spalte listet jede Ref des Repositorys auf, gruppiert so, wie Git sie
-gruppiert. Klick eine an, um bei dem Objekt zu landen, das sie benennt.
+![Vom Commit bis src/: Ordner zuerst, jeder Modus ausgeschrieben](../../screenshots/objects-tree.webp)
 
-Von dort aus ist alles ein Link:
+Die linke Spalte listet jede Ref, gruppiert wie Git gruppiert: HEAD (mit
+`→ main`, wenn er auf einem Branch steht), Branches, Tags und Remotes, jeweils
+mit Anzahl. Remotes startet eingeklappt. Eine eckige Markierung ist eine Ref auf
+einen Commit, eine runde grüne ein **annotierter** Tag. Der Filter schränkt alle
+Gruppen zugleich ein. Ein Klick auf eine Ref öffnet das Objekt, das sie benennt;
+die Zeile bleibt hervorgehoben, solange du von ihr aus läufst.
 
-- Ein **Commit** zeigt seinen `tree` und jeden `parent` — klick dich zur
-  Momentaufnahme durch, oder rückwärts durch die Historie, Commit für Commit.
-- Ein **Tree** listet seine Einträge mit Modus, Typ, SHA und Größe. Klick auf
-  einen Namen, um dieses Kind zu öffnen.
-- Ein **Blob** zeigt seinen Text (bei allem Großen dessen Anfang) — oder sagt
-  klar, dass er binär ist.
-- Ein **annotierter Tag** zeigt, worauf er zeigt — klick dich zum Commit durch.
+Von dort ist alles eine Tür:
 
-**Zurück** geht deine Schritte wieder ab.
+- Ein **Commit** zeigt, worauf er **zeigt** — seinen Wurzel-Tree mit der Zahl
+  seiner Einträge und jeden Eltern-Commit mit Betreff —, dann Autor und
+  Committer (*wie der Autor*, wenn sie gleich sind) und die Nachricht.
+- Ein **Tree** ist eine Tabelle aus Name, Modus, Objekt und Größe, Ordner
+  zuerst. Jeder Modus ist ausgeschrieben: *Datei*, *ausführbar*, *Ordner*,
+  *Symlink*, *Submodul*. Ein Ordner nennt die Zahl seiner Einträge, ein Symlink
+  sein Ziel.
+- Ein **Blob** zeigt seinen Text mit Zeilennummern (bei Großem nur den Anfang)
+  oder sagt klar, dass er binär ist. Über einen Tree erreicht, sagt eine Leiste,
+  wie er dort heißt — *Heißt src/app.ts in Commit 07c6f3d, Modus 100644
+  (normale Datei)* — mit einem Link zum Verlauf der Datei.
+- Ein **annotierter Tag** zeigt auf das benannte Objekt und hält den Tagger fest.
+
+![Ein Blob, der Name, den sein Tree ihm gab, und sein Platz im Modell](../../screenshots/objects-blob.webp)
+
+### Der Pfad
+
+Das Band unter dem Revisionsfeld ist der gegangene **Pfad**:
+`Branch main → Commit 07c6f3d → Wurzel → src/ → app.ts`. Der Tree eines Commits
+ist die **Wurzel**; eine Datei oder ein Ordner bekommt den Namen der angeklickten
+Zeile. Ein Klick auf einen Eintrag führt dorthin zurück. Eine Revision tippen,
+eine Ref oder eines der Beispiele neben **Öffnen** wählen beginnt einen neuen Pfad.
+
+**Zurück** und **Vorwärts** gehen durch alles Geöffnete, wie im Browser: Nach
+einem Zurück führt Vorwärts wieder hin, bis du von dort etwas Neues öffnest. Das
+Revisionsfeld folgt dem Weg, `main:src/app.ts` steht also immer zum Kopieren bereit.
+
+### Farben
+
+Jede Art behält überall dieselbe Farbe — Abzeichen, Pfadeintrag, Karte, Zeile:
+Commit in der Akzentfarbe des Themes, Tree in dessen Gelb, Blob in Blau, Tag und
+Ref in Grün. Unter dem Kopf des Objekts sagt ein Satz, was diese Art *ist*.
+
+### Wo du im Modell bist
+
+Die Leiste unten im Bereich ist Gits Kette — **ref → commit → tree → blob**,
+bei einem annotierten Tag mit **tag** zwischen ref und commit —, und die
+angezeigte Art leuchtet als *du bist hier*.
 
 ## Eine Revision eintippen
 
@@ -86,6 +121,13 @@ Datei, `100755` ausführbar, `040000` ein Untertree, `120000` ein Symlink,
   Dangling-Bericht von `git fsck` ein, und sie öffnet sich — oft der schnellste
   Weg zu sehen, was ein verlorener Commit enthielt, bevor du entscheidest, ob du
   ihn zurückholst.
+- **Eine Submodul-Zeile öffnet sich nicht.** Ihr Gitlink nennt einen Commit
+  eines anderen Repositorys, den dieses nicht hat.
+- **Zählungen und Symlink-Ziele haben eine Obergrenze.** Ein Tree mit mehr als
+  300 Unterordnern listet sie ohne Anzahl, und nur die ersten 50 Symlinks
+  zeigen ihr Ziel.
+- **Der Pfad endet mit dem Dialog.** Schließ ihn, und der nächste beginnt wieder
+  beim Branch von HEAD.
 
 Siehe auch: [Der Graph](graph.md) · [Repository-Wartung](maintenance.md) ·
 [Wiederherstellung](recovery.md)
