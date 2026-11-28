@@ -12,6 +12,7 @@ import {
   getCheckStatePhrase,
   getChecksSummary,
   getLogLines,
+  getLogLineTone,
   getPlainLog,
   getRerunnableRuns,
   sortChecksByState
@@ -302,6 +303,14 @@ describe('getLogLines', () => {
     expect(lines.map((l) => l.n)).toEqual([5, 6, 7])
     expect(lines[1].spans).toEqual([{ text: 'two', style: { color: '#aa0000' } }])
     expect(lines.map((l) => l.failure)).toEqual([false, false, true])
+  })
+
+  it('tones a passed test, the closing error and the step command, whole line', () => {
+    const lines = getLogLines(`${D}Run npm test${X}\n> vitest run\n ${G}✓${X} a.test.ts\n${R}Error: Process completed${X}\n`)
+    expect(lines.map((l) => l.tone)).toEqual(['cmd', null, 'ok', 'err'])
+    expect(getLogLineTone('2026-11-20 ##[error]Bash exited with code 1')).toBe(null)
+    expect(getLogLineTone('##[error]Bash exited with code 1')).toBe('err')
+    expect(getLogLineTone('##[command]/usr/bin/bash script.sh')).toBe('cmd')
   })
 
   it('copies the log without colour codes', () => {

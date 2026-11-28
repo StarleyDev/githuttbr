@@ -6,6 +6,7 @@ import {
   CI_POLL_SLOW_MS,
   ciDot,
   ciElapsedMs,
+  ciJobStateKey,
   ciPollDelayMs,
   ciStateKey,
   formatElapsed,
@@ -61,6 +62,14 @@ describe('ciDot / ciStateKey', () => {
     expect(ciDot('completed', 'manual')).toBe('neutral')
     expect(ciStateKey('completed', 'manual')).toBe('ciRuns.stateManual')
     expect(ciStateKey('completed', null)).toBe('ciRuns.stateUnknown')
+  })
+
+  it('names a job’s state with its own lower-case keys', () => {
+    expect(ciJobStateKey('completed', 'success')).toBe('ciRuns.jobStateSuccess')
+    expect(ciJobStateKey('completed', 'failure')).toBe('ciRuns.jobStateFailure')
+    expect(ciJobStateKey('completed', 'skipped')).toBe('ciRuns.jobStateSkipped')
+    expect(ciJobStateKey('running', null)).toBe('ciRuns.jobStateRunning')
+    expect(ciJobStateKey('completed', null)).toBe('ciRuns.jobStateUnknown')
   })
 })
 

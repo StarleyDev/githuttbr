@@ -319,7 +319,7 @@ function CheckLog({ text, defaultOpen }: { text: string; defaultOpen: boolean })
       )}
       <pre>
         {lines.list.map((l) => (
-          <span key={l.n} className={`pck-log-line ${l.failure ? 'fail' : ''}`}>
+          <span key={l.n} className={`pck-log-line ${l.failure ? 'fail' : (l.tone ?? '')}`}>
             <span className="pck-log-n" style={{ minWidth: `${width}ch` }}>
               {l.n}
             </span>

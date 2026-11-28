@@ -11,6 +11,7 @@ import {
   ciDot,
   ciElapsedMs,
   ciPollDelayMs,
+  ciJobStateKey,
   ciStateKey,
   groupJobsByStage,
   hasActiveRuns,
@@ -259,7 +260,7 @@ export function CiRunsPage({ repoPath }: { repoPath: string }): React.JSX.Elemen
             )}
             {ready && list?.capabilities.dispatch && (
               <button className="ci-runs-btn" onClick={() => setDispatchOpen((v) => !v)} aria-expanded={dispatchOpen}>
-                <Play size={12} /> {t('ciRuns.runWorkflow')}
+                {t('ciRuns.runWorkflow')}
               </button>
             )}
           </header>
@@ -304,7 +305,7 @@ export function CiRunsPage({ repoPath }: { repoPath: string }): React.JSX.Elemen
                   {t('ciRuns.allBranches')}
                 </button>
                 <button
-                  className={`ci-seg-btn mono ${onlyBranch ? 'active' : ''}`}
+                  className={`ci-seg-btn ${onlyBranch ? 'active' : ''}`}
                   aria-pressed={onlyBranch}
                   onClick={() => setOnlyBranch(true)}
                   disabled={!currentBranch}
@@ -523,7 +524,7 @@ function RunCard({
             {workflowLabel && <span>{workflowLabel}</span>}
             {run.event && <span>{run.event}</span>}
             {run.actor && <span>{run.actor}</span>}
-            {run.sha && (
+            {open && run.sha && (
               <span>
                 <button className="ci-run-link mono" title={t('ciRuns.copySha')} onClick={copySha}>
                   {run.sha.slice(0, 7)}
@@ -703,7 +704,7 @@ function JobRow({
     [repoPath, remoteUrl, tokens, runId, jobId]
   )
   const hasDetail = job.steps.length > 0 || job.hasLog || !!job.url
-  const stateLine = [t(ciStateKey(job.phase, job.outcome)), elapsed !== null ? sayDuration(elapsed) : null]
+  const stateLine = [t(ciJobStateKey(job.phase, job.outcome)), elapsed !== null ? sayDuration(elapsed) : null]
     .filter(Boolean)
     .join(' · ')
 

@@ -11431,7 +11431,7 @@ input.is-invalid {
   white-space: nowrap;
 }
 .conflict-ref.src {
-  background: rgba(88, 166, 255, 0.2);
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
   color: var(--accent);
 }
 .conflict-ref.tgt {
@@ -11529,13 +11529,13 @@ input.is-invalid {
   background: rgba(63, 208, 164, 0.06);
 }
 .conflict-side.theirs pre {
-  background: rgba(88, 166, 255, 0.06);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
 }
 .conflict-side.picked pre {
   background: rgba(63, 208, 164, 0.16);
 }
 .conflict-side.theirs.picked pre {
-  background: rgba(88, 166, 255, 0.16);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
 }
 .conflict-side.rejected {
   opacity: 0.38;
@@ -11702,7 +11702,7 @@ input.is-invalid {
   color: var(--green);
 }
 .conflict-side-letter.theirs {
-  background: rgba(88, 166, 255, 0.2);
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
   color: var(--accent);
 }
 
@@ -11729,7 +11729,7 @@ input.is-invalid {
   background: rgba(63, 208, 164, 0.08);
 }
 .conflict-file.theirs .conflict-file-head {
-  background: rgba(88, 166, 255, 0.08);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
 }
 
 .conflict-file-body {
@@ -11806,7 +11806,7 @@ input.is-invalid {
 .conflict-file.theirs .conflict-code-add.on {
   color: var(--accent);
   border-color: var(--accent);
-  background: rgba(88, 166, 255, 0.16);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
 }
 
 .conflict-code-gutter {
@@ -11814,24 +11814,24 @@ input.is-invalid {
   width: 18px;
 }
 
-/* Per-chunk picker: a bare checkbox on a slim strip above the chunk. */
+/* Per-chunk picker: a bare checkbox in the gutter of the chunk's first line, between the
+   line's own + and its number. It takes no row, so Yours and Incoming stay aligned with Base. */
+.conflict-chunk {
+  position: relative;
+}
 .conflict-chunk-head {
+  position: absolute;
+  inset-inline-start: 20px;
+  top: 3px;
+  z-index: 1;
   display: flex;
-  align-items: center;
-  padding: 1px 4px;
-  margin-top: 2px;
+  line-height: 0;
 }
 .conflict-chunk-head input {
   cursor: pointer;
   margin: 0;
   width: 12px;
   height: 12px;
-}
-.conflict-file.ours .conflict-chunk-head {
-  background: rgba(63, 208, 164, 0.07);
-}
-.conflict-file.theirs .conflict-chunk-head {
-  background: rgba(88, 166, 255, 0.07);
 }
 .conflict-file.ours .conflict-chunk-head input {
   accent-color: var(--green);
@@ -11841,21 +11841,12 @@ input.is-invalid {
 }
 
 /* Chunk the navigator is parked on */
-.conflict-chunk.active .conflict-chunk-head {
-  box-shadow: inset 2px 0 0 var(--text-1);
-}
-.conflict-file.ours .conflict-chunk.active .conflict-chunk-head {
-  background: rgba(63, 208, 164, 0.2);
-}
-.conflict-file.theirs .conflict-chunk.active .conflict-chunk-head {
-  background: rgba(88, 166, 255, 0.2);
-}
 /* Picked lines keep their stronger tint (declared later, so it wins). */
 .conflict-file.ours .conflict-chunk.active .conflict-code-line.conflict {
   background: rgba(63, 208, 164, 0.15);
 }
 .conflict-file.theirs .conflict-chunk.active .conflict-code-line.conflict {
-  background: rgba(88, 166, 255, 0.15);
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
 }
 
 .conflict-code-line.conflict {
@@ -11865,7 +11856,7 @@ input.is-invalid {
   background: rgba(63, 208, 164, 0.08);
 }
 .conflict-file.theirs .conflict-code-line.conflict {
-  background: rgba(88, 166, 255, 0.08);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
 }
 .conflict-code-line.conflict.picked {
   box-shadow: inset 3px 0 0 var(--green);
@@ -11877,7 +11868,7 @@ input.is-invalid {
   background: rgba(63, 208, 164, 0.22);
 }
 .conflict-file.theirs .conflict-code-line.conflict.picked {
-  background: rgba(88, 166, 255, 0.22);
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
 }
 
 .conflict-code-no {
@@ -12008,7 +11999,7 @@ input.is-invalid {
   background: rgba(63, 208, 164, 0.12);
 }
 .conflict-output-rows .cor.theirs {
-  background: rgba(88, 166, 255, 0.12);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
 /* Hand-typed lines: neither side owns them, so give them their own subtle tint. */
 .conflict-output-rows .cor.edited {
@@ -12089,7 +12080,7 @@ input.is-invalid {
 }
 .conflict-output-gutter .cog.theirs {
   border-inline-end: 3px solid var(--accent);
-  background: rgba(88, 166, 255, 0.12);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
 .conflict-output-gutter .cog.edited {
   border-inline-end: 3px solid var(--yellow);
@@ -12366,18 +12357,19 @@ input.is-invalid {
 .conflict-file.base .conflict-file-head {
   background: var(--bg-1);
 }
-.conflict-file.base .conflict-code-line.in-hunk {
-  background: color-mix(in srgb, var(--text-2) 10%, transparent);
+/* The base has no side to tint: its conflict lines read brighter than the context around
+   them, which steps back, as in the other two panes' unchanged lines. */
+.conflict-file.base .conflict-code-line:not(.in-hunk) .conflict-code-text {
+  opacity: 0.6;
 }
-.conflict-file.base .conflict-code-line.in-hunk.active {
-  background: color-mix(in srgb, var(--text-2) 18%, transparent);
-}
-/* Where a conflict sits in the base when both sides only inserted lines. */
+/* Where a conflict sits in the base when both sides only inserted lines. It takes no
+   height, so the base's lines stay level with Yours and Incoming; the active one is drawn
+   by its shadow. */
 .conflict-base-anchor {
-  height: 2px;
+  height: 0;
 }
 .conflict-base-anchor.active {
-  background: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
 }
 
 .cw-result-label {
@@ -12455,7 +12447,7 @@ input.is-invalid {
   border-color: var(--border);
 }
 .crb-card.active {
-  box-shadow: 0 0 0 1px var(--accent);
+  border-color: var(--red);
 }
 .crb-card .crb-line {
   padding: 0 12px;
@@ -16161,6 +16153,10 @@ input[type='range']:focus-visible {
 .diff-line-extra-spacer { flex: none; }
 .prp-line-threads { display: flex; flex-direction: column; gap: 8px; }
 .prp-line-threads .prp-card { margin-bottom: 0; }
+/* In the PR's Files tab a thread spans the diff and reads as part of the review, so its
+   frame takes the accent. */
+.prp-file-diff .diff-line-extra { max-width: none; }
+.prp-file-diff .prp-line-threads .prp-card { border-color: color-mix(in srgb, var(--accent) 40%, var(--border)); }
 .prp-line-composer {
   border: 1px solid var(--accent);
   border-radius: 8px;
@@ -17321,7 +17317,7 @@ mark.find-hit.active {
 }
 .prd-actions { align-items: center; flex-wrap: wrap; gap: 6px; }
 .prd-approve { color: var(--ok, #2ea043); }
-.prd-reject { color: var(--warn, #d29922); }
+.prd-reject { color: var(--red); }
 .prd-merge { display: inline-flex; align-items: center; gap: 6px; }
 .prd-merge select {
   padding: 5px 7px; background: var(--bg-1); border: 1px solid var(--border); border-radius: 6px;
@@ -19673,6 +19669,12 @@ button.insights-row:hover { background: var(--bg-2); }
 .commitedit-banner.warn { background: color-mix(in srgb, var(--yellow, #f5a524) 14%, transparent); color: var(--yellow, #b8860b); }
 /* The composer's message tools (CommitMessageEditor), laid out as in the commit box. */
 .commitedit-message { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; }
+/* An edited message marks its title field, as the card's "edited" pill does. */
+.commitedit-message-card:has(.commitedit-edited) .commit-summary {
+  border-color: color-mix(in srgb, var(--accent, #6366f1) 45%, var(--border));
+}
+/* Here the co-author button is a bare icon next to the counter, not a framed box. */
+.commitedit-message .commit-coauthor { border-color: transparent; background: none; }
 /* The files list and the editor share the card's height; they wrap under each
    other only when the card is too narrow for both. */
 .commitedit-split { display: flex; flex-wrap: wrap; flex: 1; min-height: 0; }
@@ -19698,6 +19700,8 @@ button.insights-row:hover { background: var(--bg-2); }
 .commitedit-header .commitedit-sha { color: var(--accent, #6366f1); background: var(--bg-3); border-radius: 4px; padding: 1px 7px; }
 .commitedit-header .commitedit-subject { font-size: 13px; color: var(--text-1); }
 .commitedit-byline { font-size: 12px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+/* Punctuation, not copy: it separates the byline from the subject before it. */
+.commitedit-byline::before { content: '·'; margin-inline-end: 6px; }
 .commitedit-pill {
   flex-shrink: 0;
   padding: 2px 9px;
@@ -20915,6 +20919,12 @@ button.pck-chip:hover { color: var(--text-0); }
 .pck-log-line.fail { background: color-mix(in srgb, var(--red, #e5484d) 12%, transparent); color: var(--red, #e5484d); }
 /* The log's own dark red would vanish on the marked line: one lighter red, as the mockup has it. */
 .pck-log-line.fail .pck-log-text span { color: color-mix(in srgb, var(--red, #e5484d) 65%, var(--text-0)) !important; }
+/* Whole-line tones over the runner's own colours (see getLogLineTone). */
+.pck-log-line.ok .pck-log-text, .pck-log-line.ok .pck-log-text span { color: var(--green) !important; }
+.pck-log-line.err .pck-log-text, .pck-log-line.err .pck-log-text span {
+  color: color-mix(in srgb, var(--red, #e5484d) 65%, var(--text-0)) !important;
+}
+.pck-log-line.cmd .pck-log-text, .pck-log-line.cmd .pck-log-text span { color: var(--text-3) !important; }
 .pck-log-n { flex: none; text-align: end; color: var(--text-3); user-select: none; }
 .pck-log-text { min-width: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 .prp-tab-count.prp-tab-fail { background: color-mix(in srgb, var(--red, #e5484d) 18%, transparent); color: var(--red, #e5484d); }
@@ -22678,7 +22688,10 @@ button.pck-chip:hover { color: var(--text-0); }
   display: flex; align-items: center; gap: 10px; padding: 8px 12px; flex-wrap: wrap;
   border-bottom: 1px solid var(--border); background: var(--bg-1); font-size: 12px;
 }
-.prp-file-diff-head code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-1); }
+.prp-file-diff-head code { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-1); }
+/* The counts sit right after the path; the tools keep to the right edge. */
+.prp-file-diff-stat { flex: none; font-variant-numeric: tabular-nums; }
+.prp-file-diff-head .prp-branch-copy { margin-inline-start: auto; }
 .prp-file-diff-head .prp-side-note { margin: 0; }
 .prp-viewed-toggle { display: inline-flex; align-items: center; gap: 5px; color: var(--text-2); cursor: pointer; flex: none; }
 .prp-file-diff > :last-child { flex: 1; min-height: 0; overflow: auto; }
@@ -23158,7 +23171,6 @@ button.pck-chip:hover { color: var(--text-0); }
 .ci-runs-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .ci-seg { display: inline-flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
 .ci-seg-btn { padding: 6px 12px; border: none; background: none; color: var(--text-1); font: inherit; font-size: 12.5px; cursor: pointer; }
-.ci-seg-btn.mono { font-family: var(--font-mono, ui-monospace, monospace); font-size: 12px; }
 .ci-seg-btn:hover:not(:disabled) { color: var(--text-0); }
 .ci-seg-btn.active { background: color-mix(in srgb, var(--accent) 24%, transparent); color: var(--text-0); }
 .ci-seg-btn:disabled { opacity: 0.5; cursor: default; }
@@ -23196,9 +23208,10 @@ button.pck-chip:hover { color: var(--text-0); }
 .ci-run-link.mono { font-family: var(--font-mono, ui-monospace, monospace); }
 .ci-run-link:hover { color: var(--text-0); }
 .ci-runs-list .ci-run-state { display: inline; font-size: 12px; color: var(--text-1); }
-.ci-run-state.pass, .ci-job-state.pass { color: var(--green); }
+.ci-run-state.pass { color: var(--green); }
+/* A job reads muted next to its run's own state; only a failed one keeps the red. */
 .ci-run-state.fail, .ci-job-state.fail { color: var(--red); }
-.ci-run-state.pending, .ci-job-state.pending { color: var(--ci-pending); }
+.ci-run-state.pending { color: var(--ci-pending); }
 .ci-run-progress { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ci-pending); font-variant-numeric: tabular-nums; }
 .ci-run-bar { width: 90px; height: 5px; border-radius: 999px; background: var(--border); overflow: hidden; }
 .ci-run-bar > span { display: block; height: 100%; background: var(--ci-pending); transition: width 0.3s ease; }

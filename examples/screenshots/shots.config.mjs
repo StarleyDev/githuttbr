@@ -1457,6 +1457,8 @@ export const shots = [
     repos: ['octopus-merge'],
     drive: async (page, repos, app) => {
       await openPrTimelineShot(page, app, repos['octopus-merge'], prTimelineFake({ full: true, comments: [] }))
+      // The timeline opens on Comments, which hides the pushes — the shot shows everything.
+      await page.locator('.prt-seg button').last().click()
       await page.locator('.prt-new-divider').waitFor()
       await page.locator('.prt-push').first().waitFor()
       await page.locator('.prt-resolved').waitFor()

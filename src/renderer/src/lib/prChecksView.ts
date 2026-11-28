@@ -95,11 +95,27 @@ export function getRerunnableRuns(checks: readonly PrCheck[]): string[] {
   return [...new Set(ids)]
 }
 
+/** How a log line reads apart from its own colours: a passed test, an error, the step's command. */
+export type LogLineTone = 'ok' | 'err' | 'cmd' | null
+
 export interface LogLine {
   /** 1-based, counted from the log's real start: lines cut off the top still count. */
   n: number
   spans: AnsiSpan[]
   failure: boolean
+  tone: LogLineTone
+}
+
+/**
+ * The tone of one plain log line. A runner colours only the tick of a passed test and prints the
+ * job's closing error in a dark red; whole-line tones make the log scan the way the summary does.
+ */
+export function getLogLineTone(plain: string): LogLineTone {
+  if (/^\s*[✓✔√]\s/.test(plain)) return 'ok'
+  if (/^\s*(?:Error:|##\[error\])/.test(plain)) return 'err'
+  // GitHub Actions opens a step with `Run <command>`; Azure Pipelines marks it `##[command]`.
+  if (/^(?:Run\s|##\[command\])/.test(plain)) return 'cmd'
+  return null
 }
 
 /**
@@ -119,7 +135,10 @@ export function getLogLines(text: string, firstLine = 1): LogLine[] {
   }
   // A log ends with a newline: no empty last line for it.
   if (lines.length > 1 && lines[lines.length - 1].length === 0) lines.pop()
-  return lines.map((spans, i) => ({ n: firstLine + i, spans, failure: isFailureLine(plain[i] ?? '') }))
+  return lines.map((spans, i) => {
+    const line = plain[i] ?? ''
+    return { n: firstLine + i, spans, failure: isFailureLine(line), tone: getLogLineTone(line) }
+  })
 }
 
 /** The log as text to paste: no colour codes. */

@@ -942,7 +942,7 @@ export function ConflictResolver({
             {textEdited && <span className="settings-hint">{t('conflictWs.handEdited')}</span>}
             <span className="cw-spacer" />
             <button className="btn primary small" disabled={!allResolved || saving} onClick={() => void save()}>
-              <Check size={13} /> {interp(t('conflictWs.markResolved'), { file: fileName })}
+              {interp(t('conflictWs.markResolved'), { file: fileName })}
             </button>
           </div>
         </div>

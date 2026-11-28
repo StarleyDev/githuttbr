@@ -5,7 +5,6 @@ import {
   FilePen,
   GitPullRequestArrow,
   GitPullRequestClosed,
-  GitPullRequestDraft,
   GitMerge,
   GitBranch,
   GitCommitHorizontal,
@@ -16,16 +15,10 @@ import {
   X,
   MessageSquare,
   Clock,
-  User,
   Users,
-  UserCheck,
-  Tag,
-  Milestone,
   FileDiff,
   CircleDot,
-  CalendarDays,
   Sparkles,
-  ClipboardList,
   Copy,
   MoreHorizontal,
   Target,
@@ -699,7 +692,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
             <header className="prp-head">
               {status && (
                 <span className={`prp-state prp-${status}`}>
-                  <StatusIcon status={status} /> {t(STATUS_KEY[status])}
+                  {t(STATUS_KEY[status])}
                 </span>
               )}
               <h2>
@@ -971,14 +964,14 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                   }}
                 />
                 <div className="prp-composer-actions">
-                  <button className="btn ghost small prd-reject" onClick={() => review('REQUEST_CHANGES')} disabled={busy}>
-                    <X size={13} /> {t('prDetail.requestChanges')}
+                  <button className="btn ghost small danger prd-reject" onClick={() => review('REQUEST_CHANGES')} disabled={busy}>
+                    {t('prDetail.requestChanges')}
                   </button>
                   <button className="btn ghost small prd-approve" onClick={() => review('APPROVE')} disabled={busy}>
-                    <Check size={13} /> {t('prDetail.approve')}
+                    {t('prDetail.approve')}
                   </button>
                   <button className="btn ghost small" onClick={submitComment} disabled={busy || !comment.trim()}>
-                    <MessageSquare size={13} /> {t('prDetail.comment')}
+                    {t('prDetail.comment')}
                   </button>
                 </div>
               </section>
@@ -1036,7 +1029,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
         <aside className="prp-side">
           {pr && (
             <>
-              <Field icon={<User size={12} />} label={t('prPage.author')}>
+              <Field label={t('prPage.author')}>
                 <span className="prp-person">
                   <Avatar login={pr.author} avatars={pr.avatars} />
                   {pr.author}
@@ -1044,7 +1037,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                 {pr.createdAt && <div className="prp-side-note">{interp(t('prPage.openedOn'), { date: fmtDate(pr.createdAt) })}</div>}
               </Field>
 
-              <Field icon={<GitPullRequest size={12} />} label={t('prPage.status')}>
+              <Field label={t('prPage.status')}>
                 <div>{status && t(STATUS_KEY[status])}</div>
                 {pr.merged && pr.mergedAt && (
                   <div className="prp-side-note">
@@ -1072,7 +1065,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                 {canMerge && refused && <div className="prp-side-note prp-warn">{t('prPage.mergeRefused')}</div>}
               </Field>
 
-              <Field icon={<UserCheck size={12} />} label={t('prPage.reviewers')}>
+              <Field label={t('prPage.reviewers')}>
                 {reviewers.length === 0 ? (
                   <span className="issue-none">{t('prPage.noReviewers')}</span>
                 ) : (
@@ -1093,7 +1086,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
               </Field>
 
               {pr.assignees !== undefined && (
-                <Field icon={<User size={12} />} label={t('prPage.assignees')}>
+                <Field label={t('prPage.assignees')}>
                   {pr.assignees.length === 0 ? (
                     <span className="issue-none">{t('common.none')}</span>
                   ) : (
@@ -1110,7 +1103,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
               )}
 
               {pr.labels !== undefined && (
-                <Field icon={<Tag size={12} />} label={t('prPage.labels')}>
+                <Field label={t('prPage.labels')}>
                   {pr.labels.length === 0 ? (
                     <span className="issue-none">{t('common.none')}</span>
                   ) : (
@@ -1133,12 +1126,12 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
               )}
 
               {pr.milestone !== undefined && (
-                <Field icon={<Milestone size={12} />} label={t('prPage.milestone')}>
+                <Field label={t('prPage.milestone')}>
                   {pr.milestone ?? <span className="issue-none">{t('common.none')}</span>}
                 </Field>
               )}
 
-              <Field icon={<GitBranch size={12} />} label={t('prPage.branches')}>
+              <Field label={t('prPage.branches')}>
                 <div className="prp-branches">
                   <PrBranchName
                     name={pr.source}
@@ -1173,7 +1166,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
               </Field>
 
               {pr.workItems && pr.workItems.length > 0 && (
-                <Field icon={<ClipboardList size={12} />} label={t('prPage.workItems')}>
+                <Field label={t('prPage.workItems')}>
                   <ul className="prp-work-items">
                     {pr.workItems.map((w) => (
                       <li key={w.id}>
@@ -1190,12 +1183,12 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                 </Field>
               )}
 
-              <Field icon={<FileDiff size={12} />} label={t('prPage.changes')}>
+              <Field label={t('prPage.changes')}>
                 <ChangeSummary pr={pr} files={files} />
               </Field>
 
               {counts && checks && checks.length > 0 && (
-                <Field icon={<CircleDot size={12} />} label={t('prDetail.checks')}>
+                <Field label={t('prDetail.checks')}>
                   <button className="prp-link" onClick={() => setSection('checks')}>
                     {interp(t('prPage.checksSummary'), {
                       pass: String(counts.pass),
@@ -1206,7 +1199,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                 </Field>
               )}
 
-              <Field icon={<Users size={12} />} label={t('prPage.participants')}>
+              <Field label={t('prPage.participants')}>
                 <div className="prp-faces">
                   {people.map((p) => (
                     <Avatar key={p} login={p} avatars={pr.avatars} size={22} title={p} />
@@ -1215,7 +1208,7 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
               </Field>
 
               {pr.updatedAt && (
-                <Field icon={<CalendarDays size={12} />} label={t('prPage.activity')}>
+                <Field label={t('prPage.activity')}>
                   <div className="prp-side-note">{interp(t('prPage.openedOn'), { date: fmtDate(pr.createdAt) })}</div>
                   <div className="prp-side-note">{interp(t('prPage.updatedOn'), { date: fmtDate(pr.updatedAt) })}</div>
                 </Field>
@@ -1618,22 +1611,15 @@ function BranchGoButton({
   )
 }
 
-function Field({ icon, label, children }: { icon: React.ReactNode; label: string; children: React.ReactNode }): React.JSX.Element {
+function Field({ label, children }: { label: string; children: React.ReactNode }): React.JSX.Element {
   return (
     <div className="issue-field prp-field">
       <div className="issue-field-label">
-        {icon} {label}
+        {label}
       </div>
       <div className="issue-field-val">{children}</div>
     </div>
   )
-}
-
-function StatusIcon({ status }: { status: ReturnType<typeof prStatus> }): React.JSX.Element {
-  if (status === 'merged') return <GitMerge size={13} />
-  if (status === 'closed') return <GitPullRequestClosed size={13} />
-  if (status === 'draft') return <GitPullRequestDraft size={13} />
-  return <GitPullRequest size={13} />
 }
 
 function ReviewIcon({ state }: { state: ReviewerState }): React.JSX.Element {
@@ -1911,6 +1897,9 @@ function FilesSection({
             <>
               <div className="prp-file-diff-head">
                 <code title={file.filename}>{file.filename}</code>
+                <span className="prp-file-diff-stat">
+                  <span className="ins-add">+{file.additions}</span> <span className="ins-del">−{file.deletions}</span>
+                </span>
                 {file.previousFilename && (
                   <span className="prp-side-note">{interp(t('prPage.renamedFrom'), { path: file.previousFilename })}</span>
                 )}

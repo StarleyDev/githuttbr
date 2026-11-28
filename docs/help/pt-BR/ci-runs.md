@@ -59,15 +59,15 @@ do seu repositório local sem custo; senão, o número.
 
 | Botão | Aparece quando | O que acontece |
 |---|---|---|
-| **Reexecutar falhas** | A execução falhou ou foi cancelada | Só os jobs que não passaram rodam de novo |
+| **Rodar de novo os que falharam** | A execução falhou ou foi cancelada | Só os jobs que não passaram rodam de novo |
 | **Reexecutar** (↻) | A execução terminou, no GitHub — no cartão, ao passar o mouse | Todos os jobs rodam de novo |
 | **Abrir no navegador** | Ao passar o mouse no cartão | A execução no site do serviço |
 | **Cancelar** | A execução está na fila ou rodando | Pergunta antes: os jobs em andamento são interrompidos e o trabalho deles se perde |
-| **Executar workflow** | O serviço permite iniciar à mão | Escolha o workflow e uma branch; ele começa como se a branch tivesse recebido push, e aparece na lista em alguns segundos |
+| **Rodar workflow** | O serviço permite iniciar à mão | Escolha o workflow e uma branch; ele começa como se a branch tivesse recebido push, e aparece na lista em alguns segundos |
 
 O que cada serviço permite:
 
-| Serviço | Lista e jobs | Passos | Log | Reexecutar tudo | Reexecutar falhas | Cancelar | Iniciar à mão |
+| Serviço | Lista e jobs | Passos | Log | Reexecutar tudo | Rodar de novo os que falharam | Cancelar | Iniciar à mão |
 |---|---|---|---|---|---|---|---|
 | **GitHub** (e Enterprise Server) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ — o workflow precisa do gatilho `workflow_dispatch` |
 | **GitLab** (e self-managed) | ✓ — pipelines, jobs por estágio | — | ✓ | — | ✓ (*Retry*) | ✓ | ✓ — roda o `.gitlab-ci.yml` na branch |
