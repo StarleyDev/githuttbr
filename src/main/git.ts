@@ -1921,6 +1921,42 @@ async function probePrRef(repoPath: string, remote: string, candidates: PrRefCan
  */
 const DIFF_PREFIXES = ['--src-prefix=a/', '--dst-prefix=b/']
 
+/** A full object id, sha-1 or sha-256. */
+const GIT_OBJECT_ID = /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/
+
+/**
+ * A repo-relative path that came over IPC, as an absolute path inside the work
+ * tree — or a throw. Refuses absolute paths, `..` and `.git` segments, and
+ * NUL or line breaks (which would split an `--index-info` record). The prefix
+ * test carries the separator, so `/repo-evil` does not pass for `/repo`.
+ */
+function conflictPathInRepo(repoPath: string, path: unknown): string {
+  if (typeof path !== 'string' || !path || /[\0\r\n]/.test(path) || isAbsolute(path) || /^[A-Za-z]:/.test(path)) {
+    throw new Error(`Refusing a path outside the repository: ${String(path)}`)
+  }
+  if (path.split(/[\\/]/).some((seg) => seg === '..' || seg.toLowerCase() === '.git')) {
+    throw new Error(`Refusing a path outside the repository: ${path}`)
+  }
+  const root = resolvePath(repoPath)
+  const abs = resolvePath(root, path)
+  if (!abs.startsWith(root + sep)) throw new Error(`Refusing a path outside the repository: ${path}`)
+  return abs
+}
+
+/**
+ * A directory inside the repo can be a symlink to anywhere, which the lexical
+ * check of conflictPathInRepo cannot see: resolve the nearest existing parent
+ * of `abs` for real and refuse when it lands outside `root` (itself real).
+ */
+async function assertRealPathInside(root: string, abs: string): Promise<void> {
+  let dir = dirname(abs)
+  while (!(await lstat(dir).catch(() => null)) && dirname(dir) !== dir) dir = dirname(dir)
+  const real = await realpath(dir)
+  if (real !== root && !real.startsWith(root + sep)) {
+    throw new Error(`Refusing to write outside the repository: ${relative(root, abs)}`)
+  }
+}
+
 async function runGit(
   repoPath: string,
   args: string[],
@@ -3981,17 +4017,27 @@ export const gitService = {
     return { files: pairRenames(files, parseUnmergedStages(stagesZ)), listed }
   },
 
-  /** The index stages and working-tree bytes of some unmerged paths, so a
-   *  resolution of them can be put back exactly as git left it. */
+  /**
+   * The index stages and working-tree content of some unmerged paths, so a
+   * resolution of them can be put back exactly as git left it. The content goes
+   * into the object store as a loose blob and only its sha crosses to the
+   * renderer: an undo stack holding whole lockfiles would grow by megabytes per
+   * resolution. Loose objects outlive `gc` for its prune grace (two weeks).
+   */
   async conflictSnapshot(repoPath: string, files: string[]): Promise<ConflictSnapshot> {
+    for (const path of files) conflictPathInRepo(repoPath, path)
     const stages = files.length ? await runGit(repoPath, ['ls-files', '-u', '-s', '-z', '--', ...files]) : ''
     const out: ConflictSnapshot['files'] = []
     for (const path of files) {
-      try {
-        out.push({ path, base64: (await readFile(join(repoPath, path))).toString('base64') })
-      } catch {
-        out.push({ path, base64: null })
+      if (!(await lstat(join(repoPath, path)).catch(() => null))) {
+        out.push({ path, blob: null })
+        continue
       }
+      // --no-filters: the bytes as they are on disk, not cleaned (eol, LFS) —
+      // restoring writes them straight back. A file that exists but cannot be
+      // hashed throws: recording it as absent would make undo delete it.
+      const blob = (await runGit(repoPath, ['hash-object', '-w', '--no-filters', '--', path])).trim()
+      out.push({ path, blob })
     }
     return { stages, files: out }
   },
@@ -4000,17 +4046,38 @@ export const gitService = {
    * Undo a resolution: write the working-tree files back, then replace each
    * path's index entry with the unmerged stages captured before. Mode 0 drops
    * the resolved (stage 0) entry, which `--index-info` needs said explicitly.
+   *
+   * The snapshot crosses IPC, so nothing in it is trusted: every path must stay
+   * inside the work tree and every sha and mode must look like one, checked for
+   * all of them before the first byte is written.
    */
   async conflictRestore(repoPath: string, snapshot: ConflictSnapshot): Promise<void> {
     const stages = parseUnmergedStages(snapshot.stages)
-    const paths = [...new Set([...snapshot.files.map((f) => f.path), ...stages.map((s) => s.path)])]
-    for (const f of snapshot.files) {
-      const abs = join(repoPath, f.path)
-      if (f.base64 === null) await rm(abs, { force: true })
-      else {
-        await mkdir(dirname(abs), { recursive: true })
-        await writeFile(abs, Buffer.from(f.base64, 'base64'))
+    const writes = snapshot.files.map((f) => {
+      if (f.blob !== null && !GIT_OBJECT_ID.test(f.blob)) throw new Error(`Not a blob id: ${f.blob}`)
+      return { abs: conflictPathInRepo(repoPath, f.path), blob: f.blob }
+    })
+    for (const s of stages) {
+      conflictPathInRepo(repoPath, s.path)
+      if (!GIT_OBJECT_ID.test(s.sha) || !/^[0-7]{6}$/.test(s.mode) || s.stage < 1 || s.stage > 3) {
+        throw new Error(`Not an index entry: ${s.path}`)
       }
+    }
+    const paths = [...new Set([...snapshot.files.map((f) => f.path), ...stages.map((s) => s.path)])]
+    const root = await realpath(resolvePath(repoPath))
+    for (const w of writes) {
+      await assertRealPathInside(root, w.abs)
+      if (w.blob === null) {
+        await rm(w.abs, { force: true })
+        continue
+      }
+      const { stdout } = await pexecFile('git', ['-C', repoPath, 'cat-file', 'blob', w.blob], {
+        env: noPromptEnv(),
+        encoding: 'buffer',
+        maxBuffer: 1024 * 1024 * 1024
+      })
+      await mkdir(dirname(w.abs), { recursive: true })
+      await writeFile(w.abs, stdout)
     }
     const zero = '0'.repeat(40)
     const lines = [
@@ -4033,6 +4100,7 @@ export const gitService = {
    * working tree, and remove `drop` from the index and the disk.
    */
   async conflictResolvePaths(repoPath: string, keep: string[], drop: string[]): Promise<void> {
+    for (const path of [...keep, ...drop]) conflictPathInRepo(repoPath, path)
     if (drop.length) await runGit(repoPath, ['rm', '-q', '-f', '--ignore-unmatch', '--', ...drop])
     if (keep.length) await runGit(repoPath, ['add', '--', ...keep])
   },

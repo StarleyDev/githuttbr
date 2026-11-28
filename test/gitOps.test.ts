@@ -1,6 +1,6 @@
 import { describe, it, expect, afterAll } from 'vitest'
-import { readFileSync, writeFileSync, existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs'
-import { join } from 'node:path'
+import { readFileSync, writeFileSync, existsSync, mkdirSync, mkdtempSync, rmSync, readdirSync, symlinkSync } from 'node:fs'
+import { dirname, join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { gitMethodIsRead, gitService } from '../src/main/git'
 import { prepareRepoFileActions } from '../src/main/repoFileActions'
@@ -135,6 +135,83 @@ describe('conflict workspace: overview, path resolutions and undo', () => {
     expect(readFileSync(join(R, 'app.js'), 'utf8')).toBe(original)
     const info = (await gitService.conflictOverview(R)).files.find((f) => f.path === 'app.js')
     expect(info).toMatchObject({ code: 'UU', conflicts: 1 })
+  })
+
+  it('keeps only a blob sha in the snapshot, and restores a large file byte for byte', async () => {
+    const R = cloneFixture('merge-conflict')
+    await expect(gitService.merge(R, 'feature')).rejects.toThrow()
+    // 6 MB of non-text bytes, CR LF included, standing in for a big lockfile.
+    const big = Buffer.alloc(6 * 1024 * 1024)
+    for (let i = 0; i < big.length; i++) big[i] = (i * 31 + (i >> 9)) & 0xff
+    writeFileSync(join(R, 'app.js'), big)
+    const before = await gitService.conflictSnapshot(R, ['app.js'])
+    expect(JSON.stringify(before).length).toBeLessThan(2048)
+    expect(before.files[0].blob).toMatch(/^[0-9a-f]{40}$/)
+    await gitService.resolveConflict(R, 'app.js', 'resolved\n')
+    await gitService.conflictRestore(R, before)
+    expect(readFileSync(join(R, 'app.js')).equals(big)).toBe(true)
+    expect((await gitService.conflictOverview(R)).files.find((f) => f.path === 'app.js')?.code).toBe('UU')
+  })
+
+  it('refuses a snapshot or a resolution that reaches outside the repository', async () => {
+    const R = cloneFixture('merge-conflict')
+    await expect(gitService.merge(R, 'feature')).rejects.toThrow()
+    const outside = mkdtempSync(join(tmpdir(), 'githuttbr-outside-'))
+    const victim = join(outside, 'victim.txt')
+    writeFileSync(victim, 'keep me\n')
+    // A sibling whose name starts with the repo's: a bare prefix test lets it through.
+    const sibling = `${R}-evil`
+    mkdirSync(sibling, { recursive: true })
+    const sha = execFileSync('git', ['-C', R, 'hash-object', '-w', '--stdin'], { input: 'pwned\n' })
+      .toString()
+      .trim()
+    const valid = await gitService.conflictSnapshot(R, ['app.js'])
+    const escapes = [
+      '../escape.txt',
+      'a/../../escape.txt',
+      victim,
+      `${sibling}/owned.txt`,
+      '.git/hooks/pre-commit',
+      'ok\nname.txt'
+    ]
+    for (const path of escapes) {
+      await expect(
+        gitService.conflictRestore(R, { stages: valid.stages, files: [{ path, blob: sha }] })
+      ).rejects.toThrow(/outside the repository/)
+      await expect(
+        gitService.conflictRestore(R, { stages: '', files: [{ path, blob: null }] })
+      ).rejects.toThrow(/outside the repository/)
+      await expect(gitService.conflictResolvePaths(R, [path], [])).rejects.toThrow(/outside the repository/)
+      await expect(gitService.conflictResolvePaths(R, [], [path])).rejects.toThrow(/outside the repository/)
+      await expect(gitService.conflictSnapshot(R, [path])).rejects.toThrow(/outside the repository/)
+    }
+    // An index line with an escaping path is refused before any file is written.
+    const evilStages = `100644 ${sha} 1\t../escape.txt\0`
+    await expect(
+      gitService.conflictRestore(R, { stages: evilStages, files: [{ path: 'app.js', blob: sha }] })
+    ).rejects.toThrow(/outside the repository/)
+    // A blob id that is not one is refused too.
+    await expect(
+      gitService.conflictRestore(R, { stages: '', files: [{ path: 'app.js', blob: 'HEAD:app.js' }] })
+    ).rejects.toThrow(/Not a blob id/)
+    // A directory in the repo that is a symlink out of it.
+    symlinkSync(outside, join(R, 'linked'))
+    await expect(
+      gitService.conflictRestore(R, { stages: '', files: [{ path: 'linked/victim.txt', blob: sha }] })
+    ).rejects.toThrow(/outside the repository/)
+    await expect(
+      gitService.conflictRestore(R, { stages: '', files: [{ path: 'linked/victim.txt', blob: null }] })
+    ).rejects.toThrow(/outside the repository/)
+
+    expect(readFileSync(victim, 'utf8')).toBe('keep me\n')
+    expect(readdirSync(outside)).toEqual(['victim.txt'])
+    expect(readdirSync(sibling)).toEqual([])
+    expect(existsSync(join(dirname(R), 'escape.txt'))).toBe(false)
+    expect(readFileSync(join(R, 'app.js'), 'utf8')).not.toContain('pwned')
+    // The conflict itself is untouched.
+    expect((await gitService.conflictOverview(R)).files.find((f) => f.path === 'app.js')?.code).toBe('UU')
+    rmSync(outside, { recursive: true, force: true })
+    rmSync(sibling, { recursive: true, force: true })
   })
 
   it('pairs a rename/rename conflict and settles it on one name', async () => {

@@ -656,12 +656,14 @@ export interface ConflictOverview {
 
 /**
  * The unmerged state of some paths, captured before resolving them so the
- * resolution can be undone: the index stages plus the working-tree bytes.
+ * resolution can be undone: the index stages plus the working-tree content.
  */
 export interface ConflictSnapshot {
   /** `git ls-files -u -s -z` output for the paths. */
   stages: string
-  files: { path: string; base64: string | null }[]
+  /** `blob` is the sha of the file's bytes, written to the object store as a
+   *  loose object; null when the file was not on disk. */
+  files: { path: string; blob: string | null }[]
 }
 
 export interface StashInfo {
