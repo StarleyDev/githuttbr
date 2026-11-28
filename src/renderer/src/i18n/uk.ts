@@ -4967,6 +4967,8 @@ export const uk: Dict = {
   'conflictWs.finishRevert': 'Завершити скасування',
   'conflictWs.reviewAgain': 'Переглянути ще раз',
   'conflictWs.undoResolved': 'Розвʼязати {file}',
+  'conflictWs.undoUnavailable': 'Це розвʼязання не можна скасувати: його стан не вдалося зберегти (наприклад, у підмодуля).',
+  'conflictWs.undoGone': 'Це розвʼязання більше не можна скасувати: очищення git (gc) видалило збережений вміст.',
   'batch.done': '{label} {done} {repoWord}',
   'batch.partial': '{label} {done}/{total} — невдалих: {failed}',
   'batch.repository': 'репозиторій',

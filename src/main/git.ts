@@ -2521,13 +2521,16 @@ async function describeTreeChildren(repoPath: string, tree: string, children: Tr
     }
     for (const child of subtrees) child.count = counts.get(child.name) ?? 0
   }
+  // A few reads at a time: a folder full of links must not spawn fifty gits at once.
   const links = children.filter((c) => c.mode === '120000').slice(0, OBJECT_SYMLINK_TARGET_LIMIT)
-  await Promise.all(
-    links.map(async (child) => {
-      const target = await runGit(repoPath, ['cat-file', 'blob', child.sha]).catch(() => '')
-      if (target) child.target = target.slice(0, 300)
-    })
-  )
+  for (let i = 0; i < links.length; i += 6) {
+    await Promise.all(
+      links.slice(i, i + 6).map(async (child) => {
+        const target = await runGit(repoPath, ['cat-file', 'blob', child.sha]).catch(() => '')
+        if (target) child.target = target.slice(0, 300)
+      })
+    )
+  }
 }
 
 /** One in-memory merge of `ref` into `base`, used to fill gaps left by a batch abort. */
@@ -4135,7 +4138,8 @@ export const gitService = {
       await mkdir(dirname(w.abs), { recursive: true })
       await writeFile(w.abs, stdout)
     }
-    const zero = '0'.repeat(40)
+    // The null id is as long as the repository's object ids: 64 in a sha256 repo.
+    const zero = '0'.repeat(stages[0]?.sha.length ?? 40)
     const lines = [
       ...paths.map((p) => `0 ${zero}\t${p}`),
       ...stages.map((s) => `${s.mode} ${s.sha} ${s.stage}\t${s.path}`)

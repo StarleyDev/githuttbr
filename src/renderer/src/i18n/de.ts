@@ -4974,6 +4974,8 @@ export const de: Dict = {
   'conflictWs.finishRevert': 'Zurücknahme abschließen',
   'conflictWs.reviewAgain': 'Noch einmal prüfen',
   'conflictWs.undoResolved': '{file} lösen',
+  'conflictWs.undoUnavailable': 'Diese Auflösung kann nicht rückgängig gemacht werden: Ihr Zustand konnte nicht gespeichert werden (z. B. ein Submodul).',
+  'conflictWs.undoGone': 'Diese Auflösung kann nicht mehr rückgängig gemacht werden: Die Bereinigung von git (gc) hat den gespeicherten Inhalt entfernt.',
   'batch.done': '{label} {done} {repoWord}',
   'batch.partial': '{label} {done}/{total} — {failed} fehlgeschlagen',
   'batch.repository': 'Repository',

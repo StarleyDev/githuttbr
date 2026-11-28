@@ -4974,6 +4974,8 @@ export const ptBR: Dict = {
   'conflictWs.finishRevert': 'Concluir o revert',
   'conflictWs.reviewAgain': 'Revisar de novo',
   'conflictWs.undoResolved': 'Resolver {file}',
+  'conflictWs.undoUnavailable': 'Esta resolução não pode ser desfeita: o estado dela não pôde ser guardado (um submódulo, por exemplo).',
+  'conflictWs.undoGone': 'Esta resolução não pode mais ser desfeita: a limpeza do git (gc) apagou o conteúdo guardado.',
   'batch.done': '{label} {done} {repoWord}',
   'batch.partial': '{label} {done}/{total} — {failed} falharam',
   'batch.repository': 'repositório',

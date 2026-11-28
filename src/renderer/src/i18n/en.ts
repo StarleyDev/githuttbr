@@ -4973,6 +4973,8 @@ export const en = {
   'conflictWs.finishRevert': 'Finish the revert',
   'conflictWs.reviewAgain': 'Review again',
   'conflictWs.undoResolved': 'Resolve {file}',
+  'conflictWs.undoUnavailable': 'This resolution cannot be undone: its state could not be saved (a submodule, for example).',
+  'conflictWs.undoGone': 'This resolution can no longer be undone: git\'s cleanup (gc) removed the saved content.',
   'batch.done': '{label} {done} {repoWord}',
   'batch.partial': '{label} {done}/{total} — {failed} failed',
   'batch.repository': 'repository',

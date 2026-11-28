@@ -1496,8 +1496,17 @@ function runConflictResolution(path: string, label: string, files: string[], fn:
     },
     {
       label: interp(t('conflictWs.undoResolved'), { file: files[0] ?? '' }),
+      // No snapshot (a submodule's folder cannot be hashed) means nothing to put
+      // back: say so rather than report an undo that did nothing.
       undo: async () => {
-        if (snapshot) await gitApi.conflictRestore(path, snapshot)
+        if (!snapshot) throw new Error(t('conflictWs.undoUnavailable'))
+        try {
+          await gitApi.conflictRestore(path, snapshot)
+        } catch (err) {
+          // The saved blobs are loose objects: a `gc --prune=now` removes them.
+          const gone = err instanceof Error && /cat-file|bad file|not a valid object|could not get object/i.test(err.message)
+          throw gone ? new Error(t('conflictWs.undoGone')) : err
+        }
       },
       redo: fn
     },

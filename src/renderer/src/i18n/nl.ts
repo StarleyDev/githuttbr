@@ -4974,6 +4974,8 @@ export const nl: Dict = {
   'conflictWs.finishRevert': 'Terugdraaien afronden',
   'conflictWs.reviewAgain': 'Opnieuw nakijken',
   'conflictWs.undoResolved': '{file} oplossen',
+  'conflictWs.undoUnavailable': 'Deze oplossing kan niet ongedaan worden gemaakt: de toestand kon niet worden bewaard (bijvoorbeeld een submodule).',
+  'conflictWs.undoGone': 'Deze oplossing kan niet meer ongedaan worden gemaakt: de opschoning van git (gc) heeft de bewaarde inhoud verwijderd.',
   'batch.done': '{label} {done} {repoWord}',
   'batch.partial': '{label} {done}/{total} — {failed} mislukt',
   'batch.repository': 'repository',

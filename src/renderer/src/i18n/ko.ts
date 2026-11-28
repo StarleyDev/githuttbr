@@ -4963,6 +4963,8 @@ export const ko: Dict = {
   'conflictWs.finishRevert': '되돌리기 완료',
   'conflictWs.reviewAgain': '다시 검토',
   'conflictWs.undoResolved': '{file} 해결',
+  'conflictWs.undoUnavailable': '이 해결은 되돌릴 수 없습니다: 상태를 저장하지 못했습니다(예: 서브모듈).',
+  'conflictWs.undoGone': '이 해결은 더 이상 되돌릴 수 없습니다: git 정리(gc)가 저장된 내용을 삭제했습니다.',
   'batch.done': '{label} {done} {repoWord}',
   'batch.partial': '{label} {done}/{total} — {failed}개 실패',
   'batch.repository': '개 저장소',

@@ -4914,6 +4914,8 @@ export const it: Dict = {
   'conflictWs.finishRevert': 'Completa il revert',
   'conflictWs.reviewAgain': 'Rivedi',
   'conflictWs.undoResolved': 'Risolvi {file}',
+  'conflictWs.undoUnavailable': 'Questa risoluzione non può essere annullata: non è stato possibile salvarne lo stato (un sottomodulo, ad esempio).',
+  'conflictWs.undoGone': 'Questa risoluzione non può più essere annullata: la pulizia di git (gc) ha rimosso il contenuto salvato.',
   'batch.done': '{label} {done} {repoWord}',
   'batch.partial': '{label} {done}/{total} — {failed} falliti',
   'batch.repository': 'repository',

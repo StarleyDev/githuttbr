@@ -4966,6 +4966,8 @@ export const pl: Dict = {
   'conflictWs.finishRevert': 'Zakończ cofanie',
   'conflictWs.reviewAgain': 'Przejrzyj ponownie',
   'conflictWs.undoResolved': 'Rozwiąż {file}',
+  'conflictWs.undoUnavailable': 'Tego rozwiązania nie można cofnąć: nie udało się zapisać jego stanu (np. submoduł).',
+  'conflictWs.undoGone': 'Tego rozwiązania nie można już cofnąć: porządkowanie gita (gc) usunęło zapisaną zawartość.',
   'batch.done': '{label} {done} {repoWord}',
   'batch.partial': '{label} {done}/{total} — {failed} nieudanych',
   'batch.repository': 'repozytorium',

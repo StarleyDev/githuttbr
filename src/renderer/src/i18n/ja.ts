@@ -4903,6 +4903,8 @@ export const ja: Dict = {
   'conflictWs.finishRevert': '取り消しを完了',
   'conflictWs.reviewAgain': 'もう一度確認',
   'conflictWs.undoResolved': '{file} を解決',
+  'conflictWs.undoUnavailable': 'この解決は元に戻せません：状態を保存できませんでした（サブモジュールなど）。',
+  'conflictWs.undoGone': 'この解決はもう元に戻せません：git のクリーンアップ（gc）が保存した内容を削除しました。',
   'batch.done': '{label} {done} {repoWord}',
   'batch.partial': '{label} {done}/{total} — {failed} 件が失敗',
   'batch.repository': 'リポジトリ',

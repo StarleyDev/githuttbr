@@ -4968,6 +4968,8 @@ export const he: Dict = {
   'conflictWs.finishRevert': 'סיים את הביטול',
   'conflictWs.reviewAgain': 'בדוק שוב',
   'conflictWs.undoResolved': 'פתור את {file}',
+  'conflictWs.undoUnavailable': 'לא ניתן לבטל את הפתרון הזה: לא ניתן היה לשמור את מצבו (למשל תת-מודול).',
+  'conflictWs.undoGone': 'כבר לא ניתן לבטל את הפתרון הזה: הניקוי של git ‏(gc) מחק את התוכן השמור.',
   'batch.done': '{label} {done} {repoWord}',
   'batch.partial': '{label} {done}/{total} — {failed} נכשלו',
   'batch.repository': 'מאגר',

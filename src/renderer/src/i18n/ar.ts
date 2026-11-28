@@ -4969,6 +4969,8 @@ export const ar: Dict = {
   'conflictWs.finishRevert': 'إنهاء التراجع',
   'conflictWs.reviewAgain': 'المراجعة مجددًا',
   'conflictWs.undoResolved': 'حل {file}',
+  'conflictWs.undoUnavailable': 'لا يمكن التراجع عن هذا الحل: تعذّر حفظ حالته (وحدة فرعية مثلًا).',
+  'conflictWs.undoGone': 'لم يعد ممكنًا التراجع عن هذا الحل: أزال تنظيف git ‏(gc) المحتوى المحفوظ.',
   'batch.done': '{label} {done} {repoWord}',
   'batch.partial': '{label} {done}/{total} — فشل {failed}',
   'batch.repository': 'مستودع',

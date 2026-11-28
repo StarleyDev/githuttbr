@@ -4968,6 +4968,8 @@ export const es: Dict = {
   'conflictWs.finishRevert': 'Terminar la reversión',
   'conflictWs.reviewAgain': 'Revisar de nuevo',
   'conflictWs.undoResolved': 'Resolver {file}',
+  'conflictWs.undoUnavailable': 'Esta resolución no se puede deshacer: no se pudo guardar su estado (un submódulo, por ejemplo).',
+  'conflictWs.undoGone': 'Esta resolución ya no se puede deshacer: la limpieza de git (gc) eliminó el contenido guardado.',
   'batch.done': '{label} {done} {repoWord}',
   'batch.partial': '{label} {done}/{total} — {failed} fallidos',
   'batch.repository': 'repositorio',

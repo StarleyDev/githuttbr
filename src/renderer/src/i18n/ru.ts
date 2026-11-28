@@ -4967,6 +4967,8 @@ export const ru: Dict = {
   'conflictWs.finishRevert': 'Завершить отмену',
   'conflictWs.reviewAgain': 'Проверить ещё раз',
   'conflictWs.undoResolved': 'Разрешить {file}',
+  'conflictWs.undoUnavailable': 'Это разрешение нельзя отменить: его состояние не удалось сохранить (например, у подмодуля).',
+  'conflictWs.undoGone': 'Это разрешение больше нельзя отменить: очистка git (gc) удалила сохранённое содержимое.',
   'batch.done': '{label} {done} {repoWord}',
   'batch.partial': '{label} {done}/{total} — с ошибкой: {failed}',
   'batch.repository': 'репозиторий',

@@ -4910,6 +4910,8 @@ export const tr: Dict = {
   'conflictWs.finishRevert': 'Geri almayı bitir',
   'conflictWs.reviewAgain': 'Yeniden gözden geçir',
   'conflictWs.undoResolved': '{file} çöz',
+  'conflictWs.undoUnavailable': 'Bu çözüm geri alınamaz: durumu kaydedilemedi (örneğin bir alt modül).',
+  'conflictWs.undoGone': 'Bu çözüm artık geri alınamaz: git temizliği (gc) kaydedilen içeriği sildi.',
   'batch.done': '{label} {done} {repoWord}',
   'batch.partial': '{label} {done}/{total} — {failed} başarısız',
   'batch.repository': 'depo',

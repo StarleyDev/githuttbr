@@ -4963,6 +4963,8 @@ export const zhCN: Dict = {
   'conflictWs.finishRevert': '完成还原',
   'conflictWs.reviewAgain': '再次检查',
   'conflictWs.undoResolved': '解决 {file}',
+  'conflictWs.undoUnavailable': '此解决无法撤销：未能保存其状态（例如子模块）。',
+  'conflictWs.undoGone': '此解决已无法撤销：git 清理（gc）删除了保存的内容。',
   'batch.done': '{label} {done} 个{repoWord}',
   'batch.partial': '{label} {done}/{total} —— {failed} 个失败',
   'batch.repository': '仓库',
