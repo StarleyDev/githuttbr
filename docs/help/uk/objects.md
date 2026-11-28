@@ -4,6 +4,7 @@ category: Репозиторій та історія
 order: 16
 summary: Пройдіться шаром під графом — коміти, дерева, блоби, теги і рефи, що на них вказують. Тут ніщо нічого не змінює.
 keywords: об’єкти objects object оглядач explorer блоб blob дерево tree коміт commit тег tag реф ref сантехніка plumbing cat-file ls-tree sha1 внутрішня будова internals база rev-parse HEAD^{tree} loose packed
+source: 946d418d5b13af167a16a2f0d3164d813b423ab6
 ---
 
 # Оглядач об’єктів

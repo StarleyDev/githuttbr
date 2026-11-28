@@ -4,6 +4,7 @@ category: المستودع والسجل
 order: 16
 summary: تجوّل في الطبقة التي تحت الرسم البياني — الالتزامات والأشجار والكتل والوسوم والمراجع التي تشير إليها. لا شيء هنا يغيّر شيئًا.
 keywords: كائنات مستكشف الكائنات objects blob tree commit tag ref سباكة plumbing cat-file ls-tree sha1 بنية داخلية قاعدة بيانات rev-parse HEAD^{tree} سائب محزوم loose packed
+source: 946d418d5b13af167a16a2f0d3164d813b423ab6
 ---
 
 # مستكشف الكائنات

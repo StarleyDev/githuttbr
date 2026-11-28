@@ -4,6 +4,7 @@ category: Praca ze zmianami
 order: 34
 summary: Zamień commity w stylu conventional pomiędzy dwiema referencjami w pogrupowany changelog.
 keywords: changelog lista zmian notatki wydania conventional commits generuj release notes generate CHANGELOG
+source: 82fe9093441415a9cd578fe981f73d1082852b29
 ---
 
 # Generator changelogu
@@ -19,6 +20,11 @@ pomiędzy nimi w changelog, pogrupowany według typu Conventional Commit.
 - Commity, które nie trzymają się żadnej konwencji, lądują pod **Inne**, zamiast
   zostać porzucone — changelog, który po cichu gubi commity, jest gorszy od
   bałaganiarskiego.
+
+Wynik otwiera się w tym samym edytorze **Pisz / Podgląd** co opis pull requesta,
+razem z paskiem narzędzi: przeredaguj wpis, usuń linię, której nikt nie
+potrzebuje, i sprawdź, jak się wyrenderuje, zanim gdziekolwiek trafi. Ponowne
+generowanie zastępuje twoje zmiany.
 
 Skopiuj wynik albo **dopisz go prosto na początek `CHANGELOG.md`**.
 

@@ -4,6 +4,7 @@ category: Trabalhando com mudanças
 order: 34
 summary: Transforma os conventional commits entre duas refs num changelog agrupado.
 keywords: changelog notas de release release notes conventional commits gerar CHANGELOG
+source: 82fe9093441415a9cd578fe981f73d1082852b29
 ---
 
 # Gerador de changelog

@@ -4,7 +4,7 @@ category: Synchronizacja i wiele repozytoriów
 order: 57
 summary: Wszystkie pull requesty repozytorium na jednej stronie — według stanu, filtrowane po autorze, recenzencie, celu i CI —, ‹ ›, by przechodzić przefiltrowaną listę z wnętrza PR, jego commity, jego aktualizacje (każdy push, co zmienił, co nowego od ostatniej wizyty) oraz komentarze do wiersza jego diffa. Rozmowa jako jedna oś czasu, z tym, co nowego od ostatniej wizyty.
 keywords: pull requesty lista strona merge requesty pr mr filtr autor recenzent moje czekają na moją recenzję proszą mnie o recenzję ci nie przechodzi gałąź docelowa szkice scalone zamknięte szukaj triage poprzedni następny alt strzałka nawigacja checkout przejdź do gałęzi źródłowej docelowej kopiuj nazwę gałęzi fetch komentarz do wiersza komentarz inline komentarz recenzji komentarz w diffie skomentuj wiersz zakładka pliki code review line comment zakładka commity lista commitów commity pr historia commitów otwórz commit kopiuj sha pobierz gałąź pr edytor markdown pasek narzędzi podgląd wzmianka commits tab commit list open commit copy sha markdown editor toolbar preview mention drzewo plików drzewo folderów widok drzewa widok ścieżek przejrzane pliki oznacz folder jako przejrzany edytuj usuń edytowany literówka file tree viewed files edit delete edited typo odwołanie tytuł karta po najechaniu work item AB# numer issue podpowiedź reference title hover card issue number fork commity pr refs/pull head renderowane komentarze obrazy piksel śledzący zablokowany obraz kliknij aby wczytać zadanie tabela blok rendered comments images blocked image aktualizacje iteracje pushe force push rebase historia przepisana wersje diffa co się zmieniło od ostatniej wizyty plakietka nowa oznacz jako przejrzane porównaj aktualizację updates iterations history rewritten diff versions what changed since last visit new badge mark as seen compare update rozmowa oś czasu otwarte wątki rozwiązany wątek zatwierdził poprosił o zmiany wypchnięte commity rola recenzenta nowe od ostatniej wizyty porównaj dwa commity chipy typów commitów ci dla commita pokaż diff następny nieobejrzany filtr nieobejrzane z komentarzami postęp recenzji zmieniony od przejrzenia conversation timeline open threads resolved thread approved requested changes pushed commits reviewer role new since last visit compare two commits commit type chips conventional commits ci per commit view diff next unviewed filter unviewed with comments review progress changed since viewed
-source: d91d96af92225cb74da274f8d168b07f6110b709
+source: 6c1d5afb9bb0a33fa35b74bcc119ac137da2bf22
 ---
 
 # Strona pull requestów
@@ -101,16 +101,16 @@ Każdy wiersz czyta się od lewej do prawej:
 | **Kropka** | Pull request zmienił się, odkąd ostatnio opuściłeś jego stronę. Ten, którego nigdy nie otworzyłeś, nie ma kropki — nie ma z czym porównać |
 | **#** | Numer — zielony, gdy otwarty, szary dla szkicu |
 | **Tytuł** | Tytuł, jego typ [Conventional Commits](committing.md) jako kolorowy chip (`feat`, `fix`, `docs`…), plakietka *szkic*. Pod nim: autor (pominięty przy twoich), źródło → cel oraz **Komentarze: N** — albo **Nowe komentarze: N**, gdy od twojej ostatniej wizyty inni napisali jakieś |
-| **Rozmiar** | `+48 −12 · Pliki: 4` — dodane i usunięte linie, zmienione pliki |
+| **Rozmiar** | `+48 −12 · Pliki: 4` — dodane i usunięte linie, zmienione pliki; samo `Pliki: 4` tam, gdzie hosting nie liczy linii |
 | **Recenzja** | Obowiązujący werdykt każdego recenzenta — **✓ bruno zatwierdza**, **✕ ana prosi o zmiany** — a potem kogo jeszcze poproszono, **● czeka na Ciebie** na żółto. **✓ gotowy do scalenia**, gdy hosting mówi, że recenzje są zakończone, a testy nie zawiodły; **brak recenzentów**, gdy nikogo nie poproszono albo nikt nie odpowiedział |
 | **Testy** | Testy heada — `✓ 6/6`, `✕ 1 błędnych`, `● 2 w toku`; najedź, by zobaczyć liczby |
 | **Zmieniono** | Jak dawno ostatnio się zmienił; najedź, by zobaczyć datę |
 
 ### Co daje każdy hosting
 
-Rozmiar, komentarze i werdykty nie są na liście każdego hostingu, a strona nigdy
-nie otwiera każdego pull requesta z osobna, by je znaleźć: czego lista nie niesie,
-zostaje puste, nigdy zero.
+Rozmiar, komentarze i werdykty nie są na liście każdego hostingu, a strona nie
+otwiera każdego pull requesta z osobna, by je znaleźć — z jednym wyjątkiem,
+opisanym niżej: czego lista nie niesie, zostaje puste, nigdy zero.
 
 | Hosting | Rozmiar | Komentarze | Werdykty recenzji |
 |---|---|---|---|
@@ -121,7 +121,7 @@ zostaje puste, nigdy zero.
 | **Bitbucket Cloud** | — | ✓ (tylko liczba) | — |
 | **Forgejo** | ✓ gdy serwer to wypełnia | ✓ (tylko liczba) | Kogo poproszono |
 
-**Azure DevOps: tylko pliki.** Jego API nie podaje liczby wierszy dla pull requesta, więc komórka pokazuje same pliki, bez +/−. Ta strona czyta je dla wierszy, które pokazuje — dwa żądania na pull request, cztery naraz — i trzyma je, dopóki ktoś nie wypchnie zmian do tego pull requesta; okresowe odświeżanie paska bocznego nigdy ich nie czyta. Liczba, której nie da się odczytać, zostawia pustą komórkę, bez błędu.
+**Azure DevOps: tylko pliki.** Jego API nie podaje liczby wierszy dla pull requesta — wymagałoby to diffu każdego pliku — więc komórka pokazuje `Pliki: 4`, bez +/−. Jego lista nie ma też liczby plików, więc ta strona odczytuje ją sama, dla otwartych i szkicowych wierszy, które rysuje — scalone i zamknięte zostają puste, bo pełna ich lista kosztowałaby setki żądań za liczbę, według której nikt nie recenzuje: dwa żądania na pull request (jego iteracje, potem zmiany ostatniej — ta sama liczba co w jego karcie Pliki), cztery naraz. Liczby są trzymane, dopóki ktoś nie wypchnie zmian do tego pull requesta, więc odświeżenie albo powrót na stronę pyta tylko o te, które się zmieniły. Okresowe odświeżanie paska bocznego nigdy ich nie czyta. Liczba, której nie da się odczytać — brak uprawnień, serwer ograniczający żądania — zostawia pustą komórkę, bez błędu; pull request z ponad 20 000 zmian nie jest liczony.
 
 Liczba komentarzy to komentarze rozmowy — komentarze do linii diffu się do niej nie
 wliczają. Bez tokenu zapytanie GitHuba jest pomijane i te kolumny zostają puste.

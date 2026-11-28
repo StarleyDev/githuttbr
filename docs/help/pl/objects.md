@@ -4,6 +4,7 @@ category: Repozytorium i historia
 order: 16
 summary: Przejdź się po warstwie pod grafem — commity, drzewa, bloby, tagi i referencje, które na nie wskazują. Nic tutaj niczego nie zmienia.
 keywords: obiekty eksplorator blob drzewo commit tag referencja hydraulika wnętrzności baza objects object explorer tree ref plumbing cat-file ls-tree sha1 internals rev-parse HEAD^{tree} loose packed
+source: 946d418d5b13af167a16a2f0d3164d813b423ab6
 ---
 
 # Eksplorator obiektów

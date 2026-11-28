@@ -4,6 +4,7 @@ category: Repository e cronologia
 order: 16
 summary: Percorri lo strato sotto il grafo — commit, tree, blob, tag e i ref che li puntano. Qui niente cambia niente.
 keywords: oggetti objects esploratore blob tree commit tag ref plumbing cat-file ls-tree sha1 interni database rev-parse HEAD^{tree} loose packed
+source: 946d418d5b13af167a16a2f0d3164d813b423ab6
 ---
 
 # Esploratore di oggetti

@@ -4,7 +4,7 @@ category: 同步与多仓库
 order: 57
 summary: 一个仓库的全部拉取请求集中在一页——按状态分，可按作者、评审者、目标分支和 CI 筛选——在拉取请求内用 ‹ › 逐个浏览筛选后的列表，查看其提交和更新（每次推送、它改了什么、自你上次查看以来的新内容），并可评论其差异中的某一行。 对话以一条时间线呈现，并标出自上次访问以来的新内容。
 keywords: 拉取请求 pull requests 列表 页面 合并请求 merge requests pr mr 筛选 作者 评审者 我的 等待我评审 请求我评审 ci 失败 目标分支 草稿 已合并 已关闭 搜索 分类 上一个 下一个 alt 方向键 导航 检出 checkout 前往源分支 目标分支 复制分支名 获取 fetch 行评论 行内评论 评审评论 差异评论 评论某行 文件标签 代码评审 line comment 提交标签 提交列表 拉取请求的提交 提交历史 打开提交 复制 SHA 拉取 PR 分支 Markdown 编辑器 工具栏 预览 提及 commits tab commit list open commit copy sha markdown editor toolbar preview mention 文件树 文件夹树 树视图 路径视图 已查看文件 将文件夹标为已查看 编辑 删除 移除 已编辑 笔误 file tree viewed files edit delete edited typo 引用 标题 悬停卡片 工作项 AB# issue 编号 工具提示 reference title hover card work item issue number fork 拉取请求的提交 refs/pull head 渲染的评论 图片 跟踪像素 被拦截的图片 点击加载 任务 表格 代码块 rendered comments images blocked image 更新 迭代 推送 强制推送 变基 历史已改写 差异版本 自上次查看以来的变化 新徽章 标记为已查看 比较更新 updates iterations pushes force push rebase history rewritten diff versions what changed since last visit new badge mark as seen compare update 对话 时间线 未解决的讨论串 已解决的讨论串 已批准 请求修改 推送的提交 评审者角色 自上次访问以来的新内容 比较两个提交 提交类型标签 每个提交的 CI 查看差异 下一个未查看 筛选 未查看 有评论 评审进度 查看后已更改 conversation timeline open threads resolved thread approved requested changes pushed commits reviewer role new since last visit compare two commits commit type chips conventional commits ci per commit view diff next unviewed filter unviewed with comments review progress changed since viewed
-source: d91d96af92225cb74da274f8d168b07f6110b709
+source: 6c1d5afb9bb0a33fa35b74bcc119ac137da2bf22
 ---
 
 # 拉取请求页面
@@ -86,15 +86,14 @@ source: d91d96af92225cb74da274f8d168b07f6110b709
 | **圆点** | 自你上次离开其页面以来，该拉取请求有了变化。从未打开过的没有圆点——没有可比较的基准 |
 | **#** | 编号——打开时为绿色，草稿为灰色 |
 | **标题** | 标题、以彩色标签显示的 [Conventional Commits](committing.md) 类型（`feat`、`fix`、`docs`…）、*草稿* 徽章。下方是：作者（你自己的则省略）、源 → 目标，以及 **N 条评论**——如果自你上次访问以来别人写了新评论，则为 **N 条新评论** |
-| **大小** | `+48 −12 · 4 个文件`——新增和删除的行数，以及涉及的文件 |
+| **大小** | `+48 −12 · 4 个文件`——新增和删除的行数，以及涉及的文件；托管平台不统计行数时只显示 `4 个文件` |
 | **评审** | 每位评审者当前有效的结论——**✓ bruno 已批准**、**✕ ana 要求修改**——然后是仍被请求的人，黄色的 **● 等待你**。托管平台表示评审已完成且检查没有失败时显示 **✓ 可以合并**；没有人被请求或作答时显示 **无评审者** |
 | **检查** | head 的检查——`✓ 6/6`、`✕ 1 失败`、`● 2 运行中`；悬停查看计数 |
 | **更新于** | 距上次变化多久；悬停查看日期 |
 
 ### 各托管平台提供什么
 
-大小、评论和评审结论并非每个托管平台的列表都有，而页面绝不会为了找到它们逐个打开拉取请求：
-列表没带的就留空，绝不显示为零。
+大小、评论和评审结论并非每个托管平台的列表都有，而页面不会为了找到它们逐个打开拉取请求——只有一个例外，见下文：列表没带的就留空，绝不显示为零。
 
 | 托管平台 | 大小 | 评论 | 评审结论 |
 |---|---|---|---|
@@ -105,7 +104,7 @@ source: d91d96af92225cb74da274f8d168b07f6110b709
 | **Bitbucket Cloud** | — | ✓（仅数量） | — |
 | **Forgejo** | ✓ 服务器填写时 | ✓（仅数量） | 被请求的人 |
 
-**Azure DevOps：仅文件数。** 它的 API 不提供拉取请求的行数，所以单元格只显示文件数，没有 +/−。本页面为它显示的行读取文件数——每个拉取请求两次请求，同时最多四个——并保留到有人向该拉取请求推送为止；侧边栏的定期刷新从不读取它们。读取失败的计数会让单元格留空，不报错。
+**Azure DevOps：仅文件数。** 它的 API 不提供拉取请求的行数——那需要每个文件的 diff——所以单元格显示 `4 个文件`，没有 +/−。它的列表也不带文件数，所以本页面自己读取，只针对它绘制的打开和草稿行——已合并和已关闭的留空，因为读取它们的完整列表要花上数百次请求，只为一个没人据此评审的数字：每个拉取请求两次请求（它的迭代，再是最后一次迭代的变更——与它的“文件”标签页的数量相同），同时最多四个。这些计数会保留到有人向该拉取请求推送为止，因此刷新或回到页面时只会询问有变动的那些。侧边栏的定期刷新从不读取它们。读取失败的计数——没有权限、服务器限流——会让单元格留空，不报错；变更超过 20,000 处的拉取请求不计数。
 
 评论数是对话中的评论——差异中某一行上的评论不计在内。没有令牌时会跳过 GitHub 的请求，
 这些列保持空白。

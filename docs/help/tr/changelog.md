@@ -4,6 +4,7 @@ category: Değişikliklerle çalışma
 order: 34
 summary: İki ref arasındaki conventional commit'leri gruplanmış bir changelog'a dönüştürür.
 keywords: changelog değişiklik günlüğü sürüm notları release notes conventional commits üret generate CHANGELOG
+source: 82fe9093441415a9cd578fe981f73d1082852b29
 ---
 
 # Changelog üreteci
@@ -17,6 +18,11 @@ commit'leri Conventional Commit türüne göre gruplanmış bir changelog'a dön
 - Ardından Features, Fixes, Performance ve devamı.
 - Hiçbir kurala uymayan commit'ler atılmak yerine **Other** altına iner —
   commit'leri sessizce yitiren bir changelog, dağınık olandan daha kötüdür.
+
+Sonuç, bir pull request açıklamasıyla aynı **Yaz / Önizleme** düzenleyicisinde,
+araç çubuğuyla birlikte açılır: bir girdiyi yeniden yazın, kimsenin ihtiyaç
+duymadığı bir satırı silin ve bir yere gitmeden önce nasıl göründüğünü kontrol
+edin. Yeniden oluşturmak düzenlemelerinizin yerine geçer.
 
 Sonucu kopyalayın ya da **doğrudan `CHANGELOG.md`'nin başına ekleyin**.
 

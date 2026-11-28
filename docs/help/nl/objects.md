@@ -4,6 +4,7 @@ category: Repository & geschiedenis
 order: 16
 summary: Loop door de laag onder de grafiek — commits, trees, blobs, tags en de refs die ernaar wijzen. Niets hier verandert iets.
 keywords: objecten objects verkenner explorer blob tree commit tag ref plumbing cat-file ls-tree sha1 interne werking database rev-parse HEAD^{tree} loose packed
+source: 946d418d5b13af167a16a2f0d3164d813b423ab6
 ---
 
 # Objectverkenner

@@ -4,7 +4,7 @@ category: Sync & viele Repos
 order: 57
 summary: Alle Pull Requests eines Repositorys auf einer Seite — nach Status, gefiltert nach Autor, Reviewer, Ziel und CI —, ‹ ›, um die gefilterte Liste aus einem PR heraus durchzugehen, seine Commits, seine Updates (jeder Push, was er geändert hat, was seit deinem letzten Besuch neu ist) und Kommentare zu einer Zeile seines Diffs. Die Unterhaltung als ein Verlauf, mit dem, was seit deinem letzten Besuch neu ist.
 keywords: pull requests liste seite merge requests pr mr filter autor reviewer meine wartet auf mein review review angefragt ci schlägt fehl ziel-branch entwürfe gemergt geschlossen suche triage vorheriger nächster alt pfeil navigation checkout auschecken zum quell-branch ziel-branch branch-name kopieren fetch zeilenkommentar inline-kommentar review-kommentar diff-kommentar zeile kommentieren dateien-tab code review line comment commits-tab commit-liste pr-commits commit-verlauf commit öffnen sha kopieren pr-branch fetchen markdown-editor werkzeugleiste vorschau erwähnung commits tab commit list open commit copy sha markdown editor toolbar preview mention dateibaum ordnerbaum baumansicht pfadansicht gesehene dateien ordner als gesehen markieren bearbeiten löschen entfernen bearbeitet tippfehler file tree viewed files edit delete edited typo verweis titel hover-karte work item AB# issue-nummer tooltip reference title hover card issue number fork pr-commits refs/pull head gerenderte kommentare bilder tracking-pixel blockiertes bild zum laden klicken aufgabe tabelle block rendered comments images blocked image updates iterationen pushes force-push rebase verlauf umgeschrieben diff-versionen was hat sich geändert seit dem letzten besuch neu-badge als gesehen markieren update vergleichen iterations history rewritten diff versions what changed since last visit new badge mark as seen compare update unterhaltung verlauf zeitleiste offene threads gelöster thread genehmigt änderungen angefordert gepushte commits reviewer-rolle neu seit deinem letzten besuch zwei commits vergleichen commit-typ-chips ci pro commit diff ansehen nächste ungesehene ungesehen filtern mit kommentaren review-fortschritt geändert seit gesehen conversation timeline open threads resolved thread approved requested changes pushed commits reviewer role new since last visit compare two commits commit type chips conventional commits ci per commit view diff next unviewed filter unviewed with comments review progress changed since viewed
-source: d91d96af92225cb74da274f8d168b07f6110b709
+source: 6c1d5afb9bb0a33fa35b74bcc119ac137da2bf22
 ---
 
 # Pull-Request-Seite
@@ -103,16 +103,17 @@ Jede Zeile liest sich von links nach rechts:
 | **Punkt** | Der Pull Request hat sich geändert, seit du seine Seite zuletzt verlassen hast. Einer, den du nie geöffnet hast, hat keinen Punkt — es gibt nichts zu vergleichen |
 | **#** | Die Nummer — grün, solange offen, grau bei einem Entwurf |
 | **Titel** | Der Titel, sein [Conventional-Commits](committing.md)-Typ als farbiger Chip (`feat`, `fix`, `docs`…), ein *Entwurf*-Badge. Darunter: der Autor (bei deinen eigenen weggelassen), Quelle → Ziel und **N Kommentare** — oder **N neue Kommentare**, wenn andere seit deinem letzten Besuch welche geschrieben haben |
-| **Größe** | `+48 −12 · 4 Dateien` — hinzugefügte und entfernte Zeilen, berührte Dateien |
+| **Größe** | `+48 −12 · 4 Dateien` — hinzugefügte und entfernte Zeilen, berührte Dateien; nur `4 Dateien`, wo der Host keine Zeilen zählt |
 | **Review** | Das aktuelle Urteil jedes Reviewers — **✓ bruno hat genehmigt**, **✕ ana hat Änderungen angefordert** —, dann wer noch angefragt ist, **● wartet auf dich** in Gelb. **✓ bereit zum Mergen**, wenn der Host sagt, dass die Reviews erledigt sind und die Checks nicht fehlgeschlagen sind; **keine Reviewer**, wenn niemand angefragt wurde oder geantwortet hat |
 | **Checks** | Die Checks des Heads — `✓ 6/6`, `✕ 1 fehlgeschlagen`, `● 2 laufen`; Hover zeigt die Zahlen |
 | **Aktualisiert** | Wie lange die letzte Änderung her ist; Hover zeigt das Datum |
 
 ### Was jeder Host liefert
 
-Größe, Kommentare und Urteile stehen nicht in der Liste jedes Hosts, und die Seite
-öffnet nie jeden Pull Request einzeln, um sie zu finden: was die Liste nicht
-mitbringt, bleibt leer, nie eine Null.
+Größe, Kommentare und Urteile stehen nicht in der Liste jedes Hosts, und die
+Seite öffnet nicht jeden Pull Request einzeln, um sie zu finden — mit einer
+Ausnahme, siehe unten: was die Liste nicht mitbringt, bleibt leer, nie eine
+Null.
 
 | Host | Größe | Kommentare | Review-Urteile |
 |---|---|---|---|
@@ -123,7 +124,7 @@ mitbringt, bleibt leer, nie eine Null.
 | **Bitbucket Cloud** | — | ✓ (nur die Anzahl) | — |
 | **Forgejo** | ✓, wenn der Server es füllt | ✓ (nur die Anzahl) | Wer angefragt ist |
 
-**Azure DevOps: nur Dateien.** Seine API kennt keine Zeilenzahlen für einen Pull Request, daher zeigt die Zelle nur die Dateien, ohne +/−. Diese Seite liest sie für die Zeilen, die sie zeigt — zwei Anfragen pro Pull Request, vier gleichzeitig — und behält sie, bis jemand auf diesen Pull Request pusht; die periodische Aktualisierung der Seitenleiste liest sie nie. Eine Zahl, die nicht gelesen werden kann, lässt die Zelle leer, ohne Fehler.
+**Azure DevOps: nur Dateien.** Seine API kennt keine Zeilenzahlen für einen Pull Request — dafür bräuchte es den Diff jeder Datei —, daher zeigt die Zelle `4 Dateien`, ohne +/−. Auch seine Liste enthält keine Dateizahl, also liest diese Seite sie selbst, für die offenen und Entwurfszeilen, die sie zeichnet — gemergte und geschlossene bleiben leer, denn eine volle Liste davon würde Hunderte Anfragen kosten, für eine Zahl, nach der niemand reviewt: zwei Anfragen pro Pull Request (seine Iterationen, dann die Änderungen der letzten — dieselbe Zahl wie in seinem Tab Dateien), vier gleichzeitig. Die Zahlen bleiben erhalten, bis jemand auf diesen Pull Request pusht, sodass eine Aktualisierung oder die Rückkehr zur Seite nur nach denen fragt, die sich bewegt haben. Die periodische Aktualisierung der Seitenleiste liest sie nie. Eine Zahl, die nicht gelesen werden kann — keine Berechtigung, ein drosselnder Server —, lässt die Zelle leer, ohne Fehler; ein Pull Request mit über 20.000 Änderungen wird nicht gezählt.
 
 Die Kommentaranzahl sind die Kommentare der Unterhaltung — Kommentare an einer
 Zeile des Diffs zählen nicht dazu. Ohne Token entfällt die GitHub-Anfrage, und

@@ -4,7 +4,7 @@ category: Eşitleme ve çoklu depo
 order: 57
 summary: Bir deponun tüm pull request’leri tek sayfada — duruma göre, yazar, inceleyen, hedef ve CI ile süzülmüş —, bir PR’ın içinden süzülmüş listede ilerlemek için ‹ ›, commit’leri, güncellemeleri (her push, neyi değiştirdiği, son ziyaretinizden beri ne yeni) ve diff’inin bir satırına yorumlar. Konuşma tek bir zaman çizelgesi olarak, son ziyaretinizden beri yeni olanlarla.
 keywords: pull request’ler liste sayfa merge request pr mr filtre yazar inceleyen benimkiler incelememi bekleyenler benden inceleme istenen ci başarısız hedef dal taslaklar birleştirilen kapalı arama önceliklendirme önceki sonraki alt ok gezinme checkout kaynak dala git hedef dala git dal adını kopyala fetch satır yorumu satır içi yorum inceleme yorumu diff yorumu satıra yorum yap dosyalar sekmesi kod incelemesi line comment commit sekmesi commit listesi pr commit’leri commit geçmişi commit aç sha kopyala pr dalını getir markdown düzenleyici biçimlendirme çubuğu önizleme bahsetme commits tab commit list open commit copy sha markdown editor toolbar preview mention dosya ağacı klasör ağacı ağaç görünümü yol görünümü görülen dosyalar klasörü görüldü işaretle düzenle sil kaldır düzenlendi yazım hatası file tree viewed files edit delete edited typo referans başlık üzerine gelince kart work item AB# issue numarası ipucu reference title hover card issue number fork pr commit’leri refs/pull head işlenmiş yorumlar görseller izleme pikseli engellenmiş görsel yüklemek için tıkla görev tablo blok rendered comments images blocked image güncellemeler yinelemeler push’lar force push rebase geçmiş yeniden yazıldı diff sürümleri son ziyaretten beri ne değişti yeni rozeti görüldü olarak işaretle güncellemeyi karşılaştır updates iterations history rewritten diff versions what changed since last visit new badge mark as seen compare update konuşma zaman çizelgesi açık başlıklar çözülmüş başlık onayladı değişiklik istedi gönderilen commit’ler inceleyen rolü son ziyaretinizden beri yeni iki commit’i karşılaştır commit tür çipleri commit başına ci diff’i göster sonraki görülmemiş filtre görülmemiş yorumlu inceleme ilerlemesi görüldükten sonra değişti conversation timeline open threads resolved thread approved requested changes pushed commits reviewer role new since last visit compare two commits commit type chips conventional commits ci per commit view diff next unviewed filter unviewed with comments review progress changed since viewed
-source: d91d96af92225cb74da274f8d168b07f6110b709
+source: 6c1d5afb9bb0a33fa35b74bcc119ac137da2bf22
 ---
 
 # Pull request sayfası
@@ -99,16 +99,16 @@ Her satır soldan sağa okunur:
 | **Nokta** | Pull request, sayfasından son ayrılışından bu yana değişti. Hiç açmadığın birinde nokta yoktur — karşılaştıracak bir şey yoktur |
 | **#** | Numara — açıkken yeşil, taslakta gri |
 | **Başlık** | Başlık, [Conventional Commits](committing.md) türü renkli bir çip olarak (`feat`, `fix`, `docs`…), bir *taslak* rozeti. Altında: yazar (kendi pull request’lerinde yazılmaz), kaynak → hedef ve **N yorum** — son ziyaretinden bu yana başkaları yazdıysa **N yeni yorum** |
-| **Boyut** | `+48 −12 · 4 dosya` — eklenen ve silinen satırlar, dokunulan dosyalar |
+| **Boyut** | `+48 −12 · 4 dosya` — eklenen ve silinen satırlar, dokunulan dosyalar; sunucunun satır saymadığı yerde yalnızca `4 dosya` |
 | **İnceleme** | Her inceleyenin geçerli kararı — **✓ bruno onayladı**, **✕ ana değişiklik istedi** — ardından kimden hâlâ istendiği, sarı renkte **● seni bekliyor**. Sunucu incelemelerin tamam olduğunu söylüyor ve kontroller başarısız olmadıysa **✓ birleştirmeye hazır**; kimseden istenmediyse ya da kimse yanıt vermediyse **inceleyen yok** |
 | **Kontroller** | Head’in kontrolleri — `✓ 6/6`, `✕ 1 başarısız`, `● 2 çalışıyor`; sayılar için üzerine gelin |
 | **Güncellendi** | En son ne kadar önce değiştiği; tarih için üzerine gelin |
 
 ### Her sunucu ne verir
 
-Boyut, yorumlar ve kararlar her sunucunun listesinde yoktur ve sayfa bunları bulmak
-için her pull request’i tek tek açmaz: listenin taşımadığı şey boş kalır, asla sıfır
-olmaz.
+Boyut, yorumlar ve kararlar her sunucunun listesinde yoktur ve sayfa bunları
+bulmak için her pull request’i tek tek açmaz — aşağıda anlatılan tek bir istisna
+dışında: listenin taşımadığı şey boş kalır, asla sıfır olmaz.
 
 | Sunucu | Boyut | Yorumlar | İnceleme kararları |
 |---|---|---|---|
@@ -119,7 +119,7 @@ olmaz.
 | **Bitbucket Cloud** | — | ✓ (yalnızca sayı) | — |
 | **Forgejo** | ✓ sunucu doldurduğunda | ✓ (yalnızca sayı) | Kimden istendiği |
 
-**Azure DevOps: yalnızca dosyalar.** API’si pull request başına satır sayısı vermez, bu yüzden hücre +/− olmadan yalnızca dosyaları gösterir. Bu sayfa gösterdiği satırlar için okur — pull request başına iki istek, aynı anda dört — ve biri o pull request’e push edene kadar saklar; kenar çubuğunun düzenli yenilemesi bunları hiç okumaz. Okunamayan bir sayı hücreyi hatasız boş bırakır.
+**Azure DevOps: yalnızca dosyalar.** API’si pull request başına satır sayısı vermez — bunun için her dosyanın diff’i gerekirdi —, bu yüzden hücre +/− olmadan `4 dosya` gösterir. Listesinde dosya sayısı da yoktur; bu yüzden bu sayfa onu kendisi okur, çizdiği açık ve taslak satırlar için — birleştirilen ve kapalı olanlar boş kalır, çünkü bunların tam listesi kimsenin incelemede kullanmadığı bir sayı için yüzlerce isteğe mal olurdu: pull request başına iki istek (yinelemeleri, ardından sonuncusunun değişiklikleri — Dosyalar sekmesindekiyle aynı sayı), aynı anda dört. Sayılar biri o pull request’e push edene kadar saklanır; böylece yenileme ya da sayfaya geri dönme yalnızca değişenleri sorar. Kenar çubuğunun düzenli yenilemesi bunları hiç okumaz. Okunamayan bir sayı — izin yok, istekleri kısan bir sunucu — hücreyi hatasız boş bırakır; 20.000’den fazla değişiklik içeren bir pull request sayılmaz.
 
 Yorum sayısı konuşmanın yorumlarıdır — diff’in bir satırına yazılan yorumlar buna
 dahil değildir. Token yoksa GitHub isteği atlanır ve bu sütunlar boş kalır.

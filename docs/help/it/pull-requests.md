@@ -4,7 +4,7 @@ category: Sincronizzazione e più repo
 order: 57
 summary: Tutte le pull request di un repository in una pagina — per stato, filtrate per autore, revisore, destinazione e CI —, ‹ › per scorrere la lista filtrata da dentro una PR, i suoi commit, i suoi aggiornamenti (ogni push, cosa ha cambiato, cosa c’è di nuovo dalla tua ultima visita) e commenti su una riga del suo diff. La conversazione come un’unica cronologia, con le novità dalla tua ultima visita.
 keywords: pull request lista pagina merge request pr mr filtro autore revisore mie in attesa della mia revisione revisione chiesta ci fallita branch di destinazione bozze unite chiuse ricerca triage precedente successiva alt freccia navigazione checkout vai al branch di origine destinazione copia nome del branch fetch commento di riga commento inline commento di revisione commento sul diff commenta riga scheda file revisione del codice line comment scheda commit elenco dei commit commit della pr cronologia dei commit apri commit copia sha scarica il branch della pr editor markdown barra di formattazione anteprima menzione commits tab commit list open commit copy sha markdown editor toolbar preview mention albero dei file albero delle cartelle vista ad albero vista percorso file visti segna cartella come vista modifica elimina rimuovi modificato refuso file tree viewed files edit delete edited typo riferimento titolo scheda al passaggio work item AB# numero della issue tooltip reference title hover card issue number fork commit della pr refs/pull head commenti visualizzati immagini pixel traccianti immagine bloccata clic per caricare attività tabella blocco rendered comments images blocked image aggiornamenti iterazioni push force push rebase cronologia riscritta versioni del diff cosa è cambiato dall’ultima visita badge nuovo segna come visto confronta aggiornamento updates iterations history rewritten diff versions what changed since last visit new badge mark as seen compare update conversazione cronologia discussioni aperte discussione risolta ha approvato ha chiesto modifiche commit inviati ruolo revisore nuovo dalla tua ultima visita confronta due commit chip del tipo di commit ci per commit vedi diff prossimo non visto filtra non visti con commenti avanzamento della revisione cambiato da quando l’hai visto conversation timeline open threads resolved thread approved requested changes pushed commits reviewer role new since last visit compare two commits commit type chips conventional commits ci per commit view diff next unviewed filter unviewed with comments review progress changed since viewed
-source: d91d96af92225cb74da274f8d168b07f6110b709
+source: 6c1d5afb9bb0a33fa35b74bcc119ac137da2bf22
 ---
 
 # Pagina delle pull request
@@ -101,16 +101,16 @@ Ogni riga si legge da sinistra a destra:
 | **Punto** | La pull request è cambiata dall’ultima volta che hai lasciato la sua pagina. Una che non hai mai aperto non ha il punto — non c’è niente con cui confrontare |
 | **#** | Il numero — verde finché è aperta, grigio per una bozza |
 | **Titolo** | Il titolo, il suo tipo [Conventional Commits](committing.md) come chip colorato (`feat`, `fix`, `docs`…), un badge *bozza*. Sotto: l’autore (omesso sulle tue), origine → destinazione e **N commenti** — oppure **N commenti nuovi** quando altri ne hanno scritti dalla tua ultima visita |
-| **Dimensione** | `+48 −12 · 4 file` — righe aggiunte e tolte, file toccati |
+| **Dimensione** | `+48 −12 · 4 file` — righe aggiunte e tolte, file toccati; solo `4 file` dove l’host non conta le righe |
 | **Revisione** | Il verdetto in vigore di ogni revisore — **✓ bruno ha approvato**, **✕ ana ha chiesto modifiche** — poi chi è ancora richiesto, **● aspetta te** in giallo. **✓ pronta per il merge** quando l’host dice che le revisioni sono fatte e i controlli non sono falliti; **nessun revisore** quando nessuno è stato richiesto né ha risposto |
 | **Controlli** | I controlli dell’head — `✓ 6/6`, `✕ 1 fallito`, `● 2 in corso`; passa sopra per i conteggi |
 | **Aggiornata** | Quanto tempo fa è cambiata l’ultima volta; passa sopra per la data |
 
 ### Cosa dà ogni host
 
-Dimensione, commenti e verdetti non sono nella lista di ogni host, e la pagina non
-apre mai ogni pull request per trovarli: ciò che la lista non porta resta vuoto,
-mai uno zero.
+Dimensione, commenti e verdetti non sono nella lista di ogni host, e la pagina
+non apre ogni pull request per trovarli — con un’eccezione, qui sotto: ciò che
+la lista non porta resta vuoto, mai uno zero.
 
 | Host | Dimensione | Commenti | Verdetti di revisione |
 |---|---|---|---|
@@ -121,7 +121,7 @@ mai uno zero.
 | **Bitbucket Cloud** | — | ✓ (solo il numero) | — |
 | **Forgejo** | ✓ quando il server lo compila | ✓ (solo il numero) | Chi è richiesto |
 
-**Azure DevOps: solo file.** La sua API non dà il numero di righe per pull request, quindi la cella mostra solo i file, senza +/−. Questa pagina li legge per le righe che mostra — due richieste per pull request, quattro alla volta — e li tiene finché qualcuno non fa push su quella pull request; l’aggiornamento periodico della barra laterale non li legge mai. Un conteggio che non si riesce a leggere lascia la cella vuota, senza errori.
+**Azure DevOps: solo file.** La sua API non dà il numero di righe per pull request — servirebbe il diff di ogni file —, quindi la cella mostra `4 file`, senza +/−. Nemmeno la sua lista porta il numero di file, quindi questa pagina lo legge da sé, per le righe aperte e in bozza che disegna — quelle unite e chiuse restano vuote, perché una lista completa costerebbe centinaia di richieste per un numero su cui nessuno basa una revisione: due richieste per pull request (le sue iterazioni, poi le modifiche dell’ultima — lo stesso conteggio della sua scheda File), quattro alla volta. I conteggi restano finché qualcuno non fa push su quella pull request, così un aggiornamento o il ritorno alla pagina chiede solo quelle che si sono mosse. L’aggiornamento periodico della barra laterale non li legge mai. Un conteggio che non si riesce a leggere — nessun permesso, un server che limita le richieste — lascia la cella vuota, senza errori; una pull request con oltre 20.000 modifiche non viene contata.
 
 Il numero di commenti è quello della conversazione — i commenti su una riga del
 diff non ci sono. Senza token la richiesta a GitHub viene saltata, e quelle
