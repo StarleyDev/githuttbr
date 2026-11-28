@@ -22,7 +22,11 @@ function fmt(n: number): string {
   return n.toLocaleString()
 }
 
-export function InsightsPage({ repoPath }: { repoPath: string }): React.JSX.Element {
+/**
+ * `embedded`: inside Repository settings, whose page head already says "Insights"
+ * with its icon — the page's own big title would say it twice.
+ */
+export function InsightsPage({ repoPath, embedded = false }: { repoPath: string; embedded?: boolean }): React.JSX.Element {
   const t = useT()
   const toast = useUIStore((s) => s.toast)
   const setFileView = useUIStore((s) => s.setFileView)
@@ -77,15 +81,17 @@ export function InsightsPage({ repoPath }: { repoPath: string }): React.JSX.Elem
         transition={{ duration: 0.2 }}
       >
         <PageHead>
-          <header className="changelog-header">
-            <div className="changelog-title">
-              <BarChart3 size={20} />
-              <div>
-                <h1>{t('insights.title')}</h1>
-                <span className="settings-hint">{repoName} {t('insights.subtitle')}</span>
+          {!embedded && (
+            <header className="changelog-header">
+              <div className="changelog-title">
+                <BarChart3 size={20} />
+                <div>
+                  <h1>{t('insights.title')}</h1>
+                  <span className="settings-hint">{repoName} {t('insights.subtitle')}</span>
+                </div>
               </div>
-            </div>
-          </header>
+            </header>
+          )}
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 16 }}>
             <div className="codesearch-tabs" style={{ margin: 0 }}>
               {RANGES.map((r) => (

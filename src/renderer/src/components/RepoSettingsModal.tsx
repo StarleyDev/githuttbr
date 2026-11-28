@@ -447,7 +447,7 @@ export function RepoSettingsModal({ repoPath, initialTab }: { repoPath: string; 
             {page === 'info' && <RepoInfoTab repoPath={repoPath} />}
             {page === 'vault' && <RepoVaultTab repoPath={repoPath} onCount={onVaultCount} />}
             {page === 'analytics' && <AnalyticsSection aiEnabled={aiEnabled} />}
-            {page === 'insights' && <InsightsPage repoPath={repoPath} />}
+            {page === 'insights' && <InsightsPage repoPath={repoPath} embedded />}
             {page === 'history' && <RepoHistorySection />}
             {page === 'logs' && <RepoLogsTab repoPath={repoPath} />}
           </div>

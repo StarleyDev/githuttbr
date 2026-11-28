@@ -3379,6 +3379,10 @@ export const shots = [
     drive: async (page, repoPaths) => {
       const repo = repoPaths['insights']
       await page.evaluate((p) => window.__shot.settings.getState().openPageTab({ type: 'insights', repoPath: p }), repo)
+      await page.waitForTimeout(1200)
+      // The playground's commits carry fixed dates that age out of the default
+      // 90 days: the whole history shows what the page is for.
+      await page.locator('.insights .codesearch-tab').last().click()
       await page.waitForTimeout(1800)
     }
   },
