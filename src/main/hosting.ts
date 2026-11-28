@@ -251,7 +251,9 @@ import {
   azurePrDetail,
   azureFileDiff,
   azurePrFiles,
+  azurePrFileCount,
   azurePrIterationFiles,
+  AzureThrottle,
   azurePrUpdates,
   parseRetryAfter,
   azureReply,
@@ -270,6 +272,7 @@ import {
 } from './azurePr'
 import { ensurePrCommits, getLocalMergeBase, readPrFileFromClone, readPrFilesFromClone, type PrFetchMode } from './prLocalFiles'
 import { withNoPatchReasons } from '../shared/prFileDiff'
+import { PrFileCountCache, getPrFileCounts, parsePrFileCountRequests } from './prFileCounts'
 import {
   azureReferenceSummaries,
   forgejoReferenceSummaries,
@@ -2877,6 +2880,39 @@ async function pullRequestFileDiff(remoteUrl: string, tokens: HostTokens, reques
 
 /** GitHub's `pulls/{n}/files` lists at most this many (30 pages of 100). */
 const GITHUB_PR_FILES_MAX = 3000
+
+const prFileCountCache = new PrFileCountCache()
+
+/**
+ * The changed-file count of each PR the list page shows, for Azure DevOps —
+ * whose list has no size (GitHub's and Forgejo's carry theirs). Only that page
+ * asks, never the sidebar's periodic refresh: each count is two host calls
+ * (the iterations, then the last one's changes), so they are cached by head
+ * commit (prFileCounts.ts). Silent by design: no credential, a refusal or a
+ * failed read leaves that row's cell blank. The plain token, without the
+ * credential retry: a background read must never evict a working login.
+ */
+async function pullRequestFileCounts(
+  remoteUrl: string,
+  tokens: HostTokens,
+  requests: unknown
+): Promise<Record<number, number>> {
+  const parsed = parseRemoteUrl(remoteUrl)
+  const asked = parsePrFileCountRequests(requests)
+  if (!parsed || parsed.provider !== 'azure' || !asked.length) return {}
+  const repo = { org: parsed.owner, project: parsed.project, repo: parsed.repo }
+  const key = `${repo.org}/${repo.project}/${repo.repo}`.toLowerCase()
+  // The token is looked up once per call — shared by the workers — and only when the cache missed.
+  let auth: Promise<ApiAuth | null> | null = null
+  const throttle = new AzureThrottle()
+  return getPrFileCounts(prFileCountCache, key, asked, async (id) => {
+    auth ??= remoteApiToken(remoteUrl, 'azure', tokens.azure).catch(() => null)
+    const found = await auth
+    if (!found) throw Object.assign(new Error('no credential'), { status: 401 })
+    const ado: Ado = (url, init) => adoJson(url, found.token, init)
+    return azurePrFileCount(ado, repo, id, throttle)
+  })
+}
 
 /**
  * Changed files in a PR from the host's API (for the file-by-file review
@@ -5514,6 +5550,10 @@ export function registerHostingHandlers(): void {
   )
   handleForRepo('hosting:prFileDiff', (remoteUrl: string, tokens: HostTokens, request: unknown) =>
     pullRequestFileDiff(remoteUrl, tokens, request)
+  )
+  // The list page's size column on Azure DevOps: a batch of {id, headSha} → count by id.
+  handleForRepo('hosting:getPrFileCounts', (remoteUrl: string, tokens: HostTokens, requests: unknown) =>
+    pullRequestFileCounts(remoteUrl, tokens, requests)
   )
   handleForRepo('hosting:prListCommits', (remoteUrl: string, tokens: HostTokens, number: number) =>
     pullRequestCommitList(remoteUrl, tokens, number)

@@ -5958,6 +5958,8 @@ export const uk: Dict = {
   'prList.files': "Файлів: {n}",
   'prList.filesOne': "Файлів: {n}",
   'prList.sizeTitle': "Додано рядків: {additions}, видалено: {deletions}, файлів: {files}",
+  'prList.sizeTitleFiles': "Змінено файлів: {files} — хостинг не рахує рядки",
+  'prList.sizeTitleFilesOne': "Змінено файлів: {files} — хостинг не рахує рядки",
   'prList.reviewApproved': "схвалив(ла)",
   'prList.reviewChanges': "попросив(ла) змін",
   'prList.reviewWaitingYou': "чекає на вас",

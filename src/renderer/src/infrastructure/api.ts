@@ -1340,6 +1340,13 @@ export const hostingApi = {
   /** One file's diff read on demand — this clone first, then the host. Always the file back, with a reason when still no patch. */
   prFileDiff: (repoPath: string, remoteUrl: string, tokens: PrTokens, request: import('../../../shared/types').PrFileDiffRequest) =>
     window.api.hosting.prFileDiff(repoPath, remoteUrl, tokens, request) as Promise<import('../../../shared/types').PrFile>,
+  /** Changed-file counts by PR id, for the list page on Azure DevOps; a row it could not count is absent. */
+  getPrFileCounts: (
+    repoPath: string,
+    remoteUrl: string,
+    tokens: PrTokens,
+    requests: import('../../../shared/types').PrFileCountRequest[]
+  ) => window.api.hosting.getPrFileCounts(repoPath, remoteUrl, tokens, requests) as Promise<Record<number, number>>,
   prListCommits: (repoPath: string, remoteUrl: string, tokens: PrTokens, number: number) =>
     window.api.hosting.prListCommits(repoPath, remoteUrl, tokens, number) as Promise<import('../../../shared/types').PrCommitList>,
   prListUpdates: (repoPath: string, remoteUrl: string, tokens: PrTokens, number: number) =>

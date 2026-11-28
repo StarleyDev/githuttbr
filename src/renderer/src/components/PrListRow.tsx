@@ -78,12 +78,22 @@ export function PrListRow({
       </span>
       <span
         className="prl-size"
-        title={size ? interp(t('prList.sizeTitle'), { additions: size.additions, deletions: size.deletions, files: size.files }) : undefined}
+        title={
+          size?.lines
+            ? interp(t('prList.sizeTitle'), { additions: size.lines.additions, deletions: size.lines.deletions, files: size.files })
+            : size
+              ? interp(t(size.files === 1 ? 'prList.sizeTitleFilesOne' : 'prList.sizeTitleFiles'), { files: size.files })
+              : undefined
+        }
       >
         {size && (
           <>
-            <span className="prl-add">+{size.additions}</span> <span className="prl-del">−{size.deletions}</span>
-            {' · '}
+            {size.lines && (
+              <>
+                <span className="prl-add">+{size.lines.additions}</span> <span className="prl-del">−{size.lines.deletions}</span>
+                {' · '}
+              </>
+            )}
             {interp(t(size.files === 1 ? 'prList.filesOne' : 'prList.files'), { n: size.files })}
           </>
         )}

@@ -118,10 +118,12 @@ meelevert blijft leeg, nooit een nul.
 |---|---|---|---|
 | **GitHub** | ✓ | ✓, en welke nieuw zijn | ✓, en *klaar om te mergen* — één extra GraphQL-verzoek voor de hele lijst |
 | **GitLab** | — | ✓ (alleen het aantal) | Wie gevraagd is; *klaar om te mergen* uit de mergestatus van GitLab |
-| **Azure DevOps** | — | — | ✓ uit de stemmen van de reviewers |
+| **Azure DevOps** | Alleen bestanden, gelezen bij het openen van de pagina | — | ✓ uit de stemmen van de reviewers |
 | **Bitbucket Data Center** | — | ✓ (alleen het aantal) | ✓ |
 | **Bitbucket Cloud** | — | ✓ (alleen het aantal) | — |
 | **Forgejo** | ✓ als de server het invult | ✓ (alleen het aantal) | Wie gevraagd is |
+
+**Azure DevOps: alleen bestanden.** De API geeft geen regelaantallen per pull request, dus de cel toont alleen de bestanden, zonder +/−. Deze pagina leest ze voor de rijen die ze toont — twee verzoeken per pull request, vier tegelijk — en bewaart ze tot iemand naar die pull request pusht; de periodieke verversing van de zijbalk leest ze nooit. Een aantal dat niet gelezen kan worden laat de cel leeg, zonder foutmelding.
 
 Het aantal reacties is dat van het gesprek — reacties op een regel van de diff
 tellen niet mee. Zonder token wordt het GitHub-verzoek overgeslagen en blijven die

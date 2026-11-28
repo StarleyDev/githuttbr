@@ -5965,6 +5965,8 @@ export const nl: Dict = {
   'prList.files': "{n} bestanden",
   'prList.filesOne': "{n} bestand",
   'prList.sizeTitle': "{additions} regels toegevoegd en {deletions} verwijderd, in {files} bestanden",
+  'prList.sizeTitleFiles': "{files} bestanden gewijzigd — de host telt geen regels",
+  'prList.sizeTitleFilesOne': "{files} bestand gewijzigd — de host telt geen regels",
   'prList.reviewApproved': "goedgekeurd",
   'prList.reviewChanges': "wijzigingen gevraagd",
   'prList.reviewWaitingYou': "wacht op jou",

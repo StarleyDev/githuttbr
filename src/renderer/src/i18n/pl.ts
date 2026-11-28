@@ -5957,6 +5957,8 @@ export const pl: Dict = {
   'prList.files': "Pliki: {n}",
   'prList.filesOne': "Pliki: {n}",
   'prList.sizeTitle': "Dodane wiersze: {additions}, usunięte: {deletions}, w plikach: {files}",
+  'prList.sizeTitleFiles': "Zmienione pliki: {files} — host nie liczy wierszy",
+  'prList.sizeTitleFilesOne': "Zmienione pliki: {files} — host nie liczy wierszy",
   'prList.reviewApproved': "zatwierdza",
   'prList.reviewChanges': "prosi o zmiany",
   'prList.reviewWaitingYou': "czeka na Ciebie",

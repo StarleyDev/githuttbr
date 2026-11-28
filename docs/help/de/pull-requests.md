@@ -118,10 +118,12 @@ mitbringt, bleibt leer, nie eine Null.
 |---|---|---|---|
 | **GitHub** | ✓ | ✓, und welche neu sind | ✓, und *bereit zum Mergen* — eine zusätzliche GraphQL-Anfrage für die ganze Liste |
 | **GitLab** | — | ✓ (nur die Anzahl) | Wer angefragt ist; *bereit zum Mergen* aus GitLabs Merge-Status |
-| **Azure DevOps** | — | — | ✓ aus den Stimmen der Reviewer |
+| **Azure DevOps** | Nur Dateien, beim Öffnen der Seite gelesen | — | ✓ aus den Stimmen der Reviewer |
 | **Bitbucket Data Center** | — | ✓ (nur die Anzahl) | ✓ |
 | **Bitbucket Cloud** | — | ✓ (nur die Anzahl) | — |
 | **Forgejo** | ✓, wenn der Server es füllt | ✓ (nur die Anzahl) | Wer angefragt ist |
+
+**Azure DevOps: nur Dateien.** Seine API kennt keine Zeilenzahlen für einen Pull Request, daher zeigt die Zelle nur die Dateien, ohne +/−. Diese Seite liest sie für die Zeilen, die sie zeigt — zwei Anfragen pro Pull Request, vier gleichzeitig — und behält sie, bis jemand auf diesen Pull Request pusht; die periodische Aktualisierung der Seitenleiste liest sie nie. Eine Zahl, die nicht gelesen werden kann, lässt die Zelle leer, ohne Fehler.
 
 Die Kommentaranzahl sind die Kommentare der Unterhaltung — Kommentare an einer
 Zeile des Diffs zählen nicht dazu. Ohne Token entfällt die GitHub-Anfrage, und

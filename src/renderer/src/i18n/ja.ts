@@ -5894,6 +5894,8 @@ export const ja: Dict = {
   'prList.files': "{n} ファイル",
   'prList.filesOne': "{n} ファイル",
   'prList.sizeTitle': "{files} ファイルで {additions} 行追加、{deletions} 行削除",
+  'prList.sizeTitleFiles': "{files} ファイルを変更 — ホストは行数を数えません",
+  'prList.sizeTitleFilesOne': "{files} ファイルを変更 — ホストは行数を数えません",
   'prList.reviewApproved': "承認",
   'prList.reviewChanges': "変更を要求",
   'prList.reviewWaitingYou': "あなたを待っています",

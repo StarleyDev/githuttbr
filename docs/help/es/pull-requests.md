@@ -116,10 +116,12 @@ no trae queda en blanco, nunca en cero.
 |---|---|---|---|
 | **GitHub** | ✓ | ✓, y cuáles son nuevos | ✓, y *listo para fusionar* — una petición GraphQL extra para toda la lista |
 | **GitLab** | — | ✓ (solo el número) | A quién se le pide; *listo para fusionar* según el estado de merge de GitLab |
-| **Azure DevOps** | — | — | ✓ a partir de los votos de los revisores |
+| **Azure DevOps** | Solo archivos, leídos al abrir la página | — | ✓ a partir de los votos de los revisores |
 | **Bitbucket Data Center** | — | ✓ (solo el número) | ✓ |
 | **Bitbucket Cloud** | — | ✓ (solo el número) | — |
 | **Forgejo** | ✓ cuando el servidor lo rellena | ✓ (solo el número) | A quién se le pide |
+
+**Azure DevOps: solo archivos.** Su API no da recuentos de líneas por pull request, así que la celda muestra solo los archivos, sin +/−. Esta página los lee para las filas que muestra — dos peticiones por pull request, cuatro a la vez — y los guarda hasta que alguien haga push a esa pull request; la actualización periódica de la barra lateral nunca los lee. Un recuento que no se puede leer deja la celda en blanco, sin error.
 
 El número de comentarios son los comentarios de la conversación — los comentarios
 en una línea del diff no cuentan. Sin token, la petición a GitHub se omite y esas

@@ -5964,6 +5964,8 @@ export const en = {
   'prList.files': "{n} files",
   'prList.filesOne': "{n} file",
   'prList.sizeTitle': "{additions} lines added and {deletions} removed, in {files} files",
+  'prList.sizeTitleFiles': "{files} files changed — the host does not count lines",
+  'prList.sizeTitleFilesOne': "{files} file changed — the host does not count lines",
   'prList.reviewApproved': "approved",
   'prList.reviewChanges': "requested changes",
   'prList.reviewWaitingYou': "waiting for you",

@@ -5959,6 +5959,8 @@ export const he: Dict = {
   'prList.files': "{n} קבצים",
   'prList.filesOne': "{n} קובץ",
   'prList.sizeTitle': "{additions} שורות נוספו ו-{deletions} הוסרו, ב-{files} קבצים",
+  'prList.sizeTitleFiles': "{files} קבצים שונו — המארח אינו סופר שורות",
+  'prList.sizeTitleFilesOne': "{files} קובץ שונה — המארח אינו סופר שורות",
   'prList.reviewApproved': "אישר/ה",
   'prList.reviewChanges': "ביקש/ה שינויים",
   'prList.reviewWaitingYou': "ממתין לך",

@@ -5965,6 +5965,8 @@ export const ptBR: Dict = {
   'prList.files': "{n} arq.",
   'prList.filesOne': "{n} arq.",
   'prList.sizeTitle': "{additions} linhas adicionadas e {deletions} removidas, em {files} arquivos",
+  'prList.sizeTitleFiles': "{files} arquivos alterados — o host não conta linhas",
+  'prList.sizeTitleFilesOne': "{files} arquivo alterado — o host não conta linhas",
   'prList.reviewApproved': "aprovou",
   'prList.reviewChanges': "pediu alterações",
   'prList.reviewWaitingYou': "esperando você",

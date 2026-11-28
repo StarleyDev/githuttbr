@@ -116,10 +116,12 @@ mai uno zero.
 |---|---|---|---|
 | **GitHub** | ✓ | ✓, e quali sono nuovi | ✓, e *pronta per il merge* — una richiesta GraphQL in più per tutta la lista |
 | **GitLab** | — | ✓ (solo il numero) | Chi è richiesto; *pronta per il merge* dallo stato di merge di GitLab |
-| **Azure DevOps** | — | — | ✓ dai voti dei revisori |
+| **Azure DevOps** | Solo file, letti all’apertura della pagina | — | ✓ dai voti dei revisori |
 | **Bitbucket Data Center** | — | ✓ (solo il numero) | ✓ |
 | **Bitbucket Cloud** | — | ✓ (solo il numero) | — |
 | **Forgejo** | ✓ quando il server lo compila | ✓ (solo il numero) | Chi è richiesto |
+
+**Azure DevOps: solo file.** La sua API non dà il numero di righe per pull request, quindi la cella mostra solo i file, senza +/−. Questa pagina li legge per le righe che mostra — due richieste per pull request, quattro alla volta — e li tiene finché qualcuno non fa push su quella pull request; l’aggiornamento periodico della barra laterale non li legge mai. Un conteggio che non si riesce a leggere lascia la cella vuota, senza errori.
 
 Il numero di commenti è quello della conversazione — i commenti su una riga del
 diff non ci sono. Senza token la richiesta a GitHub viene saltata, e quelle

@@ -116,10 +116,12 @@ zostaje puste, nigdy zero.
 |---|---|---|---|
 | **GitHub** | ✓ | ✓, wraz z tym, które są nowe | ✓, oraz *gotowy do scalenia* — jedno dodatkowe zapytanie GraphQL na całą listę |
 | **GitLab** | — | ✓ (tylko liczba) | Kogo poproszono; *gotowy do scalenia* ze statusu scalenia GitLaba |
-| **Azure DevOps** | — | — | ✓ z głosów recenzentów |
+| **Azure DevOps** | Tylko pliki, czytane po otwarciu strony | — | ✓ z głosów recenzentów |
 | **Bitbucket Data Center** | — | ✓ (tylko liczba) | ✓ |
 | **Bitbucket Cloud** | — | ✓ (tylko liczba) | — |
 | **Forgejo** | ✓ gdy serwer to wypełnia | ✓ (tylko liczba) | Kogo poproszono |
+
+**Azure DevOps: tylko pliki.** Jego API nie podaje liczby wierszy dla pull requesta, więc komórka pokazuje same pliki, bez +/−. Ta strona czyta je dla wierszy, które pokazuje — dwa żądania na pull request, cztery naraz — i trzyma je, dopóki ktoś nie wypchnie zmian do tego pull requesta; okresowe odświeżanie paska bocznego nigdy ich nie czyta. Liczba, której nie da się odczytać, zostawia pustą komórkę, bez błędu.
 
 Liczba komentarzy to komentarze rozmowy — komentarze do linii diffu się do niej nie
 wliczają. Bez tokenu zapytanie GitHuba jest pomijane i te kolumny zostają puste.

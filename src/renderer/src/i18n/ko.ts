@@ -5954,6 +5954,8 @@ export const ko: Dict = {
   'prList.files': "파일 {n}개",
   'prList.filesOne': "파일 {n}개",
   'prList.sizeTitle': "파일 {files}개에서 {additions}줄 추가, {deletions}줄 삭제",
+  'prList.sizeTitleFiles': "파일 {files}개 변경 — 호스트가 줄 수를 세지 않습니다",
+  'prList.sizeTitleFilesOne': "파일 {files}개 변경 — 호스트가 줄 수를 세지 않습니다",
   'prList.reviewApproved': "승인",
   'prList.reviewChanges': "변경 요청",
   'prList.reviewWaitingYou': "내 리뷰 대기 중",

@@ -5958,6 +5958,8 @@ export const ru: Dict = {
   'prList.files': "Файлов: {n}",
   'prList.filesOne': "Файлов: {n}",
   'prList.sizeTitle': "Добавлено строк: {additions}, удалено: {deletions}, файлов: {files}",
+  'prList.sizeTitleFiles': "Изменено файлов: {files} — хостинг не считает строки",
+  'prList.sizeTitleFilesOne': "Изменено файлов: {files} — хостинг не считает строки",
   'prList.reviewApproved': "одобрил(а)",
   'prList.reviewChanges': "запросил(а) изменения",
   'prList.reviewWaitingYou': "ждёт вас",

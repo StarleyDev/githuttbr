@@ -81,9 +81,24 @@ describe('PR list rows: since the last visit', () => {
 })
 
 describe('PR list rows: size and checks', () => {
-  it('shows a size only when the host gave all of it', () => {
-    expect(getPrSize(pr(1, { additions: 48, deletions: 0, changedFiles: 4 }))).toEqual({ additions: 48, deletions: 0, files: 4 })
-    expect(getPrSize(pr(2, { additions: 48 }))).toBeNull()
+  it('shows lines and files when the host gave all three', () => {
+    expect(getPrSize(pr(1, { additions: 48, deletions: 0, changedFiles: 4 }))).toEqual({
+      files: 4,
+      lines: { additions: 48, deletions: 0 }
+    })
+  })
+
+  it('shows the files alone where the host counts no lines (Azure DevOps) — never a zero for them', () => {
+    expect(getPrSize(pr(1, { changedFiles: 7 }))).toEqual({ files: 7, lines: null })
+    // Half a line count is no line count.
+    expect(getPrSize(pr(2, { additions: 3, changedFiles: 2 }))).toEqual({ files: 2, lines: null })
+    expect(getPrSize(pr(3, { changedFiles: 0 }))).toEqual({ files: 0, lines: null })
+  })
+
+  it('leaves the cell blank without a file count', () => {
+    expect(getPrSize(pr(1, { additions: 48 }))).toBeNull()
+    expect(getPrSize(pr(2, { additions: 48, deletions: 2 }))).toBeNull()
+    expect(getPrSize(pr(3))).toBeNull()
   })
 
   it('counts the failing heads', () => {
