@@ -12,7 +12,10 @@
   --modal-w: 470px;
   --modal-w-md: 504px;
   --modal-w-wide: 740px;
-  --modal-w-tall: 820px;
+  /* The large group: Settings' own size, for every dialog full of information
+     that scrolls — lists, logs, histories, the repository settings. */
+  --modal-w-lg: min(1080px, calc(100vw - 60px));
+  --modal-h-lg: min(912px, calc(100vh - 80px));
   /* GitHuttBr Default brand palette */
   --githuttbr-primary: #2b2d42;
   --githuttbr-purple: #6c5ce7;
@@ -6632,20 +6635,10 @@ body.col-resizing .node-ava {
   width: var(--modal-w-wide);
 }
 
-/* 20% over the default 420px: room for a repository list worth multi-selecting. */
-.modal-clone {
-  width: var(--modal-w-wide);
-}
-
 /* 20% over the default 420px: branch names, their state badges and the
    "tracks origin/…" line fit without wrapping. */
 .modal-push-branches {
   width: var(--modal-w-md);
-}
-
-/* Wide enough for a long PR branch name plus its reason chips on one line. */
-.modal-branch-cleanup {
-  width: 600px;
 }
 
 /* The standard width: the reviewer, assignee and label chips and the two
@@ -8545,8 +8538,8 @@ body.col-resizing .node-ava {
    section's content. 20% over the 900 × 760 it had, so the grouped pages'
    rows stop wrapping; the viewport still caps it on a small screen. */
 .modal-settings {
-  width: min(1080px, calc(100vw - 60px));
-  height: min(912px, calc(100vh - 80px));
+  width: var(--modal-w-lg);
+  height: var(--modal-h-lg);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -14622,7 +14615,14 @@ input[type='range']:focus-visible {
 }
 
 /* ── Branch comparison: a centre-pane view (was a modal) ── */
-.modal-tall { width: var(--modal-w-tall); max-width: calc(100vw - 48px); }
+/* Dialogs full of information take the large group's size, Settings' own. */
+.modal.modal-tall,
+.modal.modal-clone,
+.modal.modal-branch-cleanup {
+  width: var(--modal-w-lg);
+  height: var(--modal-h-lg);
+  max-width: calc(100vw - 48px);
+}
 .compare-header { flex-wrap: wrap; row-gap: 6px; }
 .compare-title { display: flex; align-items: center; gap: 8px; font-size: 13px; flex-shrink: 0; }
 .compare-title svg { color: var(--accent, #6366f1); }
@@ -20591,8 +20591,8 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 /* The same size as Settings (.modal-settings), so the two read as one family
    and the repository's pages get the room Settings' pages have. */
 .modal:has(> .modal-scroll > .repo-settings-shell) {
-  width: min(1080px, calc(100vw - 60px));
-  height: min(912px, calc(100vh - 80px));
+  width: var(--modal-w-lg);
+  height: var(--modal-h-lg);
 }
 .repo-settings-shell { flex: 1; }
 .repo-settings-summary {
