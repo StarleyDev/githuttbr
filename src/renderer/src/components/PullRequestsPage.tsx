@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { GitMerge, GitPullRequest, GitPullRequestClosed, GitPullRequestDraft, Loader2, Plus, RefreshCw } from 'lucide-react'
+import { ChevronDown, GitPullRequest, Loader2, Plus, RefreshCw } from 'lucide-react'
 import type { CiStatus, HostingProvider, PullRequest } from '../../../shared/types'
 import { countChecks } from '../../../shared/ciSummary'
 import { gitlabServerBases } from '../../../shared/gitlabInstance'
@@ -18,7 +18,6 @@ import {
   filterSummary,
   hasActiveFilters,
   openListCapped,
-  highlightParts,
   isMine,
   prInTab,
   prListItems,
@@ -29,13 +28,12 @@ import {
   type PrListItem,
   type PrListTab
 } from '../lib/prList'
+import { countCiFailing, getPrTriage } from '../lib/prListRow'
 import { bitbucketServerBasesOf, enterpriseBasesOf, prRemoteIdentity, repoSupportsPrReview } from '../lib/hosting'
 import { NO_ITEMS } from '../lib/stableEmpty'
-import { timeAgo } from '../lib/timeAgo'
 import { readableError } from '../lib/gitErrorHint'
-import { ciIcon, ciTitle } from './CiIcon'
-import { HostUserAvatar } from './HostUserAvatar'
 import { PageHead } from './PageHead'
+import { PrListRow } from './PrListRow'
 
 const TAB_KEY: Record<PrListTab, TranslationKey> = {
   open: 'prList.tabOpen',
@@ -60,7 +58,14 @@ const PROVIDER_NAME: Record<Exclude<HostingProvider, null>, string> = {
  * without opening each one. A row opens the PR's own page, whose ‹ › walk this
  * filtered list.
  */
-export function PullRequestsPage({ repoPath }: { repoPath: string }): React.JSX.Element {
+export function PullRequestsPage({
+  repoPath,
+  fromMission = false
+}: {
+  repoPath: string
+  /** Opened from Mission Control: the page offers the way back. */
+  fromMission?: boolean
+}): React.JSX.Element {
   const t = useT()
   const openModal = useUIStore((s) => s.openModal)
   const repoLoaded = useRepoStore((s) => !!s.repos[repoPath])
@@ -72,6 +77,8 @@ export function PullRequestsPage({ repoPath }: { repoPath: string }): React.JSX.
   const refreshPRs = useRepoStore((s) => s.refreshPRs)
   const profiles = useSettingsStore((s) => s.settings.profiles)
   const githubToken = useSettingsStore((s) => s.activeProfile().githubToken)
+  // Subscribed, so a row's "new" dot clears the moment its PR page is left.
+  const visits = useSettingsStore((s) => s.settings.prVisits)
   const view = usePrListStore((s) => s.views[repoPath]) ?? DEFAULT_VIEW
   const finished = usePrListStore((s) => s.finished[repoPath])
   const { setTab, setFilters, clearFilters, loadFinished } = usePrListStore.getState()
@@ -188,6 +195,17 @@ export function PullRequestsPage({ repoPath }: { repoPath: string }): React.JSX.
   const targets = useMemo(() => targetOptions(tabPrs), [tabPrs])
   const mine = useMemo(() => tabPrs.filter((p) => isMine(p, me)).length, [tabPrs, me])
   const awaiting = useMemo(() => tabPrs.filter((p) => awaitsMyReview(p, me)).length, [tabPrs, me])
+  const ciFailing = useMemo(() => countCiFailing(tabPrs), [tabPrs])
+
+  // Open and Drafts are triaged — what waits on you, yours, the rest; Merged and
+  // Closed are history, one list. ‹ › walk the rows in the order they are drawn.
+  const triage = useMemo(() => (finishedTab ? null : getPrTriage(rows, me)), [finishedTab, rows, me])
+  const ordered = useMemo(
+    () => (triage ? [...triage.awaiting, ...triage.mine, ...triage.others] : rows),
+    [triage, rows]
+  )
+  const [othersOpen, setOthersOpen] = useState(false)
+  const [moreOpen, setMoreOpen] = useState(false)
 
   const [now, setNow] = useState(() => Date.now())
   useEffect(() => {
@@ -209,7 +227,7 @@ export function PullRequestsPage({ repoPath }: { repoPath: string }): React.JSX.
       repoPath,
       { number: it.pr.id, title: it.pr.title, remoteUrl: it.remoteUrl },
       {
-        entries: rows.map((r) => ({ number: r.pr.id, title: r.pr.title, remoteUrl: r.remoteUrl })),
+        entries: ordered.map((r) => ({ number: r.pr.id, title: r.pr.title, remoteUrl: r.remoteUrl })),
         filters,
         tab
       }
@@ -221,48 +239,68 @@ export function PullRequestsPage({ repoPath }: { repoPath: string }): React.JSX.
     .map((p) => interp(t(p.key), p.vars))
     .join(', ')
   const repoName = repoPath.split(/[\\/]/).pop() ?? repoPath
+  // The pickers that live behind "More filters": lit while one of them narrows the list.
+  const morePicked = (!!filters.author && filters.author !== ME) || (!!filters.reviewer && filters.reviewer !== ME) || !!filters.target
 
   // Tabs and filters need a remote to list from: same gate as the list below.
   const ready = repoLoaded && !!origin
+
+  const renderCard = (list: PrListItem[]): React.JSX.Element => (
+    <ul className="prl-card" aria-label={t('prList.title')}>
+      {list.map((it) => (
+        <li key={`${it.remoteUrl}#${it.pr.id}`}>
+          <PrListRow item={it} query={filters.query} me={me} now={now} visits={visits} onOpen={() => open(it)} />
+        </li>
+      ))}
+    </ul>
+  )
+
+  // "Others" folds away while there is something more pressing above it; a
+  // search or a filter shows everything it kept.
+  const triaged = !!triage && (triage.awaiting.length > 0 || triage.mine.length > 0)
+  const othersShown = !triaged || active || othersOpen
 
   return (
     <div className="changelog-page prl-page">
       <div className="changelog-inner">
         <PageHead>
+          {fromMission && (
+            <button className="prl-back" onClick={() => useUIStore.getState().setMissionOpen(true)}>
+              <span aria-hidden="true">←</span> {t('prList.backToMission')}
+            </button>
+          )}
           <header className="prl-header">
-            <div className="changelog-title">
-              <GitPullRequest size={20} />
-              <div>
-                <h1>{t('prList.title')}</h1>
-                <span className="settings-hint">
-                  {/* i18n-ignore repository and product names are data */}
-                  {provider ? `${repoName} · ${PROVIDER_NAME[provider]}` : repoName}
-                </span>
-              </div>
+            <GitPullRequest size={22} className="prl-header-icon" />
+            <div className="prl-header-title">
+              <h1>{t('prList.title')}</h1>
+              <span className="prl-header-sub">
+                {/* i18n-ignore repository and product names are data */}
+                {provider ? `${repoName} · ${PROVIDER_NAME[provider]}` : repoName}
+              </span>
             </div>
-            <div className="prl-header-actions">
-              <button className="btn ghost small" onClick={refresh} title={t('prList.refresh')}>
-                <RefreshCw size={13} className={finishedHere?.status === 'loading' ? 'spin' : undefined} /> {t('prList.refresh')}
-              </button>
-              <button className="btn small" onClick={() => openModal({ kind: 'create-pr', repoPath })}>
-                <Plus size={13} /> {t('prList.newPr')}
-              </button>
-            </div>
+            <span className="prl-header-gap" />
+            <button className="prl-btn" onClick={refresh} title={t('prList.refresh')}>
+              {finishedHere?.status === 'loading' && <RefreshCw size={12} className="spin" />}
+              {t('prList.refresh')}
+            </button>
+            <button className="prl-btn primary" onClick={() => openModal({ kind: 'create-pr', repoPath })}>
+              <Plus size={13} /> {t('prList.newPr')}
+            </button>
           </header>
           {ready && (
-            <>
-              <nav className="prl-tabs" role="tablist" aria-label={t('prList.title')}>
+            <div className="prl-controls">
+              <div className="prl-seg" role="tablist" aria-label={t('prList.title')}>
                 {PR_LIST_TABS.map((id) => (
                   <button
                     key={id}
                     role="tab"
                     aria-selected={tab === id}
-                    className={`prl-tab ${tab === id ? 'active' : ''}`}
+                    className={`prl-seg-btn ${tab === id ? 'active' : ''}`}
                     onClick={() => setTab(repoPath, id)}
                   >
                     {t(TAB_KEY[id])}
                     {counts[id] !== null && (
-                      <span className="prl-tab-count">
+                      <span className="prl-seg-count">
                         {counts[id]}
                         {((id === 'merged' || id === 'closed') && finishedHere?.data?.truncated) || (id === 'open' && openCapped)
                           ? '+'
@@ -271,94 +309,102 @@ export function PullRequestsPage({ repoPath }: { repoPath: string }): React.JSX.
                     )}
                   </button>
                 ))}
-              </nav>
-
-              <div className="prl-filters">
-                <label className="prl-field prl-field-search">
-                  {t('prList.search')}
-                  <input
-                    type="search"
-                    value={view.filters.query}
-                    placeholder={t('prList.searchPlaceholder')}
-                    onChange={(e) => setFilters(repoPath, { query: e.target.value })}
-                  />
-                </label>
-                <label className="prl-field">
-                  {t('prList.author')}
-                  <select value={filters.author} onChange={(e) => setFilters(repoPath, { author: e.target.value })}>
-                    <option value="">{t('prList.allAuthors')}</option>
-                    {me && <option value={ME}>{interp(t('prList.meOption'), { name: me, n: mine })}</option>}
-                    {authors.map((a) => (
-                      <option key={a.value} value={a.value}>
-                        {interp(t('prList.withCount'), { name: a.value, n: a.count })}
-                      </option>
-                    ))}
-                    {/* A pick the current tab has nobody for stays selectable, or the select would lie. */}
-                    {filters.author && filters.author !== ME && !authors.some((a) => a.value === filters.author) && (
-                      <option value={filters.author}>{filters.author}</option>
-                    )}
-                  </select>
-                </label>
-                <label className="prl-field">
-                  {t('prList.reviewer')}
-                  <select value={filters.reviewer} onChange={(e) => setFilters(repoPath, { reviewer: e.target.value })}>
-                    <option value="">{t('prList.anyReviewer')}</option>
-                    {me && <option value={ME}>{interp(t('prList.reviewMeOption'), { n: awaiting })}</option>}
-                    {reviewers.map((a) => (
-                      <option key={a.value} value={a.value}>
-                        {interp(t('prList.withCount'), { name: a.value, n: a.count })}
-                      </option>
-                    ))}
-                    {filters.reviewer && filters.reviewer !== ME && !reviewers.some((a) => a.value === filters.reviewer) && (
-                      <option value={filters.reviewer}>{filters.reviewer}</option>
-                    )}
-                  </select>
-                </label>
-                <label className="prl-field">
-                  {t('prList.target')}
-                  <select value={filters.target} onChange={(e) => setFilters(repoPath, { target: e.target.value })}>
-                    <option value="">{t('prList.allTargets')}</option>
-                    {targets.map((a) => (
-                      <option key={a.value} value={a.value}>
-                        {interp(t('prList.withCount'), { name: a.value, n: a.count })}
-                      </option>
-                    ))}
-                    {filters.target && !targets.some((a) => a.value === filters.target) && (
-                      <option value={filters.target}>{filters.target}</option>
-                    )}
-                  </select>
-                </label>
-                <div className="prl-chips">
-                  {me && (
-                    <button
-                      className={`prl-chip ${filters.author === ME ? 'active' : ''}`}
-                      aria-pressed={filters.author === ME}
-                      onClick={() => setFilters(repoPath, { author: filters.author === ME ? '' : ME })}
-                    >
-                      {t('prList.chipMine')}
-                    </button>
-                  )}
-                  {me && (
-                    <button
-                      className={`prl-chip ${filters.reviewer === ME ? 'active' : ''}`}
-                      aria-pressed={filters.reviewer === ME}
-                      onClick={() => setFilters(repoPath, { reviewer: filters.reviewer === ME ? '' : ME })}
-                    >
-                      {t('prList.chipAwaiting')}
-                    </button>
-                  )}
-                  {!finishedTab && (
-                    <button
-                      className={`prl-chip ${filters.ciFailing ? 'active' : ''}`}
-                      aria-pressed={filters.ciFailing}
-                      onClick={() => setFilters(repoPath, { ciFailing: !filters.ciFailing })}
-                    >
-                      {t('prList.chipCiFailing')}
-                    </button>
-                  )}
-                </div>
               </div>
-            </>
+              <label className="prl-search">
+                <span className="prl-sr">{t('prList.search')}</span>
+                <input
+                  type="search"
+                  value={view.filters.query}
+                  placeholder={t('prList.searchFull')}
+                  onChange={(e) => setFilters(repoPath, { query: e.target.value })}
+                />
+              </label>
+              {me && (
+                <button
+                  className={`prl-chip prl-chip-awaiting ${filters.reviewer === ME ? 'active' : ''}`}
+                  aria-pressed={filters.reviewer === ME}
+                  onClick={() => setFilters(repoPath, { reviewer: filters.reviewer === ME ? '' : ME })}
+                >
+                  {t('prList.chipAwaiting')} <span className="prl-chip-count">{awaiting}</span>
+                </button>
+              )}
+              {me && (
+                <button
+                  className={`prl-chip ${filters.author === ME ? 'active' : ''}`}
+                  aria-pressed={filters.author === ME}
+                  onClick={() => setFilters(repoPath, { author: filters.author === ME ? '' : ME })}
+                >
+                  {t('prList.chipMine')} <span className="prl-chip-count">{mine}</span>
+                </button>
+              )}
+              {!finishedTab && (
+                <button
+                  className={`prl-chip ${filters.ciFailing ? 'active' : ''}`}
+                  aria-pressed={filters.ciFailing}
+                  onClick={() => setFilters(repoPath, { ciFailing: !filters.ciFailing })}
+                >
+                  {t('prList.chipCiFailing')} <span className="prl-chip-count">{ciFailing}</span>
+                </button>
+              )}
+              <div className="prl-more">
+                <button
+                  className={`prl-chip ${morePicked || moreOpen ? 'active' : ''}`}
+                  aria-expanded={moreOpen}
+                  onClick={() => setMoreOpen((v) => !v)}
+                >
+                  {t('prList.moreFilters')} <ChevronDown size={12} />
+                </button>
+                {moreOpen && (
+                  <MoreFilters onClose={() => setMoreOpen(false)}>
+                    <label className="prl-field">
+                      {t('prList.author')}
+                      <select value={filters.author} onChange={(e) => setFilters(repoPath, { author: e.target.value })}>
+                        <option value="">{t('prList.allAuthors')}</option>
+                        {me && <option value={ME}>{interp(t('prList.meOption'), { name: me, n: mine })}</option>}
+                        {authors.map((a) => (
+                          <option key={a.value} value={a.value}>
+                            {interp(t('prList.withCount'), { name: a.value, n: a.count })}
+                          </option>
+                        ))}
+                        {/* A pick the current tab has nobody for stays selectable, or the select would lie. */}
+                        {filters.author && filters.author !== ME && !authors.some((a) => a.value === filters.author) && (
+                          <option value={filters.author}>{filters.author}</option>
+                        )}
+                      </select>
+                    </label>
+                    <label className="prl-field">
+                      {t('prList.reviewer')}
+                      <select value={filters.reviewer} onChange={(e) => setFilters(repoPath, { reviewer: e.target.value })}>
+                        <option value="">{t('prList.anyReviewer')}</option>
+                        {me && <option value={ME}>{interp(t('prList.reviewMeOption'), { n: awaiting })}</option>}
+                        {reviewers.map((a) => (
+                          <option key={a.value} value={a.value}>
+                            {interp(t('prList.withCount'), { name: a.value, n: a.count })}
+                          </option>
+                        ))}
+                        {filters.reviewer && filters.reviewer !== ME && !reviewers.some((a) => a.value === filters.reviewer) && (
+                          <option value={filters.reviewer}>{filters.reviewer}</option>
+                        )}
+                      </select>
+                    </label>
+                    <label className="prl-field">
+                      {t('prList.target')}
+                      <select value={filters.target} onChange={(e) => setFilters(repoPath, { target: e.target.value })}>
+                        <option value="">{t('prList.allTargets')}</option>
+                        {targets.map((a) => (
+                          <option key={a.value} value={a.value}>
+                            {interp(t('prList.withCount'), { name: a.value, n: a.count })}
+                          </option>
+                        ))}
+                        {filters.target && !targets.some((a) => a.value === filters.target) && (
+                          <option value={filters.target}>{filters.target}</option>
+                        )}
+                      </select>
+                    </label>
+                  </MoreFilters>
+                )}
+              </div>
+            </div>
           )}
         </PageHead>
 
@@ -370,20 +416,16 @@ export function PullRequestsPage({ repoPath }: { repoPath: string }): React.JSX.
           <p className="ci-runs-empty">{t('prList.noRemote')}</p>
         ) : (
           <>
-            <div className="prl-status" aria-live="polite">
-              {active
-                ? interp(t('prList.shownOf'), { n: rows.length, total: inTab.length })
-                : interp(t('prList.shownAll'), { n: inTab.length })}
-              {active && summary && <> · {summary}</>}
-              {active && (
-                <>
-                  {' · '}
-                  <button className="prp-link" onClick={() => clearFilters(repoPath)}>
-                    {t('prList.clearFilters')}
-                  </button>
-                </>
-              )}
-            </div>
+            {active && (
+              <div className="prl-status" aria-live="polite">
+                {interp(t('prList.shownOf'), { n: rows.length, total: inTab.length })}
+                {summary && <> · {summary}</>}
+                {' · '}
+                <button className="prp-link" onClick={() => clearFilters(repoPath)}>
+                  {t('prList.clearFilters')}
+                </button>
+              </div>
+            )}
 
             {finishedTab && finishedHere?.status === 'error' && (
               <div className="ci-runs-error">
@@ -405,27 +447,39 @@ export function PullRequestsPage({ repoPath }: { repoPath: string }): React.JSX.
               <p className="ci-runs-empty">
                 {active ? t('prList.noMatches') : !finishedTab && !provider ? t('prList.noHost') : t('prList.empty')}
               </p>
-            ) : (
-              <div className="prl-table">
-                {/* The column names are for the eye; each row's button names its PR. */}
-                <div className="prl-row prl-head" aria-hidden="true">
-                  <span>{t('prList.colNumber')}</span>
-                  <span>{t('prList.colTitle')}</span>
-                  <span>{t('prList.colAuthor')}</span>
-                  <span>{t('prList.colBranches')}</span>
-                  <span>{t('prList.colChecks')}</span>
-                  <span>{t('prList.colUpdated')}</span>
-                </div>
-                <ul className="prl-list" aria-label={t('prList.title')}>
-                  {rows.map((it) => (
-                    <li key={`${it.remoteUrl}#${it.pr.id}`}>
-                      <PrRow item={it} query={filters.query} me={me} now={now} onOpen={() => open(it)} />
-                    </li>
-                  ))}
-                </ul>
+            ) : triage && triaged ? (
+              <div className="prl-sections">
+                {triage.awaiting.length > 0 && (
+                  <section>
+                    <h2 className="prl-section prl-section-awaiting">
+                      {interp(t('prList.sectionAwaiting'), { n: triage.awaiting.length })}
+                    </h2>
+                    {renderCard(triage.awaiting)}
+                  </section>
+                )}
+                {triage.mine.length > 0 && (
+                  <section>
+                    <h2 className="prl-section">{interp(t('prList.sectionMine'), { n: triage.mine.length })}</h2>
+                    {renderCard(triage.mine)}
+                  </section>
+                )}
+                {triage.others.length > 0 && (
+                  <section>
+                    <h2 className="prl-section">
+                      {interp(t('prList.sectionOthers'), { n: triage.others.length })}
+                      {!active && (
+                        <button className="prl-section-toggle" aria-expanded={othersShown} onClick={() => setOthersOpen((v) => !v)}>
+                          {othersShown ? t('prList.sectionHide') : t('prList.sectionShow')}
+                        </button>
+                      )}
+                    </h2>
+                    {othersShown && renderCard(triage.others)}
+                  </section>
+                )}
               </div>
+            ) : (
+              <div className="prl-sections">{renderCard(ordered)}</div>
             )}
-            {rows.length > 0 && reviewable && <p className="prl-note">{t('prList.hint')}</p>}
           </>
         )}
       </div>
@@ -433,87 +487,32 @@ export function PullRequestsPage({ repoPath }: { repoPath: string }): React.JSX.
   )
 }
 
-/** How many heads one ciStatuses call answers — main reads no more per call. */
-const CI_BATCH = 40
-
-function PrRow({
-  item,
-  query,
-  me,
-  now,
-  onOpen
-}: {
-  item: PrListItem
-  query: string
-  me: string | null
-  now: number
-  onOpen: () => void
-}): React.JSX.Element {
-  const t = useT()
-  const { pr } = item
-  const mine = isMine(pr, me)
-  const ago = pr.updatedAt ? timeAgo(Date.parse(pr.updatedAt), now) : null
-  const waiting = pr.requestedReviewers ?? []
+/** The author, reviewer and target pickers, under "More filters". Closes on
+ *  Escape or a click anywhere else. */
+function MoreFilters({ onClose, children }: { onClose: () => void; children: React.ReactNode }): React.JSX.Element {
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const onDown = (e: MouseEvent): void => {
+      const box = ref.current
+      // The toggle button sits beside the panel: its own click closes it.
+      if (box && !box.parentElement?.contains(e.target as Node)) onClose()
+    }
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [onClose])
   return (
-    <button className="prl-row" onClick={onOpen} title={`#${pr.id} ${pr.title}`}>
-      <span className="prl-num">
-        <StateIcon pr={pr} />#{pr.id}
-      </span>
-      <span className="prl-title">
-        <span className="prl-title-text">
-          {highlightParts(pr.title, query).map((part, i) => (part.hit ? <mark key={i} className="search-hit">{part.text}</mark> : part.text))}
-          {pr.isDraft && (pr.state ?? 'open') === 'open' && <span className="prl-badge">{t('prList.draft')}</span>}
-          {item.upstream && <span className="prl-badge">{interp(t('prList.onUpstream'), { repo: item.upstream })}</span>}
-        </span>
-        {waiting.length > 0 && (pr.state ?? 'open') === 'open' && (
-          <span className={`prl-sub ${awaitsMyReview(pr, me) ? 'prl-sub-you' : ''}`}>
-            {interp(t('prList.reviewRequested'), { names: waiting.join(', ') })}
-          </span>
-        )}
-      </span>
-      <span className="prl-author">
-        <HostUserAvatar login={pr.author} url={pr.authorAvatar} size={20} />
-        <span className="prl-author-name">{pr.author}</span>
-        {mine && <span className="prl-you">{t('prList.you')}</span>}
-      </span>
-      <span className="prl-branches" title={`${pr.sourceBranch} → ${pr.targetBranch}`}>
-        {/* i18n-ignore branch names around an arrow */}
-        {`${pr.sourceBranch} → ${pr.targetBranch}`}
-      </span>
-      <span className="prl-ci" title={pr.ci ? ciTitle(pr.ci, pr.ciCounts, t) : undefined}>
-        {pr.ci ? (
-          <>
-            {ciIcon(pr.ci, 13)}
-            <CiShort pr={pr} />
-          </>
-        ) : (
-          <span className="prl-muted">—</span>
-        )}
-      </span>
-      <span className="prl-updated" title={pr.updatedAt ? new Date(pr.updatedAt).toLocaleString() : undefined}>
-        {ago ? interp(t(ago.key), { n: ago.n }) : '—'}
-      </span>
-    </button>
+    <div ref={ref} className="prl-more-panel">
+      {children}
+    </div>
   )
 }
 
-/** "6/6", "1 failed", "2 running" — the head's checks in a column's width. */
-function CiShort({ pr }: { pr: PullRequest }): React.JSX.Element | null {
-  const t = useT()
-  const c = pr.ciCounts
-  if (!c) return null
-  // Skipped and cancelled checks are not owed: 4 of 6 with 2 skipped is all green.
-  const total = c.passed + c.failed + c.pending + c.unknown
-  // Every check skipped or cancelled: nothing was owed, so nothing to count.
-  if (!total) return null
-  if (pr.ci === 'failure') return <span className="ci-failure">{interp(t('ci.countFailed'), { n: c.failed })}</span>
-  if (pr.ci === 'pending') return <span>{interp(t('ci.countPending'), { n: c.pending })}</span>
-  return <span>{interp(t('prList.ciPassed'), { n: c.passed, total })}</span>
-}
-
-function StateIcon({ pr }: { pr: PullRequest }): React.JSX.Element {
-  if (pr.state === 'merged') return <GitMerge size={13} className="prl-state merged" />
-  if (pr.state === 'closed') return <GitPullRequestClosed size={13} className="prl-state closed" />
-  if (pr.isDraft) return <GitPullRequestDraft size={13} className="prl-state draft" />
-  return <GitPullRequest size={13} className="prl-state open" />
-}
+/** How many heads one ciStatuses call answers — main reads no more per call. */
+const CI_BATCH = 40

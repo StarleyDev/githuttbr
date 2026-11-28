@@ -470,7 +470,9 @@ describe('mapping the documented shapes', () => {
       requestedReviewers: ['jdoe'],
       // The list page's "updated" column and its search.
       updatedAt: new Date(1700000500000).toISOString(),
-      body: 'Does a thing.'
+      body: 'Does a thing.',
+      // The list page's review column: the reviewer who answered.
+      reviews: [{ login: 'rev2', verdict: 'approved' }]
     })
   })
 

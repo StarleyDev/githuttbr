@@ -34,6 +34,7 @@ import type {
   PrReviewEvent,
   PrReviewThread,
   PullRequest,
+  PrListReview,
   PrDiffCommits,
   PrDiffRevision,
   PrLineAnchor
@@ -192,6 +193,8 @@ export interface BbsPull {
   reviewers?: BbsParticipant[]
   participants?: BbsParticipant[]
   links?: { self?: Array<{ href?: string }> }
+  /** The list's counters: comments, open tasks. */
+  properties?: { commentCount?: number }
 }
 
 interface BbsComment {
@@ -268,8 +271,20 @@ export function mapBbsPull(pr: BbsPull, repo: BitbucketServerRepo): PullRequest 
     ...(head && head !== base ? { headRepo: head } : {}),
     requestedReviewers: pendingReviewers(pr).map((r) => who(r.user)),
     ...(pr.updatedDate ? { updatedAt: new Date(pr.updatedDate).toISOString() } : {}),
-    ...(pr.description ? { body: pr.description } : {})
+    ...(pr.description ? { body: pr.description } : {}),
+    ...(pr.reviewers ? { reviews: bbsVerdicts(pr.reviewers) } : {}),
+    ...(typeof pr.properties?.commentCount === 'number' ? { commentCount: pr.properties.commentCount } : {})
   }
+}
+
+/** The reviewers who have answered: approved, or "needs work". */
+function bbsVerdicts(reviewers: BbsParticipant[]): PrListReview[] {
+  return reviewers.flatMap((r): PrListReview[] => {
+    const status = r.status ?? (r.approved ? 'APPROVED' : 'UNAPPROVED')
+    if (status === 'APPROVED') return [{ login: who(r.user), verdict: 'approved' }]
+    if (status === 'NEEDS_WORK') return [{ login: who(r.user), verdict: 'changes' }]
+    return []
+  })
 }
 
 /** A Data Center build state, in the app's terms. */

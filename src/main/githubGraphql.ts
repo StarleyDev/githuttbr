@@ -1,4 +1,5 @@
 import { HttpStatusError } from './httpStatusError'
+import type { PrListComment, PrListReview } from '../shared/types'
 
 /**
  * GitHub's GraphQL API, for the few things REST cannot do: reply in a review
@@ -220,6 +221,76 @@ export async function getReviewThreadResolution(
     }
     if (!conn.pageInfo?.hasNextPage || !conn.pageInfo.endCursor) break
     after = conn.pageInfo.endCursor
+  }
+  return out
+}
+
+// ── What the pull request list shows beyond REST ─────────────────────────────
+
+/** The fields a list row reads, per pull request. */
+const PR_LIST_EXTRAS_FIELDS = `number additions deletions changedFiles reviewDecision
+  comments(last:50){ totalCount nodes{ createdAt author{ login } } }
+  latestReviews(first:20){ nodes{ state author{ login } } }`
+
+interface PrListExtrasNode {
+  number?: number
+  additions?: number
+  deletions?: number
+  changedFiles?: number
+  reviewDecision?: 'APPROVED' | 'CHANGES_REQUESTED' | 'REVIEW_REQUIRED' | null
+  comments?: { totalCount?: number; nodes?: Array<{ createdAt?: string; author?: { login?: string } | null } | null> }
+  latestReviews?: { nodes?: Array<{ state?: string; author?: { login?: string } | null } | null> }
+}
+
+/** One row's size, conversation and reviews — what REST's list leaves out. */
+export interface PrListExtras {
+  additions: number
+  deletions: number
+  changedFiles: number
+  commentCount: number
+  recentComments: PrListComment[]
+  reviews: PrListReview[]
+  readyToMerge: boolean
+}
+
+/**
+ * Size, comment count and each reviewer's verdict for many pull requests in
+ * ONE request: an aliased `pullRequest(number:)` per row, so the answer covers
+ * exactly the rows the REST list returned (stack members included) — never one
+ * request per row. A row GitHub could not answer is simply missing.
+ */
+export async function getPullRequestListExtras(
+  post: GithubGraphqlRawPost,
+  owner: string,
+  repo: string,
+  numbers: readonly number[]
+): Promise<Map<number, PrListExtras>> {
+  const out = new Map<number, PrListExtras>()
+  const wanted = [...new Set(numbers.filter((n) => Number.isInteger(n) && n > 0))]
+  if (!wanted.length) return out
+  const fields = wanted.map((n) => `pr${n}: pullRequest(number:${n}){ ${PR_LIST_EXTRAS_FIELDS} }`).join('\n')
+  const query = `query($owner:String!,$repo:String!){ repository(owner:$owner,name:$repo){ ${fields} } }`
+  const answer = await post<{ repository?: Record<string, PrListExtrasNode | null> | null }>(query, { owner, repo })
+  for (const node of Object.values(answer.data?.repository ?? {})) {
+    if (!node || typeof node.number !== 'number') continue
+    const reviews: PrListReview[] = []
+    for (const r of node.latestReviews?.nodes ?? []) {
+      const login = r?.author?.login
+      if (!login) continue
+      if (r.state === 'APPROVED') reviews.push({ login, verdict: 'approved' })
+      else if (r.state === 'CHANGES_REQUESTED') reviews.push({ login, verdict: 'changes' })
+    }
+    out.set(node.number, {
+      additions: node.additions ?? 0,
+      deletions: node.deletions ?? 0,
+      changedFiles: node.changedFiles ?? 0,
+      commentCount: node.comments?.totalCount ?? 0,
+      recentComments: (node.comments?.nodes ?? []).flatMap((c) =>
+        c?.createdAt ? [{ at: c.createdAt, author: c.author?.login ?? '' }] : []
+      ),
+      reviews,
+      readyToMerge: node.reviewDecision === 'APPROVED'
+    })
   }
   return out
 }

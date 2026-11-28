@@ -1475,12 +1475,13 @@ export const shots = [
     }
   },
   {
-    // The pull requests page, searched for "pix": the matches highlighted, an
-    // author marked "you", a red CI and a draft. Every host answer is faked in
-    // main — a fictional GitHub repository, no network, no account.
+    // The pull requests page as Mission Control opens it: triaged into what waits
+    // on your review, yours and the others, each row with its size, where every
+    // reviewer stands, its checks, and a dot where it moved since your last
+    // visit. Every host answer is faked in main — a fictional GitHub repository,
+    // no network, no account.
     out: 'pull-requests',
     repos: ['octopus-merge'],
-    themes: ['light'],
     prepare: async ({ repoPaths, run }) => {
       const repo = repoPaths['octopus-merge']
       await run('git', ['-C', repo, 'remote', 'remove', 'origin'], { allowFail: true })
@@ -1490,11 +1491,17 @@ export const shots = [
       await fakePullRequestHost(app)
       const repo = repos['octopus-merge']
       await page.evaluate(async (p) => {
+        const h = 3600_000
+        const now = Date.now()
+        // The last visits: #479 and #482 changed since, the rest did not.
+        const web = 'https://github.com/example/payments#'
+        const seen = { 479: 20, 482: 12, 475: 1, 477: 1, 469: 1, 468: 1, 466: 1, 458: 1 }
+        const prVisits = Object.fromEntries(Object.entries(seen).map(([n, ago]) => [web + n, now - ago * h]))
+        window.__shot.settings.getState().update((s) => ({ ...s, prVisits }))
         await window.__shot.repo.getState().refreshPRs(p, { silent: true })
-        window.__shot.settings.getState().openPageTab({ type: 'pull-requests', repoPath: p })
+        window.__shot.settings.getState().openPageTab({ type: 'pull-requests', repoPath: p, from: 'mission' })
       }, repo)
-      await page.locator('.prl-row', { hasText: 'Pix' }).first().waitFor()
-      await page.fill('.prl-field-search input', 'pix')
+      await page.locator('.prl-row', { hasText: 'Retry confirmations' }).first().waitFor()
       await page.waitForTimeout(400)
     }
   },
@@ -1516,10 +1523,10 @@ export const shots = [
         await window.__shot.repo.getState().refreshPRs(p, { silent: true })
         window.__shot.settings.getState().openPageTab({ type: 'pull-requests', repoPath: p })
       }, repo)
-      await page.locator('.prl-row', { hasText: 'Pix' }).first().waitFor()
-      await page.fill('.prl-field-search input', 'pix')
+      await page.locator('.prl-row', { hasText: 'Retry confirmations' }).first().waitFor()
+      await page.fill('.prl-search input', 'main')
       await page.waitForTimeout(300)
-      await page.locator('.prl-list .prl-row').first().click()
+      await page.locator('.prl-card .prl-row').first().click()
       await page.locator('.prn-pos').waitFor()
       await page.locator('.prp-head h2').waitFor()
       await page.waitForTimeout(400)
@@ -5512,27 +5519,45 @@ async function fakePullRequestHost(app) {
       url: `https://github.com/example/payments/pull/${id}`, headSha: `c0ffee${id}`,
       updatedAt: new Date(now - ago).toISOString(), requestedReviewers: [], ...extra
     })
+    // Comments written `hoursAgo` ago, for the "N new comments" since the visit the shot records.
+    const said = (author, ...hoursAgo) => hoursAgo.map((x) => ({ at: new Date(now - x * h).toISOString(), author }))
+    const size = (additions, deletions, changedFiles) => ({ additions, deletions, changedFiles })
     const prs = [
-      pr(482, 'you', 'feat/pix-qr', 'main', 'Pix payments with a dynamic QR code', 2 * h,
-        { ci: 'success', ciCounts: counts(6), requestedReviewers: ['ana'] }),
-      pr(479, 'ana', 'fix/pix-timeout', 'main', 'Retry Pix confirmations that time out', 5 * h,
-        { ci: 'failure', ciCounts: counts(4, 1), requestedReviewers: ['you', 'bruno'], awaitingYou: true }),
-      pr(477, 'bruno', 'chore/deps', 'main', 'Bump the HTTP client to 5.2', 9 * h, { ci: 'success', ciCounts: counts(6) }),
-      pr(474, 'carla', 'feat/boleto-pdf', 'release/2.4', 'Boleto PDF with the new layout', 26 * h,
-        { ci: 'pending', ciCounts: counts(3, 0, 2), requestedReviewers: ['you'], awaitingYou: true }),
-      pr(469, 'you', 'fix/pix-refund', 'release/2.4', 'Partial refunds for Pix', 3 * 24 * h,
-        { isDraft: true, ci: 'failure', ciCounts: counts(5, 1) }),
-      pr(466, 'ana', 'feat/webhooks', 'main', 'Sign outgoing webhooks', 4 * 24 * h, { ci: 'success', ciCounts: counts(6) }),
-      pr(461, 'dev-bot', 'docs/pix-faq', 'main', 'Document the Pix error codes', 6 * 24 * h,
-        { ci: 'success', ciCounts: counts(2) }),
-      pr(458, 'bruno', 'feat/card-tokens', 'main', 'Store card tokens per merchant', 8 * 24 * h,
-        { isDraft: true, ci: 'success', ciCounts: counts(6) })
+      pr(479, 'ana', 'fix/timeout', 'main', 'fix: Retry confirmations that time out', 5 * h, {
+        ci: 'failure', ciCounts: counts(5, 1), requestedReviewers: ['you'], awaitingYou: true,
+        reviews: [{ login: 'bruno', verdict: 'approved' }], ...size(48, 12, 4),
+        commentCount: 3, recentComments: said('bruno', 30, 28, 27)
+      }),
+      pr(475, 'bruno', 'feat/ledger-csv', 'main', 'feat: Export the ledger as CSV', 26 * h, {
+        ci: 'success', ciCounts: counts(6), requestedReviewers: ['you'], awaitingYou: true, reviews: [], ...size(120, 3, 6),
+        commentCount: 0, recentComments: []
+      }),
+      pr(482, 'you', 'feat/qr', 'main', 'feat: Payments with a dynamic QR code', 2 * h, {
+        ci: 'success', ciCounts: counts(6), reviews: [{ login: 'ana', verdict: 'changes' }], ...size(210, 40, 9),
+        commentCount: 5, recentComments: [...said('bruno', 40, 39, 38), ...said('ana', 3, 2)]
+      }),
+      pr(477, 'carla', 'chore/http-client', 'main', 'chore(deps): Bump the HTTP client to 5.2', 9 * h, {
+        ci: 'success', ciCounts: counts(6), reviews: [], ...size(14, 14, 2)
+      }),
+      pr(469, 'you', 'fix/refund', 'release/2.4', 'fix: Partial refunds', 3 * 24 * h, {
+        isDraft: true, ci: 'failure', ciCounts: counts(5, 1), reviews: [], ...size(18, 7, 2)
+      }),
+      pr(468, 'carla', 'feat/webhooks', 'main', 'feat: Sign outgoing webhooks', 4 * 24 * h, {
+        ci: 'success', ciCounts: counts(6), reviews: [{ login: 'bruno', verdict: 'approved' }], ...size(96, 11, 5)
+      }),
+      pr(466, 'you', 'docs/errors', 'main', 'docs: Document the error codes', 6 * 24 * h, {
+        ci: 'success', ciCounts: counts(2), reviews: [{ login: 'ana', verdict: 'approved' }], readyToMerge: true,
+        ...size(64, 0, 1)
+      }),
+      pr(458, 'bruno', 'feat/card-tokens', 'main', 'feat: Store card tokens per merchant', 8 * 24 * h, {
+        isDraft: true, ci: 'success', ciCounts: counts(6), reviews: [], ...size(230, 18, 11)
+      })
     ]
     ipcMain.handle('hosting:listPRs', () => ({ provider: 'github', prs, me: 'you' }))
     ipcMain.handle('hosting:listFinishedPRs', () => ({
       provider: 'github', truncated: false,
       prs: [
-        pr(455, 'ana', 'feat/pix-keys', 'main', 'Register Pix keys', 10 * 24 * h, { state: 'merged' }),
+        pr(455, 'ana', 'feat/ledger', 'main', 'feat: Keep a ledger of every charge', 10 * 24 * h, { state: 'merged' }),
         pr(451, 'carla', 'spike/crypto', 'main', 'Spike: crypto payouts', 12 * 24 * h, { state: 'closed' })
       ]
     }))

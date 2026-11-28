@@ -44,6 +44,8 @@ export default {
       'test/prTimeline.test.ts',
       // The Commits tab's summary and type chips; the Files tab's filter and "next unviewed".
       'test/prCommitSummary.test.ts',
+      // The PR list page's rows: triage sections, size, new comments, the review column.
+      'test/prListRow.test.ts',
       'test/i18n.test.ts',
       'test/ciRunsLogic.test.ts',
       // The CI runs overview: workflow cards, quick filters, a running run's progress.

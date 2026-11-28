@@ -20,7 +20,9 @@ import {
   createGithubGraphqlPost,
   createGithubGraphqlRawPost,
   findReviewThread,
-  getReviewThreadResolution
+  getPullRequestListExtras,
+  getReviewThreadResolution,
+  type PrListExtras
 } from './githubGraphql'
 import {
   getAnchorLine,
@@ -203,6 +205,7 @@ import type {
   HostingAccess,
   HostingProvider,
   PullRequest,
+  PrListReview,
   PrComment,
   PrCommentHandle,
   PrDetail,
@@ -1081,6 +1084,8 @@ async function listPullRequestsOf(
       draft?: boolean
       work_in_progress?: boolean
       reviewers?: Array<{ username: string }>
+      user_notes_count?: number
+      detailed_merge_status?: string
     } & GlListFields>
     return {
       provider: 'gitlab',
@@ -1093,7 +1098,10 @@ async function listPullRequestsOf(
         url: p.web_url,
         isDraft: !!(p.draft || p.work_in_progress),
         requestedReviewers: (p.reviewers ?? []).map((r) => r.username),
-        ...glListExtras(p)
+        ...glListExtras(p),
+        ...(typeof p.user_notes_count === 'number' ? { commentCount: p.user_notes_count } : {}),
+        // Every merge check passed — approvals included: GitLab's "ready to merge".
+        ...(p.detailed_merge_status === 'mergeable' ? { readyToMerge: true } : {})
       }))
     }
   }
@@ -1202,6 +1210,20 @@ async function listPullRequestsOf(
       pr.ci = status.state
       pr.ciCounts = countChecks(status)
     }
+
+    // Size, comments and each reviewer's verdict — not in the REST list. One
+    // GraphQL request for every open row; a refusal leaves the columns empty.
+    const open = prs.filter((p) => p.state === 'open').map((p) => p.id)
+    const extras = await getPullRequestListExtras(
+      createGithubGraphqlRawPost(ep.graphqlUrl, auth.token),
+      parsed.owner,
+      parsed.repo,
+      open
+    ).catch(() => new Map<number, PrListExtras>())
+    for (const pr of prs) {
+      const extra = extras.get(pr.id)
+      if (extra) Object.assign(pr, extra)
+    }
     return { provider: 'github', prs }
   }
 
@@ -1256,6 +1278,7 @@ interface BbCloudPull {
   description?: string
   updated_on?: string
   author: { display_name: string; links?: { avatar?: { href?: string } } }
+  comment_count?: number
   source: { branch: { name: string } }
   destination: { branch: { name: string } }
   links: { html: { href: string } }
@@ -1273,7 +1296,8 @@ export function mapBbCloudPull(p: BbCloudPull): PullRequest {
     ...(p.state === 'MERGED' ? { state: 'merged' } : p.state === 'DECLINED' || p.state === 'SUPERSEDED' ? { state: 'closed' } : {}),
     ...(p.updated_on ? { updatedAt: p.updated_on } : {}),
     ...(p.description ? { body: p.description } : {}),
-    ...(httpsOnly(p.author?.links?.avatar?.href) ? { authorAvatar: httpsOnly(p.author.links?.avatar?.href) } : {})
+    ...(httpsOnly(p.author?.links?.avatar?.href) ? { authorAvatar: httpsOnly(p.author.links?.avatar?.href) } : {}),
+    ...(typeof p.comment_count === 'number' ? { commentCount: p.comment_count } : {})
   }
 }
 
@@ -1309,8 +1333,17 @@ export function mapAzListPull(p: AzListPull, base: string, repo: string): PullRe
     ...(p.lastMergeSourceCommit?.commitId ? { headSha: p.lastMergeSourceCommit.commitId } : {}),
     ...(at ? { updatedAt: at } : {}),
     ...(p.description ? { body: p.description } : {}),
-    ...(pending.length ? { requestedReviewers: pending.map((r) => r.displayName as string) } : {})
+    ...(pending.length ? { requestedReviewers: pending.map((r) => r.displayName as string) } : {}),
+    ...(p.reviewers ? { reviews: azureVerdicts(p.reviewers) } : {})
   }
+}
+
+/** The votes already cast, as verdicts: 10 and 5 approve, -5 and -10 hold it back. */
+function azureVerdicts(reviewers: NonNullable<AzListPull['reviewers']>): PrListReview[] {
+  return reviewers.flatMap((r): PrListReview[] => {
+    if (r.isContainer || !r.displayName || !r.vote) return []
+    return [{ login: r.displayName, verdict: r.vote > 0 ? 'approved' : 'changes' }]
+  })
 }
 
 /** How many merged/closed PRs the list page reads — per state where the host splits them. */
