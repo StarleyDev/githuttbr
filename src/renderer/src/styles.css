@@ -8782,6 +8782,8 @@ body.col-resizing .node-ava {
   margin: 0 auto;
   padding: 32px 32px 64px;
 }
+/* The wiki is prose: a 1420px line is too long to read, so it keeps a reading width. */
+.changelog-inner.wiki-reading { max-width: 860px; }
 .changelog-inner:has(> .page-head) {
   padding-top: 0;
 }
@@ -19083,7 +19085,9 @@ button.obj-pointer:hover { border-color: color-mix(in srgb, var(--accent) 50%, v
 .obj-table { overflow: hidden; }
 .obj-row {
   display: grid;
-  grid-template-columns: 22px minmax(0, 1fr) 150px 90px 120px;
+  /* Object and size a little over the mockup's 90 / 120px: "commit 1a2b3c4" and a
+     submodule's "commit in another repo" (longer in most languages) fit whole. */
+  grid-template-columns: 22px minmax(0, 1fr) 150px 100px 150px;
   align-items: center;
   gap: 10px;
   width: 100%;
@@ -21204,7 +21208,6 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .repo-settings-row-control > select {
   min-width: 0;
 }
-.repo-settings-row-control > select:focus { outline: none; border-color: var(--accent); }
 .repo-settings-danger { margin-top: 18px; border-color: color-mix(in srgb, var(--danger) 40%, var(--border)); }
 .repo-settings-row.danger .repo-settings-row-label { color: var(--danger); }
 .repo-settings-row.danger .repo-settings-row-control { align-items: flex-end; }

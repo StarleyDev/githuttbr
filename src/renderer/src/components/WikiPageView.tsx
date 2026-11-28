@@ -144,7 +144,7 @@ export function WikiPageView({ repoPath }: { repoPath: string }): React.JSX.Elem
   return (
     <div className="changelog-page">
       <motion.div
-        className="changelog-inner"
+        className="changelog-inner wiki-reading"
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
