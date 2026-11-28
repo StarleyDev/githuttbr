@@ -6,6 +6,13 @@
      follows every theme — a little lighter than the panel in a dark theme,
      never the theme's darkest shade (--bg-0), which read as a black hole. */
   --field-bg: color-mix(in srgb, var(--bg-1) 55%, var(--bg-2));
+  /* Dialog sizes, one per group: every dialog of a group takes its size from
+     here, so resizing one group resizes all of its dialogs at once.
+     The standard one follows Merge with options. */
+  --modal-w: 470px;
+  --modal-w-md: 504px;
+  --modal-w-wide: 740px;
+  --modal-w-tall: 820px;
   /* GitHuttBr Default brand palette */
   --githuttbr-primary: #2b2d42;
   --githuttbr-purple: #6c5ce7;
@@ -6579,10 +6586,11 @@ body.col-resizing .node-ava {
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.6);
 }
 
-/* Merge with options: 50px wider than a plain dialog and a little taller, so its
-   five fields and their hints fit without the dialog scrolling. */
-.modal.modal-merge-options {
-  width: 470px;
+/* The standard dialog (Merge with options, Bundle & archive, and every dialog
+   without a size of its own): its width from --modal-w, 10px of room under its
+   buttons, and more height before it scrolls. */
+.modal.modal-std {
+  width: var(--modal-w);
   max-height: calc(100vh - 40px);
   padding-bottom: 10px;
 }
@@ -6621,18 +6629,18 @@ body.col-resizing .node-ava {
 }
 
 .modal-wide {
-  width: 740px;
+  width: var(--modal-w-wide);
 }
 
 /* 20% over the default 420px: room for a repository list worth multi-selecting. */
 .modal-clone {
-  width: 740px;
+  width: var(--modal-w-wide);
 }
 
 /* 20% over the default 420px: branch names, their state badges and the
    "tracks origin/…" line fit without wrapping. */
 .modal-push-branches {
-  width: 504px;
+  width: var(--modal-w-md);
 }
 
 /* Wide enough for a long PR branch name plus its reason chips on one line. */
@@ -6640,10 +6648,10 @@ body.col-resizing .node-ava {
   width: 600px;
 }
 
-/* 20px over the default 420px: the reviewer, assignee and label chips and the
-   two checkboxes breathe without wrapping. */
+/* The standard width: the reviewer, assignee and label chips and the two
+   checkboxes breathe without wrapping. */
 .modal-create-pr {
-  width: 440px;
+  width: var(--modal-w);
 }
 
 /* ─── Settings import: choose the parts, translate the paths ───────────── */
@@ -8306,7 +8314,7 @@ body.col-resizing .node-ava {
 /* Open repository and Scanned repositories: 20% wider than a plain dialog,
    so paths in the lists read further before they are cut. */
 .modal.modal-launcher {
-  width: 504px;
+  width: var(--modal-w-md);
 }
 
 .launcher-list {
@@ -14614,7 +14622,7 @@ input[type='range']:focus-visible {
 }
 
 /* ── Branch comparison: a centre-pane view (was a modal) ── */
-.modal-tall { width: 820px; max-width: calc(100vw - 48px); }
+.modal-tall { width: var(--modal-w-tall); max-width: calc(100vw - 48px); }
 .compare-header { flex-wrap: wrap; row-gap: 6px; }
 .compare-title { display: flex; align-items: center; gap: 8px; font-size: 13px; flex-shrink: 0; }
 .compare-title svg { color: var(--accent, #6366f1); }

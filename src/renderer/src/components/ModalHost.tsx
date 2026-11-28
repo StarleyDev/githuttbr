@@ -2493,8 +2493,6 @@ export function ModalHost(): React.JSX.Element {
                   ? 'modal-wide'
                   : modal.kind === 'launcher' || modal.kind === 'scanned-repos'
                   ? 'modal-launcher'
-                  : modal.kind === 'merge-options'
-                  ? 'modal-merge-options'
                   : modal.kind === 'interactive-rebase' ||
                       modal.kind === 'conflict-radar' ||
                       modal.kind === 'range-diff' ||
@@ -2523,7 +2521,7 @@ export function ModalHost(): React.JSX.Element {
                       modal.kind === 'cli-edit' ||
                       modal.kind === 'stack'
                     ? 'modal-tall'
-                    : ''
+                    : 'modal-std'
               }`}
               initial={{ opacity: 0, scale: 0.94, y: 16 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -2671,7 +2669,7 @@ export function ModalHost(): React.JSX.Element {
               className={
                 dialog.kind === 'settings-import' || dialog.kind === 'settings-export'
                   ? 'modal modal-settings-import'
-                  : 'modal'
+                  : 'modal modal-std'
               }
               initial={{ opacity: 0, scale: 0.96, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
