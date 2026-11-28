@@ -1,6 +1,6 @@
 import type { CiJob, CiRun, CiRunJob, CiRunOutcome, CiRunPhase, CiRunStep, CiState, CiWorkflow } from '../shared/types'
 import type { Ado, AdoText } from './azurePr'
-import { CI_LOG_TAIL_BYTES, CI_RUNS_PAGE, isoToMs, shortBranch, type CiRunsAdapter } from './ciRuns'
+import { CI_LOG_TAIL_BYTES, CI_RUNS_PAGE, isoToMs, pullRequestFromRef, shortBranch, type CiRunsAdapter } from './ciRuns'
 import type { CiLookup } from './ciCache'
 import { aggregateCiState } from './ciStatusState'
 
@@ -103,7 +103,8 @@ export function azureRun(b: AzBuild): CiRun {
     startedAt: isoToMs(b.startTime),
     finishedAt: phase === 'completed' ? isoToMs(b.finishTime) : undefined,
     url: b._links?.web?.href ?? '',
-    workflowId: b.definition ? String(b.definition.id) : undefined
+    workflowId: b.definition ? String(b.definition.id) : undefined,
+    pullRequest: pullRequestFromRef(b.sourceBranch)
   }
 }
 

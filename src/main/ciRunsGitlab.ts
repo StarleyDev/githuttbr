@@ -1,5 +1,5 @@
 import type { CiJob, CiRun, CiRunJob, CiRunOutcome, CiRunPhase, CiState } from '../shared/types'
-import { CI_LOG_TAIL_BYTES, CI_RUNS_PAGE, isoToMs, type CiRunsAdapter } from './ciRuns'
+import { CI_LOG_TAIL_BYTES, CI_RUNS_PAGE, isoToMs, pullRequestFromRef, type CiRunsAdapter } from './ciRuns'
 import type { CiLookup } from './ciCache'
 import { aggregateCiState } from './ciStatusState'
 
@@ -88,7 +88,8 @@ export function gitlabRun(p: GlPipeline): CiRun {
     createdAt: isoToMs(p.created_at) ?? 0,
     startedAt: isoToMs(p.started_at),
     finishedAt: phase === 'completed' ? (isoToMs(p.finished_at) ?? isoToMs(p.updated_at)) : undefined,
-    url: p.web_url
+    url: p.web_url,
+    pullRequest: pullRequestFromRef(p.ref)
   }
 }
 

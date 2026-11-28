@@ -10,14 +10,15 @@ keywords: ci runs actions workflow pipeline build github actions gitlab pipeline
 
 You pushed, and now you wait: switch to the browser, find the repository, open
 Actions, find your run, open the job that went red, scroll to the end of the
-log. **CI runs** puts that loop next to the code. One page lists the remote's
-runs, newest first; a click opens a run's jobs, each job's steps and its log;
-and the buttons to run it again or stop it are on the row.
+log. **CI runs** puts that loop next to the code. One page tells you how each
+workflow has been doing lately, lists the remote's runs newest first, and opens
+a failed run straight on the test that broke — with the file and line, one
+click from your editor. The buttons to run it again or stop it are on the card.
 
 It talks to the host's own API with the token you already gave GitHuttBr. Nothing
 runs on your machine — for that, see [Local CI](local-ci.md).
 
-![The CI runs page: a failed run opened on its jobs, with the failing step and the log](../screenshots/ci-runs.webp)
+![The CI runs page: a card per workflow with its last runs, the Failed and Running filters, a running run's progress, and a failed run opened on the test that broke and its jobs](../screenshots/ci-runs.webp)
 
 ## Opening it
 
@@ -29,15 +30,20 @@ called `origin` — or the first remote, when there is no `origin`.
 
 | Part | What it is |
 |---|---|
-| **A run row** | The commit's title (or the workflow's name), the branch, the workflow, the run number, what started it (push, pull request, schedule, manual…), who started it and the commit. On the right: where it stands, how long it took — or has been going — and how long ago it started |
+| **Workflow cards** | One card per workflow: what triggers it, its pass rate over its last 10 finished runs (green from 90 %, amber from 70 %, red below), those runs as coloured squares — oldest on the left, so the newest sits next to "now" — its average time, and either its slowest job or how its last run went. Click a card to list only that workflow's runs; click it again to show them all |
 | **All branches / current branch** | Every run on the remote, or only the branch you have checked out |
+| **Failed / Running** | Quick filters with the number of runs each would leave. They count what the other filters leave, so the number is what a click shows |
 | **Filter** | Narrows the loaded runs by title, workflow, branch, author, commit or event |
-| **Jobs** | Open a run to list its jobs, grouped by stage where the host has stages (GitLab, Azure). A job that failed opens its steps on its own: the failing step is the news |
+| **A run card** | The commit's title (or the workflow's name), then the branch, the workflow and run number, what started it (push, pull request, schedule, manual…), who started it and the commit — click the commit to copy it. When the run belongs to a pull request, **PR #n** opens that pull request's page. On the right: where it stands, how long it took and how long ago |
+| **A running run** | *Running · step 3 of 5*, a progress bar and the time so far. The step is the running job's; on a host without steps (GitLab, Forgejo) it counts jobs instead |
+| **The failed test** | A failed run opens on its own, newest first, with the test its log names: the job, the test, the first line of the error and **path:line** — click it, or *Open in editor*, to land on that line. The same reading as a pull request's [Checks tab](hosting.md#the-checks-tab) |
+| **Jobs** | Under it, each job with its state and duration, grouped by stage where the host has stages (GitLab, Azure). *View steps and log* opens a job's steps and the end of its log — on a failed job it is always there, on the others it appears when you point at the job |
 | **Steps** | Each step of a job, with its state and duration — GitHub, Azure and Forgejo report them; GitLab has no steps |
-| **Log** | The 📜 button on a finished job shows the end of its log, colours kept. Only the last 512 KB are fetched — where a failure is — and the page says when the start was left out |
+| **Log** | The end of a finished job's log, colours kept. Only the last 512 KB are fetched — where a failure is — and the page says when the start was left out |
 
 While anything on the page is queued or running, the list asks the host again
-every 15 seconds, and the open run's jobs with it; durations tick every second.
+every 15 seconds, and the jobs of the open run and of every running run with
+it — that is where the step count comes from; durations tick every second.
 When two minutes of answers bring nothing new — a run waiting for a deployment
 approval, say — it slows to once a minute, and speeds up again as soon as
 something moves. A list where everything has finished asks nothing until you
@@ -52,8 +58,9 @@ read from your local repository at no cost; otherwise after its number.
 | Button | Shows when | What happens |
 |---|---|---|
 | **Re-run failed** | The run failed or was cancelled | Only the jobs that did not pass run again |
-| **Re-run** (↻) | The run finished, on GitHub | Every job runs again |
-| **Cancel** (⊘) | The run is queued or running | Asks first: the jobs in progress are interrupted and their work is lost |
+| **Re-run** (↻) | The run finished, on GitHub — on the card when you point at it | Every job runs again |
+| **Open in browser** | Pointing at a card | The run on the host's site |
+| **Cancel** | The run is queued or running | Asks first: the jobs in progress are interrupted and their work is lost |
 | **Run workflow** | The host can start one by hand | Pick the workflow and a branch; it starts as if that branch had been pushed, and shows up in the list a few seconds later |
 
 What each host allows:
@@ -87,6 +94,17 @@ that never had CI. That keeps a busy graph inside the host's hourly allowance.
 
 ## Limits
 
+- **The cards only know the runs the page listed.** That is the last 50 runs
+  of the branch filter in force — a workflow that ran rarely may show fewer
+  than ten squares, and switching to the current branch recomputes every card.
+  The slowest job appears once the page has read some finished run's jobs (the
+  failed run it opens is enough); until then the card says how the last run went.
+- **The failed test is read from the log's text.** Vitest, Jest and pytest are
+  recognised; any other runner, a build error or a log cut short shows the job
+  list alone. A path the runner wrote outside the checkout cannot be opened.
+- **PR #n depends on what the host says.** GitHub lists the pull request only
+  for runs from the same repository, not from a fork; GitLab says it for merge
+  request pipelines and Azure for PR builds. Forgejo runs carry no link.
 - **The log is the end, and only once a job finishes.** GitHub and Forgejo
   hand out a job's log after it is done; while it runs, the page shows its
   steps moving, not its output. GitLab and Azure serve a running job's log so

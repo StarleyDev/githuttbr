@@ -229,19 +229,24 @@ function CheckCard({
   )
 }
 
-function FailedTests({
+/** The failed tests a log names — also on the CI runs page, under a failed run, with `heading` naming the job. */
+export function FailedTests({
   failures,
   repoPath,
   prFiles,
-  onShowFile
+  onShowFile,
+  heading
 }: {
   failures: FailedTest[]
   repoPath: string
   prFiles: readonly string[] | null
   onShowFile: (file: string) => void
+  heading?: (count: string) => string
 }): React.JSX.Element {
   const t = useT()
   const editor = useSettingsStore((s) => s.settings.editor)
+  const count =
+    failures.length === 1 ? t('prChecks.testFailedOne') : interp(t('prChecks.testsFailed'), { count: String(failures.length) })
 
   const openFile = (file: string, line: number | null): void => {
     const path = `${repoPath.replace(/\/+$/, '')}/${file}`
@@ -255,7 +260,7 @@ function FailedTests({
   return (
     <div className="pck-failures">
       <span className="pck-failures-count">
-        {failures.length === 1 ? t('prChecks.testFailedOne') : interp(t('prChecks.testsFailed'), { count: String(failures.length) })}
+        {heading ? heading(count) : count}
       </span>
       {failures.map((f, i) => {
         // Only a path that lands inside this repository can be opened or found in the diff.

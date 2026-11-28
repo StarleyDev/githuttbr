@@ -1602,6 +1602,8 @@ export interface CiRun {
   url: string
   /** The definition this run belongs to, for "run again on another branch". */
   workflowId?: string
+  /** The pull / merge request the run was started for, when the host says. */
+  pullRequest?: number
 }
 
 export interface CiRunStep {

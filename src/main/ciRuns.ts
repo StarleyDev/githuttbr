@@ -38,3 +38,13 @@ export function shortBranch(ref: string | null | undefined): string | null {
   if (!ref) return null
   return ref.startsWith('refs/heads/') ? ref.slice('refs/heads/'.length) : ref
 }
+
+/**
+ * The pull / merge request a run's ref names: GitLab's merge request pipelines
+ * run on `refs/merge-requests/<iid>/head` (or `/merge`, `/train`), Azure's PR
+ * builds on `refs/pull/<id>/merge`. Undefined for a branch or a tag.
+ */
+export function pullRequestFromRef(ref: string | null | undefined): number | undefined {
+  const m = /^refs\/(?:merge-requests|pull)\/(\d+)\//.exec(ref ?? '')
+  return m ? Number(m[1]) : undefined
+}

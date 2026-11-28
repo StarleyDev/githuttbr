@@ -46,6 +46,8 @@ export default {
       'test/prCommitSummary.test.ts',
       'test/i18n.test.ts',
       'test/ciRunsLogic.test.ts',
+      // The CI runs overview: workflow cards, quick filters, a running run's progress.
+      'test/ciRunsOverview.test.ts',
       // The PR Checks tab: failed tests read from vitest, jest and pytest logs.
       'test/prChecks.test.ts',
       'test/prPickerLogic.test.ts',
