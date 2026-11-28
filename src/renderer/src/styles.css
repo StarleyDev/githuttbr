@@ -14717,6 +14717,9 @@ input[type='range']:focus-visible {
 /* Every list scrolls on its own and the diff shows one file at a time: a big
    comparison as one block of diff is what could not be scrolled. */
 .compare-body { display: flex; flex: 1; min-height: 0; }
+/* On the pull request page's surface (--bg-1), like its Files tab: the file
+   viewer's own --bg-0 is the theme's darkest shade and reads as black. */
+.file-viewer.compare-view { background: var(--bg-1); }
 .compare-side {
   width: clamp(260px, 28%, 400px);
   flex-shrink: 0;
@@ -14739,7 +14742,7 @@ input[type='range']:focus-visible {
   cursor: pointer;
 }
 .compare-mode:hover { color: var(--text-0); }
-.compare-mode.active { background: var(--bg-0); color: var(--text-0); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+.compare-mode.active { background: color-mix(in srgb, var(--accent) 22%, transparent); color: var(--text-0); font-weight: 600; }
 .compare-commits { flex: 0 1 auto; max-height: 42%; overflow-y: auto; border-bottom: 1px solid var(--border); }
 .compare-group + .compare-group { border-top: 1px solid var(--border-soft); }
 .compare-group-title {
