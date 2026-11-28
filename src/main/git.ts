@@ -141,6 +141,7 @@ import type {
   GitObject,
   GitObjectKind,
   RefObject,
+  TreeChild,
   MergeOptions,
   FsckReport,
   MaintenanceResult,
@@ -2472,6 +2473,61 @@ function gitWithStdin(repoPath: string, args: string[], input: string, extraEnv?
     child.stdin.on('error', () => undefined)
     child.stdin.end(input)
   })
+}
+
+/** How many entries a tree holds — `ls-tree` names only, counted. */
+async function countTreeEntries(repoPath: string, tree: string): Promise<number> {
+  if (!tree) return 0
+  const out = await runGit(repoPath, ['ls-tree', '-z', '--name-only', tree], undefined, 64 * 1024 * 1024).catch(() => '')
+  return out.split('\0').filter(Boolean).length
+}
+
+/** Subject line of each commit, by sha — one `log --no-walk` for the lot. */
+async function commitSubjects(repoPath: string, shas: string[]): Promise<Map<string, string>> {
+  const subjects = new Map<string, string>()
+  const wanted = shas.filter((s) => /^[0-9a-f]{40}([0-9a-f]{24})?$/i.test(s))
+  if (!wanted.length) return subjects
+  const out = await runGit(repoPath, ['log', '--no-walk=unsorted', `--format=%H${SEP}%s`, ...wanted, '--']).catch(() => '')
+  for (const line of out.split('\n')) {
+    const [sha, subject] = line.split(SEP)
+    if (sha && subject !== undefined) subjects.set(sha, subject)
+  }
+  return subjects
+}
+
+/** A tree with this many subtrees is not worth a second listing just for counts. */
+const OBJECT_SUBTREE_COUNT_LIMIT = 300
+/** Symlinks whose target is read for a tree listing; past this they show only their size. */
+const OBJECT_SYMLINK_TARGET_LIMIT = 50
+
+/**
+ * Fill in what a tree row says beside its mode: a subtree's entry count, and
+ * a symlink's target. The counts come from one more `ls-tree` over the
+ * subtrees as pathspecs — literal, so a directory named `*` means itself.
+ */
+async function describeTreeChildren(repoPath: string, tree: string, children: TreeChild[]): Promise<void> {
+  const subtrees = children.filter((c) => c.kind === 'tree')
+  if (subtrees.length && subtrees.length <= OBJECT_SUBTREE_COUNT_LIMIT) {
+    const out = await runGit(
+      repoPath,
+      ['--literal-pathspecs', 'ls-tree', '-z', '--name-only', tree, '--', ...subtrees.map((c) => `${c.name}/`)],
+      undefined,
+      64 * 1024 * 1024
+    ).catch(() => '')
+    const counts = new Map<string, number>()
+    for (const path of out.split('\0')) {
+      const slash = path.indexOf('/')
+      if (slash > 0) counts.set(path.slice(0, slash), (counts.get(path.slice(0, slash)) ?? 0) + 1)
+    }
+    for (const child of subtrees) child.count = counts.get(child.name) ?? 0
+  }
+  const links = children.filter((c) => c.mode === '120000').slice(0, OBJECT_SYMLINK_TARGET_LIMIT)
+  await Promise.all(
+    links.map(async (child) => {
+      const target = await runGit(repoPath, ['cat-file', 'blob', child.sha]).catch(() => '')
+      if (target) child.target = target.slice(0, 300)
+    })
+  )
 }
 
 /** One in-memory merge of `ref` into `base`, used to fill gaps left by a batch abort. */
@@ -6574,7 +6630,11 @@ export const gitService = {
     }
     // HEAD is a ref too, and the one people start from — for-each-ref omits it.
     const head = (await runGit(repoPath, ['rev-parse', 'HEAD']).catch(() => '')).trim()
-    if (head) refs.unshift({ name: 'HEAD', sha: head, kind: 'commit' })
+    if (head) {
+      // On a branch, HEAD is a pointer to a pointer — say which, as `HEAD → main`.
+      const symbolic = (await runGit(repoPath, ['symbolic-ref', '-q', '--short', 'HEAD']).catch(() => '')).trim()
+      refs.unshift({ name: 'HEAD', sha: head, kind: 'commit', ...(symbolic ? { symbolic } : {}) })
+    }
     return refs
   },
 
@@ -6609,6 +6669,7 @@ export const gitService = {
             size: rawSize && rawSize !== '-' ? Number(rawSize) : null
           }
         })
+      await describeTreeChildren(repoPath, sha, object.tree)
       return object
     }
 
@@ -6617,9 +6678,19 @@ export const gitService = {
     if (kind === 'commit') {
       const header = body.split('\n\n')[0] ?? ''
       const field = (key: string): string => new RegExp(`^${key} (.*)$`, 'm').exec(header)?.[1]?.trim() ?? ''
+      const tree = field('tree')
+      const parents = [...header.matchAll(/^parent (.*)$/gm)].map((m) => m[1].trim())
+      // What the "points to" cards say without opening anything: the root's
+      // entry count and each parent's subject. Two cheap reads.
+      const [treeCount, subjects] = await Promise.all([
+        countTreeEntries(repoPath, tree),
+        commitSubjects(repoPath, parents)
+      ])
       object.commit = {
-        tree: field('tree'),
-        parents: [...header.matchAll(/^parent (.*)$/gm)].map((m) => m[1].trim()),
+        tree,
+        treeCount,
+        parents,
+        parentSubjects: parents.map((p) => subjects.get(p) ?? ''),
         author: field('author'),
         committer: field('committer'),
         message: body.slice(header.length).replace(/^\n+/, '')
@@ -6630,12 +6701,16 @@ export const gitService = {
     if (kind === 'tag') {
       const header = body.split('\n\n')[0] ?? ''
       const field = (key: string): string => new RegExp(`^${key} (.*)$`, 'm').exec(header)?.[1]?.trim() ?? ''
+      const target = field('object')
+      const type = field('type')
+      const targetSubject = type === 'commit' ? ((await commitSubjects(repoPath, [target])).get(target) ?? '') : ''
       object.tag = {
-        object: field('object'),
-        type: field('type'),
+        object: target,
+        type,
         name: field('tag'),
         tagger: field('tagger'),
-        message: body.slice(header.length).replace(/^\n+/, '')
+        message: body.slice(header.length).replace(/^\n+/, ''),
+        targetSubject
       }
       return object
     }

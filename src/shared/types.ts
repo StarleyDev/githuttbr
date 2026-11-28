@@ -3533,6 +3533,10 @@ export interface TreeChild {
   name: string
   /** Blob size in bytes; null for trees and submodule gitlinks. */
   size: number | null
+  /** For a subtree: how many entries it holds, so a row can say "4 items" without opening it. */
+  count?: number
+  /** For a symlink (mode 120000): the path it points at, which is all its blob contains. */
+  target?: string
 }
 
 /** A raw object from the database, decoded enough to be walkable. */
@@ -3545,12 +3549,24 @@ export interface GitObject {
   rev: string
   commit?: {
     tree: string
+    /** How many entries the root tree holds. */
+    treeCount: number
     parents: string[]
+    /** Each parent's subject line, in the order of `parents`. */
+    parentSubjects: string[]
     author: string
     committer: string
     message: string
   }
-  tag?: { object: string; type: string; name: string; tagger: string; message: string }
+  tag?: {
+    object: string
+    type: string
+    name: string
+    tagger: string
+    message: string
+    /** The subject of the tagged object when it is a commit, else ''. */
+    targetSubject: string
+  }
   tree?: TreeChild[]
   blob?: {
     /** Decoded text, or null when the blob is binary. */
@@ -3567,6 +3583,8 @@ export interface RefObject {
   sha: string
   /** The kind of object the ref names — annotated tags point at a `tag`. */
   kind: GitObjectKind
+  /** For `HEAD` on a branch: the branch it is a symbolic ref to, short (`main`). */
+  symbolic?: string
 }
 
 /**

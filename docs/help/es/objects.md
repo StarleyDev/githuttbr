@@ -16,7 +16,7 @@ que un árbol le puso el nombre, la porcelana deja de ser magia.
 `⌘K` → **Explorador de objetos**. Nada de esta página puede cambiar un solo
 byte — todas las llamadas que hay detrás son de lectura.
 
-![Los campos de un commit, con su árbol y sus padres como enlaces, junto a la lista de refs](../../screenshots/objects.webp)
+![El commit al que apunta main: la ruta desde la rama, a qué apunta y dónde está un commit en el modelo](../../screenshots/objects.webp)
 
 ## Los cuatro objetos
 
@@ -39,20 +39,57 @@ barato".
 
 ## Recorrer
 
-La columna izquierda lista todas las refs del repositorio, agrupadas como las
-agrupa git. Haz clic en una para aterrizar en el objeto que nombra.
+![Del commit a src/: primero las carpetas, cada modo explicado](../../screenshots/objects-tree.webp)
 
-A partir de ahí todo es un enlace:
+La columna de la izquierda lista todas las refs, agrupadas como las agrupa git:
+HEAD (con `→ main` cuando está en una rama), Ramas, Etiquetas y Remotas, cada
+grupo con su recuento. Remotas empieza plegado. El marcador cuadrado es una ref
+a un commit; el redondo verde, una etiqueta **anotada**. El filtro estrecha
+todos los grupos a la vez. Haz clic en una ref para llegar al objeto que nombra;
+esa fila queda resaltada mientras recorres desde ella.
 
-- Un **commit** muestra su `tree` y cada `parent` — entra a la instantánea, o
-  ve hacia atrás por el historial de commit en commit.
-- Un **tree** lista sus entradas con modo, tipo, sha y tamaño. Haz clic en un
-  nombre para abrir ese hijo.
-- Un **blob** muestra su texto (el principio, si es grande), o dice claramente
-  que es binario.
-- Una **etiqueta anotada** muestra a qué apunta — entra hasta el commit.
+A partir de ahí, todo es una puerta:
 
-**Atrás** deshace tus pasos.
+- Un **commit** muestra a qué **apunta** — su árbol raíz, con cuántos elementos
+  tiene, y cada padre, con su asunto — y luego autor y committer (*el mismo que
+  el autor* cuando coinciden) y el mensaje.
+- Un **árbol** es una tabla de nombre, modo, objeto y tamaño, primero las
+  carpetas. Cada modo se explica: *archivo*, *ejecutable*, *carpeta*, *enlace
+  simbólico*, *submódulo*. Una carpeta dice cuántos elementos tiene; un enlace,
+  adónde apunta.
+- Un **blob** muestra su texto con números de línea (solo el principio, si es
+  grande), o dice claramente que es binario. Si llegas por un árbol, una barra
+  dice cómo se llama ahí — *Llamado src/app.ts en el commit 07c6f3d, modo
+  100644 (archivo normal)* — con un enlace al historial del archivo.
+- Una **etiqueta anotada** apunta al objeto que nombra y registra quién la creó.
+
+![Un blob, el nombre que le dio su árbol y dónde está en el modelo](../../screenshots/objects-blob.webp)
+
+### La ruta
+
+La franja bajo la caja de revisión es la **ruta** recorrida:
+`rama main → commit 07c6f3d → raíz → src/ → app.ts`. El árbol de un commit es
+la **raíz**; un archivo o carpeta toma el nombre de la fila en la que hiciste
+clic. Haz clic en cualquier elemento para volver a él. Escribir una revisión,
+elegir una ref o uno de los ejemplos junto a **Abrir** empieza una ruta nueva.
+
+**Atrás** y **Adelante** recorren todo lo que abriste, como en un navegador:
+después de volver, Adelante regresa, hasta que abras algo nuevo desde ahí. La
+caja de revisión sigue el recorrido, así que `main:src/app.ts` siempre está ahí
+para copiar.
+
+### Colores
+
+Cada tipo conserva un color allí donde aparece — insignia, elemento de la ruta,
+tarjeta, fila: commit en el color de acento del tema, árbol en su amarillo, blob
+en azul, etiqueta y ref en verde. Bajo la cabecera del objeto, una frase dice
+qué *es* ese tipo.
+
+### Dónde estás en el modelo
+
+La franja al pie del panel es la cadena de git — **ref → commit → tree →
+blob**, con **tag** entre ref y commit en una etiqueta anotada — y el tipo en
+pantalla queda resaltado como *estás aquí*.
 
 ## Escribir una revisión
 
@@ -86,6 +123,13 @@ guarda un submódulo.
 - **Los objetos inalcanzables siguen siendo objetos.** Pega un sha del informe
   de colgantes de `git fsck` y se abre, que suele ser la vía más rápida para ver
   qué contenía un commit perdido antes de decidir si lo recuperas.
+- **Una fila de submódulo no se abre.** Su gitlink nombra un commit de otro
+  repositorio, que este no tiene.
+- **Los recuentos y destinos de enlace tienen un techo.** Un árbol con más de
+  300 subcarpetas las lista sin recuento, y solo los 50 primeros enlaces
+  simbólicos muestran su destino.
+- **La ruta termina con el diálogo.** Ciérralo y el siguiente vuelve a empezar
+  por la rama de HEAD.
 
 Ver también: [El grafo](graph.md) · [Mantenimiento del repositorio](maintenance.md) ·
 [Recuperación](recovery.md)

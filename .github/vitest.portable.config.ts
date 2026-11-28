@@ -75,7 +75,9 @@ export default {
       'test/settingsExport.test.ts',
       'test/keychainWeakBackend.test.ts',
       'test/keychainFailClosed.test.ts',
-      'test/vaultUnreadable.test.ts'
+      'test/vaultUnreadable.test.ts',
+      // The object explorer's trail, its Back/Forward history and identity dates.
+      'test/objectExplorer.test.ts'
     ]
   }
 }

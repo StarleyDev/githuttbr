@@ -4801,14 +4801,49 @@ export const shots = [
     }
   },
   {
-    // Object explorer: a commit, its fields linked, beside the ref list.
+    // Object explorer: main's commit — the trail from the branch, what it points
+    // to, who made it, and where a commit sits in the model.
     out: 'objects',
-    repos: ['tags-and-releases'],
+    repos: ['object-model'],
     themes: ['light'],
     drive: async (page, repoPaths) => {
-      const repo = repoPaths['tags-and-releases']
+      const repo = repoPaths['object-model']
       await page.evaluate((r) => window.__shot.ui.getState().openModal({ kind: 'objects', repoPath: r }), repo)
-      await page.waitForTimeout(1200)
+      await page.locator('.obj-pointer').first().waitFor()
+      await page.waitForTimeout(800)
+    }
+  },
+  {
+    // Object explorer: walked from the commit into src/ — every kind of tree
+    // entry, its mode spelled out.
+    out: 'objects-tree',
+    repos: ['object-model'],
+    themes: ['light'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['object-model']
+      await page.evaluate((r) => window.__shot.ui.getState().openModal({ kind: 'objects', repoPath: r }), repo)
+      await page.locator('.obj-pointer').first().click()
+      await page.locator('.obj-row', { hasText: 'src/' }).click()
+      await page.locator('.obj-row', { hasText: 'ui-kit' }).waitFor()
+      // The pointer would leave the first row in its hover tint.
+      await page.mouse.move(5, 5)
+      await page.waitForTimeout(800)
+    }
+  },
+  {
+    // Object explorer: one step further, the blob — and the tree that named it.
+    out: 'objects-blob',
+    repos: ['object-model'],
+    themes: ['light'],
+    drive: async (page, repoPaths) => {
+      const repo = repoPaths['object-model']
+      await page.evaluate((r) => window.__shot.ui.getState().openModal({ kind: 'objects', repoPath: r }), repo)
+      await page.locator('.obj-pointer').first().click()
+      await page.locator('.obj-row', { hasText: 'src/' }).click()
+      await page.locator('.obj-row', { hasText: 'app.ts' }).click()
+      await page.locator('.obj-named').waitFor()
+      await page.mouse.move(5, 5)
+      await page.waitForTimeout(800)
     }
   },
   {
