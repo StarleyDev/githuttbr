@@ -48,6 +48,8 @@ export default {
       'test/prCommitSummary.test.ts',
       // The PR list page's rows: triage sections, size, new comments, the review column.
       'test/prListRow.test.ts',
+      // The list page's Azure file counts: which rows, main's cache by head, the count itself.
+      'test/prFileCounts.test.ts',
       'test/i18n.test.ts',
       'test/ciRunsLogic.test.ts',
       // The CI runs overview: workflow cards, quick filters, a running run's progress.

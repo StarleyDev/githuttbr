@@ -29,11 +29,13 @@ import {
   type PrListTab
 } from '../lib/prList'
 import { countCiFailing, getPrTriage } from '../lib/prListRow'
+import { withPrFileCounts } from '../lib/prFileCounts'
 import { bitbucketServerBasesOf, enterpriseBasesOf, prRemoteIdentity, repoSupportsPrReview } from '../lib/hosting'
 import { NO_ITEMS } from '../lib/stableEmpty'
 import { readableError } from '../lib/gitErrorHint'
 import { PageHead } from './PageHead'
 import { PrListRow } from './PrListRow'
+import { usePrFileCounts } from './usePrFileCounts'
 
 const TAB_KEY: Record<PrListTab, TranslationKey> = {
   open: 'prList.tabOpen',
@@ -182,7 +184,12 @@ export function PullRequestsPage({
   const items = finishedTab ? finishedItems : withCi
   const inTab = useMemo(() => items.filter((it) => prInTab(it.pr, tab)), [items, tab])
   const filters = useMemo(() => effectiveFilters(view.filters, me, view.tab), [view.filters, me, view.tab])
-  const rows = useMemo(() => filterPrList(items, tab, filters, me), [items, tab, filters, me])
+  const filtered = useMemo(() => filterPrList(items, tab, filters, me), [items, tab, filters, me])
+  // Azure DevOps lists no size: the drawn rows' file counts are read from here
+  // alone (never with the sidebar's refresh) and joined in as they arrive.
+  const azure = provider === 'azure' || finishedHere?.data?.provider === 'azure'
+  const fileCounts = usePrFileCounts(repoPath, origin?.url, azure, filtered)
+  const rows = useMemo(() => withPrFileCounts(filtered, fileCounts), [filtered, fileCounts])
   const counts = useMemo(
     () => tabCounts(openItems.map((it) => it.pr), finishedHere?.data ? finishedHere.data.prs : null),
     [openItems, finishedHere]

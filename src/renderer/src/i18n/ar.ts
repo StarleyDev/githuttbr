@@ -5960,6 +5960,8 @@ export const ar: Dict = {
   'prList.files': "الملفات: {n}",
   'prList.filesOne': "الملفات: {n}",
   'prList.sizeTitle': "أُضيف {additions} سطرًا وحُذف {deletions}، في {files} ملفات",
+  'prList.sizeTitleFiles': "تغيّرت {files} ملفات — المضيف لا يحسب الأسطر",
+  'prList.sizeTitleFilesOne': "تغيّر {files} ملف — المضيف لا يحسب الأسطر",
   'prList.reviewApproved': "وافق",
   'prList.reviewChanges': "طلب تغييرات",
   'prList.reviewWaitingYou': "بانتظارك",

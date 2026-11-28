@@ -96,25 +96,36 @@ Each row reads left to right:
 | **Dot** | The pull request changed since you last left its page. One you never opened has no dot — there is nothing to compare with |
 | **#** | The number — green while open, grey for a draft |
 | **Title** | The title, its [Conventional Commits](committing.md) type as a coloured chip (`feat`, `fix`, `docs`…), a *draft* badge. Under it: the author (left out on your own), source → target, and **N comments** — or **N new comments** when some were written by others since your last visit |
-| **Size** | `+48 −12 · 4 files` — lines added and removed, files touched |
+| **Size** | `+48 −12 · 4 files` — lines added and removed, files touched; `4 files` alone where the host counts no lines |
 | **Review** | Each reviewer's standing verdict — **✓ bruno approved**, **✕ ana requested changes** — then who is still asked, **● waiting for you** in yellow. **✓ ready to merge** when the host says the reviews are done and the checks did not fail; **no reviewers** when nobody was asked or answered |
 | **Checks** | The head's checks — `✓ 6/6`, `✕ 1 failing`, `● 2 running`; hover for the counts |
 | **Updated** | How long ago it last changed; hover for the date |
 
 ### What each host gives
 
-Size, comments and verdicts are not in every host's list, and the page never
-opens each pull request to find them: what the list does not carry stays blank,
-never a zero.
+Size, comments and verdicts are not in every host's list, and the page does
+not open each pull request to find them — with one exception, below: what the
+list does not carry stays blank, never a zero.
 
 | Host | Size | Comments | Review verdicts |
 |---|---|---|---|
 | **GitHub** | ✓ | ✓, and which are new | ✓, and *ready to merge* — one extra GraphQL request for the whole list |
 | **GitLab** | — | ✓ (count only) | Who is asked; *ready to merge* from GitLab's merge status |
-| **Azure DevOps** | — | — | ✓ from the reviewers' votes |
+| **Azure DevOps** | Files only, read when the page opens | — | ✓ from the reviewers' votes |
 | **Bitbucket Data Center** | — | ✓ (count only) | ✓ |
 | **Bitbucket Cloud** | — | ✓ (count only) | — |
 | **Forgejo** | ✓ when the server fills it | ✓ (count only) | Who is asked |
+
+**Azure DevOps: files only.** Its API has no line counts for a pull request —
+they would take every file's diff — so the cell reads `4 files`, with no +/−.
+Its list has no file count either, so this page reads it, for the rows it
+draws: two requests per pull request (its iterations, then the last one's
+changes — the same count as its Files tab), four at a time. They are kept until
+someone pushes to that pull request, so a refresh or coming back to the page
+asks only for the ones that moved. The sidebar's periodic refresh never reads
+them. A count that cannot be read — no permission, a throttled server — leaves
+the cell blank, without an error; a pull request of over 20,000 changes is
+not counted.
 
 The comment count is the conversation's comments — comments on a line of the diff
 are not in it. Without a token the GitHub request is skipped, and those columns

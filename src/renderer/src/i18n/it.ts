@@ -5905,6 +5905,8 @@ export const it: Dict = {
   'prList.files': "{n} file",
   'prList.filesOne': "{n} file",
   'prList.sizeTitle': "{additions} righe aggiunte e {deletions} rimosse, in {files} file",
+  'prList.sizeTitleFiles': "{files} file modificati — l’host non conta le righe",
+  'prList.sizeTitleFilesOne': "{files} file modificato — l’host non conta le righe",
   'prList.reviewApproved': "ha approvato",
   'prList.reviewChanges': "ha chiesto modifiche",
   'prList.reviewWaitingYou': "aspetta te",

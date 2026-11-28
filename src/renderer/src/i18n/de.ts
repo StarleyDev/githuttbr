@@ -5965,6 +5965,8 @@ export const de: Dict = {
   'prList.files': "{n} Dateien",
   'prList.filesOne': "{n} Datei",
   'prList.sizeTitle': "{additions} Zeilen hinzugefügt und {deletions} entfernt, in {files} Dateien",
+  'prList.sizeTitleFiles': "{files} Dateien geändert — der Host zählt keine Zeilen",
+  'prList.sizeTitleFilesOne': "{files} Datei geändert — der Host zählt keine Zeilen",
   'prList.reviewApproved': "genehmigt",
   'prList.reviewChanges': "Änderungen angefordert",
   'prList.reviewWaitingYou': "wartet auf dich",

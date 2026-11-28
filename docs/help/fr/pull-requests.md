@@ -120,10 +120,12 @@ ce que la liste n’apporte pas reste vide, jamais à zéro.
 |---|---|---|---|
 | **GitHub** | ✓ | ✓, et lesquels sont nouveaux | ✓, et *prête à fusionner* — une requête GraphQL de plus pour toute la liste |
 | **GitLab** | — | ✓ (le nombre seulement) | Qui est sollicité ; *prête à fusionner* d’après le statut de merge de GitLab |
-| **Azure DevOps** | — | — | ✓ d’après les votes des relecteurs |
+| **Azure DevOps** | Fichiers seuls, lus à l’ouverture de la page | — | ✓ d’après les votes des relecteurs |
 | **Bitbucket Data Center** | — | ✓ (le nombre seulement) | ✓ |
 | **Bitbucket Cloud** | — | ✓ (le nombre seulement) | — |
 | **Forgejo** | ✓ quand le serveur le remplit | ✓ (le nombre seulement) | Qui est sollicité |
+
+**Azure DevOps : fichiers seuls.** Son API ne donne pas de nombre de lignes par pull request, la cellule n’affiche donc que les fichiers, sans +/−. Cette page les lit pour les lignes qu’elle affiche — deux requêtes par pull request, quatre à la fois — et les garde jusqu’à ce que quelqu’un pousse sur cette pull request ; le rafraîchissement périodique de la barre latérale ne les lit jamais. Un nombre illisible laisse la cellule vide, sans erreur.
 
 Le nombre de commentaires est celui de la conversation — les commentaires sur une
 ligne du diff n’y sont pas. Sans jeton, la requête GitHub est sautée, et ces

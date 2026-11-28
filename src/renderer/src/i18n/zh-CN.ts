@@ -5954,6 +5954,8 @@ export const zhCN: Dict = {
   'prList.files': "{n} 个文件",
   'prList.filesOne': "{n} 个文件",
   'prList.sizeTitle': "{files} 个文件中新增 {additions} 行、删除 {deletions} 行",
+  'prList.sizeTitleFiles': "更改了 {files} 个文件 — 托管方不统计行数",
+  'prList.sizeTitleFilesOne': "更改了 {files} 个文件 — 托管方不统计行数",
   'prList.reviewApproved': "已批准",
   'prList.reviewChanges': "要求修改",
   'prList.reviewWaitingYou': "等待你",

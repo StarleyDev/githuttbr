@@ -100,7 +100,7 @@ Cada linha se lê da esquerda para a direita:
 | **Ponto** | O pull request mudou desde a última vez que você saiu da página dele. Um que você nunca abriu não tem ponto — não há com o que comparar |
 | **#** | O número — verde enquanto aberto, cinza num rascunho |
 | **Título** | O título, o tipo [Conventional Commits](committing.md) num chip colorido (`feat`, `fix`, `docs`…) e um selo *rascunho*. Embaixo: o autor (omitido nos seus), origem → destino e **N comentários** — ou **N comentários novos** quando outras pessoas escreveram desde a sua última visita |
-| **Tamanho** | `+48 −12 · 4 arq.` — linhas adicionadas e removidas, arquivos tocados |
+| **Tamanho** | `+48 −12 · 4 arq.` — linhas adicionadas e removidas, arquivos tocados; só `4 arq.` onde o host não conta linhas |
 | **Revisão** | O veredito de cada revisor — **✓ bruno aprovou**, **✕ ana pediu alterações** — e depois quem ainda tem revisão pedida, **● esperando você** em amarelo. **✓ pronto para mesclar** quando o host diz que as revisões estão feitas e os checks não falharam; **sem revisores** quando ninguém foi chamado nem respondeu |
 | **Checks** | Os checks do head — `✓ 6/6`, `✕ 1 falhando`, `● 2 rodando`; passe o mouse para ver as contagens |
 | **Atualizado** | Há quanto tempo mudou pela última vez; passe o mouse para ver a data |
@@ -108,17 +108,28 @@ Cada linha se lê da esquerda para a direita:
 ### O que cada host entrega
 
 Tamanho, comentários e vereditos não estão na lista de todo host, e a página
-nunca abre cada pull request para buscá-los: o que a lista não traz fica em
-branco, nunca zero.
+não abre cada pull request para buscá-los — com uma exceção, abaixo: o que a
+lista não traz fica em branco, nunca zero.
 
 | Host | Tamanho | Comentários | Vereditos |
 |---|---|---|---|
 | **GitHub** | ✓ | ✓, e quais são novos | ✓, e *pronto para mesclar* — um pedido GraphQL a mais para a lista inteira |
 | **GitLab** | — | ✓ (só a contagem) | Quem tem revisão pedida; *pronto para mesclar* pelo status de merge do GitLab |
-| **Azure DevOps** | — | — | ✓ pelos votos dos revisores |
+| **Azure DevOps** | Só arquivos, lidos quando a página abre | — | ✓ pelos votos dos revisores |
 | **Bitbucket Data Center** | — | ✓ (só a contagem) | ✓ |
 | **Bitbucket Cloud** | — | ✓ (só a contagem) | — |
 | **Forgejo** | ✓ quando o servidor preenche | ✓ (só a contagem) | Quem tem revisão pedida |
+
+**Azure DevOps: só arquivos.** A API dele não tem contagem de linhas por pull
+request — exigiria o diff de cada arquivo —, então a célula mostra `4 arq.`, sem
++/−. A lista também não traz a contagem de arquivos, então esta página a lê,
+para as linhas que mostra: dois pedidos por pull request (as iterações, depois
+as mudanças da última — a mesma contagem da aba Arquivos), quatro por vez. Elas
+ficam guardadas até alguém fazer push naquele pull request, então atualizar ou
+voltar à página só pergunta pelos que mudaram. A atualização periódica da
+barra lateral nunca as lê. Uma contagem que não pode ser lida — sem permissão,
+servidor limitando pedidos — deixa a célula em branco, sem erro; um pull
+request com mais de 20.000 mudanças não é contado.
 
 A contagem é dos comentários da conversa — comentários numa linha do diff não
 entram. Sem token, o pedido ao GitHub não é feito e essas colunas ficam vazias.

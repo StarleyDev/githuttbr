@@ -62,12 +62,24 @@ export function getPrCommentLabel(
   return { key: total === 1 ? 'prList.commentsOne' : 'prList.comments', n: total }
 }
 
-/** "+48 −12 · 4 files", when the host said all three. */
-export function getPrSize(pr: PullRequest): { additions: number; deletions: number; files: number } | null {
-  if (typeof pr.additions !== 'number' || typeof pr.deletions !== 'number' || typeof pr.changedFiles !== 'number') {
-    return null
-  }
-  return { additions: pr.additions, deletions: pr.deletions, files: pr.changedFiles }
+/** A row's size: the files always, the lines only where the host counts them. */
+export interface PrSize {
+  files: number
+  lines: { additions: number; deletions: number } | null
+}
+
+/**
+ * "+48 −12 · 4 files" when the host said all three; "4 files" when it counts
+ * files only (Azure DevOps, which has no per-PR line counts). Null without a
+ * file count — a cell left blank, never a zero that would read as a fact.
+ */
+export function getPrSize(pr: PullRequest): PrSize | null {
+  if (typeof pr.changedFiles !== 'number') return null
+  const lines =
+    typeof pr.additions === 'number' && typeof pr.deletions === 'number'
+      ? { additions: pr.additions, deletions: pr.deletions }
+      : null
+  return { files: pr.changedFiles, lines }
 }
 
 export type PrReviewTone = 'green' | 'red' | 'yellow' | 'muted'

@@ -426,6 +426,8 @@ const api = {
     },
     prFileDiff: (repoPath: string, remoteUrl: string, tokens: unknown, request: unknown): Promise<unknown> =>
       ipcRenderer.invoke('hosting:prFileDiff', repoPath, remoteUrl, tokens, request),
+    getPrFileCounts: (repoPath: string, remoteUrl: string, tokens: unknown, requests: unknown): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:getPrFileCounts', repoPath, remoteUrl, tokens, requests),
     prListCommits: (repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown> =>
       ipcRenderer.invoke('hosting:prListCommits', repoPath, remoteUrl, tokens, number),
     prListUpdates: (repoPath: string, remoteUrl: string, tokens: unknown, number: number): Promise<unknown> =>

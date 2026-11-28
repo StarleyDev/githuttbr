@@ -755,7 +755,8 @@ export interface PullRequest {
   /** The author's picture, when the host's list names one (https only is drawn). */
   authorAvatar?: string
   /** Lines added and removed and files touched, when the host's list says
-   *  (GitHub through one GraphQL read, Forgejo in its list). Absent: unknown. */
+   *  (GitHub through one GraphQL read, Forgejo in its list). Absent: unknown.
+   *  Azure DevOps has files only, read by the list page (PrFileCountRequest). */
   additions?: number
   deletions?: number
   changedFiles?: number
@@ -770,6 +771,12 @@ export interface PullRequest {
   /** The host considers it approved and ready to go in (GitHub's review
    *  decision, GitLab's merge status). */
   readyToMerge?: boolean
+}
+
+/** A row the PR list page wants its changed-file count for — the head keys main's cache. */
+export interface PrFileCountRequest {
+  id: number
+  headSha: string
 }
 
 /** One comment's time and author, as the PR list counts the new ones. */

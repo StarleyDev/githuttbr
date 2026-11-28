@@ -5901,6 +5901,8 @@ export const tr: Dict = {
   'prList.files': "{n} dosya",
   'prList.filesOne': "{n} dosya",
   'prList.sizeTitle': "{files} dosyada {additions} satır eklendi, {deletions} satır silindi",
+  'prList.sizeTitleFiles': "{files} dosya değişti — sunucu satırları saymıyor",
+  'prList.sizeTitleFilesOne': "{files} dosya değişti — sunucu satırları saymıyor",
   'prList.reviewApproved': "onayladı",
   'prList.reviewChanges': "değişiklik istedi",
   'prList.reviewWaitingYou': "seni bekliyor",

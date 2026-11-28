@@ -114,10 +114,12 @@ olmaz.
 |---|---|---|---|
 | **GitHub** | ✓ | ✓, hangilerinin yeni olduğuyla | ✓, ve *birleştirmeye hazır* — tüm liste için tek bir ek GraphQL isteği |
 | **GitLab** | — | ✓ (yalnızca sayı) | Kimden istendiği; *birleştirmeye hazır* GitLab’in birleştirme durumundan |
-| **Azure DevOps** | — | — | ✓ inceleyenlerin oylarından |
+| **Azure DevOps** | Yalnızca dosyalar, sayfa açılınca okunur | — | ✓ inceleyenlerin oylarından |
 | **Bitbucket Data Center** | — | ✓ (yalnızca sayı) | ✓ |
 | **Bitbucket Cloud** | — | ✓ (yalnızca sayı) | — |
 | **Forgejo** | ✓ sunucu doldurduğunda | ✓ (yalnızca sayı) | Kimden istendiği |
+
+**Azure DevOps: yalnızca dosyalar.** API’si pull request başına satır sayısı vermez, bu yüzden hücre +/− olmadan yalnızca dosyaları gösterir. Bu sayfa gösterdiği satırlar için okur — pull request başına iki istek, aynı anda dört — ve biri o pull request’e push edene kadar saklar; kenar çubuğunun düzenli yenilemesi bunları hiç okumaz. Okunamayan bir sayı hücreyi hatasız boş bırakır.
 
 Yorum sayısı konuşmanın yorumlarıdır — diff’in bir satırına yazılan yorumlar buna
 dahil değildir. Token yoksa GitHub isteği atlanır ve bu sütunlar boş kalır.
