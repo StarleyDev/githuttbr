@@ -4,7 +4,7 @@ category: Sincronização e vários repositórios
 order: 57
 summary: Todos os pull requests de um repositório numa página — por estado, filtrados por autor, revisor, destino e CI — ‹ › para percorrer a lista filtrada de dentro de um PR, os commits dele, as atualizações (cada push, o que mudou, o que é novo desde a sua última visita), e comentários numa linha do diff. A conversa como uma linha do tempo, com o que é novo desde a sua última visita.
 keywords: título referência cartão item de trabalho AB# número de issue dica pull requests lista página merge requests pr mr filtro autor revisor meus aguardando minha revisão revisão pedida ci falhando branch de destino rascunhos mesclados fechados busca triagem anterior próximo alt seta navegação checkout ir para branch de origem destino copiar nome da branch buscar fetch comentário de linha comentário inline comentário de revisão comentar na linha aba arquivos revisão de código aba commits lista de commits commits do pr histórico abrir commit copiar sha buscar branch do pr commits de pr de fork refs/pull head atualizações iterações pushes force push rebase histórico reescrito versões de diff o que mudou desde a última visita selo nova marcar como visto comparar atualização editor markdown barra formatação visualizar menção árvore de arquivos pastas visão em árvore visão de caminhos arquivos vistos marcar pasta como vista editar excluir apagar editado erro digitação renderizado comentários imagens pixel rastreamento imagem bloqueada clique carregar tarefas tabela bloco conversa linha do tempo threads abertas thread resolvida aprovou pediu alterações enviou commits papel revisor novo desde a última visita comparar dois commits selos de tipo ci por commit ver diff próximo não visto filtro não vistos com comentários progresso mudou
-source: 196e91891ca1b6e621df1a2c6d4aac55461b0746
+source: bac83752f115629d207b5c3c2f66d9b873cd28f1
 ---
 
 # Página de pull requests
@@ -643,7 +643,8 @@ Uma thread que o host diz estar **aberta** leva uma etiqueta âmbar, e a barra
 acima da linha do tempo conta essas threads: **1 thread aberta** mostra só elas,
 as que ainda esperam resposta. Uma thread **resolvida** se recolhe numa linha —
 *Thread resolvida em src/palette.tsx:18 · 2 comentários* — e um clique a abre.
-**Tudo · Comentários · Revisões · Commits** reduzem a linha do tempo a um tipo.
+**Comentários · Revisões · Commits · Tudo** reduzem a linha do tempo a um tipo;
+**Comentários** é o que abre primeiro, e **Tudo** traz o resto de volta.
 
 Os **Revisores** da barra lateral dizem o veredito de cada pessoa por escrito —
 **✓ aprovou** ou **pediu alterações** — e um relógio para quem ainda não

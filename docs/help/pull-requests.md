@@ -616,8 +616,8 @@ back together in your head. The **Conversation** tab tells it as one
 A thread the host reports **open** carries an amber pill, and the bar above the
 timeline counts them: **1 open thread** shows only those, the ones still waiting
 for an answer. A **resolved** thread folds to one line — *Resolved thread in
-src/palette.tsx:18 · 2 comments* — and a click unfolds it. **All · Comments ·
-Reviews · Commits** narrow the timeline to one kind.
+src/palette.tsx:18 · 2 comments* — and a click unfolds it. **Comments · Reviews · Commits · All** narrow the timeline to one kind;
+**Comments** is the one it opens on, and **All** brings everything back.
 
 The sidebar's **Reviewers** say each person's verdict in words — **✓ approved**
 or **requested changes** — and a clock for someone still to answer.

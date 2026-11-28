@@ -17704,6 +17704,13 @@ mark.find-hit.active {
   color: var(--text-0);
   z-index: 0;
 }
+/* Edit commit: the editor on the app theme's surface, as the pull request page
+   is — not the code theme's backdrop, which is near black in most dark themes. */
+.commitedit-editor .code-editor,
+.commitedit-editor .code-editor-pre.hljs,
+.commitedit-editor .code-editor-gutter {
+  background: var(--bg-1);
+}
 /* A line the edit changed: a full-width band, as the edit-commit mockup draws
    it. The negative margin reaches the backdrop's 12px padding on both sides. */
 .code-editor-changed {
@@ -20009,8 +20016,19 @@ button.insights-row:hover { background: var(--bg-2); }
 .prt-head strong { color: var(--text-0); }
 .prt-sep, .prt-time { color: var(--text-3); }
 .prt-role {
-  padding: 0 6px; border: 1px solid var(--border); border-radius: 999px; font-size: 10.5px; color: var(--text-2);
-  line-height: 1.5;
+  padding: 0 7px; border: 1px solid var(--border); border-radius: 999px; font-size: 10.5px; color: var(--text-2);
+  line-height: 1.6; font-weight: 600;
+}
+/* Who is who at a glance: the author in the accent, a reviewer in a second hue. */
+.prt-role.author {
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+  color: color-mix(in srgb, var(--accent) 80%, var(--text-0));
+}
+.prt-role.reviewer {
+  border-color: color-mix(in srgb, var(--purple) 55%, transparent);
+  background: color-mix(in srgb, var(--purple) 18%, transparent);
+  color: color-mix(in srgb, var(--purple) 80%, var(--text-0));
 }
 
 /* A line thread in place: where, its state, the lines it is about, its comments and reply box. */

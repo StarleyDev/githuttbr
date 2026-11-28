@@ -16,11 +16,13 @@ import {
   type PrTimelineItem
 } from '../lib/prTimeline'
 
+// Comments first, and the one shown on opening: the conversation is what you
+// come here to read. "All" adds the pushes and reviews back, at the end.
 const FILTERS: { id: PrTimelineFilter; labelKey: TranslationKey }[] = [
-  { id: 'all', labelKey: 'prTimeline.filterAll' },
   { id: 'comments', labelKey: 'prTimeline.filterComments' },
   { id: 'reviews', labelKey: 'prTimeline.filterReviews' },
-  { id: 'commits', labelKey: 'prTimeline.filterCommits' }
+  { id: 'commits', labelKey: 'prTimeline.filterCommits' },
+  { id: 'all', labelKey: 'prTimeline.filterAll' }
 ]
 
 const REVIEW_SENTENCE: Partial<Record<PrReview['state'], TranslationKey>> = {
@@ -97,7 +99,7 @@ export function PrConversationTimeline({
   onOpenCommits: () => void
 }): React.JSX.Element {
   const t = useT()
-  const [filter, setFilter] = useState<PrTimelineFilter>('all')
+  const [filter, setFilter] = useState<PrTimelineFilter>('comments')
   const [openOnly, setOpenOnly] = useState(false)
   // Resolved threads opened from their one-line summary.
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set())
@@ -113,8 +115,8 @@ export function PrConversationTimeline({
     return (
       <>
         <strong>{login}</strong>
-        {roles.author && <span className="prt-role">{t('prTimeline.roleAuthor')}</span>}
-        {roles.reviewer && <span className="prt-role">{t('prTimeline.roleReviewer')}</span>}
+        {roles.author && <span className="prt-role author">{t('prTimeline.roleAuthor')}</span>}
+        {roles.reviewer && <span className="prt-role reviewer">{t('prTimeline.roleReviewer')}</span>}
       </>
     )
   }
