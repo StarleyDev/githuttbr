@@ -32,6 +32,8 @@ export default {
       // First-run steps and how each AI card becomes an account.
       'test/onboarding.test.ts',
       'test/commitBody.test.ts',
+      // Which lines an edit changed, tinted in the edit-commit editor.
+      'test/changedLines.test.ts',
       // The commit editor's change count, cascade rows and "Add file" search.
       'test/commitEditPanel.test.ts',
       // Mission Control's refresh, hosting cadence and release column.

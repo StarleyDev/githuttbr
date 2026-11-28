@@ -17704,6 +17704,16 @@ mark.find-hit.active {
   color: var(--text-0);
   z-index: 0;
 }
+/* A line the edit changed: a full-width band, as the edit-commit mockup draws
+   it. The negative margin reaches the backdrop's 12px padding on both sides. */
+.code-editor-changed {
+  display: inline-block;
+  box-sizing: content-box;
+  min-width: 100%;
+  margin-inline: -12px;
+  padding-inline: 12px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
 .code-editor-area {
   z-index: 1;
   resize: none;

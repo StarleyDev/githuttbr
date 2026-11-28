@@ -46,7 +46,8 @@ As soon as the message differs from the original, the card is marked
 ### The files card
 
 The commit's files are listed with their status letter; a dot marks each one
-you have changed. Pick a file to edit it as it was in that commit. The switch
+you have changed. Pick a file to edit it as it was in that commit; the lines
+you change or add are tinted as you type, so your edit stays in view. The switch
 above the editor flips between **Edit** and **Compare with original**, which
 shows the file's diff from what the commit holds to your edited text — the same
 diff view the rest of the app uses.

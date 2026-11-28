@@ -7,6 +7,7 @@ import { gitApi } from '../infrastructure/api'
 import { useT } from '../i18n'
 import { guessLanguage } from '../lib/highlight'
 import { filterEditableFiles } from '../lib/commitEditPanel'
+import { getChangedLines } from '../lib/changedLines'
 import { CodeEditor } from './CodeEditor'
 import { DiffViewer } from './DiffViewer'
 
@@ -84,6 +85,11 @@ export function CommitEditFilesCard({
   }
 
   const sel = drafts[selFile]
+  // The lines this edit changed, tinted in the editor as you type.
+  const changedLines = useMemo(
+    () => (sel && !sel.binary && !sel.missing ? getChangedLines(sel.original, sel.draft) : undefined),
+    [sel]
+  )
   // Hunks only, the shape the diff viewer reads for a host that sends no patch.
   const diff = useMemo(
     () => (mode === 'compare' && sel && !sel.binary && !sel.missing ? unifiedDiff(sel.original, sel.draft) : ''),
@@ -208,6 +214,7 @@ export function CommitEditFilesCard({
               lineNumbers
               label={selFile}
               disabled={!editable}
+              changedLines={changedLines}
             />
           )}
         </div>

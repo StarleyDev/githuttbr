@@ -50,7 +50,8 @@ Assim que a mensagem fica diferente da original, o cartão ganha a marca
 
 Os arquivos do commit aparecem com a letra de status; um ponto marca cada um
 que você alterou. Escolha um arquivo para editá-lo como ele estava naquele
-commit. O seletor acima do editor alterna entre **Editar** e **Comparar com o
+commit; as linhas que você muda ou acrescenta ficam com um fundo enquanto você
+digita, para a sua edição ficar à vista. O seletor acima do editor alterna entre **Editar** e **Comparar com o
 original**, que mostra o diff do arquivo entre o que o commit guarda e o texto
 editado — a mesma visualização de diff do resto do app.
 
