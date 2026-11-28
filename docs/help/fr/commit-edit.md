@@ -51,7 +51,8 @@ l'ancien sujet reste visible sous la description sous la forme *avant : …*, et
 
 Les fichiers du commit sont listés avec leur lettre de statut ; un point marque
 chacun de ceux que vous avez changés. Choisissez un fichier pour le modifier tel
-qu'il était dans ce commit. L'interrupteur au-dessus de l'éditeur bascule entre
+qu'il était dans ce commit ; les lignes que vous modifiez ou ajoutez sont
+teintées au fil de la frappe, pour que votre modification reste en vue. L'interrupteur au-dessus de l'éditeur bascule entre
 **Modifier** et **Comparer avec l’original**, qui montre le diff du fichier
 entre ce que contient le commit et votre texte modifié — la même vue de diff que
 dans le reste de l'application.

@@ -48,6 +48,8 @@ konu açıklamanın altında *önce: …* olarak görünür kalır ve **Orijinal
 
 Commit'in dosyaları durum harfleriyle listelenir; değiştirdiğiniz her dosyayı bir
 nokta işaretler. Bir dosyayı o commit'teki hâliyle düzenlemek için seçin.
+Değiştirdiğiniz ya da eklediğiniz satırlar siz yazarken renklendirilir, böylece
+düzenlemeniz gözünüzün önünde kalır.
 Düzenleyicinin üstündeki anahtar **Düzenle** ile **Orijinalle karşılaştır**
 arasında geçiş yapar; ikincisi dosyanın commit'teki hâlinden düzenlediğiniz metne
 kadarki diff'ini gösterir — uygulamanın geri kalanının kullandığı diff görünümüyle.

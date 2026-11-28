@@ -52,7 +52,8 @@ terug.
 
 De bestanden van de commit staan in een lijst met hun statusletter; een stip
 markeert elk bestand dat je hebt gewijzigd. Kies een bestand om het te bewerken
-zoals het in die commit was. De schakelaar boven de editor wisselt tussen
+zoals het in die commit was; de regels die je wijzigt of toevoegt krijgen een
+tint terwijl je typt, zodat je bewerking in beeld blijft. De schakelaar boven de editor wisselt tussen
 **Bewerken** en **Vergelijken met origineel**, dat de diff van het bestand toont
 van wat de commit bevat naar je bewerkte tekst — dezelfde diffweergave als in de
 rest van de app.

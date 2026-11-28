@@ -48,7 +48,9 @@ Gdy tylko wiadomość różni się od oryginału, karta dostaje oznaczenie
 ### Karta plików
 
 Pliki commita są wypisane z literą statusu; kropka oznacza każdy, który
-zmieniłeś. Wybierz plik, żeby edytować go w postaci z tego commita. Przełącznik
+zmieniłeś. Wybierz plik, żeby edytować go w postaci z tego commita; wiersze, które
+zmieniasz lub dodajesz, są podbarwiane w trakcie pisania, więc twoja edycja
+pozostaje na widoku. Przełącznik
 nad edytorem przełącza między **Edytuj** a **Porównaj z oryginałem**, które
 pokazuje diff pliku od tego, co zawiera commit, do twojego edytowanego tekstu —
 ten sam widok diffu, którego używa reszta aplikacji.

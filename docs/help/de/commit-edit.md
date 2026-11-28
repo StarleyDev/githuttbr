@@ -54,7 +54,9 @@ wieder her.
 
 Die Dateien des Commits stehen mit ihrem Statusbuchstaben in der Liste; ein
 Punkt markiert jede, die du geändert hast. Wähle eine Datei, um sie so zu
-bearbeiten, wie sie in diesem Commit war. Der Schalter über dem Editor wechselt
+bearbeiten, wie sie in diesem Commit war; die Zeilen, die du änderst oder
+hinzufügst, werden schon beim Tippen eingefärbt, damit deine Änderung im Blick
+bleibt. Der Schalter über dem Editor wechselt
 zwischen **Bearbeiten** und **Mit Original vergleichen**, das den Diff der Datei
 vom Stand im Commit zu deinem bearbeiteten Text zeigt — dieselbe Diff-Ansicht
 wie im Rest der App.

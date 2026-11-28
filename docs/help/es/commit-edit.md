@@ -49,7 +49,9 @@ al original** restaura el resumen y la descripción.
 ### La tarjeta de archivos
 
 Los archivos del commit aparecen con su letra de estado; un punto marca cada uno
-que has cambiado. Elige un archivo para editarlo tal como estaba en ese commit.
+que has cambiado. Elige un archivo para editarlo tal como estaba en ese commit;
+las líneas que cambias o añades se tiñen mientras escribes, para que tu edición
+no se pierda de vista.
 El conmutador encima del editor alterna entre **Editar** y **Comparar con el
 original**, que muestra el diff del archivo desde lo que contiene el commit hasta
 tu texto editado — la misma vista de diff que usa el resto de la app.

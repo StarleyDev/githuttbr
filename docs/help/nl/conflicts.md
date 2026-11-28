@@ -2,21 +2,48 @@
 title: Conflicten oplossen
 category: Werken met wijzigingen
 order: 32
-summary: Een oplosser met drie panelen die je vertelt welke kant welke is.
-keywords: conflict oplosser resolver merge conflicten ours theirs oplossen markers three-way rerere reuse recorded resolution onthouden herhalen
+summary: Eén scherm voor de hele vastgelopen stap — elk bestand, de gemeenschappelijke voorouder, een antwoord per conflict en de finish.
+keywords: conflict oplosser resolver merge conflicten ours theirs basis gemeenschappelijke voorouder oplossen markers three-way verwijderd hernoemd modify delete rename rerere reuse recorded resolution onthouden herhalen afronden doorgaan afbreken finish continue abort
 ---
 
 # Conflicten oplossen
 
-Wanneer een merge, rebase, cherry-pick of revert stilvalt, vertelt een banner je
-**wat** er stilviel en **tussen wat** — "`feature/x` mergen in `main`", niet
-alleen "conflict".
+Wanneer een merge, rebase, cherry-pick of revert stilvalt, maakt de oplosser van
+de hele stap één scherm. De balk bovenaan zegt **wat** er stilviel en **tussen
+wat** — "`feature` wordt samengevoegd in `main`", niet alleen "conflict" — en hoe
+ver je bent: *2 van 5 bestanden opgelost*, met de conflicten die nog over zijn in
+alle bestanden samen.
 
 ![De conflictoplosser](../../screenshots/conflict-resolver.webp)
 
+## De bestandenstrook
+
+Onder de balk staat één chip per bestand waarop deze stap stilviel:
+
+| Chip | Betekent |
+|---|---|
+| Groen met ✓ | Opgelost — gestaged, niets meer te beslissen |
+| Omlijnd | Het bestand waar je nu bent |
+| Een rood getal | Hoeveel conflictblokken het bestand nog bevat |
+| Een label | Een conflict zonder tekst om samen te voegen: *aan één kant verwijderd*, *aan beide kanten hernoemd*, *aan één kant toegevoegd* |
+
+Opgeloste chips komen eerst en open chips daarna, elke reeks op naam, zodat de
+strook links leest als klaar en rechts als wat er nog over is.
+
+**Volgend bestand →** springt naar het volgende bestand dat nog open is, en een
+bestand als opgelost markeren brengt je daar vanzelf heen. **Doorgaan** in de
+balk blijft uitgeschakeld tot elke chip groen is; **Afbreken** vraagt eerst en
+zegt wat je verliest.
+
+git vergeet een bestand zodra het gestaged is, dus "opgelost" is wat GitHuttBr
+tijdens deze stap zag, plus de bestanden die git in zijn merge-bericht noemde.
+Een bestand dat je in een terminal hebt gestaged voordat je de oplosser opende,
+telt nog steeds mee; na een herstart midden in een rebase telt de opgeloste helft
+van die ene stap misschien niet mee.
+
 ## Waarom dit conflicteert
 
-**Waarom dit conflicteert** in de kop somt per kant de commits op die dit
+**Waarom dit conflicteert** in de bestandskop somt per kant de commits op die dit
 bestand hebben aangeraakt sinds de branches uiteengingen — `git log --merge`, dat
 git al eeuwig meelevert en dat niemand vindt.
 
@@ -27,44 +54,129 @@ meestal wat de oplossing werkelijk bepaalt. Staat er niets, dan heeft geen van
 beide kanten een wijziging aan precies dit pad gecommit — de botsing kwam van een
 hernoeming of een verplaatsing.
 
+De kop zegt ook bij welk conflict je bent en wat voor conflict het bestand heeft,
+gelezen uit git's eigen status: *beide kanten wijzigden dezelfde regels*, *aan
+beide kanten toegevoegd*.
+
 ## De drie panelen
 
 | Paneel | Is |
 |---|---|
-| Links | **Ours** — de kant waar je op zat, gelabeld met zijn commit |
-| Rechts | **Theirs** — de kant die binnenkomt, gelabeld met zijn commit |
-| Midden | De **uitvoer**: bewerkbaar, met regelnummers, en wat er daadwerkelijk gestaged wordt |
+| **Jouw kant** | De kant waar je op zat, met bovenaan de nieuwste commit aan die kant die het bestand aanraakte: sha, onderwerp, auteur, hoe lang geleden |
+| **Basis** | De versie waar beide kanten van uitgingen — de gemeenschappelijke voorouder, of bij een pick of een rebase-stap de ouder van de commit die wordt toegepast. De regels die elk conflict verving zijn gearceerd |
+| **Binnenkomend** | De kant die binnenkomt, met een kop op dezelfde manier als Jouw kant |
 
-Alle drie de panelen zijn in grootte aan te passen, en de kop van de uitvoer
-draagt twee weergaveschakelaars:
+**Basis tonen** in de kop van het resultaat verbergt of toont het paneel Basis en
+onthoudt je keuze. Het is grijs als er geen basis is — beide kanten voegden het
+bestand toe.
+
+Alle panelen zijn in grootte aan te passen, en de kop van het resultaat draagt
+twee weergaveschakelaars:
 
 | Schakelaar | Wat het doet |
 |---|---|
-| **Terugloop** | Laat lange regels teruglopen binnen de panelen A en B in plaats van ze te scrollen. Het uitvoerpaneel houdt één rij per regel — zijn zijmarkeringen hangen daarvan af — dus dat scrolt altijd |
-| **Gekoppeld** | Scrolt A, B en de uitvoer samen, verticaal en zijwaarts. Hun regelaantallen verschillen, dus de verticale positie wordt naar verhouding gelijkgehouden |
+| **Terugloop** | Laat lange regels teruglopen binnen de zijpanelen in plaats van ze te scrollen. De tekstweergave van het resultaat houdt één rij per regel — zijn zijmarkeringen hangen daarvan af — dus die scrolt altijd |
+| **Scrollen koppelen** | Scrolt de panelen en het resultaat samen, verticaal en zijwaarts. Hun regelaantallen verschillen, dus de verticale positie wordt naar verhouding gelijkgehouden |
 
-Terugloop staat aanvankelijk uit, Gekoppeld aanvankelijk aan, en beide
+Terugloop staat aanvankelijk uit, Scrollen koppelen aanvankelijk aan, en beide
 onthouden hun stand.
+
+## Het resultaat
+
+Het resultaat is het bestand zoals het geschreven gaat worden. Elk conflict staat
+op zijn plek als een kaart met vier antwoorden erop:
+
+| Antwoord | Wat er in het bestand komt |
+|---|---|
+| **Die van jou** | Jouw regels, en alleen die van jou |
+| **Die van hen** | Hun regels, en alleen die van hen |
+| **Beide** | Jouw regels, daarna die van hen |
+| **Bewerken** | Beide, geopend in de teksteditor met het conflict geselecteerd, voor als het antwoord "beide, maar aangepast" is |
+
+Een kaart zonder antwoord toont beide kanten vooraf, elke regel gemarkeerd met *←
+van jou* of *← van hen* en genummerd met de regel waarop hij terechtkomt als je
+hem kiest, zodat je kunt beslissen zonder op te kijken. Bij een bestand met heel
+lange regels blijven de antwoorden in beeld terwijl de code eronder zijwaarts
+scrolt. **Hele bestand: dat van jou | dat van hen** in de bestandskop beantwoordt
+elk conflict in één keer.
+
+**Als tekst bewerken** zet het resultaat om naar een gewone editor om vrij te
+typen, met het aantal regels van het bestand in de kop. Zodra je hebt getypt,
+beschrijven de kaarten niet meer wat er staat, dus blijft de tekst tot **Keuzes
+herstellen** alles terugzet.
+
+De voettekst telt wat er in dit bestand nog over is; ***bestand* als opgelost
+markeren** schrijft het resultaat weg en staget het, en is uitgeschakeld tot elk
+conflict een antwoord heeft.
 
 ## Navigeren
 
 Een bestand openen zet je op zijn **eerste conflict**, niet bovenaan het
-bestand. De pijlen ⌃ / ⌄ in de kop van de uitvoer — of <kbd>Alt+↑</kbd> /
-<kbd>Alt+↓</kbd> — stappen door de rest en scrollen alle drie de panelen naar
-elk conflict.
+bestand. De pijlen ⌃ / ⌄ in de kop van het resultaat — of <kbd>Alt+↑</kbd> /
+<kbd>Alt+↓</kbd> — stappen door de rest en scrollen elk paneel naar elk
+conflict.
 
-## Kiezen
+## Kiezen per regel
 
-Per **regel**, per **blok**, of de **hele kant** in één keer — en je kunt beide
-kanten van een blok nemen wanneer het antwoord "allebei houden" is. Een navigator
-loodst je conflict voor conflict langs wat er nog over is, zodat je onmogelijk
-per ongeluk een marker laat staan.
+De zijpanelen kiezen nog steeds per **regel** en per **blok**, en het
+selectievakje in hun kop neemt de **hele kant** — voor het antwoord dat geen kaart
+biedt, zoals twee regels van jou en één van hen. Keuzes per regel verschijnen
+meteen in de kaarten.
+
+## Bestanden zonder iets om samen te voegen
+
+Sommige conflicten hebben geen regels om te vergelijken: de ene kant
+**verwijderde** een bestand dat de andere wijzigde, of beide kanten
+**hernoemden** het naar verschillende namen. Drie panelen waarvan er één leeg is
+zouden niets uitleggen, dus deze krijgen in plaats daarvan een kaart — wie wat
+deed, met de commit, auteur en ouderdom van elke kant.
+
+![Een bestand dat aan de ene kant is verwijderd en aan de andere is gewijzigd](../../screenshots/conflict-deleted.webp)
+
+| Geval | Keuzes |
+|---|---|
+| Aan één kant verwijderd | **Bestand houden** (met de wijzigingen die de andere kant maakte), **Bestand verwijderen** (vraagt eerst), en **Bekijk wat jij wijzigde** — de diff ten opzichte van de basis, zodat je weet wat verwijderen weggooit |
+| Aan beide kanten hernoemd | De ene naam of de andere **houden**, of **Beide namen houden** |
+
+git legt geen verband vast tussen een hernoemd origineel en zijn twee nieuwe
+namen, dus de kaart koppelt ze op inhoud. Lukt dat niet — meerdere hernoemingen
+tegelijk, en de bestanden ook gewijzigd — dan zegt hij dat, en verschijnen de
+nieuwe namen als eigen chips.
+
+## Afronden
+
+Als het laatste bestand is opgelost, stuurt de werkruimte je niet op zoek naar
+**Doorgaan**: een kaart vat samen hoe de conflicten zijn beantwoord, laat je het
+merge-bericht bewerken (vooraf ingevuld met dat van git zelf) en rondt van daaruit
+af.
+
+![Elk conflict opgelost, met het merge-bericht en de rerere-schakelaar](../../screenshots/conflict-done.webp)
+
+- De samenvatting telt wat hij jou zag kiezen: van jou, van hen, beide, met de
+  hand bewerkt. Een bestand dat buiten de oplosser is opgelost telt als bestand,
+  niet als antwoord.
+- Een **rebase**-stap houdt het eigen bericht van de opnieuw toegepaste commit,
+  dus daar is geen berichtvak.
+- **Deze oplossingen (rerere) onthouden voor de volgende keer** is git's
+  `rerere.enabled`, dezelfde schakelaar als in Instellingen. git onthoudt alleen
+  conflicten die het heeft zien gebeuren, dus aanzetten hier werkt vanaf het
+  volgende.
+- **Opnieuw nakijken** sluit de oplosser op het gestagede resultaat.
+
+## Ongedaan maken
+
+Elke oplossing — een bestand als opgelost gemarkeerd, een kant gekozen, een
+bestand gehouden of verwijderd, een hernoeming beslecht — heeft een
+ongedaanmaakregel. Ongedaan maken zet het conflict precies terug zoals git het
+achterliet: de markers, beide kanten en de basis in de index, het bestand op
+schijf. **Afbreken** is het enige dat niet ongedaan kan worden, en daarom vraagt
+het eerst.
 
 ## AI-hulp
 
-Met AI ingeschakeld stelt **Oplossen met AI** een merge voor in het
-uitvoerpaneel. Het past nooit iets uit zichzelf toe: jij leest het, bewerkt het
-en staget het. Zie [AI-functies](ai.md).
+Met AI ingeschakeld stelt **Oplossen met AI** een merge voor in het resultaat,
+als tekst. Het past nooit iets uit zichzelf toe: jij leest het, bewerkt het en
+staget het. Zie [AI-functies](ai.md).
 
 ## Xcode-projectbestanden
 
@@ -84,7 +196,7 @@ kanten overnemen, de `children`- en `files`-arrays verenigen, en stoppen bij wat
 echt uiteenliep. De balk boven de panelen zegt wat elke kant toevoegde en wat er
 — als er iets is — voor jou overblijft.
 
-Net als het AI-voorstel landt het in het uitvoerpaneel en zet het niets klaar.
+Net als het AI-voorstel landt het in het resultaat en zet het niets klaar.
 Je leest het voor je opslaat.
 
 ![De balk voor samenvoegen op structuur boven de conflictpanelen, bij een Xcode-projectbestand](../../screenshots/conflict-pbxproj.webp)

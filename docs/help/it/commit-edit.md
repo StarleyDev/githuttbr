@@ -52,7 +52,8 @@ descrizione.
 
 I file del commit sono elencati con la loro lettera di stato; un punto segna
 ognuno di quelli che hai cambiato. Scegli un file per modificarlo com'era in quel
-commit. L'interruttore sopra l'editor passa da **Modifica** a **Confronta con
+commit; le righe che cambi o aggiungi si colorano mentre scrivi, così la tua
+modifica resta sotto gli occhi. L'interruttore sopra l'editor passa da **Modifica** a **Confronta con
 l’originale**, che mostra il diff del file da ciò che contiene il commit al tuo
 testo modificato — la stessa vista diff usata nel resto dell'app.
 
