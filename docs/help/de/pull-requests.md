@@ -17,20 +17,26 @@ du jeden öffnen, lesen, zurückgehen, den nächsten öffnen. Die
 du einen Pull Request öffnest, bringen dich **‹ ›** zum nächsten derselben Liste,
 ohne zurückzugehen.
 
-![Die Pull-Request-Seite mit der Suche nach „pix“: Treffer hervorgehoben, eigene mit „du“ markiert, eine fehlschlagende CI und ein Entwurf](../../screenshots/pull-requests.webp)
+![Die Pull-Request-Seite, aus dem Leitstand geöffnet: zwei warten auf dein Review, drei sind deine eigenen, die anderen eingeklappt; jede Zeile mit ihrer Größe, dem Stand jedes Reviewers, ihren Checks und einem Punkt, wo sich seit deinem letzten Besuch etwas geändert hat](../../screenshots/pull-requests.webp)
 
 ## Öffnen
 
 - Das **Listensymbol** im Kopf **PULL REQUESTS** der Seitenleiste (*Alle Pull
   Requests anzeigen*).
 - *Pull Requests…* in der Befehlspalette (⌘K) oder **Werkzeuge → Pull Requests…**.
+- Der **Pull-Request-Chip** in der Zeile eines Repositorys in der [Missionskontrolle](mission-control.md).
+  Von dort geöffnet, beginnt die Seite mit **← Zurück zum Leitstand** und behält
+  es, wenn du einen ihrer Pull Requests öffnest und mit **← Pull Requests**
+  zurückkommst.
 
 Wie das Wiki und die [CI-Läufe](ci-runs.md) hängt die Seite am Tab des
 Repositorys.
 
-## Tabs
+## Status
 
-| Tab | Was er enthält |
+Das Segment-Steuerelement links neben der Suche enthält die vier Status, jeweils mit ihrer Anzahl.
+
+| Status | Was er enthält |
 |---|---|
 | **Offen** | Alle offenen Pull Requests, Entwürfe eingeschlossen |
 | **Entwürfe** | Nur die offenen, die als Entwurf markiert sind |
@@ -45,17 +51,22 @@ schon hat. Gemergt und Geschlossen werden erst abgefragt, wenn du einen davon
 
 | Filter | Behält |
 |---|---|
-| **Suchen** | Pull Requests, deren Titel, Beschreibung, Branches oder Nummer jedes eingegebene Wort enthalten. `#482` oder `482` findet diese Nummer; Treffer werden im Titel hervorgehoben |
+| **Suchen** | Pull Requests, deren Titel, Beschreibung, Autor, Branches oder Nummer jedes eingegebene Wort enthalten. `#482` oder `482` findet diese Nummer; Treffer werden im Titel hervorgehoben |
 | **Autor** | Einen Autor — jeder mit der Anzahl seiner PRs in diesem Tab. **Ich** steht oben |
 | **Reviewer** | Einen angefragten Reviewer oder **Review von mir angefragt** |
 | **Ziel-Branch** | Pull Requests in diesen Branch |
-| **Meine** | Eine Abkürzung für *Autor: Ich* |
 | **Wartet auf mein Review** | Eine Abkürzung für *Reviewer: Review von mir angefragt* |
+| **Meine** | Eine Abkürzung für *Autor: Ich* |
 | **CI schlägt fehl** | Pull Requests, deren Checks am Head fehlgeschlagen sind |
 
-Die Zeile unter den Filtern sagt, wie viele Pull Requests des Tabs angezeigt
-werden und welche Filter aktiv sind, mit **Filter zurücksetzen**, um alle zu
-entfernen.
+Die Suche und die drei Chips teilen sich eine Zeile; jeder Chip sagt, wie viele
+Pull Requests des aktuellen Status er übrig ließe. **Autor**, **Reviewer** und
+**Ziel-Branch** liegen unter **Weitere Filter ▾**, das hervorgehoben ist, solange
+einer davon gesetzt ist.
+
+Solange ein Filter aktiv ist, sagt eine Zeile über der Liste, wie viele Pull
+Requests des Status angezeigt werden und welche Filter aktiv sind, mit **Filter
+zurücksetzen**, um alle zu entfernen.
 
 Filter bleiben pro Repository erhalten, **solange die App läuft** — verlasse die
 Seite, komm zurück, sie sind, wie du sie verlassen hast. Über einen Neustart
@@ -73,16 +84,51 @@ wem es gehört (kein User-Scope), oder es kein Token gibt, werden **Ich**,
 
 ## Die Liste
 
-| Spalte | Was sie zeigt |
+Offen und Entwürfe sind in drei Abschnitte geteilt, in der Reihenfolge, in der du sie abarbeitest:
+
+| Abschnitt | Enthält |
 |---|---|
-| **#** | Die Nummer, mit einem Symbol für offen, Entwurf, gemergt oder geschlossen |
-| **Titel** | Der Titel, ein *Entwurf*-Badge und wer noch um ein Review gebeten ist — in der Akzentfarbe, wenn du es bist |
-| **Autor** | Das Bild vom Host, wo er eins liefert, sonst die Initiale, und **du** bei deinen eigenen |
-| **Branches** | Quelle → Ziel |
-| **Checks** | Die Checks des Heads zusammengefasst — `6/6`, `1 fehlgeschlagen`, `2 laufen`; Hover zeigt die Zahlen |
+| **Wartet auf dein Review** | Pull Requests, für die dich jemand um ein Review gebeten hat — die Überschrift in Gelb |
+| **Deine Pull Requests** | Die, die du geschrieben hast |
+| **Andere** | Alles andere, hinter **anzeigen** eingeklappt, solange die beiden oberen etwas enthalten; eine Suche oder ein Filter klappt es auf |
+
+Wenn der Host nicht sagen kann, wer du bist, gibt es nichts zu sortieren, und die
+Liste ist eine einzige Karte. Gemergt und Geschlossen sind Geschichte: eine Karte,
+keine Abschnitte.
+
+Jede Zeile liest sich von links nach rechts:
+
+| Teil | Was er zeigt |
+|---|---|
+| **Punkt** | Der Pull Request hat sich geändert, seit du seine Seite zuletzt verlassen hast. Einer, den du nie geöffnet hast, hat keinen Punkt — es gibt nichts zu vergleichen |
+| **#** | Die Nummer — grün, solange offen, grau bei einem Entwurf |
+| **Titel** | Der Titel, sein [Conventional-Commits](committing.md)-Typ als farbiger Chip (`feat`, `fix`, `docs`…), ein *Entwurf*-Badge. Darunter: der Autor (bei deinen eigenen weggelassen), Quelle → Ziel und **N Kommentare** — oder **N neue Kommentare**, wenn andere seit deinem letzten Besuch welche geschrieben haben |
+| **Größe** | `+48 −12 · 4 Dateien` — hinzugefügte und entfernte Zeilen, berührte Dateien |
+| **Review** | Das aktuelle Urteil jedes Reviewers — **✓ bruno hat genehmigt**, **✕ ana hat Änderungen angefordert** —, dann wer noch angefragt ist, **● wartet auf dich** in Gelb. **✓ bereit zum Mergen**, wenn der Host sagt, dass die Reviews erledigt sind und die Checks nicht fehlgeschlagen sind; **keine Reviewer**, wenn niemand angefragt wurde oder geantwortet hat |
+| **Checks** | Die Checks des Heads — `✓ 6/6`, `✕ 1 fehlgeschlagen`, `● 2 laufen`; Hover zeigt die Zahlen |
 | **Aktualisiert** | Wie lange die letzte Änderung her ist; Hover zeigt das Datum |
 
-Die Zeilen sind nach der letzten Aktivität sortiert. Ein Klick öffnet die eigene
+### Was jeder Host liefert
+
+Größe, Kommentare und Urteile stehen nicht in der Liste jedes Hosts, und die Seite
+öffnet nie jeden Pull Request einzeln, um sie zu finden: was die Liste nicht
+mitbringt, bleibt leer, nie eine Null.
+
+| Host | Größe | Kommentare | Review-Urteile |
+|---|---|---|---|
+| **GitHub** | ✓ | ✓, und welche neu sind | ✓, und *bereit zum Mergen* — eine zusätzliche GraphQL-Anfrage für die ganze Liste |
+| **GitLab** | — | ✓ (nur die Anzahl) | Wer angefragt ist; *bereit zum Mergen* aus GitLabs Merge-Status |
+| **Azure DevOps** | — | — | ✓ aus den Stimmen der Reviewer |
+| **Bitbucket Data Center** | — | ✓ (nur die Anzahl) | ✓ |
+| **Bitbucket Cloud** | — | ✓ (nur die Anzahl) | — |
+| **Forgejo** | ✓, wenn der Server es füllt | ✓ (nur die Anzahl) | Wer angefragt ist |
+
+Die Kommentaranzahl sind die Kommentare der Unterhaltung — Kommentare an einer
+Zeile des Diffs zählen nicht dazu. Ohne Token entfällt die GitHub-Anfrage, und
+diese Spalten bleiben leer.
+
+Innerhalb eines Abschnitts sind die Zeilen nach der letzten Aktivität sortiert,
+und **‹ ›** in einem Pull Request gehen sie in der gezeigten Reihenfolge durch. Ein Klick öffnet die eigene
 Seite des Pull Requests ([Hosting & Pull Requests](hosting.md)). Auf einem Host
 ohne diese Seite öffnet die Zeile den Pull Request im Browser.
 
@@ -91,7 +137,7 @@ Ursprungs-Repository gelistet, markiert mit *auf owner/repo*.
 
 ## Die Liste aus einem Pull Request heraus durchgehen
 
-![Ein aus der gefilterten Liste geöffneter Pull Request: ‹ 1 von 4 › und die Filter, aus denen er kam](../../screenshots/pull-request-nav.webp)
+![Ein aus der gefilterten Liste geöffneter Pull Request: ‹ 1 von 7 › und die Filter, aus denen er kam](../../screenshots/pull-request-nav.webp)
 
 Ein von der Seite aus geöffneter Pull Request zeigt eine Leiste über seinem
 Titel:
@@ -430,9 +476,12 @@ Force-Push sind exakt, also auch sein **Änderungen anzeigen**.
 Ein Pull Request mit zweihundert Dateien ist als zweihundert vollständige Pfade
 schwer zu lesen und schwer zu Ende zu bringen, ohne den Faden zu verlieren. Über
 der Liste und dem Diff führt eine Zeile Buch — *4 von 9 Dateien angesehen*, mit
-einem Balken —, und **Nächste ungesehene →** öffnet die nächste Datei weiter
-unten, die du nicht abgehakt hast, und fängt danach oben wieder an; sie ist
-ausgegraut, sobald alles Gelistete angesehen ist. **Anzeigen:** grenzt die Liste
+einem Balken —, und **Vorherige ungesehene** / **Nächste ungesehene** springen zur
+nächstgelegenen Datei, die du nicht abgehakt hast, nach oben oder unten, und
+laufen dabei rund um die Liste; sie sind ausgegraut, sobald alles Gelistete
+angesehen ist. Hake **Beim Weitergehen als gesehen markieren** an, und **Nächste
+ungesehene** hakt die offene Datei für dich ab, bevor es weitergeht — wer
+durchliest, berührt die Kästchen nie; die Wahl wird gespeichert. **Anzeigen:** grenzt die Liste
 auf **Ungesehen** oder **Mit Kommentaren** (irgendeine Review-Unterhaltung darauf)
 ein, und zurück auf **Alle**.
 
@@ -654,8 +703,9 @@ Ein Thread, den der Host als **offen** meldet, trägt eine bernsteinfarbene Pill
 und die Leiste über dem Verlauf zählt sie: **1 offener Thread** zeigt nur diese,
 die noch auf eine Antwort warten. Ein **gelöster** Thread klappt auf eine Zeile
 zusammen — *Gelöster Thread in src/palette.tsx:18 · 2 Kommentare* —, und ein Klick
-klappt ihn auf. **Alles · Kommentare · Reviews · Commits** grenzen den Verlauf auf
-eine Art ein.
+klappt ihn auf. **Kommentare · Reviews · Commits · Alles** grenzen den Verlauf auf
+eine Art ein; **Kommentare** ist die Ansicht, mit der er öffnet, und **Alles**
+holt alles zurück.
 
 Die **Reviewer** in der Seitenleiste nennen das Urteil jeder Person in Worten —
 **✓ genehmigt** oder **Änderungen angefordert** — und eine Uhr für jemanden, der
@@ -664,11 +714,17 @@ noch antworten muss.
 ### Neu seit deinem letzten Besuch
 
 Wenn du die Seite eines Pull Requests verlässt (eine andere Seite, ein anderer
-Tab, Schließen), merkt sich die App die Zeit. Beim nächsten Mal markiert eine
+Tab, Schließen, die App beenden oder neu laden), merkt sich die App die Zeit. Beim nächsten Mal markiert eine
 Linie, wo du aufgehört hast — **Neu seit deinem letzten Besuch** —, und die Leiste
 sagt, wie viele Einträge danach kamen. Die Markierung wird beim Verlassen gesetzt,
 nicht beim Öffnen, also bleibt sie stehen, während du liest. Beim ersten Öffnen
 eines Pull Requests ist nichts als neu markiert.
+
+Was du selbst geschrieben hast, ist für dich nie neu: deine eigenen Kommentare,
+Antworten und Reviews zählen nicht mit und verschieben die Linie nicht. Ein
+Thread, der vor deinem Besuch begann und seitdem eine Antwort von jemand anderem
+bekommen hat, zählt ebenfalls als neu — er bleibt im Verlauf dort, wo er begann,
+also such ihn oberhalb der Linie.
 
 Zeiten lauten *vor 2 T.*; fahr darüber für das volle Datum.
 
@@ -690,8 +746,11 @@ Zeiten lauten *vor 2 T.*; fahr darüber für das volle Datum.
   Zeilenkommentaren abgelegt wird — bekommt keine Zeile; seine Threads stehen schon
   da.
 - Deine letzten Besuche werden für die 300 zuletzt besuchten Pull Requests
-  gespeichert, nur auf diesem Computer. Die App mit einem offenen Pull Request zu
-  beenden, zählt nicht als Verlassen.
+  gespeichert, nur auf diesem Computer. Ein Absturz oder eine abgewürgte App
+  zeichnet keinen Besuch auf.
+- **Deine** erkennt die App an deinem Konto beim Host. Wo der Host Autoren nur
+  mit Anzeigenamen nennt und keine ID zum Abgleichen liefert, zählen deine eigenen
+  Einträge wie die aller anderen.
 
 ## Kommentare schreiben
 

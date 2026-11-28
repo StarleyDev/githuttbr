@@ -17,7 +17,7 @@ pull requests** responde esas preguntas en una sola pantalla y, una vez que abre
 una pull request, **‹ ›** te llevan a la siguiente de la misma lista sin volver
 atrás.
 
-![La página de pull requests buscando «pix»: las coincidencias resaltadas, las tuyas marcadas con «tú», una CI fallando y un borrador](../../screenshots/pull-requests.webp)
+![La página de pull requests abierta desde el Centro de control: dos esperando tu revisión, tres tuyas, las demás plegadas; cada fila con su tamaño, en qué punto está cada revisor, sus checks y un punto donde cambió desde tu última visita](../../screenshots/pull-requests.webp)
 
 ## Abrirla
 
@@ -25,13 +25,18 @@ atrás.
   (*Ver todas las pull requests*).
 - *Pull requests…* en la paleta de comandos (⌘K), o **Herramientas → Pull
   requests…**.
+- El **chip de pull requests** en la fila de un repositorio del [Centro de control](mission-control.md).
+  Abierta desde ahí, la página empieza con **← Volver al Centro de control**, y lo
+  conserva cuando abres una de sus pull requests y vuelves con **← Pull requests**.
 
 Como la wiki y las [ejecuciones de CI](ci-runs.md), la página va en la pestaña
 del repositorio.
 
-## Pestañas
+## Estados
 
-| Pestaña | Qué contiene |
+El control segmentado a la izquierda de la búsqueda tiene los cuatro estados, con cuántas tiene cada uno.
+
+| Estado | Qué contiene |
 |---|---|
 | **Abiertas** | Todas las pull requests abiertas, borradores incluidos |
 | **Borradores** | Solo las abiertas marcadas como borrador |
@@ -46,16 +51,21 @@ y una vez por sesión; **Actualizar** las pide de nuevo.
 
 | Filtro | Conserva |
 |---|---|
-| **Buscar** | Pull requests cuyo título, descripción, ramas o número contienen todas las palabras escritas. `#482` o `482` encuentra ese número; las coincidencias se resaltan en el título |
+| **Buscar** | Pull requests cuyo título, descripción, autor, ramas o número contienen todas las palabras escritas. `#482` o `482` encuentra ese número; las coincidencias se resaltan en el título |
 | **Autor** | Un autor — cada uno con cuántas tiene en esta pestaña. **Yo** va primero |
 | **Revisor** | Un revisor solicitado, o **Piden mi revisión** |
 | **Rama de destino** | Pull requests hacia esa rama |
-| **Mías** | Un atajo para *Autor: Yo* |
 | **Esperando mi revisión** | Un atajo para *Revisor: piden mi revisión* |
+| **Mías** | Un atajo para *Autor: Yo* |
 | **CI fallando** | Pull requests cuyos checks del head fallaron |
 
-La línea bajo los filtros dice cuántas pull requests de la pestaña se muestran y
-qué filtros están activos, con **quitar filtros** para quitarlos todos.
+La búsqueda y los tres chips comparten una fila; cada chip dice cuántas pull
+requests del estado actual dejaría. **Autor**, **Revisor** y **Rama de destino**
+están bajo **Más filtros ▾**, que se resalta mientras uno de ellos esté puesto.
+
+Mientras haya algún filtro activo, una línea sobre la lista dice cuántas pull
+requests del estado se muestran y qué filtros están activos, con **quitar
+filtros** para quitarlos todos.
 
 Los filtros se mantienen por repositorio **mientras la app está abierta** — sal
 de la página, vuelve, y siguen como los dejaste. No se guardan entre reinicios a
@@ -72,16 +82,51 @@ revisión** no se ofrecen.
 
 ## La lista
 
-| Columna | Qué muestra |
+Abiertas y Borradores se dividen en tres secciones, en el orden en que las vas resolviendo:
+
+| Sección | Contiene |
 |---|---|
-| **#** | El número, con un icono de abierta, borrador, fusionada o cerrada |
-| **Título** | El título, una insignia de *borrador* y a quién se le sigue pidiendo revisión — en el color de acento cuando eres tú |
-| **Autor** | La foto del host cuando la da, si no la inicial, y **tú** en las tuyas |
-| **Ramas** | Origen → destino |
-| **Checks** | Los checks del head resumidos — `6/6`, `1 con fallos`, `2 en curso`; pasa el ratón para ver los números |
+| **Esperando tu revisión** | Pull requests en las que alguien te pidió revisión — el título de la sección en amarillo |
+| **Tus pull requests** | Las que escribiste tú |
+| **Otros** | Todo lo demás, plegado tras **mostrar** mientras las dos de arriba tengan algo; una búsqueda o un filtro lo despliega |
+
+Cuando el host no puede decir quién eres, no hay nada que clasificar y la lista
+es una sola tarjeta. Fusionadas y Cerradas son historia: una tarjeta, sin
+secciones.
+
+Cada fila se lee de izquierda a derecha:
+
+| Parte | Qué muestra |
+|---|---|
+| **Punto** | La pull request cambió desde la última vez que saliste de su página. Una que nunca abriste no tiene punto — no hay con qué comparar |
+| **#** | El número — verde mientras está abierta, gris si es borrador |
+| **Título** | El título, su tipo de [Conventional Commits](committing.md) como un chip de color (`feat`, `fix`, `docs`…), una insignia de *borrador*. Debajo: el autor (omitido en las tuyas), origen → destino y **N comentarios** — o **N comentarios nuevos** cuando otros escribieron alguno desde tu última visita |
+| **Tamaño** | `+48 −12 · 4 archivos` — líneas añadidas y quitadas, archivos tocados |
+| **Revisión** | El veredicto vigente de cada revisor — **✓ bruno aprobó**, **✕ ana pidió cambios** — y luego a quién se le sigue pidiendo, **● esperándote** en amarillo. **✓ listo para fusionar** cuando el host dice que las revisiones están hechas y los checks no fallaron; **sin revisores** cuando nadie fue solicitado ni respondió |
+| **Checks** | Los checks del head — `✓ 6/6`, `✕ 1 con fallos`, `● 2 en curso`; pasa el ratón para ver los números |
 | **Actualizada** | Hace cuánto cambió por última vez; pasa el ratón para ver la fecha |
 
-Las filas se ordenan por la actividad más reciente. Un clic abre la página propia
+### Qué da cada host
+
+El tamaño, los comentarios y los veredictos no están en la lista de todos los
+hosts, y la página nunca abre cada pull request para buscarlos: lo que la lista
+no trae queda en blanco, nunca en cero.
+
+| Host | Tamaño | Comentarios | Veredictos de revisión |
+|---|---|---|---|
+| **GitHub** | ✓ | ✓, y cuáles son nuevos | ✓, y *listo para fusionar* — una petición GraphQL extra para toda la lista |
+| **GitLab** | — | ✓ (solo el número) | A quién se le pide; *listo para fusionar* según el estado de merge de GitLab |
+| **Azure DevOps** | — | — | ✓ a partir de los votos de los revisores |
+| **Bitbucket Data Center** | — | ✓ (solo el número) | ✓ |
+| **Bitbucket Cloud** | — | ✓ (solo el número) | — |
+| **Forgejo** | ✓ cuando el servidor lo rellena | ✓ (solo el número) | A quién se le pide |
+
+El número de comentarios son los comentarios de la conversación — los comentarios
+en una línea del diff no cuentan. Sin token, la petición a GitHub se omite y esas
+columnas quedan vacías.
+
+Dentro de una sección, las filas se ordenan por la actividad más reciente, y
+**‹ ›** dentro de una pull request las recorren en el orden mostrado. Un clic abre la página propia
 de la pull request ([Hosting y pull requests](hosting.md)). En un host sin esa
 página, la fila abre la pull request en el navegador.
 
@@ -90,7 +135,7 @@ requests en el repositorio original, marcadas *en owner/repo*.
 
 ## Recorrer la lista desde una pull request
 
-![Una pull request abierta desde la lista filtrada: ‹ 1 de 4 › y los filtros de los que vino](../../screenshots/pull-request-nav.webp)
+![Una pull request abierta desde la lista filtrada: ‹ 1 de 7 › y los filtros de los que vino](../../screenshots/pull-request-nav.webp)
 
 Una pull request abierta desde la página muestra una franja sobre su título:
 
@@ -421,9 +466,12 @@ después de un force push son exactos, así que su **Ver los cambios** también 
 Una pull request de doscientos archivos es difícil de leer como doscientas rutas
 completas, y difícil de terminar sin perder el hilo. Encima de la lista y del
 diff, una línea lleva la cuenta — *4 de 9 archivos vistos*, con una barra — y
-**Siguiente sin ver →** abre el siguiente archivo hacia abajo que no hayas
-marcado, volviendo al principio al llegar al final; queda desactivado cuando todo
-lo listado está visto. **Mostrar:** reduce la lista a los archivos **Sin ver** o
+**Anterior sin ver** / **Siguiente sin ver** saltan al archivo más cercano que no
+hayas marcado, hacia arriba o hacia abajo, dando la vuelta a la lista; quedan
+desactivados cuando todo lo listado está visto. Marca **Marcar como visto al
+avanzar** y **Siguiente sin ver** marca por ti el archivo abierto antes de avanzar
+— leyendo de corrido, nunca tocas las casillas; la elección se recuerda.
+**Mostrar:** reduce la lista a los archivos **Sin ver** o
 **Con comentarios** (cualquier conversación de revisión sobre ellos), y vuelve a
 **Todos**.
 
@@ -634,8 +682,9 @@ Un hilo que el host da como **abierto** lleva una píldora ámbar, y la barra so
 la línea de tiempo los cuenta: **1 hilo abierto** muestra solo esos, los que
 siguen esperando respuesta. Un hilo **resuelto** se pliega en una línea — *Hilo
 resuelto en src/palette.tsx:18 · 2 comentarios* — y un clic lo despliega.
-**Todo · Comentarios · Revisiones · Commits** reducen la línea de tiempo a un
-tipo.
+**Comentarios · Revisiones · Commits · Todo** reducen la línea de tiempo a un
+tipo; **Comentarios** es el que se abre primero, y **Todo** lo trae todo de
+vuelta.
 
 Los **Revisores** de la barra lateral dicen el veredicto de cada persona con
 palabras — **✓ aprobó** o **pidió cambios** — y un reloj para quien aún tiene que
@@ -644,10 +693,16 @@ responder.
 ### Nuevo desde tu última visita
 
 Cuando sales de la página de una pull request (otra página, otra pestaña,
-cerrarla), la app anota la hora. La próxima vez, una línea marca dónde lo dejaste
+cerrarla, salir de la app o recargarla), la app anota la hora. La próxima vez, una línea marca dónde lo dejaste
 — **Nuevo desde tu última visita** — y la barra dice cuántas entradas llegaron
 después. La marca se hace al salir, no al abrir, así que se queda quieta mientras
 lees. La primera vez que abres una pull request no hay nada marcado como nuevo.
+
+Lo que escribiste tú nunca es nuevo para ti: tus propios comentarios, respuestas
+y revisiones ni cuentan ni mueven la línea. Un hilo que empezó antes de tu visita
+y desde entonces recibió una respuesta de otra persona también cuenta como nuevo
+— se queda donde empezó en la línea de tiempo, así que búscalo por encima de la
+línea.
 
 Las horas se leen *hace 2 d*; pasa el ratón para ver la fecha completa.
 
@@ -668,8 +723,11 @@ Las horas se leen *hace 2 d*; pasa el ratón para ver la fecha completa.
 - Una revisión de GitHub sin texto propio — el sobre bajo el que se archiva cada
   tanda de comentarios de línea — no tiene línea; sus hilos ya se muestran.
 - Tus últimas visitas se guardan para las 300 pull requests más recientes, solo
-  en este equipo. Salir de la app con una pull request abierta no cuenta como
-  salir de ella.
+  en este equipo. Un cierre inesperado, o la app terminada a la fuerza, no
+  registra la visita.
+- **Lo tuyo** se reconoce por tu cuenta en el host. Donde el host nombra a los
+  autores solo por su nombre visible y no da un id con el que comparar, tus
+  propias entradas cuentan como las de cualquiera.
 
 ## Escribir comentarios
 

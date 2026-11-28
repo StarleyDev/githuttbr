@@ -16,7 +16,7 @@ okumak, geri dönmek, sonrakini açmak gerekiyordu. **Pull request sayfası** bu
 soruları tek ekranda yanıtlar ve bir pull request’i açtığınızda **‹ ›** geri
 dönmeden sizi aynı listenin bir sonrakine götürür.
 
-![“pix” için aranmış pull request sayfası: eşleşmeler vurgulu, sizinkiler “sen” ile işaretli, başarısız bir CI ve bir taslak](../../screenshots/pull-requests.webp)
+![Komuta merkezinden açılmış pull request sayfası: ikisi incelemeni bekliyor, üçü senin, diğerleri katlanmış; her satırda boyutu, her inceleyenin durumu, kontrolleri ve son ziyaretinden bu yana değiştiği yerde bir nokta](../../screenshots/pull-requests.webp)
 
 ## Açmak
 
@@ -24,12 +24,19 @@ dönmeden sizi aynı listenin bir sonrakine götürür.
   request’leri gör*).
 - Komut paletinde (⌘K) *Pull request’ler…* ya da **Araçlar → Pull
   request’ler…**.
+- [Komuta merkezinde](mission-control.md) bir deponun satırındaki **pull request
+  çipi**. Oradan açıldığında sayfa **← Görev kontrole dön** ile başlar ve pull
+  request’lerinden birini açıp **← Pull request’ler** ile geri döndüğünüzde de onu
+  korur.
 
 Wiki ve [CI çalıştırmaları](ci-runs.md) gibi, sayfa deponun sekmesinde açılır.
 
-## Sekmeler
+## Durumlar
 
-| Sekme | Ne içerir |
+Aramanın solundaki bölmeli düğme, her birinde kaç tane olduğuyla birlikte dört
+durumu tutar.
+
+| Durum | Ne içerir |
 |---|---|
 | **Açık** | Taslaklar dahil tüm açık pull request’ler |
 | **Taslaklar** | Yalnızca taslak olarak işaretlenmiş açık olanlar |
@@ -44,17 +51,21 @@ kez istenir; **Yenile** yeniden ister.
 
 | Filtre | Bıraktığı |
 |---|---|
-| **Ara** | Başlığı, açıklaması, dalları veya numarası yazılan her kelimeyi içeren pull request’ler. `#482` ya da `482` o numarayı bulur; eşleşmeler başlıkta vurgulanır |
+| **Ara** | Başlığı, açıklaması, yazarı, dalları veya numarası yazılan her kelimeyi içeren pull request’ler. `#482` ya da `482` o numarayı bulur; eşleşmeler başlıkta vurgulanır |
 | **Yazar** | Tek bir yazar — her biri bu sekmede kaç tane olduğuyla listelenir. **Ben** ilk sıradadır |
 | **İnceleyen** | İstenen tek bir inceleyen ya da **Benden inceleme istenen** |
 | **Hedef dal** | O dala açılan pull request’ler |
-| **Benimkiler** | *Yazar: Ben* için kısayol |
 | **İncelememi bekleyenler** | *İnceleyen: benden inceleme istenen* için kısayol |
+| **Benimkiler** | *Yazar: Ben* için kısayol |
 | **CI başarısız** | Head’inin kontrolleri başarısız olan pull request’ler |
 
-Filtrelerin altındaki satır, sekmedeki pull request’lerin kaçının gösterildiğini
-ve hangi filtrelerin açık olduğunu söyler; hepsini kaldırmak için **filtreleri
-temizle** vardır.
+Arama ve üç çip aynı satırı paylaşır; her çip, geçerli durumdaki pull
+request’lerden kaçını bırakacağını söyler. **Yazar**, **İnceleyen** ve **Hedef
+dal**, **Diğer filtreler ▾** altında durur; biri ayarlıyken bu düğme vurgulanır.
+
+Herhangi bir filtre açıkken listenin üstündeki bir satır, durumdaki pull
+request’lerin kaçının gösterildiğini ve hangi filtrelerin açık olduğunu söyler;
+hepsini kaldırmak için **filtreleri temizle** vardır.
 
 Filtreler depo başına **uygulama çalıştığı sürece** tutulur — sayfadan çıkın,
 geri gelin, bıraktığınız gibidirler. Yeniden başlatmalar arasında bilerek
@@ -70,16 +81,49 @@ token yoksa, **Ben**, **Benimkiler** ve **İncelememi bekleyenler** sunulmaz.
 
 ## Liste
 
-| Sütun | Ne gösterir |
+Açık ve Taslaklar, üzerlerinden geçtiğiniz sırayla üç bölüme ayrılır:
+
+| Bölüm | Ne tutar |
 |---|---|
-| **#** | Numara; açık, taslak, birleştirilmiş veya kapalı için bir simgeyle |
-| **Başlık** | Başlık, bir *taslak* rozeti ve kimden hâlâ inceleme istendiği — siz olduğunuzda vurgu renginde |
-| **Yazar** | Sunucu veriyorsa onun resmi, yoksa baş harf; kendi pull request’lerinizde **sen** |
-| **Dallar** | Kaynak → hedef |
-| **Kontroller** | Head’in kontrollerinin özeti — `6/6`, `1 başarısız`, `2 çalışıyor`; sayılar için üzerine gelin |
+| **İncelemeni bekleyenler** | Birinin senden inceleme istediği pull request’ler — başlık sarı |
+| **Senin pull request'lerin** | Senin yazdıkların |
+| **Diğerleri** | Geri kalan her şey; üstteki iki bölümde bir şey olduğu sürece **göster** arkasında katlıdır, bir arama ya da filtre onu açar |
+
+Sunucu kim olduğunu söyleyemediğinde ayıklanacak bir şey yoktur ve liste tek bir
+karttır. Birleştirilen ve Kapalı geçmiştir: tek kart, bölüm yok.
+
+Her satır soldan sağa okunur:
+
+| Parça | Ne gösterir |
+|---|---|
+| **Nokta** | Pull request, sayfasından son ayrılışından bu yana değişti. Hiç açmadığın birinde nokta yoktur — karşılaştıracak bir şey yoktur |
+| **#** | Numara — açıkken yeşil, taslakta gri |
+| **Başlık** | Başlık, [Conventional Commits](committing.md) türü renkli bir çip olarak (`feat`, `fix`, `docs`…), bir *taslak* rozeti. Altında: yazar (kendi pull request’lerinde yazılmaz), kaynak → hedef ve **N yorum** — son ziyaretinden bu yana başkaları yazdıysa **N yeni yorum** |
+| **Boyut** | `+48 −12 · 4 dosya` — eklenen ve silinen satırlar, dokunulan dosyalar |
+| **İnceleme** | Her inceleyenin geçerli kararı — **✓ bruno onayladı**, **✕ ana değişiklik istedi** — ardından kimden hâlâ istendiği, sarı renkte **● seni bekliyor**. Sunucu incelemelerin tamam olduğunu söylüyor ve kontroller başarısız olmadıysa **✓ birleştirmeye hazır**; kimseden istenmediyse ya da kimse yanıt vermediyse **inceleyen yok** |
+| **Kontroller** | Head’in kontrolleri — `✓ 6/6`, `✕ 1 başarısız`, `● 2 çalışıyor`; sayılar için üzerine gelin |
 | **Güncellendi** | En son ne kadar önce değiştiği; tarih için üzerine gelin |
 
-Satırlar en son etkinliğe göre sıralanır. Tıklamak pull request’in kendi
+### Her sunucu ne verir
+
+Boyut, yorumlar ve kararlar her sunucunun listesinde yoktur ve sayfa bunları bulmak
+için her pull request’i tek tek açmaz: listenin taşımadığı şey boş kalır, asla sıfır
+olmaz.
+
+| Sunucu | Boyut | Yorumlar | İnceleme kararları |
+|---|---|---|---|
+| **GitHub** | ✓ | ✓, hangilerinin yeni olduğuyla | ✓, ve *birleştirmeye hazır* — tüm liste için tek bir ek GraphQL isteği |
+| **GitLab** | — | ✓ (yalnızca sayı) | Kimden istendiği; *birleştirmeye hazır* GitLab’in birleştirme durumundan |
+| **Azure DevOps** | — | — | ✓ inceleyenlerin oylarından |
+| **Bitbucket Data Center** | — | ✓ (yalnızca sayı) | ✓ |
+| **Bitbucket Cloud** | — | ✓ (yalnızca sayı) | — |
+| **Forgejo** | ✓ sunucu doldurduğunda | ✓ (yalnızca sayı) | Kimden istendiği |
+
+Yorum sayısı konuşmanın yorumlarıdır — diff’in bir satırına yazılan yorumlar buna
+dahil değildir. Token yoksa GitHub isteği atlanır ve bu sütunlar boş kalır.
+
+Bir bölümün içinde satırlar en son etkinliğe göre sıralanır ve bir pull request’in
+içindeki **‹ ›** onları çizildikleri sırayla dolaşır. Tıklamak pull request’in kendi
 sayfasını açar ([Sunucular ve pull request’ler](hosting.md)). Bu sayfası olmayan
 bir sunucuda satır pull request’i tarayıcıda açar.
 
@@ -88,7 +132,7 @@ listelenir, *owner/repo üzerinde* olarak işaretlenir.
 
 ## Bir pull request’ten listede ilerlemek
 
-![Süzülmüş listeden açılan bir pull request: ‹ 1 / 4 › ve geldiği filtreler](../../screenshots/pull-request-nav.webp)
+![Süzülmüş listeden açılan bir pull request: ‹ 1 / 7 › ve geldiği filtreler](../../screenshots/pull-request-nav.webp)
 
 Sayfadan açılan bir pull request, başlığının üstünde bir şerit gösterir:
 
@@ -405,11 +449,14 @@ kesindir, bu yüzden **Değişiklikleri göster** de kesindir.
 
 İki yüz dosyalı bir pull request’i iki yüz tam yol olarak okumak zordur, yerinizi
 kaybetmeden bitirmek de. Listenin ve diff’in üstünde bir satır sayımı tutar —
-*9 dosyadan 4 tanesi görüldü*, bir çubukla — ve **Sonraki görülmemiş →** aşağıda
-henüz işaretlemediğiniz sonraki dosyayı açar, sona gelince başa döner; listelenen
-her şey görüldüğünde soluklaşır. **Göster** listeyi **Görülmemiş** dosyalara ya da
-**Yorumlu** dosyalara (üzerinde herhangi bir inceleme konuşması olan) daraltır, ve
-yeniden **Tümü**’ne döner.
+*9 dosyadan 4 tanesi görüldü*, bir çubukla — ve **Önceki görülmemiş** / **Sonraki
+görülmemiş** yukarı ya da aşağı, henüz işaretlemediğiniz en yakın dosyaya gider,
+listenin sonunda başa sarar; listelenen her şey görüldüğünde soluklaşırlar.
+**İlerlerken görüldü olarak işaretle** kutusunu işaretlerseniz **Sonraki görülmemiş**
+ilerlemeden önce açık dosyayı sizin yerinize işaretler — baştan sona okurken
+kutulara hiç dokunmazsınız; seçim hatırlanır. **Göster** listeyi **Görülmemiş**
+dosyalara ya da **Yorumlu** dosyalara (üzerinde herhangi bir inceleme konuşması
+olan) daraltır, ve yeniden **Tümü**’ne döner.
 
 **Dosyalar** sekmesinin listesinde commit panelindekiyle aynı **Yol / Ağaç** düğmesi
 vardır ve seçim uygulamanın her yerinde aynıdır. **Ağaç** görünümünde dosyalar
@@ -612,12 +659,12 @@ sırayla anlatır.
 | **Satır başlıkları** | Yerinde, ilk yorumlarının olduğu yerde: dosya ve satır, ilgili diff satırları, yanıtlar ve bir yanıt kutusu. Yol ve **Dosyalar'da görüntüle →** o dosyayı Dosyalar sekmesinde açar |
 | **İnceleme kararları** | Yeşil **onayladı**, inceleyenin yazdıklarıyla kırmızı **değişiklik istedi**, ya da bir incelemenin kendi yorumu |
 
-Sunucunun **açık** olarak bildirdiği bir başlık kehribar renkli bir etiket taşır ve
-zaman çizelgesinin üstündeki çubuk onları sayar: **1 açık başlık** yalnızca onları,
-hâlâ yanıt bekleyenleri gösterir. **Çözülmüş** bir başlık tek satıra katlanır —
-*src/palette.tsx:18 içinde çözülmüş başlık · 2 yorum* — ve bir tıklama onu açar.
-**Tümü · Yorumlar · İncelemeler · Commit'ler** zaman çizelgesini tek bir türe
-daraltır.
+Sunucunun **açık** olarak bildirdiği bir başlık kehribar renkli bir etiket taşır
+ve zaman çizelgesinin üstündeki çubuk onları sayar: **1 açık başlık** yalnızca
+onları, hâlâ yanıt bekleyenleri gösterir. **Çözülmüş** bir başlık tek satıra
+katlanır — *src/palette.tsx:18 içinde çözülmüş başlık · 2 yorum* — ve bir tıklama
+onu açar. **Yorumlar · İncelemeler · Commit'ler · Tümü** zaman çizelgesini tek bir
+türe daraltır; **Yorumlar** ile açılır, **Tümü** her şeyi geri getirir.
 
 Kenar çubuğundaki **İnceleyenler** her kişinin kararını sözcüklerle söyler —
 **✓ onayladı** ya da **değişiklik istedi** — ve henüz yanıt vermemiş biri için bir
@@ -626,10 +673,17 @@ saat gösterir.
 ### Son ziyaretinizden beri yeni
 
 Bir pull request’in sayfasından ayrıldığınızda (başka bir sayfa, başka bir sekme,
-kapatma), uygulama zamanı not eder. Bir dahaki sefere bir çizgi kaldığınız yeri
-işaretler — **Son ziyaretinizden beri yeni** — ve çubuk ondan sonra kaç girdi
-geldiğini söyler. İşaret açarken değil ayrılırken konur, bu yüzden siz okurken yerinde
-kalır. Bir pull request’i ilk açtığınızda hiçbir şey yeni olarak işaretlenmez.
+kapatma, uygulamadan çıkma ya da onu yeniden yükleme), uygulama zamanı not eder.
+Bir dahaki sefere bir çizgi kaldığınız yeri işaretler — **Son ziyaretinizden beri
+yeni** — ve çubuk ondan sonra kaç girdi geldiğini söyler. İşaret açarken değil
+ayrılırken konur, bu yüzden siz okurken yerinde kalır. Bir pull request’i ilk
+açtığınızda hiçbir şey yeni olarak işaretlenmez.
+
+Kendi yazdıklarınız sizin için asla yeni değildir: kendi yorumlarınız,
+yanıtlarınız ve incelemeleriniz ne sayılır ne de çizgiyi kaydırır. Ziyaretinizden
+önce başlamış ve o zamandan beri başka birinden yanıt almış bir başlık da yeni
+sayılır — zaman çizelgesinde başladığı yerde kalır, bu yüzden onu çizginin üstünde
+arayın.
 
 Süreler *2g önce* gibi okunur; tam tarih için üzerine gelin.
 
@@ -649,8 +703,11 @@ Süreler *2g önce* gibi okunur; tam tarih için üzerine gelin.
   kenar çubuğunda görünürler.
 - Kendi metni olmayan bir GitHub incelemesi — her satır yorumu grubunun altında
   dosyalandığı zarf — satır almaz; başlıkları zaten görünür.
-- Son ziyaretleriniz en son 300 pull request için, yalnızca bu bilgisayarda tutulur.
-  Bir pull request açıkken uygulamadan çıkmak ondan ayrılmak sayılmaz.
+- Son ziyaretleriniz en son 300 pull request için, yalnızca bu bilgisayarda
+  tutulur. Bir çökme ya da uygulamanın zorla kapatılması ziyaret kaydetmez.
+- **Sizinki** olduğu, sunucudaki hesabınızdan anlaşılır. Sunucunun yazarları
+  yalnızca görünen adlarıyla andığı ve eşleştirilecek bir kimlik vermediği yerde,
+  kendi girdileriniz herkesinki gibi sayılır.
 
 ## Yorum yazmak
 

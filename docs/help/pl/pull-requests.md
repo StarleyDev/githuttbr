@@ -16,20 +16,27 @@ otwierać każdy, czytać, wracać, otwierać następny. **Strona pull requestó
 odpowiada na te pytania na jednym ekranie, a gdy otworzysz pull request,
 **‹ ›** przeniosą cię do następnego z tej samej listy bez wracania.
 
-![Strona pull requestów z wyszukiwaniem „pix”: dopasowania podświetlone, twoje oznaczone „ty”, nieprzechodzące CI i szkic](../../screenshots/pull-requests.webp)
+![Strona pull requestów otwarta z Centrum dowodzenia: dwa czekają na twoją recenzję, trzy twoje, pozostałe zwinięte; każdy wiersz z rozmiarem, stanowiskiem każdego recenzenta, testami i kropką tam, gdzie coś się zmieniło od twojej ostatniej wizyty](../../screenshots/pull-requests.webp)
 
 ## Jak ją otworzyć
 
 - **Ikona listy** w nagłówku **PULL REQUESTY** panelu bocznego (*Zobacz wszystkie
   pull requesty*).
 - *Pull requesty…* w palecie poleceń (⌘K) albo **Narzędzia → Pull requesty…**.
+- **Chip pull requestów** w wierszu repozytorium w [Centrum
+  dowodzenia](mission-control.md). Otwarta stamtąd strona zaczyna się od **← Wróć
+  do Centrum dowodzenia** i zachowuje ten przycisk, gdy otworzysz jeden z jej pull
+  requestów i wrócisz przez **← Pull requesty**.
 
 Podobnie jak wiki i [przebiegi CI](ci-runs.md), strona otwiera się w karcie
 repozytorium.
 
-## Zakładki
+## Stany
 
-| Zakładka | Co zawiera |
+Przełącznik segmentowy na lewo od wyszukiwania zawiera cztery stany, każdy z
+liczbą pull requestów.
+
+| Stan | Co zawiera |
 |---|---|
 | **Otwarte** | Wszystkie otwarte pull requesty, łącznie ze szkicami |
 | **Szkice** | Tylko otwarte oznaczone jako szkic |
@@ -44,16 +51,21 @@ na sesję; **Odśwież** pyta ponownie.
 
 | Filtr | Zostawia |
 |---|---|
-| **Szukaj** | Pull requesty, których tytuł, opis, gałęzie lub numer zawierają każde wpisane słowo. `#482` albo `482` znajduje ten numer; dopasowania są podświetlone w tytule |
+| **Szukaj** | Pull requesty, których tytuł, opis, autor, gałęzie lub numer zawierają każde wpisane słowo. `#482` albo `482` znajduje ten numer; dopasowania są podświetlone w tytule |
 | **Autor** | Jednego autora — każdy z liczbą swoich PR w tej zakładce. **Ja** jest na początku |
 | **Recenzent** | Jednego poproszonego recenzenta albo **Proszą mnie o recenzję** |
 | **Gałąź docelowa** | Pull requesty do tej gałęzi |
-| **Moje** | Skrót dla *Autor: Ja* |
 | **Czekają na moją recenzję** | Skrót dla *Recenzent: proszą mnie o recenzję* |
+| **Moje** | Skrót dla *Autor: Ja* |
 | **CI nie przechodzi** | Pull requesty, których testy na headzie nie przeszły |
 
-Linijka pod filtrami mówi, ile pull requestów z zakładki jest widocznych i które
-filtry są włączone, z **wyczyść filtry**, by usunąć wszystkie.
+Wyszukiwanie i trzy chipy dzielą jeden wiersz; każdy chip mówi, ile pull requestów
+bieżącego stanu by zostawił. **Autor**, **Recenzent** i **Gałąź docelowa** są pod
+**Więcej filtrów ▾**, które się podświetla, gdy któryś z nich jest ustawiony.
+
+Gdy włączony jest jakikolwiek filtr, linijka nad listą mówi, ile pull requestów
+danego stanu jest widocznych i które filtry są włączone, z **wyczyść filtry**, by
+usunąć wszystkie.
 
 Filtry są pamiętane dla każdego repozytorium **dopóki aplikacja działa** — wyjdź
 ze strony, wróć, są takie, jak je zostawiłeś. Celowo nie są zapisywane między
@@ -70,16 +82,50 @@ na moją recenzję** nie są oferowane.
 
 ## Lista
 
-| Kolumna | Co pokazuje |
+Otwarte i Szkice są podzielone na trzy sekcje, w kolejności, w jakiej się nimi
+zajmujesz:
+
+| Sekcja | Zawiera |
 |---|---|
-| **#** | Numer z ikoną: otwarty, szkic, scalony lub zamknięty |
-| **Tytuł** | Tytuł, plakietkę *szkic* i kogo nadal poproszono o recenzję — w kolorze akcentu, gdy chodzi o ciebie |
-| **Autor** | Obrazek z hostingu, jeśli go podaje, w przeciwnym razie inicjał, oraz **ty** przy twoich |
-| **Gałęzie** | Źródło → cel |
-| **Testy** | Zbiorczy stan testów heada — `6/6`, `1 błędnych`, `2 w toku`; najedź, by zobaczyć liczby |
+| **Czekają na Twoją recenzję** | Pull requesty, o których recenzję ktoś cię poprosił — nagłówek na żółto |
+| **Twoje pull requesty** | Te, które napisałeś |
+| **Pozostałe** | Wszystko inne, zwinięte za **pokaż**, dopóki dwie sekcje wyżej coś zawierają; wyszukiwanie lub filtr je rozwija |
+
+Gdy hosting nie potrafi powiedzieć, kim jesteś, nie ma czego segregować i lista
+jest jedną kartą. Scalone i Zamknięte to historia: jedna karta, bez sekcji.
+
+Każdy wiersz czyta się od lewej do prawej:
+
+| Część | Co pokazuje |
+|---|---|
+| **Kropka** | Pull request zmienił się, odkąd ostatnio opuściłeś jego stronę. Ten, którego nigdy nie otworzyłeś, nie ma kropki — nie ma z czym porównać |
+| **#** | Numer — zielony, gdy otwarty, szary dla szkicu |
+| **Tytuł** | Tytuł, jego typ [Conventional Commits](committing.md) jako kolorowy chip (`feat`, `fix`, `docs`…), plakietka *szkic*. Pod nim: autor (pominięty przy twoich), źródło → cel oraz **Komentarze: N** — albo **Nowe komentarze: N**, gdy od twojej ostatniej wizyty inni napisali jakieś |
+| **Rozmiar** | `+48 −12 · Pliki: 4` — dodane i usunięte linie, zmienione pliki |
+| **Recenzja** | Obowiązujący werdykt każdego recenzenta — **✓ bruno zatwierdza**, **✕ ana prosi o zmiany** — a potem kogo jeszcze poproszono, **● czeka na Ciebie** na żółto. **✓ gotowy do scalenia**, gdy hosting mówi, że recenzje są zakończone, a testy nie zawiodły; **brak recenzentów**, gdy nikogo nie poproszono albo nikt nie odpowiedział |
+| **Testy** | Testy heada — `✓ 6/6`, `✕ 1 błędnych`, `● 2 w toku`; najedź, by zobaczyć liczby |
 | **Zmieniono** | Jak dawno ostatnio się zmienił; najedź, by zobaczyć datę |
 
-Wiersze są posortowane według ostatniej aktywności. Kliknięcie otwiera własną
+### Co daje każdy hosting
+
+Rozmiar, komentarze i werdykty nie są na liście każdego hostingu, a strona nigdy
+nie otwiera każdego pull requesta z osobna, by je znaleźć: czego lista nie niesie,
+zostaje puste, nigdy zero.
+
+| Hosting | Rozmiar | Komentarze | Werdykty recenzji |
+|---|---|---|---|
+| **GitHub** | ✓ | ✓, wraz z tym, które są nowe | ✓, oraz *gotowy do scalenia* — jedno dodatkowe zapytanie GraphQL na całą listę |
+| **GitLab** | — | ✓ (tylko liczba) | Kogo poproszono; *gotowy do scalenia* ze statusu scalenia GitLaba |
+| **Azure DevOps** | — | — | ✓ z głosów recenzentów |
+| **Bitbucket Data Center** | — | ✓ (tylko liczba) | ✓ |
+| **Bitbucket Cloud** | — | ✓ (tylko liczba) | — |
+| **Forgejo** | ✓ gdy serwer to wypełnia | ✓ (tylko liczba) | Kogo poproszono |
+
+Liczba komentarzy to komentarze rozmowy — komentarze do linii diffu się do niej nie
+wliczają. Bez tokenu zapytanie GitHuba jest pomijane i te kolumny zostają puste.
+
+W obrębie sekcji wiersze są posortowane według ostatniej aktywności, a **‹ ›** w
+pull requeście przechodzą je w narysowanej kolejności. Kliknięcie otwiera własną
 stronę pull requesta ([Hosting i pull requesty](hosting.md)). Na hostingu bez
 takiej strony wiersz otwiera pull request w przeglądarce.
 
@@ -88,7 +134,7 @@ repozytorium nadrzędnym, oznaczone *w owner/repo*.
 
 ## Przechodzenie listy z poziomu pull requesta
 
-![Pull request otwarty z przefiltrowanej listy: ‹ 1 z 4 › i filtry, z których pochodzi](../../screenshots/pull-request-nav.webp)
+![Pull request otwarty z przefiltrowanej listy: ‹ 1 z 7 › i filtry, z których pochodzi](../../screenshots/pull-request-nav.webp)
 
 Pull request otwarty ze strony pokazuje pasek nad swoim tytułem:
 
@@ -407,9 +453,12 @@ przed i po force pushu są dokładne, więc jego **Pokaż zmiany** też.
 
 Pull request z dwustoma plikami trudno czytać jako dwieście pełnych ścieżek i trudno
 skończyć, nie gubiąc miejsca. Nad listą i diffem wiersz prowadzi licznik —
-*Obejrzane pliki: 4 z 9*, z paskiem — a **Następny nieobejrzany →** otwiera kolejny
-plik niżej, którego jeszcze nie zaznaczyłeś, wracając na górę po dojściu do końca;
-jest wyszarzony, gdy wszystko na liście jest obejrzane. **Pokaż** zawęża listę do
+*Obejrzane pliki: 4 z 9*, z paskiem — a **Poprzedni nieobejrzany** / **Następny
+nieobejrzany** przechodzą do najbliższego pliku, którego jeszcze nie zaznaczyłeś, w
+górę lub w dół, zawijając na końcach listy; są wyszarzone, gdy wszystko na liście
+jest obejrzane. Zaznacz **Oznacz jako obejrzany przy przejściu dalej**, a **Następny
+nieobejrzany** sam zaznaczy otwarty plik, zanim przejdzie dalej — czytając po kolei,
+nigdy nie dotykasz pól wyboru; wybór jest zapamiętywany. **Pokaż** zawęża listę do
 plików **Nieobejrzane** albo **Z komentarzami** (z jakąkolwiek rozmową recenzji) i z
 powrotem do **Wszystkie**.
 
@@ -614,11 +663,12 @@ czasu**, wzdłuż szyny, w kolejności, w jakiej się działo.
 | **Wątki do wierszy** | Na swoim miejscu, przy pierwszym komentarzu: plik i wiersz, wiersze diffa, których dotyczy, odpowiedzi i pole odpowiedzi. Ścieżka i **Zobacz w Plikach →** otwierają ten plik w zakładce Pliki |
 | **Werdykty recenzji** | **zatwierdził(a)** na zielono, **poprosił(a) o zmiany** na czerwono z tym, co napisał recenzent, albo własny komentarz recenzji |
 
-Wątek, który hosting zgłasza jako **otwarty**, ma bursztynową plakietkę, a pasek nad
-osią czasu je liczy: **1 otwarty wątek** pokazuje tylko te, które wciąż czekają na
-odpowiedź. **Rozwiązany** wątek zwija się do jednego wiersza — *Rozwiązany wątek w
-src/palette.tsx:18 · komentarze: 2* — a kliknięcie go rozwija. **Wszystko ·
-Komentarze · Review · Commity** zawężają oś czasu do jednego rodzaju.
+Wątek, który hosting zgłasza jako **otwarty**, ma bursztynową plakietkę, a pasek
+nad osią czasu je liczy: **1 otwarty wątek** pokazuje tylko te, które wciąż
+czekają na odpowiedź. **Rozwiązany** wątek zwija się do jednego wiersza —
+*Rozwiązany wątek w src/palette.tsx:18 · komentarze: 2* — a kliknięcie go rozwija.
+**Komentarze · Review · Commity · Wszystko** zawężają oś czasu do jednego rodzaju;
+otwiera się na **Komentarze**, a **Wszystko** przywraca całość.
 
 **Recenzenci** w panelu bocznym podają werdykt każdej osoby słowami — **✓
 zatwierdził(a)** albo **poprosił(a) o zmiany** — i zegar przy kimś, kto jeszcze nie
@@ -626,11 +676,17 @@ odpowiedział.
 
 ### Nowe od ostatniej wizyty
 
-Gdy opuszczasz stronę pull requesta (inna strona, inna karta, zamknięcie), aplikacja
-zapisuje czas. Następnym razem linia oznacza, gdzie skończyłeś — **Nowe od ostatniej
-wizyty** — a pasek mówi, ile wpisów pojawiło się po niej. Znacznik powstaje przy
-wyjściu, nie przy otwarciu, więc zostaje na miejscu, gdy czytasz. Przy pierwszym
-otwarciu pull requesta nic nie jest oznaczone jako nowe.
+Gdy opuszczasz stronę pull requesta (inna strona, inna karta, zamknięcie, wyjście
+z aplikacji lub jej przeładowanie), aplikacja zapisuje czas. Następnym razem linia
+oznacza, gdzie skończyłeś — **Nowe od ostatniej wizyty** — a pasek mówi, ile
+wpisów pojawiło się po niej. Znacznik powstaje przy wyjściu, nie przy otwarciu,
+więc zostaje na miejscu, gdy czytasz. Przy pierwszym otwarciu pull requesta nic
+nie jest oznaczone jako nowe.
+
+To, co napisałeś sam, nigdy nie jest dla ciebie nowe: twoje komentarze, odpowiedzi
+i recenzje ani się nie liczą, ani nie przesuwają linii. Wątek, który zaczął się
+przed twoją wizytą i od tego czasu dostał odpowiedź od kogoś innego, też liczy się
+jako nowy — zostaje na osi czasu tam, gdzie się zaczął, więc szukaj go nad linią.
 
 Czasy wyglądają jak *2 dni temu*; najedź, żeby zobaczyć pełną datę.
 
@@ -650,9 +706,11 @@ Czasy wyglądają jak *2 dni temu*; najedź, żeby zobaczyć pełną datę.
   panelu bocznym.
 - Recenzja GitHuba bez własnego tekstu — koperta, pod którą trafia każda paczka
   komentarzy do wierszy — nie dostaje wiersza; jej wątki są już widoczne.
-- Twoje ostatnie wizyty są przechowywane dla 300 najnowszych pull requestów, tylko na
-  tym komputerze. Zamknięcie aplikacji z otwartym pull requestem nie liczy się jako
-  wyjście z niego.
+- Twoje ostatnie wizyty są przechowywane dla 300 najnowszych pull requestów, tylko
+  na tym komputerze. Awaria albo ubicie aplikacji nie zapisuje wizyty.
+- **Twoje** rozpoznaje się po twoim koncie na hostingu. Tam, gdzie hosting podaje
+  autorów tylko z nazwy wyświetlanej i nie daje identyfikatora do porównania,
+  twoje wpisy liczą się jak każde inne.
 
 ## Pisanie komentarzy
 

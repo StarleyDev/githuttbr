@@ -17,7 +17,7 @@ requests** répond à ces questions sur un seul écran, et une fois une pull
 request ouverte, **‹ ›** vous mènent à la suivante de la même liste sans revenir
 en arrière.
 
-![La page des pull requests filtrée sur « pix » : les correspondances surlignées, les vôtres marquées « vous », une CI en échec et un brouillon](../../screenshots/pull-requests.webp)
+![La page des pull requests ouverte depuis le Centre de contrôle : deux en attente de votre relecture, trois à vous, les autres repliées ; chaque ligne avec sa taille, où en est chaque relecteur, ses vérifications, et un point là où elle a changé depuis votre dernière visite](../../screenshots/pull-requests.webp)
 
 ## L’ouvrir
 
@@ -25,13 +25,19 @@ en arrière.
   (*Voir toutes les pull requests*).
 - *Pull requests…* dans la palette de commandes (⌘K), ou **Outils → Pull
   requests…**.
+- La **puce pull requests** sur la ligne d’un dépôt dans le [Centre de contrôle](mission-control.md).
+  Ouverte depuis là, la page commence par **← Retour au Centre de contrôle**, et le
+  garde quand vous ouvrez l’une de ses pull requests et revenez avec
+  **← Pull requests**.
 
 Comme le wiki et les [exécutions CI](ci-runs.md), la page s’ouvre dans l’onglet
 du dépôt.
 
-## Onglets
+## États
 
-| Onglet | Ce qu’il contient |
+Le contrôle segmenté à gauche de la recherche contient les quatre états, avec le nombre de chacun.
+
+| État | Ce qu’il contient |
 |---|---|
 | **Ouvertes** | Toutes les pull requests ouvertes, brouillons compris |
 | **Brouillons** | Seulement les ouvertes marquées comme brouillon |
@@ -47,17 +53,22 @@ redemande.
 
 | Filtre | Garde |
 |---|---|
-| **Rechercher** | Les pull requests dont le titre, la description, les branches ou le numéro contiennent chaque mot saisi. `#482` ou `482` trouve ce numéro ; les correspondances sont surlignées dans le titre |
+| **Rechercher** | Les pull requests dont le titre, la description, l’auteur, les branches ou le numéro contiennent chaque mot saisi. `#482` ou `482` trouve ce numéro ; les correspondances sont surlignées dans le titre |
 | **Auteur** | Un auteur — chacun avec le nombre qu’il a dans cet onglet. **Moi** est en tête |
 | **Relecteur** | Un relecteur demandé, ou **Relecture demandée à moi** |
 | **Branche cible** | Les pull requests vers cette branche |
-| **Les miennes** | Un raccourci pour *Auteur : Moi* |
 | **En attente de ma relecture** | Un raccourci pour *Relecteur : relecture demandée à moi* |
+| **Les miennes** | Un raccourci pour *Auteur : Moi* |
 | **CI en échec** | Les pull requests dont les vérifications du head ont échoué |
 
-La ligne sous les filtres indique combien de pull requests de l’onglet sont
-affichées et quels filtres sont actifs, avec **effacer les filtres** pour tous
-les retirer.
+La recherche et les trois puces partagent une ligne ; chaque puce indique combien
+de pull requests de l’état courant elle garderait. **Auteur**, **Relecteur** et
+**Branche cible** sont rangés sous **Plus de filtres ▾**, qui s’allume tant que
+l’un d’eux est réglé.
+
+Tant qu’un filtre est actif, une ligne au-dessus de la liste indique combien de
+pull requests de l’état sont affichées et quels filtres sont actifs, avec
+**effacer les filtres** pour tous les retirer.
 
 Les filtres sont conservés par dépôt **tant que l’application tourne** — quittez
 la page, revenez, ils sont comme vous les avez laissés. Ils ne sont pas gardés
@@ -75,16 +86,51 @@ actif — tel que l’hébergeur lui-même le renvoie. Quand le jeton ne peut pa
 
 ## La liste
 
-| Colonne | Ce qu’elle montre |
+Ouvertes et Brouillons sont répartis en trois sections, dans l’ordre où vous les traitez :
+
+| Section | Contient |
 |---|---|
-| **#** | Le numéro, avec une icône pour ouverte, brouillon, fusionnée ou fermée |
-| **Titre** | Le titre, un badge *brouillon*, et qui est encore sollicité pour relire — dans la couleur d’accent quand c’est vous |
-| **Auteur** | L’image de l’hébergeur quand il en fournit une, sinon l’initiale, et **vous** sur les vôtres |
-| **Branches** | Source → cible |
-| **Vérifications** | Les vérifications du head résumées — `6/6`, `1 en échec`, `2 en cours` ; survolez pour les comptes |
+| **En attente de votre relecture** | Les pull requests pour lesquelles quelqu’un vous a demandé une relecture — l’intitulé en jaune |
+| **Vos pull requests** | Celles que vous avez écrites |
+| **Autres** | Tout le reste, replié derrière **afficher** tant que les deux du dessus ont quelque chose ; une recherche ou un filtre le déplie |
+
+Quand l’hébergeur ne peut pas dire qui vous êtes, il n’y a rien à trier et la
+liste tient en une seule carte. Fusionnées et Fermées, c’est de l’histoire : une
+carte, pas de sections.
+
+Chaque ligne se lit de gauche à droite :
+
+| Partie | Ce qu’elle montre |
+|---|---|
+| **Point** | La pull request a changé depuis que vous avez quitté sa page la dernière fois. Une que vous n’avez jamais ouverte n’a pas de point — il n’y a rien à comparer |
+| **#** | Le numéro — vert tant qu’elle est ouverte, gris pour un brouillon |
+| **Titre** | Le titre, son type [Conventional Commits](committing.md) en puce colorée (`feat`, `fix`, `docs`…), un badge *brouillon*. En dessous : l’auteur (omis sur les vôtres), source → cible, et **N commentaires** — ou **N nouveaux commentaires** quand d’autres en ont écrit depuis votre dernière visite |
+| **Taille** | `+48 −12 · 4 fichiers` — lignes ajoutées et retirées, fichiers touchés |
+| **Relecture** | Le verdict en vigueur de chaque relecteur — **✓ bruno a approuvé**, **✕ ana a demandé des modifications** — puis qui est encore sollicité, **● vous attend** en jaune. **✓ prête à fusionner** quand l’hébergeur dit que les relectures sont faites et que les vérifications n’ont pas échoué ; **aucun relecteur** quand personne n’a été sollicité ni n’a répondu |
+| **Vérifications** | Les vérifications du head — `✓ 6/6`, `✕ 1 en échec`, `● 2 en cours` ; survolez pour les comptes |
 | **Mise à jour** | Depuis quand elle a changé pour la dernière fois ; survolez pour la date |
 
-Les lignes sont triées par activité la plus récente. Un clic ouvre la page propre
+### Ce que donne chaque hébergeur
+
+La taille, les commentaires et les verdicts ne figurent pas dans la liste de tous
+les hébergeurs, et la page n’ouvre jamais chaque pull request pour les trouver :
+ce que la liste n’apporte pas reste vide, jamais à zéro.
+
+| Hébergeur | Taille | Commentaires | Verdicts de relecture |
+|---|---|---|---|
+| **GitHub** | ✓ | ✓, et lesquels sont nouveaux | ✓, et *prête à fusionner* — une requête GraphQL de plus pour toute la liste |
+| **GitLab** | — | ✓ (le nombre seulement) | Qui est sollicité ; *prête à fusionner* d’après le statut de merge de GitLab |
+| **Azure DevOps** | — | — | ✓ d’après les votes des relecteurs |
+| **Bitbucket Data Center** | — | ✓ (le nombre seulement) | ✓ |
+| **Bitbucket Cloud** | — | ✓ (le nombre seulement) | — |
+| **Forgejo** | ✓ quand le serveur le remplit | ✓ (le nombre seulement) | Qui est sollicité |
+
+Le nombre de commentaires est celui de la conversation — les commentaires sur une
+ligne du diff n’y sont pas. Sans jeton, la requête GitHub est sautée, et ces
+colonnes restent vides.
+
+Dans une section, les lignes sont triées par activité la plus récente, et **‹ ›**
+dans une pull request les parcourent dans l’ordre affiché. Un clic ouvre la page propre
 de la pull request ([Hébergement et pull requests](hosting.md)). Sur un
 hébergeur sans cette page, la ligne ouvre la pull request dans le navigateur.
 
@@ -93,7 +139,7 @@ parent sont aussi listées, marquées *sur owner/repo*.
 
 ## Parcourir la liste depuis une pull request
 
-![Une pull request ouverte depuis la liste filtrée : ‹ 1 sur 4 › et les filtres d’où elle vient](../../screenshots/pull-request-nav.webp)
+![Une pull request ouverte depuis la liste filtrée : ‹ 1 sur 7 › et les filtres d’où elle vient](../../screenshots/pull-request-nav.webp)
 
 Une pull request ouverte depuis la page affiche un bandeau au-dessus de son
 titre :
@@ -435,9 +481,12 @@ donc son **Voir les changements** l’est aussi.
 Une pull request de deux cents fichiers est difficile à lire sous forme de deux
 cents chemins complets, et difficile à terminer sans perdre le fil. Au-dessus de
 la liste et du diff, une ligne tient le compte — *4 fichiers vus sur 9*, avec une
-barre — et **Suivant non vu →** ouvre le prochain fichier, plus bas, que vous
-n’avez pas coché, en repartant du haut au besoin ; il est grisé une fois que tout
-ce qui est listé est vu. **Afficher :** restreint la liste aux fichiers **Non
+barre — et **Précédent non vu** / **Suivant non vu** vont au fichier non coché le
+plus proche, vers le haut ou vers le bas, en faisant le tour de la liste ; ils
+sont grisés une fois que tout ce qui est listé est vu. Cochez **Marquer comme vu
+en avançant** et **Suivant non vu** coche pour vous le fichier ouvert avant de
+passer au suivant — en lisant d’un bout à l’autre, vous ne touchez jamais aux
+cases ; le choix est mémorisé. **Afficher :** restreint la liste aux fichiers **Non
 vus** ou **Avec commentaires** (une conversation de relecture quelconque), et
 revient à **Tous**.
 
@@ -660,8 +709,9 @@ Un fil que l’hébergeur signale **ouvert** porte une pastille ambre, et la bar
 au-dessus de la chronologie les compte : **1 fil ouvert** n’affiche que ceux-là,
 ceux qui attendent encore une réponse. Un fil **résolu** se replie sur une ligne —
 *Fil résolu dans src/palette.tsx:18 · 2 commentaires* — et un clic le déplie.
-**Tout · Commentaires · Relectures · Commits** restreignent la chronologie à un
-seul genre.
+**Commentaires · Relectures · Commits · Tout** restreignent la chronologie à un
+seul genre ; **Commentaires** est celui sur lequel elle s’ouvre, et **Tout**
+ramène l’ensemble.
 
 Les **Relecteurs** de la barre latérale disent le verdict de chacun en toutes
 lettres — **✓ a approuvé** ou **a demandé des modifications** — et une horloge
@@ -670,11 +720,17 @@ pour qui doit encore répondre.
 ### Nouveau depuis votre dernière visite
 
 Quand vous quittez la page d’une pull request (une autre page, un autre onglet,
-la fermeture), l’app note l’heure. La fois suivante, une ligne marque l’endroit où
+la fermeture, quitter ou recharger l’app), l’app note l’heure. La fois suivante, une ligne marque l’endroit où
 vous vous étiez arrêté — **Nouveau depuis votre dernière visite** — et la barre
 dit combien d’entrées sont arrivées après. La marque est posée au départ, pas à
 l’ouverture, elle reste donc en place pendant que vous lisez. La première fois
 que vous ouvrez une pull request, rien n’est marqué comme nouveau.
+
+Ce que vous avez écrit vous-même n’est jamais nouveau pour vous : vos propres
+commentaires, réponses et relectures ne comptent pas et ne déplacent pas la
+ligne. Un fil commencé avant votre visite et qui a reçu depuis une réponse de
+quelqu’un d’autre compte aussi comme nouveau — il reste là où il a commencé dans
+la chronologie, cherchez-le donc au-dessus de la ligne.
 
 Les heures s’affichent *il y a 2 j* ; survolez pour la date complète.
 
@@ -697,8 +753,12 @@ Les heures s’affichent *il y a 2 j* ; survolez pour la date complète.
   commentaires de ligne est rangé — n’a pas de ligne ; ses fils sont déjà
   affichés.
 - Vos dernières visites sont gardées pour les 300 pull requests les plus
-  récentes, sur cet ordinateur seulement. Quitter l’app avec une pull request
-  ouverte ne compte pas comme la quitter.
+  récentes, sur cet ordinateur seulement. Un plantage, ou l’app tuée, n’enregistre
+  aucune visite.
+- **Les vôtres** sont reconnues par votre compte sur l’hébergeur. Là où
+  l’hébergeur ne nomme les auteurs que par leur nom d’affichage et ne donne aucun
+  identifiant à comparer, vos propres entrées comptent comme celles de n’importe
+  qui.
 
 ## Écrire des commentaires
 
